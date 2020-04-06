@@ -62,6 +62,10 @@
 
 #define CODEC_BACKEND_DEFAULT_BIT_WIDTH 16
 
+#ifndef AUDIO_MODE_CALL_SCREEN
+#define AUDIO_MODE_CALL_SCREEN  4
+#endif
+
 class AudioVoice {
 public:
     struct call_state_t {
