@@ -515,25 +515,25 @@ static uint32_t astream_get_latency(const struct audio_stream_out *stream) {
         period_ms = (ULL_PERIOD_MULTIPLIER * ULL_PERIOD_SIZE *
                 1000) / DEFAULT_OUTPUT_SAMPLING_RATE;
         latency = period_ms +
-            StreamOutPrimary::GetRenderLatency(astream_out->flags_) / 1000;
+            StreamOutPrimary::GetRenderLatency(astream_out->flags_, astream_out->address_) / 1000;
         break;
     case USECASE_AUDIO_PLAYBACK_OFFLOAD2:
         latency = PCM_OFFLOAD_OUTPUT_PERIOD_DURATION;
-        latency += StreamOutPrimary::GetRenderLatency(astream_out->flags_) / 1000;
+        latency += StreamOutPrimary::GetRenderLatency(astream_out->flags_, astream_out->address_) / 1000;
         break;
     case USECASE_AUDIO_PLAYBACK_DEEP_BUFFER:
         latency = DEEP_BUFFER_OUTPUT_PERIOD_DURATION;
-        latency += StreamOutPrimary::GetRenderLatency(astream_out->flags_) / 1000;
+        latency += StreamOutPrimary::GetRenderLatency(astream_out->flags_, astream_out->address_) / 1000;
         break;
     case USECASE_AUDIO_PLAYBACK_LOW_LATENCY:
         latency = LOW_LATENCY_OUTPUT_PERIOD_DURATION;
-        latency += StreamOutPrimary::GetRenderLatency(astream_out->flags_) / 1000;
+        latency += StreamOutPrimary::GetRenderLatency(astream_out->flags_, astream_out->address_) / 1000;
         break;
     case USECASE_AUDIO_PLAYBACK_VOIP:
         latency += (VOIP_PERIOD_COUNT_DEFAULT * DEFAULT_VOIP_BUF_DURATION_MS * DEFAULT_VOIP_BIT_DEPTH_BYTE)/2;
         break;
     default:
-        latency += StreamOutPrimary::GetRenderLatency(astream_out->flags_) / 1000;
+        latency += StreamOutPrimary::GetRenderLatency(astream_out->flags_, astream_out->address_) / 1000;
         break;
     }
 
@@ -571,7 +571,7 @@ static int astream_out_get_presentation_position(
        return -EINVAL;
     }
     if (astream_out) {
-       switch (astream_out->GetPalStreamType(astream_out->flags_)) {
+       switch (astream_out->GetPalStreamType(astream_out->flags_, astream_out->address_)) {
        case PAL_STREAM_COMPRESSED:
           ret = astream_out->GetFrames(frames);
           if (ret != 0) {
@@ -609,7 +609,7 @@ static int out_get_render_position(const struct audio_stream_out *stream,
         return -EINVAL;
     }
     if (astream_out) {
-        switch (astream_out->GetPalStreamType(astream_out->flags_)) {
+        switch (astream_out->GetPalStreamType(astream_out->flags_, astream_out->address_)) {
         case PAL_STREAM_COMPRESSED:
            ret = astream_out->GetFrames(&frames);
            if (ret != 0) {
@@ -1280,7 +1280,12 @@ pal_stream_type_t StreamInPrimary::GetPalStreamType(
 }
 
 pal_stream_type_t StreamOutPrimary::GetPalStreamType(
-                                    audio_output_flags_t halStreamFlags) {
+                                    audio_output_flags_t halStreamFlags,
+                                    char *address) {
+    int bus_num = -1;
+    char *str = NULL;
+    char *last_r = NULL;
+    char local_address[AUDIO_DEVICE_MAX_ADDRESS_LEN] = {0};
     pal_stream_type_t palStreamType = PAL_STREAM_LOW_LATENCY;
     if ((halStreamFlags & AUDIO_OUTPUT_FLAG_VOIP_RX)!=0) {
         palStreamType = PAL_STREAM_VOIP_RX;
@@ -1328,6 +1333,39 @@ pal_stream_type_t StreamOutPrimary::GetPalStreamType(
         palStreamType = PAL_STREAM_VOICE_CALL_MUSIC;
     } else {
         palStreamType = PAL_STREAM_GENERIC;
+    }
+
+    if (address && palStreamType == PAL_STREAM_GENERIC) {
+        /* strtok will modify the original string. make a copy first */
+        strlcpy(local_address, address, AUDIO_DEVICE_MAX_ADDRESS_LEN);
+
+        /* extract bus number from address */
+        str = strtok_r(local_address, "BUS_",&last_r);
+        if (str != NULL)
+            bus_num = (int)strtol(str, (char **)NULL, 10);
+
+        /* validate bus number */
+        if ((bus_num < 0) || (bus_num >= MAX_CAR_AUDIO_STREAMS)) {
+            AHAL_ERR("%s: invalid bus number %d", __func__, bus_num);
+            return palStreamType;
+        }
+        switch(bus_num) {
+            case CAR_AUDIO_STREAM_MEDIA:
+            case CAR_AUDIO_STREAM_SYS_NOTIFICATION:
+            case CAR_AUDIO_STREAM_PHONE:
+            case CAR_AUDIO_STREAM_FRONT_PASSENGER:
+            case CAR_AUDIO_STREAM_REAR_SEAT:
+                palStreamType = PAL_STREAM_DEEP_BUFFER;
+                break;
+            case CAR_AUDIO_STREAM_NAV_GUIDANCE:
+                palStreamType = PAL_STREAM_LOW_LATENCY;
+                break;
+            default:
+              AHAL_ERR("%s: unknown bus number %d. Default to Deep Buffer",
+                    __func__, bus_num);
+              palStreamType = PAL_STREAM_DEEP_BUFFER;
+              break;
+        }
     }
     return palStreamType;
 }
@@ -1744,11 +1782,11 @@ int StreamOutPrimary::SetVolume(float left , float right) {
 
 /* Delay in Us */
 /* Delay in Us, only to be used for PCM formats */
-int64_t StreamOutPrimary::GetRenderLatency(audio_output_flags_t halStreamFlags)
+int64_t StreamOutPrimary::GetRenderLatency(audio_output_flags_t halStreamFlags, char *address)
 {
     struct pal_stream_attributes streamAttributes_;
-    streamAttributes_.type = StreamOutPrimary::GetPalStreamType(halStreamFlags);
-    AHAL_VERBOSE(" type %d",streamAttributes_.type);
+    streamAttributes_.type = StreamOutPrimary::GetPalStreamType(halStreamFlags, address);
+    AHAL_DBG("%s:%d type %d", __func__, __LINE__, streamAttributes_.type);
     switch (streamAttributes_.type) {
          case PAL_STREAM_DEEP_BUFFER:
              return DEEP_BUFFER_PLATFORM_DELAY;
@@ -1779,7 +1817,7 @@ uint64_t StreamOutPrimary::GetFramesWritten(struct timespec *timestamp)
     /* This adjustment accounts for buffering after app processor
      * It is based on estimated DSP latency per use case, rather than exact.
      */
-    dsp_frames = StreamOutPrimary::GetRenderLatency(flags_) *
+    dsp_frames = StreamOutPrimary::GetRenderLatency(flags_, address_) *
         (streamAttributes_.out_media_config.sample_rate) / 1000000LL;
 
     if (!timestamp) {
@@ -1887,9 +1925,8 @@ static int voip_get_buffer_size(uint32_t sample_rate)
 
 uint32_t StreamOutPrimary::GetBufferSize() {
     struct pal_stream_attributes streamAttributes_;
-
-    streamAttributes_.type = StreamOutPrimary::GetPalStreamType(flags_);
-    AHAL_DBG("type %d", streamAttributes_.type);
+    streamAttributes_.type = StreamOutPrimary::GetPalStreamType(flags_, address_);
+    AHAL_DBG("%s:%d type %d", __func__, __LINE__, streamAttributes_.type);
     if (streamAttributes_.type == PAL_STREAM_VOIP_RX) {
         return voip_get_buffer_size(config_.sample_rate);
     } else if (streamAttributes_.type == PAL_STREAM_COMPRESSED) {
@@ -1937,8 +1974,8 @@ int StreamOutPrimary::Open() {
     if (ch_info.channels > 1)
         ch_info.ch_map[1] = PAL_CHMAP_CHANNEL_FR;
 
-    streamAttributes_.type = StreamOutPrimary::GetPalStreamType(flags_);
-    streamAttributes_.flags = (pal_stream_flags_t)0;
+    streamAttributes_.type = StreamOutPrimary::GetPalStreamType(flags_, address_);
+    streamAttributes_.flags = (pal_stream_flags_t)flags_;
     streamAttributes_.direction = PAL_AUDIO_OUTPUT;
     streamAttributes_.out_media_config.sample_rate = config_.sample_rate;
     streamAttributes_.out_media_config.bit_width = CODEC_BACKEND_DEFAULT_BIT_WIDTH;

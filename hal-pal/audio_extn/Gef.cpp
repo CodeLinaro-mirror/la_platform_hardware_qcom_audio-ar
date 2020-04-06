@@ -254,11 +254,12 @@ int audio_extn_get_pal_info(void *hal_data,
 {
     int device_count = 0;
     AudioDevice *adev = nullptr;
-
+    char address[] = "CAR_AUDIO_STREAM_MEDIA";
     if (hal_data) {
         adev = (AudioDevice *)hal_data;
         device_count = adev->GetPalDeviceIds({hal_device_id}, pal_device_id);
-        *pal_stream_type = StreamOutPrimary::GetPalStreamType(hal_stream_flag);
+    // Hardcoded to avoid compilation failure
+        *pal_stream_type = StreamOutPrimary::GetPalStreamType(hal_stream_flag, address);
         return device_count;
     }
 

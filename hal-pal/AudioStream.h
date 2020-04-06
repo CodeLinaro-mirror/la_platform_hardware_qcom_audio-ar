@@ -393,6 +393,16 @@ const char * const use_case_table[AUDIO_USECASE_MAX] = {
     [USECASE_AUDIO_FM_TUNER_EXT] = "fm-tuner-ext",
 };
 
+#define MAX_CAR_AUDIO_STREAMS    32
+enum {
+    CAR_AUDIO_STREAM_MEDIA            = 0,
+    CAR_AUDIO_STREAM_SYS_NOTIFICATION = 1,
+    CAR_AUDIO_STREAM_NAV_GUIDANCE     = 2,
+    CAR_AUDIO_STREAM_PHONE            = 3,
+    CAR_AUDIO_STREAM_FRONT_PASSENGER  = 8,
+    CAR_AUDIO_STREAM_REAR_SEAT        = 16,
+};
+
 extern "C" typedef void (*hello_t)( const char* text );
 extern "C" typedef int (*offload_effects_start_output)(audio_io_handle_t,
                                                        pal_stream_handle_t*);
@@ -434,13 +444,13 @@ public:
     int GetLookupTableIndex(const struct string_to_enum *table,
                                         const int table_size, int value);
     virtual int RouteStream(const std::set<audio_devices_t>&) = 0;
+    char                      address_[AUDIO_DEVICE_MAX_ADDRESS_LEN];
 protected:
     struct pal_stream_attributes streamAttributes_;
     pal_stream_handle_t*      pal_stream_handle_;
     audio_io_handle_t         handle_;
     pal_device_id_t           pal_device_id_;
     struct audio_config       config_;
-    char                      address_[AUDIO_DEVICE_MAX_ADDRESS_LEN];
     bool                      stream_started_ = false;
     bool                      stream_paused_ = false;
     int usecase_;
@@ -484,8 +494,8 @@ public:
     void GetStreamHandle(audio_stream_out** stream);
     uint32_t GetBufferSize();
     int GetFrames(uint64_t *frames);
-    static pal_stream_type_t GetPalStreamType(audio_output_flags_t halStreamFlags);
-    static int64_t GetRenderLatency(audio_output_flags_t halStreamFlags);
+    static pal_stream_type_t GetPalStreamType(audio_output_flags_t halStreamFlags, char *address);
+    static int64_t GetRenderLatency(audio_output_flags_t flags, char *address);
     int GetOutputUseCase(audio_output_flags_t halStreamFlags);
     int StartOffloadEffects(audio_io_handle_t, pal_stream_handle_t*);
     int StopOffloadEffects(audio_io_handle_t, pal_stream_handle_t*);
