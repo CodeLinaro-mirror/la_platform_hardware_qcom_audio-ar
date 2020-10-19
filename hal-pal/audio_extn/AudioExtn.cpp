@@ -31,6 +31,7 @@
 #include <dlfcn.h>
 #include "AudioExtn.h"
 #include <cutils/properties.h>
+#include "AudioCommon.h"
 #define AUDIO_OUTPUT_BIT_WIDTH ((config_->offload_info.bit_width == 32) ? 24:config_->offload_info.bit_width)
 
 static batt_listener_init_t batt_listener_init;
@@ -66,7 +67,7 @@ int AudioExtn::audio_extn_parse_compress_metadata(struct audio_config *config_, 
             pal_snd_dec->flac_dec.max_frame_size = atoi(value);
         }
         pal_snd_dec->flac_dec.sample_size = flac_sample_size;
-        ALOGD("FLAC metadata: sample_size %d min_blk_size %d, max_blk_size %d min_frame_size %d max_frame_size %d",
+        AHAL_DBG("FLAC metadata: sample_size %d min_blk_size %d, max_blk_size %d min_frame_size %d max_frame_size %d",
               pal_snd_dec->flac_dec.sample_size,
               pal_snd_dec->flac_dec.min_blk_size,
               pal_snd_dec->flac_dec.max_blk_size,
@@ -126,7 +127,7 @@ int AudioExtn::audio_extn_parse_compress_metadata(struct audio_config *config_, 
         }
         *sr = pal_snd_dec->alac_dec.sample_rate;
         *ch = pal_snd_dec->alac_dec.num_channels;
-        ALOGD("ALAC CSD values: frameLength %d bitDepth %d numChannels %d"
+        AHAL_DBG("ALAC CSD values: frameLength %d bitDepth %d numChannels %d"
                 " maxFrameBytes %d, avgBitRate %d, sampleRate %d",
                 pal_snd_dec->alac_dec.frame_length,
                 pal_snd_dec->alac_dec.bit_depth,
@@ -179,7 +180,7 @@ int AudioExtn::audio_extn_parse_compress_metadata(struct audio_config *config_, 
         }
         *sr = pal_snd_dec->ape_dec.sample_rate;
         *ch = pal_snd_dec->ape_dec.num_channels;
-        ALOGD("APE CSD values: compatibleVersion %d compressionLevel %d"
+        AHAL_DBG("APE CSD values: compatibleVersion %d compressionLevel %d"
                 " formatFlags %d blocksPerFrame %d finalFrameBlocks %d"
                 " totalFrames %d bitsPerSample %d numChannels %d"
                 " sampleRate %d seekTablePresent %d",
@@ -233,7 +234,7 @@ int AudioExtn::audio_extn_parse_compress_metadata(struct audio_config *config_, 
         if (ret >= 0) {
             pal_snd_dec->wma_dec.encodeopt2 = atoi(value);
         }
-        ALOGD("WMA params: fmt %x, bit rate %x, balgn %x, sr %d, chmsk %x"
+        AHAL_DBG("WMA params: fmt %x, bit rate %x, balgn %x, sr %d, chmsk %x"
                 " encop %x, op1 %x, op2 %x",
                 pal_snd_dec->wma_dec.fmt_tag,
                 pal_snd_dec->wma_dec.avg_bit_rate,
@@ -252,8 +253,8 @@ int AudioExtn::audio_extn_parse_compress_metadata(struct audio_config *config_, 
 
        pal_snd_dec->aac_dec.audio_obj_type = 29;
        pal_snd_dec->aac_dec.pce_bits_size = 0;
-       ALOGV("AAC params: aot %d pce %d", pal_snd_dec->aac_dec.audio_obj_type, pal_snd_dec->aac_dec.pce_bits_size);
-       ALOGV("format %x", config_->offload_info.format);
+       AHAL_VERBOSE("AAC params: aot %d pce %d", pal_snd_dec->aac_dec.audio_obj_type, pal_snd_dec->aac_dec.pce_bits_size);
+       AHAL_VERBOSE("format %x", config_->offload_info.format);
     }
     return 0;
 }
@@ -270,7 +271,7 @@ int AudioExtn::GetProxyParameters(std::shared_ptr<AudioDevice> adev __unused,
         val = 1;
         str_parms_add_int(reply, AUDIO_PARAMETER_KEY_CAN_OPEN_PROXY, val);
     }
-    ALOGV("%s: called ... can_use_proxy %d", __func__, val);
+    AHAL_VERBOSE("called ... can_use_proxy %d", val);
     return 0;
 }
 
@@ -281,7 +282,9 @@ void AudioExtn::audio_extn_get_parameters(std::shared_ptr<AudioDevice> adev,
 
     GetProxyParameters(adev, query, reply);
     kv_pairs = str_parms_to_str(reply);
-    ALOGV_IF(kv_pairs != NULL, "%s: returns %s", __func__, kv_pairs);
+    if (kv_pairs != NULL) {
+        AHAL_VERBOSE("returns %s", kv_pairs);
+    }
     free(kv_pairs);
 }
 
@@ -312,7 +315,7 @@ void AudioExtn::battery_listener_feature_init(bool is_feature_enabled) {
         batt_listener_lib_handle = dlopen(BATTERY_LISTENER_LIB_PATH, RTLD_NOW);
 
         if (!batt_listener_lib_handle) {
-            ALOGE("%s: dlopen failed", __func__);
+            AHAL_ERR("dlopen failed");
             goto feature_disabled;
         }
         if (!(batt_listener_init = (batt_listener_init_t)dlsym(
@@ -323,10 +326,10 @@ void AudioExtn::battery_listener_feature_init(bool is_feature_enabled) {
                 !(batt_prop_is_charging =
                      (batt_prop_is_charging_t)dlsym(
                         batt_listener_lib_handle, "battery_properties_is_charging"))) {
-             ALOGE("%s: dlsym failed", __func__);
+             AHAL_ERR("dlsym failed");
                 goto feature_disabled;
         }
-        ALOGD("%s: ---- Feature BATTERY_LISTENER is enabled ----", __func__);
+        AHAL_DBG("---- Feature BATTERY_LISTENER is enabled ----");
         return;
     }
 
@@ -339,7 +342,7 @@ void AudioExtn::battery_listener_feature_init(bool is_feature_enabled) {
     batt_listener_init = NULL;
     batt_listener_deinit = NULL;
     batt_prop_is_charging = NULL;
-    ALOGW(":: %s: ---- Feature BATTERY_LISTENER is disabled ----", __func__);
+    AHAL_INFO("---- Feature BATTERY_LISTENER is disabled ----");
 }
 
 void AudioExtn::battery_properties_listener_init(battery_status_change_fn_t fn)
@@ -375,14 +378,14 @@ static hfp_set_mic_mute2_t hfp_set_mic_mute2;
 
 int AudioExtn::hfp_feature_init(bool is_feature_enabled)
 {
-    ALOGD("%s: Called with feature %s", __func__,
+    AHAL_DBG("Called with feature %s",
         is_feature_enabled ? "Enabled" : "NOT Enabled");
     if (is_feature_enabled) {
         // dlopen lib
         hfp_lib_handle = dlopen(HFP_LIB_PATH, RTLD_NOW);
 
         if (!hfp_lib_handle) {
-            ALOGE("%s: dlopen failed", __func__);
+            AHAL_ERR("dlopen failed");
             goto feature_disabled;
         }
 
@@ -403,11 +406,11 @@ int AudioExtn::hfp_feature_init(bool is_feature_enabled)
             !(hfp_set_parameters =
             (hfp_set_parameters_t)dlsym(
                 hfp_lib_handle, "hfp_set_parameters"))) {
-            ALOGE("%s: dlsym failed", __func__);
+            AHAL_ERR("dlsym failed");
             goto feature_disabled;
         }
 
-        ALOGD("%s:: ---- Feature HFP is Enabled ----", __func__);
+        AHAL_DBG("---- Feature HFP is Enabled ----");
 
         return 0;
     }
@@ -425,7 +428,7 @@ feature_disabled:
     hfp_set_mic_mute2 = NULL;
     hfp_set_parameters = NULL;
 
-    ALOGW(":: %s: ---- Feature HFP is disabled ----", __func__);
+    AHAL_INFO("---- Feature HFP is disabled ----");
     return -ENOSYS;
 }
 
@@ -493,7 +496,7 @@ bool AudioExtn::audio_devices_empty(const std::set<audio_devices_t>& devs){
 void AudioExtn::audio_extn_kpi_optimize_feature_init(bool is_feature_enabled)
 {
     audio_extn_kpi_optimize_feature_enabled = is_feature_enabled;
-    ALOGD(":: %s: ---- Feature KPI_OPTIMIZE is %s ----", __func__, is_feature_enabled? "ENABLED": " NOT ENABLED");
+    AHAL_DBG(":: ---- Feature KPI_OPTIMIZE is %s ----", is_feature_enabled? "ENABLED": " NOT ENABLED");
 }
 
 typedef int (*perf_lock_acquire_t)(int, int, int*, int);
@@ -516,19 +519,19 @@ int AudioExtn::audio_extn_perf_lock_init(void)
     if (qcopt_handle == NULL) {
         if (property_get("ro.vendor.extension_library",
                          opt_lib_path, NULL) <= 0) {
-            ALOGE("%s: Failed getting perf property \n", __func__);
+            AHAL_ERR("Failed getting perf property \n");
             ret = -EINVAL;
             goto err;
         }
         if ((qcopt_handle = dlopen(opt_lib_path, RTLD_NOW)) == NULL) {
-            ALOGE("%s: Failed to open perf handle \n", __func__);
+            AHAL_ERR("Failed to open perf handle \n");
             ret = -EINVAL;
             goto err;
         } else {
             perf_lock_acq = (perf_lock_acquire_t)dlsym(qcopt_handle,
                                                        "perf_lock_acq");
             if (perf_lock_acq == NULL) {
-                ALOGE("%s: Perf lock Acquire NULL \n", __func__);
+                AHAL_ERR("Perf lock Acquire NULL \n");
                 dlclose(qcopt_handle);
                 ret = -EINVAL;
                 goto err;
@@ -536,12 +539,12 @@ int AudioExtn::audio_extn_perf_lock_init(void)
             perf_lock_rel = (perf_lock_release_t)dlsym(qcopt_handle,
                                                        "perf_lock_rel");
             if (perf_lock_rel == NULL) {
-                ALOGE("%s: Perf lock Release NULL \n", __func__);
+                AHAL_ERR("Perf lock Release NULL \n");
                 dlclose(qcopt_handle);
                 ret = -EINVAL;
                 goto err;
             }
-            ALOGE("%s: Perf lock handles Success \n", __func__);
+            AHAL_ERR("Perf lock handles Success \n");
         }
     }
 err:
@@ -554,8 +557,7 @@ void AudioExtn::audio_extn_perf_lock_acquire(int *handle, int duration,
     if (audio_extn_kpi_optimize_feature_enabled)
     {
         if (!perf_lock_opts || !size || !perf_lock_acq || !handle) {
-            ALOGE("%s: Incorrect params, Failed to acquire perf lock, err ",
-                  __func__);
+            AHAL_ERR("Incorrect params, Failed to acquire perf lock, err ");
             return;
         }
         /*
@@ -565,8 +567,8 @@ void AudioExtn::audio_extn_perf_lock_acquire(int *handle, int duration,
          */
         *handle = perf_lock_acq(*handle, duration, perf_lock_opts, size);
         if (*handle <= 0)
-            ALOGE("%s: Failed to acquire perf lock, err: %d\n",
-                  __func__, *handle);
+            AHAL_ERR("Failed to acquire perf lock, err: %d\n",
+                     *handle);
     }
 }
 
@@ -577,7 +579,7 @@ void AudioExtn::audio_extn_perf_lock_release(int *handle)
             perf_lock_rel(*handle);
             *handle = 0;
         } else
-            ALOGE("%s: Perf lock release error \n", __func__);
+            AHAL_ERR("Perf lock release error \n");
     }
 }
 
