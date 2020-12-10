@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2021, The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -34,6 +34,17 @@
 #include "AudioCommon.h"
 #define AUDIO_OUTPUT_BIT_WIDTH ((config_->offload_info.bit_width == 32) ? 24:config_->offload_info.bit_width)
 
+#ifdef __LP64__
+#define LIBS "/vendor/lib64/"
+#else
+#define LIBS "/vendor/lib/"
+#endif
+
+#define BATTERY_LISTENER_LIB_PATH LIBS"libbatterylistener.so"
+#define HFP_LIB_PATH LIBS"libhfp_pal.so"
+#define FM_LIB_PATH LIBS"libfmpal.so"
+
+
 static batt_listener_init_t batt_listener_init;
 static batt_listener_deinit_t batt_listener_deinit;
 static batt_prop_is_charging_t batt_prop_is_charging;
@@ -52,7 +63,7 @@ int AudioExtn::audio_extn_parse_compress_metadata(struct audio_config *config_, 
         ret = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_FLAC_MIN_BLK_SIZE, value, sizeof(value));
         if (ret >= 0) {
             pal_snd_dec->flac_dec.min_blk_size = atoi(value);
-            //out->is_compr_metadata_avail = true; check about this 
+            //out->is_compr_metadata_avail = true; check about this
         }
         ret = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_FLAC_MAX_BLK_SIZE, value, sizeof(value));
         if (ret >= 0) {
@@ -280,12 +291,19 @@ void AudioExtn::audio_extn_get_parameters(std::shared_ptr<AudioDevice> adev,
 {
     char *kv_pairs = NULL;
 
+    audio_extn_fm_get_parameters(adev, query, reply);
     GetProxyParameters(adev, query, reply);
     kv_pairs = str_parms_to_str(reply);
     if (kv_pairs != NULL) {
         AHAL_VERBOSE("returns %s", kv_pairs);
     }
     free(kv_pairs);
+}
+
+void AudioExtn::audio_extn_set_parameters(std::shared_ptr<AudioDevice> adev,
+                                     struct str_parms *params){
+    audio_extn_hfp_set_parameters(adev, params);
+    audio_extn_fm_set_parameters(adev, params);
 }
 
 int AudioExtn::get_controller_stream_from_params(struct str_parms *parms,
@@ -303,11 +321,6 @@ int AudioExtn::get_controller_stream_from_params(struct str_parms *parms,
 }
 
 // START: BATTERY_LISTENER ==================================================
-#ifdef __LP64__
-#define BATTERY_LISTENER_LIB_PATH "/vendor/lib64/libbatterylistener.so"
-#else
-#define BATTERY_LISTENER_LIB_PATH "/vendor/lib/libbatterylistener.so"
-#endif
 
 void AudioExtn::battery_listener_feature_init(bool is_feature_enabled) {
     battery_listener_enabled = is_feature_enabled;
@@ -362,18 +375,13 @@ bool AudioExtn::battery_properties_is_charging()
 // END: BATTERY_LISTENER ================================================================
 
 // START: HFP ======================================================================
-#ifdef __LP64__
-#define HFP_LIB_PATH "/vendor/lib64/libhfp_pal.so"
-#else
-#define HFP_LIB_PATH "/vendor/lib/libhfp_pal.so"
-#endif
 
 static void *hfp_lib_handle = NULL;
 static hfp_init_t hfp_init;
 static hfp_is_active_t hfp_is_active;
 static hfp_get_usecase_t hfp_get_usecase;
 static hfp_set_mic_mute_t hfp_set_mic_mute;
-static hfp_set_parameters_t hfp_set_parameters;
+static set_parameters_t hfp_set_parameters;
 static hfp_set_mic_mute2_t hfp_set_mic_mute2;
 
 int AudioExtn::hfp_feature_init(bool is_feature_enabled)
@@ -404,7 +412,7 @@ int AudioExtn::hfp_feature_init(bool is_feature_enabled)
             (hfp_set_mic_mute2_t)dlsym(
                 hfp_lib_handle, "hfp_set_mic_mute2")) ||
             !(hfp_set_parameters =
-            (hfp_set_parameters_t)dlsym(
+            (set_parameters_t)dlsym(
                 hfp_lib_handle, "hfp_set_parameters"))) {
             AHAL_ERR("dlsym failed");
             goto feature_disabled;
@@ -491,6 +499,45 @@ bool AudioExtn::audio_devices_empty(const std::set<audio_devices_t>& devs){
            || (devs.size() == 1 && *devs.begin() == AUDIO_DEVICE_NONE);
 }
 // END: DEVICE UTILS ===============================================================
+
+static set_parameters_t fm_set_params;
+static get_parameters_t fm_get_params;
+static void* libfm;
+
+void AudioExtn::audio_extn_fm_init(bool enabled)
+{
+
+    ALOGD("%s: Enter: enabled: %d", __func__, enabled);
+
+    if(enabled){
+        if(!libfm)
+            libfm = dlopen(FM_LIB_PATH, RTLD_NOW);
+
+        if (!libfm) {
+            ALOGE("%s: dlopen failed with: %s", __func__, dlerror());
+            return;
+        }
+
+        fm_set_params = (set_parameters_t) dlsym(libfm, "fm_set_parameters");
+        fm_get_params = (get_parameters_t) dlsym(libfm, "fm_get_parameters");
+
+        if(!fm_set_params || !fm_get_params){
+            ALOGE("%s: %s", __func__, dlerror());
+            dlclose(libfm);
+        }
+    }
+}
+
+
+void AudioExtn::audio_extn_fm_set_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *params){
+    if(fm_set_params)
+        fm_set_params(adev, params);
+}
+
+void AudioExtn::audio_extn_fm_get_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *query, struct str_parms *reply){
+   if(fm_get_params)
+        fm_get_params(adev, query, reply);
+}
 
 //START: KPI_OPTIMIZE =============================================================================
 void AudioExtn::audio_extn_kpi_optimize_feature_init(bool is_feature_enabled)
