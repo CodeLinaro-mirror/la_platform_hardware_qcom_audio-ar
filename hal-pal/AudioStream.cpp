@@ -921,7 +921,7 @@ static int astream_in_set_microphone_direction(
     std::ignore = dir;
     AHAL_VERBOSE("function not implemented");
     //No plans to implement audiozoom
-    return -1;
+    return -ENOSYS;
 }
 
 static int in_set_microphone_field_dimension(
@@ -931,7 +931,7 @@ static int in_set_microphone_field_dimension(
     std::ignore = zoom;
     AHAL_VERBOSE("function not implemented");
     //No plans to implement audiozoom
-    return -1;
+    return -ENOSYS;
 }
 
 static int astream_in_add_audio_effect(
@@ -1104,7 +1104,7 @@ exit:
 }
 
 static int astream_in_set_parameters(struct audio_stream *stream, const char *kvpairs) {
-    int ret = -EINVAL;
+    int ret = 0;
 
     std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
     std::shared_ptr<StreamInPrimary> astream_in;
@@ -2661,7 +2661,9 @@ int StreamInPrimary::SetGain(float gain) {
     volume->no_of_volpair = 1;
     volume->volume_pair[0].channel_mask = 0x03;
     volume->volume_pair[0].vol = gain;
-    ret = pal_stream_set_volume(pal_stream_handle_, volume);
+    if (pal_stream_handle_) {
+        ret = pal_stream_set_volume(pal_stream_handle_, volume);
+    }
 
     free(volume);
     if (ret) {
@@ -2752,7 +2754,7 @@ done:
 
 int StreamInPrimary::SetParameters(const char* kvpairs) {
     struct str_parms *parms = (str_parms *)NULL;
-    int ret = -EINVAL;
+    int ret = 0;
 
     AHAL_DBG("enter: kvpairs=%s", kvpairs);
     if(!mInitialized)
