@@ -60,7 +60,7 @@ LOCAL_CFLAGS += -Wall -Werror
 
 LOCAL_COPY_HEADERS_TO   := mm-audio
 LOCAL_COPY_HEADERS      := \
-                           audio_extn/audio_defs.h \
+                           audio_extn/audio_defs_ar.h \
                            audio_extn/AudioExtn.h
 
 ifeq ($(filter true, $(DUAL_AUDIO_FRAMEWORK_AR) $(TARGET_USES_QSSI)),true)
