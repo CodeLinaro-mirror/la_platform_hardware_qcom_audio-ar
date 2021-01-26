@@ -62,7 +62,7 @@ if LL_AS_PRIMARY_OUTPUT
 AM_CFLAGS += -DUSE_LL_AS_PRIMARY_OUTPUT
 endif
 
-h_sources = audio_extn/audio_defs.h \
+h_sources = audio_extn/audio_defs_ar.h \
             audio_hw_pal.h
 
 library_include_HEADERS = $(h_sources)

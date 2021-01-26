@@ -32,7 +32,7 @@
 #include <cutils/str_parms.h>
 #include <set>
 #include "PalDefs.h"
-#include "audio_defs.h"
+#include "audio_defs_ar.h"
 #include <log/log.h>
 #include "battery_listener.h"
 
