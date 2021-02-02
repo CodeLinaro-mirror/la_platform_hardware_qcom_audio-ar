@@ -488,10 +488,10 @@ bool AudioExtn::audio_devices_cmp(const std::set<audio_devices_t>& devs, audio_d
 }
 
 audio_devices_t AudioExtn::get_device_types(const std::set<audio_devices_t>& devs){
-    audio_devices_t device = AUDIO_DEVICE_NONE;
+    uint32_t device = AUDIO_DEVICE_NONE;
     for(auto d : devs)
         device |= d;
-    return device;
+    return (audio_devices_t) device;
 }
 
 bool AudioExtn::audio_devices_empty(const std::set<audio_devices_t>& devs){
