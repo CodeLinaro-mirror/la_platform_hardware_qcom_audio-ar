@@ -123,7 +123,7 @@ int32_t fm_set_volume(float value, bool persist=false)
     return ret;
 }
 
-int32_t fm_start(audio_devices_t adev __unused, int device_id)
+int32_t fm_start(std::shared_ptr<AudioDevice> adev __unused, int device_id)
 {
     int32_t ret = 0;
     const int num_pal_devs = 2;
@@ -203,7 +203,7 @@ int32_t fm_stop()
         pal_stream_close(fm.stream_handle);
     }
 
-    fm.stream_handle = NULL
+    fm.stream_handle = NULL;
     fm.running = false;
     return 0;
 }
@@ -222,7 +222,7 @@ void fm_get_parameters(std::shared_ptr<AudioDevice> adev __unused, struct str_pa
     }
 }
 
-inline void hal2vec(audio_devices_t hdev, std::vector<audio_device_t>& hdevs){
+inline void hal2vec(audio_devices_t hdev, std::vector<audio_devices_t>& hdevs){
     audio_devices_t out_devs = hdev & AUDIO_DEVICE_OUT_ALL;
     audio_devices_t in_devs = hdev & AUDIO_DEVICE_IN_ALL;
 
@@ -238,7 +238,7 @@ inline void hal2vec(audio_devices_t hdev, std::vector<audio_device_t>& hdevs){
 void fm_set_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *parms)
 {
     int ret, val, num_pal_devs;
-    pal_device_id *pal_devs;
+    pal_device_id_t *pal_devs;
     char value[32] = {0};
     float vol = 0.0;
     const char* p = str_parms_to_str(parms);
@@ -249,6 +249,7 @@ void fm_set_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *parm
         val = atoi(value);
         ALOGD("%s: FM usecase", __func__);
         if (val)
+        {
             if(val & AUDIO_DEVICE_OUT_FM && !fm.running)
                 fm_start(adev, val & ~AUDIO_DEVICE_OUT_FM);
             else if (!(val & AUDIO_DEVICE_OUT_FM) && fm.running) {
@@ -256,6 +257,7 @@ void fm_set_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *parm
                 usleep(FM_LOOPBACK_DRAIN_TIME_MS*1000);
                 fm_stop();
             }
+        }
     }
 
     ret = str_parms_get_str(parms, AUDIO_PARAMETER_KEY_FM_ROUTING, value, sizeof(value));
