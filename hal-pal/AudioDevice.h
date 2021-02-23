@@ -128,6 +128,7 @@ public:
     int perf_lock_handle;
     int perf_lock_opts[MAX_PERF_LOCK_OPTS];
     int perf_lock_opts_size;
+    int cameraOrientation = CAMERA_DEFAULT;
 protected:
     AudioDevice(){}
     std::shared_ptr<AudioVoice> VoiceInit();
