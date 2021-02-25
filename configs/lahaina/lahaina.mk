@@ -127,6 +127,7 @@ PRODUCT_PACKAGES += audioadsprpcd
 PRODUCT_PACKAGES += vendor.qti.audio-adsprpc-service.rc
 PRODUCT_PACKAGES += libfmpal
 PRODUCT_PACKAGES += libmcs
+PRODUCT_PACKAGES += libqtigefar
 
 ifneq ($(strip $(TARGET_USES_RRO)), true)
 #Audio Specific device overlays
