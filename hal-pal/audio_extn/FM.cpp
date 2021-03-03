@@ -225,11 +225,11 @@ inline void hal2vec(audio_devices_t hdev, std::vector<audio_devices_t>& hdevs){
     audio_devices_t out_devs = (audio_devices_t)(hdev & AUDIO_DEVICE_OUT_ALL);
     audio_devices_t in_devs = (audio_devices_t)(hdev & AUDIO_DEVICE_IN_ALL);
 
-    for(audio_devices_t i = (audio_devices_t)0x1; i < AUDIO_DEVICE_OUT_DEFAULT; (audio_devices_t)(i <<= 1))
+    for(audio_devices_t i = (audio_devices_t)0x1; i < AUDIO_DEVICE_OUT_DEFAULT; i = (audio_devices_t)(i << 1))
         if(out_devs & i)
             hdevs.push_back(i);
 
-    for(audio_devices_t i = (audio_devices_t)0x10000; i < AUDIO_DEVICE_IN_DEFAULT; (audio_devices_t)(i <<= 1))
+    for(audio_devices_t i = (audio_devices_t)0x10000; i < AUDIO_DEVICE_IN_DEFAULT; i = (audio_devices_t)(i << 1))
         if(out_devs & i)
             hdevs.push_back(i);
 }

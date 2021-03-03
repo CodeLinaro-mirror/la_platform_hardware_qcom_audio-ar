@@ -1267,6 +1267,17 @@ int AudioDevice::SetParameters(const char *kvpairs) {
                             sizeof(pal_param_btsco_t));
     }
 
+    ret = str_parms_get_str(parms, "wfd_channel_cap", value, sizeof(value));
+    if (ret >= 0) {
+        pal_param_proxy_channel_config_t param_out_proxy;
+
+        val = atoi(value);
+        param_out_proxy.num_proxy_channels = val;
+        AHAL_INFO("Proxy channels: %d", val);
+        ret = pal_set_param(PAL_PARAM_ID_PROXY_CHANNEL_CONFIG, (void *)&param_out_proxy,
+                sizeof(pal_param_proxy_channel_config_t));
+    }
+
     str_parms_destroy(parms);
 
     AHAL_DBG("exit: %s", kvpairs);
@@ -1399,7 +1410,7 @@ void AudioDevice::FillAndroidDeviceMap() {
     //android_device_map_.insert(std::make_pair(AUDIO_DEVICE_IN_TV_TUNER, PAL_DEVICE_IN_TV_TUNER);
     android_device_map_.insert(std::make_pair(AUDIO_DEVICE_IN_LINE, PAL_DEVICE_IN_LINE));
     android_device_map_.insert(std::make_pair(AUDIO_DEVICE_IN_SPDIF, PAL_DEVICE_IN_SPDIF));
-    //android_device_map_.insert(std::make_pair(AUDIO_DEVICE_IN_BLUETOOTH_A2DP, PAL_DEVICE_IN_BLUETOOTH_A2DP);
+    android_device_map_.insert(std::make_pair(AUDIO_DEVICE_IN_BLUETOOTH_A2DP, PAL_DEVICE_IN_BLUETOOTH_A2DP));
     //android_device_map_.insert(std::make_pair(AUDIO_DEVICE_IN_LOOPBACK, PAL_DEVICE_IN_LOOPBACK);
     //android_device_map_.insert(std::make_pair(AUDIO_DEVICE_IN_IP, PAL_DEVICE_IN_IP);
     //android_device_map_.insert(std::make_pair(AUDIO_DEVICE_IN_BUS, PAL_DEVICE_IN_BUS);
