@@ -54,6 +54,7 @@
 #define MAX_READ_RETRY_COUNT 25
 
 #define AFE_PROXY_RECORD_PERIOD_SIZE  768
+
 static bool is_pcm_format(audio_format_t format)
 {
     if (format == AUDIO_FORMAT_PCM_16_BIT ||
@@ -1409,7 +1410,7 @@ pal_stream_type_t StreamInPrimary::GetPalStreamType(
      *RAW record graphs ( record with no pp)
      */
     if (source_ == AUDIO_SOURCE_UNPROCESSED) {
-        palStreamType = PAL_STREAM_RAW;
+        palStreamType = PAL_STREAM_LOW_LATENCY;
         return palStreamType;
     }
 
