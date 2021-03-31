@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2021, The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -65,7 +65,8 @@ int audio_extn_get_pal_info(void *hal_data,
                                 audio_output_flags_t hal_stream_flag,
                                 pal_stream_type_t *pal_stream_type);
 void audio_extn_gef_notify_device_config(audio_devices_t audio_device,
-                    audio_channel_mask_t channel_mask, int sample_rate);
+                    audio_channel_mask_t channel_mask, int sample_rate,
+                    int stream_type);
 extern "C" int audio_extn_gef_send_audio_cal(void* data, int length);
 extern "C" int audio_extn_gef_get_audio_cal(void* data, int *length);
 extern "C" int audio_extn_gef_store_audio_cal(void* data, int length);
