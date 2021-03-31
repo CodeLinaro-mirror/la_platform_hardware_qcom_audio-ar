@@ -52,6 +52,18 @@
 
 #define MAX_READ_RETRY_COUNT 25
 
+static bool is_pcm_format(audio_format_t format)
+{
+    if (format == AUDIO_FORMAT_PCM_16_BIT ||
+        format == AUDIO_FORMAT_PCM_8_BIT ||
+        format == AUDIO_FORMAT_PCM_8_24_BIT ||
+        format == AUDIO_FORMAT_PCM_FLOAT ||
+        format == AUDIO_FORMAT_PCM_24_BIT_PACKED ||
+        format == AUDIO_FORMAT_PCM_32_BIT)
+        return true;
+    return false;
+}
+
 void StreamOutPrimary::GetStreamHandle(audio_stream_out** stream) {
   *stream = (audio_stream_out*)stream_.get();
 }
@@ -1225,6 +1237,16 @@ pal_stream_type_t StreamInPrimary::GetPalStreamType(
 
         return palStreamType;
     }
+
+    /*
+     *For AUDIO_SOURCE_UNPROCESSED we use LL pal stream as it corresponds to
+     *RAW record graphs ( record with no pp)
+     */
+    if (source_ == AUDIO_SOURCE_UNPROCESSED) {
+        palStreamType = PAL_STREAM_LOW_LATENCY;
+        return palStreamType;
+    }
+
     switch (halStreamFlags) {
         case AUDIO_INPUT_FLAG_FAST:
             palStreamType = PAL_STREAM_LOW_LATENCY;
@@ -2887,8 +2909,14 @@ int StreamInPrimary::Open() {
     streamAttributes_.flags = (pal_stream_flags_t)0;
     streamAttributes_.direction = PAL_AUDIO_INPUT;
     streamAttributes_.in_media_config.sample_rate = config_.sample_rate;
-    streamAttributes_.in_media_config.bit_width = CODEC_BACKEND_DEFAULT_BIT_WIDTH;
-    streamAttributes_.in_media_config.aud_fmt_id = PAL_AUDIO_FMT_PCM_S16_LE; // TODO: need to convert this from output format
+    if (is_pcm_format(config_.format)) {
+       streamAttributes_.in_media_config.aud_fmt_id = getFormatId.at(config_.format);
+       streamAttributes_.in_media_config.bit_width = format_to_bitwidth_table[config_.format];
+    } else {
+       /*TODO:Update this to support compressed capture using hal apis*/
+       streamAttributes_.in_media_config.bit_width = CODEC_BACKEND_DEFAULT_BIT_WIDTH;
+       streamAttributes_.in_media_config.aud_fmt_id = PAL_AUDIO_FMT_PCM_S16_LE;
+    }
     streamAttributes_.in_media_config.ch_info = ch_info;
 
     if (streamAttributes_.type == PAL_STREAM_ULTRA_LOW_LATENCY) {
