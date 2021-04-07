@@ -45,10 +45,9 @@ using vendor::qti::hardware::pal::V1_0::IPAL;
 using vendor::qti::hardware::pal::V1_0::implementation::PAL;
 using android::hardware::defaultPassthroughServiceImplementation;
 using android::sp;
-#endif
-
 using namespace android::hardware;
 using android::OK;
+#endif
 
 #ifdef __LP64__
 #define LIBS "/vendor/lib64/"
@@ -408,7 +407,7 @@ int AudioExtn::hfp_feature_init(bool is_feature_enabled)
         hfp_lib_handle = dlopen(HFP_LIB_PATH, RTLD_NOW);
 
         if (!hfp_lib_handle) {
-            AHAL_ERR("dlopen failed");
+            ALOGE("%s: dlopen failed with: %s", __func__, dlerror());
             goto feature_disabled;
         }
 

@@ -129,6 +129,7 @@ AUDIO_C2 += libqc2audio_utils
 AUDIO_C2 += libqc2audio_platform
 AUDIO_C2 += libqc2audio_core
 AUDIO_C2 += libqc2audio_basecodec
+AUDIO_C2 += libqc2audio_hooks
 AUDIO_C2 += libqc2audio_swaudiocodec
 AUDIO_C2 += libqc2audio_swaudiocodec_data_common
 AUDIO_C2 += libqc2audio_hwaudiocodec
@@ -153,6 +154,9 @@ PRODUCT_PACKAGES += IDP_workspaceFileXml.qwsp
 PRODUCT_PACKAGES += QRD_acdb_cal.acdb
 PRODUCT_PACKAGES += QRD_workspaceFileXml.qwsp
 PRODUCT_PACKAGES += libfmpal
+PRODUCT_PACKAGES += event.eai
+PRODUCT_PACKAGES += music.eai
+PRODUCT_PACKAGES += speech.eai
 
 ifneq ($(strip $(TARGET_USES_RRO)), true)
 #Audio Specific device overlays

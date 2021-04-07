@@ -39,7 +39,7 @@ AUDIO_FEATURE_ENABLED_DTS_EAGLE := false
 AUDIO_FEATURE_ENABLED_PAL_HIDL := true
 BOARD_USES_SRS_TRUEMEDIA := false
 DTS_CODEC_M_ := false
-MM_AUDIO_ENABLED_SAFX := true
+MM_AUDIO_ENABLED_SAFX := false
 AUDIO_FEATURE_ENABLED_HW_ACCELERATED_EFFECTS := false
 AUDIO_FEATURE_ENABLED_AUDIOSPHERE := true
 AUDIO_FEATURE_ENABLED_USB_TUNNEL := true
@@ -127,6 +127,7 @@ AUDIO_C2 += libqc2audio_utils
 AUDIO_C2 += libqc2audio_platform
 AUDIO_C2 += libqc2audio_core
 AUDIO_C2 += libqc2audio_basecodec
+AUDIO_C2 += libqc2audio_hooks
 AUDIO_C2 += libqc2audio_swaudiocodec
 AUDIO_C2 += libqc2audio_swaudiocodec_data_common
 AUDIO_C2 += libqc2audio_hwaudiocodec
@@ -143,7 +144,8 @@ AUDIO_HAL_TEST_APPS += hal_rec_test
 PRODUCT_PACKAGES += $(AUDIO_HARDWARE)
 PRODUCT_PACKAGES += $(AUDIO_WRAPPER)
 PRODUCT_PACKAGES += $(AUDIO_HAL_TEST_APPS)
-PRODUCT_PACKAGES += ftm_test_config_taro-qrd-snd-card
+PRODUCT_PACKAGES += ftm_test_config
+PRODUCT_PACKAGES += ftm_test_config_waipio-qrd-snd-card
 PRODUCT_PACKAGES += audioadsprpcd
 PRODUCT_PACKAGES += vendor.qti.audio-adsprpc-service.rc
 PRODUCT_PACKAGES += IDP_acdb_cal.acdb
@@ -151,6 +153,10 @@ PRODUCT_PACKAGES += IDP_workspaceFileXml.qwsp
 PRODUCT_PACKAGES += QRD_acdb_cal.acdb
 PRODUCT_PACKAGES += QRD_workspaceFileXml.qwsp
 PRODUCT_PACKAGES += libfmpal
+PRODUCT_PACKAGES += event.eai
+PRODUCT_PACKAGES += music.eai
+PRODUCT_PACKAGES += speech.eai
+
 
 ifneq ($(strip $(TARGET_USES_RRO)), true)
 #Audio Specific device overlays
@@ -379,6 +385,10 @@ persist.audio.fluence.voicecomm=true
 #enable c2 based encoders/decoders as default NT decoders/encoders
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.c2.preferred=true
+
+#Enable dmaBuf heap usage by C2 components
+PRODUCT_PROPERTY_OVERRIDES += \
+debug.c2.use_dmabufheaps=1
 
 ifneq ($(GENERIC_ODM_IMAGE),true)
 $(warning "Enabling codec2.0 SW only for non-generic odm build variant")
