@@ -76,6 +76,7 @@ public:
             bool volume_boost;
             bool slow_talk;
             bool hd_voice;
+            pal_device_mute_t device_mute;
     };
     struct voice_t {
             voice_session_t session[MAX_VOICE_SESSIONS];
