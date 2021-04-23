@@ -49,6 +49,9 @@ typedef bool(*hfp_is_active_t)(std::shared_ptr<AudioDevice> adev);
 typedef audio_usecase_t(*hfp_get_usecase_t)();
 typedef int(*hfp_set_mic_mute_t)(bool state);
 typedef int(*hfp_set_mic_mute2_t)(std::shared_ptr<AudioDevice> adev, bool state);
+//AUTO HAL
+typedef void(*autohal_init_t)();
+typedef pal_stream_type_t (*autohal_GetCarAudioPalStreamType_t)(char * address);
 
 typedef void (*set_parameters_t) (std::shared_ptr<AudioDevice>, struct str_parms*);
 typedef void (*get_parameters_t) (std::shared_ptr<AudioDevice>, struct str_parms*, struct str_parms*);
@@ -97,7 +100,9 @@ public:
             int *perf_lock_opts, int size);
     static void audio_extn_perf_lock_release(int *handle);
     /* end kpi optimize perf apis */
-
+    //AUTO HAL
+    static int autohal_feature_init(bool is_feature_enabled);
+    static pal_stream_type_t audio_extn_autohal_GetCarAudioPalStreamType(char* address);
 };
 
 #endif /* AUDIOEXTN_H */

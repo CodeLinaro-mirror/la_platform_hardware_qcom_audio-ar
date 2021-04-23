@@ -632,3 +632,64 @@ void AudioExtn::audio_extn_perf_lock_release(int *handle)
 
 //END: KPI_OPTIMIZE =============================================================================
 
+// START: AUTO HAL ======================================================================
+#ifdef __LP64__
+#define AUTOHAL_LIB_PATH "/vendor/lib64/libautohal_pal.so"
+#else
+#define AUTOHAL_LIB_PATH "/vendor/lib/libautohal_pal.so"
+#endif
+
+static void *autohal_lib_handle = NULL;
+static autohal_init_t autohal_init;
+static autohal_GetCarAudioPalStreamType_t autohal_GetCarAudioPalStreamType;
+
+int AudioExtn::autohal_feature_init(bool is_feature_enabled)
+{
+    AHAL_DBG(":: Called with feature %s", is_feature_enabled ? "Enabled" : "NOT Enabled");
+    if (is_feature_enabled) {
+        // dlopen lib
+        autohal_lib_handle = dlopen(AUTOHAL_LIB_PATH, RTLD_NOW);
+
+        if (!autohal_lib_handle) {
+            AHAL_ERR("dlopen failed \n");
+            goto feature_disabled;
+        }
+
+        if (!(autohal_init = (autohal_init_t)dlsym(
+            autohal_lib_handle, "autohal_init")) ||
+            !(autohal_GetCarAudioPalStreamType =
+            (autohal_GetCarAudioPalStreamType_t)dlsym(
+                autohal_lib_handle, "autohal_GetCarAudioPalStreamType"))) {
+            AHAL_ERR("dlsym failed \n");
+            goto feature_disabled;
+        }
+
+        AHAL_DBG(":: ---- Feature AUTO HAL is Enabled ----");
+
+        return 0;
+    }
+
+feature_disabled:
+    if (autohal_lib_handle) {
+        dlclose(autohal_lib_handle);
+        autohal_lib_handle = NULL;
+    }
+
+    autohal_init = NULL;
+    autohal_GetCarAudioPalStreamType = NULL;
+
+    AHAL_INFO(":: ---- Feature AUTO HAL is disabled ----");
+    return -ENOSYS;
+}
+
+pal_stream_type_t AudioExtn::audio_extn_autohal_GetCarAudioPalStreamType(char* address)
+{
+    pal_stream_type_t pal_stream_type = PAL_STREAM_GENERIC;
+
+    if(autohal_GetCarAudioPalStreamType)
+        return autohal_GetCarAudioPalStreamType(address);
+    else
+        return pal_stream_type;
+}
+
+// END: AUTO HAL ================================================================
