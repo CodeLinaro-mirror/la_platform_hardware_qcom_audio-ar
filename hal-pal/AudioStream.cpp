@@ -1457,10 +1457,6 @@ pal_stream_type_t StreamInPrimary::GetPalStreamType(
 pal_stream_type_t StreamOutPrimary::GetPalStreamType(
                                     audio_output_flags_t halStreamFlags,
                                     char *address) {
-    int bus_num = -1;
-    char *str = NULL;
-    char *last_r = NULL;
-    char local_address[AUDIO_DEVICE_MAX_ADDRESS_LEN] = {0};
     pal_stream_type_t palStreamType = PAL_STREAM_LOW_LATENCY;
     if ((halStreamFlags & AUDIO_OUTPUT_FLAG_VOIP_RX)!=0) {
         palStreamType = PAL_STREAM_VOIP_RX;
@@ -1511,36 +1507,8 @@ pal_stream_type_t StreamOutPrimary::GetPalStreamType(
     }
 
     if (address && palStreamType == PAL_STREAM_GENERIC) {
-        /* strtok will modify the original string. make a copy first */
-        strlcpy(local_address, address, AUDIO_DEVICE_MAX_ADDRESS_LEN);
-
-        /* extract bus number from address */
-        str = strtok_r(local_address, "BUS_",&last_r);
-        if (str != NULL)
-            bus_num = (int)strtol(str, (char **)NULL, 10);
-
-        /* validate bus number */
-        if ((bus_num < 0) || (bus_num >= MAX_CAR_AUDIO_STREAMS)) {
-            AHAL_ERR("%s: invalid bus number %d", __func__, bus_num);
-            return palStreamType;
-        }
-        switch(bus_num) {
-            case CAR_AUDIO_STREAM_MEDIA:
-            case CAR_AUDIO_STREAM_SYS_NOTIFICATION:
-            case CAR_AUDIO_STREAM_PHONE:
-            case CAR_AUDIO_STREAM_FRONT_PASSENGER:
-            case CAR_AUDIO_STREAM_REAR_SEAT:
-                palStreamType = PAL_STREAM_DEEP_BUFFER;
-                break;
-            case CAR_AUDIO_STREAM_NAV_GUIDANCE:
-                palStreamType = PAL_STREAM_LOW_LATENCY;
-                break;
-            default:
-              AHAL_ERR("%s: unknown bus number %d. Default to Deep Buffer",
-                    __func__, bus_num);
-              palStreamType = PAL_STREAM_DEEP_BUFFER;
-              break;
-        }
+        /* Identify BUS number and retrive PAL stream type for BUS usecase*/
+        palStreamType = AudioExtn::audio_extn_autohal_GetCarAudioPalStreamType(address);
     }
     return palStreamType;
 }
@@ -2013,8 +1981,14 @@ int64_t StreamOutPrimary::GetRenderLatency(audio_output_flags_t halStreamFlags, 
     AHAL_DBG("%s:%d type %d", __func__, __LINE__, streamAttributes_.type);
     switch (streamAttributes_.type) {
          case PAL_STREAM_DEEP_BUFFER:
+         case PAL_STREAM_PLAYBACK_MEDIA:
+         case PAL_STREAM_PLAYBACK_NAV_GUIDANCE:
+         case PAL_STREAM_PLAYBACK_FRONT_PASSENGER:
+         case PAL_STREAM_PLAYBACK_REAR_SEAT:
              return DEEP_BUFFER_PLATFORM_DELAY;
          case PAL_STREAM_LOW_LATENCY:
+         case PAL_STREAM_PLAYBACK_SYS_NOTIFICATION:
+         case PAL_STREAM_PLAYBACK_PHONE:
              return LOW_LATENCY_PLATFORM_DELAY;
          case PAL_STREAM_COMPRESSED:
          case PAL_STREAM_PCM_OFFLOAD:
@@ -2169,9 +2143,16 @@ uint32_t StreamOutPrimary::GetBufferSize() {
         return voip_get_buffer_size(config_.sample_rate);
     } else if (streamAttributes_.type == PAL_STREAM_COMPRESSED) {
         return get_compressed_buffer_size();
-    } else if (streamAttributes_.type == PAL_STREAM_PCM_OFFLOAD) {
+    } else if (streamAttributes_.type == PAL_STREAM_PCM_OFFLOAD
+              || streamAttributes_.type == PAL_STREAM_DEEP_BUFFER
+              || streamAttributes_.type == PAL_STREAM_PLAYBACK_MEDIA
+              || streamAttributes_.type == PAL_STREAM_PLAYBACK_SYS_NOTIFICATION
+              || streamAttributes_.type == PAL_STREAM_PLAYBACK_NAV_GUIDANCE
+              || streamAttributes_.type == PAL_STREAM_PLAYBACK_FRONT_PASSENGER
+              || streamAttributes_.type == PAL_STREAM_PLAYBACK_REAR_SEAT) {
         return get_pcm_buffer_size();
-    } else if (streamAttributes_.type == PAL_STREAM_LOW_LATENCY) {
+    } else if (streamAttributes_.type == PAL_STREAM_LOW_LATENCY
+              || streamAttributes_.type == PAL_STREAM_PLAYBACK_PHONE) {
         return LOW_LATENCY_PLAYBACK_PERIOD_SIZE *
             audio_bytes_per_frame(
                     audio_channel_count_from_out_mask(config_.channel_mask),
@@ -2244,7 +2225,11 @@ int StreamOutPrimary::Open() {
             streamAttributes_.out_media_config.ch_info.channels = mchannels;
         streamAttributes_.out_media_config.aud_fmt_id = getFormatId.at(config_.format & AUDIO_FORMAT_MAIN_MASK);
     } else if (streamAttributes_.type == PAL_STREAM_PCM_OFFLOAD ||
-               streamAttributes_.type == PAL_STREAM_DEEP_BUFFER) {
+               streamAttributes_.type == PAL_STREAM_DEEP_BUFFER ||
+               streamAttributes_.type == PAL_STREAM_PLAYBACK_MEDIA ||
+               streamAttributes_.type == PAL_STREAM_PLAYBACK_NAV_GUIDANCE ||
+               streamAttributes_.type == PAL_STREAM_PLAYBACK_FRONT_PASSENGER ||
+               streamAttributes_.type == PAL_STREAM_PLAYBACK_REAR_SEAT) {
         halInputFormat = config_.format;
         halOutputFormat = (audio_format_t)(getAlsaSupportedFmt.at(halInputFormat));
         streamAttributes_.out_media_config.aud_fmt_id = getFormatId.at(halOutputFormat);

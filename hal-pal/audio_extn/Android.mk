@@ -107,5 +107,44 @@ LOCAL_SHARED_LIBRARIES := \
     libutils \
 
 LOCAL_STATIC_LIBRARIES := libhealthhalutils
+#-------------------------------------------
+#            Build AUTO HAL LIB
+#-------------------------------------------
+include $(CLEAR_VARS)
+
+LOCAL_MODULE := libautohal_pal
+LOCAL_VENDOR_MODULE := true
+
+ifeq ($(TARGET_BOARD_AUTO),true)
+  LOCAL_CFLAGS += -DPLATFORM_AUTO
+endif
+
+LOCAL_SRC_FILES:= auto_hal.cpp
+
+LOCAL_CFLAGS += \
+    -Wall \
+    -Werror \
+    -Wno-unused-function \
+    -Wno-unused-variable
+
+LOCAL_SHARED_LIBRARIES := \
+    libaudioroute \
+    libaudioutils \
+    libcutils \
+    libdl \
+    libexpat \
+    liblog \
+    libar-pal
+
+LOCAL_C_INCLUDES := \
+    vendor/qcom/opensource/pal \
+    $(LOCAL_PATH)/.. \
+    $(LOCAL_PATH)/../../hal/audio_extn/ \
+    external/expat/lib \
+    system/media/audio_utils/include \
+    $(call include-path-for, audio-route) \
+
+LOCAL_HEADER_LIBRARIES += libhardware_headers
+LOCAL_HEADER_LIBRARIES += libsystem_headers
 
 include $(BUILD_SHARED_LIBRARY)
