@@ -875,6 +875,9 @@ AudioVoice::AudioVoice() {
         voice_.session[i].slow_talk = false;
         voice_.session[i].pal_voice_handle = NULL;
         voice_.session[i].hd_voice = false;
+        voice_.session[i].device_mute.dir = PAL_AUDIO_OUTPUT;
+        voice_.session[i].device_mute.mute = false;
+
     }
 
     voice_.session[MMODE1_SESS_IDX].vsid = VOICEMMODE1_VSID;
@@ -896,6 +899,8 @@ AudioVoice::~AudioVoice() {
         voice_.session[i].slow_talk = false;
         voice_.session[i].pal_voice_handle = NULL;
         voice_.session[i].hd_voice = false;
+        voice_.session[i].device_mute.mute = false;
+        voice_.session[i].device_mute.dir = PAL_AUDIO_OUTPUT;
     }
 
     voice_.session[MMODE1_SESS_IDX].vsid = VOICEMMODE1_VSID;
