@@ -87,12 +87,19 @@ std::shared_ptr<StreamOutPrimary> AudioDevice::CreateStreamOut(
                         struct audio_config *config,
                         audio_stream_out **stream_out,
                         const char *address) {
-    std::shared_ptr<StreamOutPrimary> astream (new StreamOutPrimary(handle,
-                                              devices, flags, config, address,
-                                              fnp_offload_effect_start_output_,
-                                              fnp_offload_effect_stop_output_,
-                                              fnp_visualizer_start_output_,
-                                              fnp_visualizer_stop_output_));
+    std::shared_ptr<StreamOutPrimary> astream = nullptr;
+
+    try {
+        astream = std::shared_ptr<StreamOutPrimary> (new StreamOutPrimary(handle,
+                                       devices, flags, config, address,
+                                       fnp_offload_effect_start_output_,
+                                       fnp_offload_effect_stop_output_,
+                                       fnp_visualizer_start_output_,
+                                       fnp_visualizer_stop_output_));
+    } catch (const std::exception& e) {
+        AHAL_ERR("Failed to create StreamOutPrimary");
+        return nullptr;
+    }
     astream->GetStreamHandle(stream_out);
     out_list_mutex.lock();
     stream_out_list_.push_back(astream);
@@ -399,8 +406,13 @@ static int adev_open_output_stream(struct audio_hw_device *dev,
     }
 
     astream = adevice->OutGetStream(handle);
-    if (astream == nullptr)
+    if (astream == nullptr) {
         astream = adevice->CreateStreamOut(handle, {devices}, flags, config, stream_out, address);
+        if (astream == nullptr) {
+            ret = -ENOMEM;
+            goto exit;
+        }
+    }
 exit:
     AHAL_DBG("Exit ret: %d", ret);
     return ret;
@@ -743,6 +755,8 @@ int AudioDevice::Init(hw_device_t **device, const hw_module_t *module) {
     }
     audio_extn_sound_trigger_init(adev_);
     AudioExtn::hfp_feature_init(property_get_bool("vendor.audio.feature.hfp.enable", false));
+    AudioExtn::a2dp_source_feature_init(property_get_bool("vendor.audio.feature.a2dp_offload.enable", false));
+
     AudioExtn::audio_extn_fm_init();
     AudioExtn::audio_extn_kpi_optimize_feature_init(
             property_get_bool("vendor.audio.feature.kpi_optimize.enable", false));
