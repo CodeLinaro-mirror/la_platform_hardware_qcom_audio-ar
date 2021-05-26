@@ -37,6 +37,7 @@
 
 #define LOG_TAG "AHAL: AudioDevice"
 #define ATRACE_TAG (ATRACE_TAG_AUDIO|ATRACE_TAG_HAL)
+#include <math.h>
 #include "AudioCommon.h"
 
 #include "AudioDevice.h"
@@ -645,10 +646,35 @@ int adev_get_audio_port(struct audio_hw_device *dev,
 int adev_set_audio_port_config(struct audio_hw_device *dev,
                                const struct audio_port_config *config)
 {
+	/*
     std::ignore = dev;
     std::ignore = config;
+    */
+    std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance(dev);
+    char config_address[AUDIO_DEVICE_MAX_ADDRESS_LEN];
+    strlcpy(config_address, config->ext.device.address, AUDIO_DEVICE_MAX_ADDRESS_LEN);
+    float volume = 0.0;
 
+    ALOGI("%s: config_gain_value: %d\n", __func__,config->gain.values[0]);
+    if (config->type == AUDIO_PORT_TYPE_DEVICE && config->role == AUDIO_PORT_ROLE_SINK) {
+        ALOGI("%s: device port: type %x, address %s, gain %d mB", __func__,
+        config->ext.device.type,
+        config->ext.device.address,
+        config->gain.values[0]);
+        for(auto iter = adevice->GetStreamOutList().begin(); iter != adevice->GetStreamOutList().end(); ++iter) {
+            ALOGI("%s: Stream addres: %s  config address: %s\n", __func__,(*iter)->address_, config_address);
+            if(strcmp((*iter)->address_, config_address) == 0) {
+                volume = pow(10.0, ((float)config->gain.values[0] / 2000));
+                ALOGE("%s: set volume to stream", __func__);
+                (*iter)->SetVolume(volume, volume);
+            }
+        }
+    }
     return 0;
+}
+
+std::vector<std::shared_ptr<StreamOutPrimary>> AudioDevice::GetStreamOutList() {
+    return stream_out_list_;
 }
 
 static int adev_dump(const audio_hw_device_t *device __unused, int fd __unused)
