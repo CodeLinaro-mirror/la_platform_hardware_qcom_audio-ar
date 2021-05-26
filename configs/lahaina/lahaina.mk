@@ -103,6 +103,7 @@ AUDIO_PAL := libar-pal
 AUDIO_PAL += lib_bt_bundle
 AUDIO_PAL += lib_bt_aptx
 AUDIO_PAL += catf
+AUDIO_PAL += lib_default_plugin_controls
 
 BOARD_SUPPORTS_OPENSOURCE_STHAL := true
 
