@@ -10,6 +10,10 @@ endif
 ifneq ($(AUDIO_USE_STUB_HAL), true)
 BOARD_USES_ALSA_AUDIO := true
 
+ifeq ($(TARGET_SUPPORTS_WEAR_ANDROID), true)
+AUDIO_FEATURE_ENABLED_CODEC_2_0 := true
+endif
+
 ifneq ($(TARGET_USES_AOSP_FOR_AUDIO), true)
 USE_CUSTOM_AUDIO_POLICY := 1
 AUDIO_FEATURE_QSSI_COMPLIANCE := true
@@ -35,6 +39,9 @@ AUDIO_FEATURE_ENABLED_MPEGH_SW_DECODER := true
 AUDIO_FEATURE_ENABLED_PROXY_DEVICE := true
 AUDIO_FEATURE_ENABLED_SSR := true
 AUDIO_FEATURE_ENABLED_DTS_EAGLE := false
+ifeq ($(AUDIO_FEATURE_ENABLED_CODEC_2_0), true)
+AUDIO_FEATURE_ENABLED_PAL_HIDL := true
+endif
 BOARD_USES_SRS_TRUEMEDIA := false
 DTS_CODEC_M_ := false
 MM_AUDIO_ENABLED_SAFX := true
@@ -115,6 +122,28 @@ AUDIO_HARDWARE += libhfp_pal
 #HAL Wrapper
 AUDIO_WRAPPER := libqahw
 AUDIO_WRAPPER += libqahwwrapper
+
+ifeq ($(AUDIO_FEATURE_ENABLED_CODEC_2_0), true)
+#PAL Service
+AUDIO_PAL += libpalclient
+AUDIO_PAL += vendor.qti.hardware.pal@1.0-impl
+
+# C2 Audio
+AUDIO_C2 := libqc2audio_base
+AUDIO_C2 += libqc2audio_utils
+AUDIO_C2 += libqc2audio_platform
+AUDIO_C2 += libqc2audio_core
+AUDIO_C2 += libqc2audio_basecodec
+AUDIO_C2 += libqc2audio_hooks
+AUDIO_C2 += libqc2audio_swaudiocodec
+AUDIO_C2 += libqc2audio_swaudiocodec_data_common
+AUDIO_C2 += libqc2audio_hwaudiocodec
+AUDIO_C2 += libqc2audio_hwaudiocodec_data_common
+AUDIO_C2 += vendor.qti.media.c2audio@1.0-service
+AUDIO_C2 += qc2audio_test
+AUDIO_C2 += libEvrcSwCodec
+AUDIO_C2 += libQcelp13SwCodec
+endif
 
 #HAL Test app
 AUDIO_HAL_TEST_APPS := hal_play_test
@@ -213,6 +242,9 @@ DEVICE_PACKAGE_OVERLAYS += vendor/qcom/opensource/audio-hal/primary-hal/configs/
 endif
 PRODUCT_PACKAGES += $(AUDIO_AGM)
 PRODUCT_PACKAGES += $(AUDIO_PAL)
+ifeq ($(AUDIO_FEATURE_ENABLED_CODEC_2_0), true)
+PRODUCT_PACKAGES += $(AUDIO_C2)
+endif
 
 PRODUCT_COPY_FILES += \
     vendor/qcom/opensource/audio-hal/primary-hal/configs/monaco/audio_io_policy.conf:$(TARGET_COPY_OUT_VENDOR)/etc/audio_io_policy.conf \
@@ -255,6 +287,17 @@ PRODUCT_COPY_FILES += \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/r_submix_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/r_submix_audio_policy_configuration.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/usb_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usb_audio_policy_configuration.xml \
     $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/bluetooth_qti_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/bluetooth_qti_audio_policy_configuration.xml
+
+# C2 Audio files
+ifeq ($(AUDIO_FEATURE_ENABLED_CODEC_2_0), true)
+PRODUCT_COPY_FILES += \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/codec2/media_codecs_c2_audio.xml:vendor/etc/media_codecs_c2_audio.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/media_codecs_vendor_audio.xml:vendor/etc/media_codecs_vendor_audio.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/codec2/service/1.0/c2audio.vendor.base-arm.policy:vendor/etc/seccomp_policy/c2audio.vendor.base-arm.policy \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/codec2/service/1.0/c2audio.vendor.base-arm64.policy:vendor/etc/seccomp_policy/c2audio.vendor.base-arm64.policy \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/codec2/service/1.0/c2audio.vendor.ext-arm.policy:vendor/etc/seccomp_policy/c2audio.vendor.ext-arm.policy \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/codec2/service/1.0/c2audio.vendor.ext-arm64.policy:vendor/etc/seccomp_policy/c2audio.vendor.ext-arm64.policy
+endif
 
 # Low latency audio buffer size in frames
 PRODUCT_PROPERTY_OVERRIDES += \
@@ -405,6 +448,22 @@ vendor.audio.volume.headset.gain.depcal=true
 #enable dualmic fluence for voice communication
 PRODUCT_PROPERTY_OVERRIDES += \
 persist.vendor.audio.fluence.voicecomm=true
+
+ifeq ($(AUDIO_FEATURE_ENABLED_CODEC_2_0), true)
+#enable c2 based encoders/decoders as default NT decoders/encoders
+PRODUCT_PROPERTY_OVERRIDES += \
+vendor.audio.c2.preferred=true
+
+#Enable dmaBuf heap usage by C2 components
+PRODUCT_PROPERTY_OVERRIDES += \
+debug.c2.use_dmabufheaps=1
+
+ifneq ($(GENERIC_ODM_IMAGE),true)
+$(warning "Enabling codec2.0 SW only for non-generic odm build variant")
+#Rank OMX SW codecs lower than OMX HW codecs
+PRODUCT_PROPERTY_OVERRIDES += debug.stagefright.omx_default_rank=0
+endif
+endif
 endif
 
 USE_XML_AUDIO_POLICY_CONF := 1
