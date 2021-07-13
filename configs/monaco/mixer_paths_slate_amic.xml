@@ -29,6 +29,7 @@
     <ctl name="CDC_RX0_MUX" value="ZERO" />
     <ctl name="RX0_SWITCH Switch" value="0" />
     <ctl name="SWR_DAC_PORT_0 Switch" value="0" />
+    <ctl name="SPKR_OUT_S Switch" value="0" />
 
     <!-- split a2dp -->
     <ctl name="BT SampleRate" value="KHZ_8" />
@@ -51,6 +52,7 @@
         <ctl name="CDC_RX0_MUX" value="I2S0_D2_L" />
         <ctl name="RX0_SWITCH Switch" value="1" />
         <ctl name="SWR_DAC_PORT_0 Switch" value="1" />
+        <ctl name="SPKR_OUT_S Switch" value="1" />
     </path>
 
     <path name="speaker-protected">
