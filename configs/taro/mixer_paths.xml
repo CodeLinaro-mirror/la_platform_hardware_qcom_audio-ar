@@ -110,62 +110,29 @@
     <ctl name="HPHL_RDAC Switch" value="0" />
     <ctl name="HPHR_RDAC Switch" value="0" />
     <ctl name="AUX_RDAC Switch" value="0" />
-    <ctl name="RDAC3_MUX" value="ZERO" />
+    <ctl name="RX_FIR Filter" value="OFF" />
     <ctl name="RX_EAR Mode" value="OFF" />
 
     <!-- TX Controls -->
-    <ctl name="VA_CDC_DMA_TX_0 Channels" value="One" />
     <ctl name="VA_AIF1_CAP Mixer DEC0" value="0" />
     <ctl name="VA_AIF1_CAP Mixer DEC1" value="0" />
     <ctl name="VA_AIF1_CAP Mixer DEC2" value="0" />
     <ctl name="VA_AIF1_CAP Mixer DEC3" value="0" />
-    <ctl name="VA_AIF1_CAP Mixer DEC4" value="0" />
-    <ctl name="VA_AIF1_CAP Mixer DEC5" value="0" />
-    <ctl name="VA_AIF1_CAP Mixer DEC6" value="0" />
-    <ctl name="VA_AIF1_CAP Mixer DEC7" value="0" />
     <ctl name="VA DEC0 MUX" value="MSM_DMIC" />
     <ctl name="VA DEC1 MUX" value="MSM_DMIC" />
     <ctl name="VA DEC2 MUX" value="MSM_DMIC" />
     <ctl name="VA DEC3 MUX" value="MSM_DMIC" />
-    <ctl name="VA DEC4 MUX" value="MSM_DMIC" />
-    <ctl name="VA DEC5 MUX" value="MSM_DMIC" />
-    <ctl name="VA DEC6 MUX" value="MSM_DMIC" />
-    <ctl name="VA DEC7 MUX" value="MSM_DMIC" />
     <ctl name="VA DMIC MUX0" value="ZERO" />
     <ctl name="VA DMIC MUX1" value="ZERO" />
     <ctl name="VA DMIC MUX2" value="ZERO" />
     <ctl name="VA DMIC MUX3" value="ZERO" />
-    <ctl name="VA DMIC MUX4" value="ZERO" />
-    <ctl name="VA DMIC MUX5" value="ZERO" />
-    <ctl name="VA DMIC MUX6" value="ZERO" />
-    <ctl name="VA DMIC MUX7" value="ZERO" />
     <ctl name="VA SMIC MUX0" value="ZERO" />
     <ctl name="VA SMIC MUX1" value="ZERO" />
     <ctl name="VA SMIC MUX2" value="ZERO" />
     <ctl name="VA SMIC MUX3" value="ZERO" />
-    <ctl name="VA SMIC MUX4" value="ZERO" />
-    <ctl name="VA SMIC MUX5" value="ZERO" />
-    <ctl name="VA SMIC MUX6" value="ZERO" />
-    <ctl name="VA SMIC MUX7" value="ZERO" />
     <ctl name="VA_DEC0 MODE" value="ADC_DEFAULT" />
     <ctl name="ADC2_BCS Disable" value="0" />
-    <ctl name="SWR_MIC0 HIFI PortMap" value="ZERO" />
-    <ctl name="SWR_MIC1 HIFI PortMap" value="ZERO" />
-    <ctl name="SWR_MIC2 HIFI PortMap" value="ZERO" />
-    <ctl name="SWR_MIC3 HIFI PortMap" value="ZERO" />
-    <ctl name="SWR_MIC0 SWR_DMIC_MIXER Switch" value="0" />
-    <ctl name="SWR_MIC1 SWR_DMIC_MIXER Switch" value="0" />
-    <ctl name="SWR_MIC2 SWR_DMIC_MIXER Switch" value="0" />
-    <ctl name="SWR_MIC3 SWR_DMIC_MIXER Switch" value="0" />
-    <ctl name="SWR_MIC0 SWR_DMIC_VA_MIXER Switch" value="0" />
-    <ctl name="SWR_MIC1 SWR_DMIC_VA_MIXER Switch" value="0" />
-    <ctl name="SWR_MIC2 SWR_DMIC_VA_MIXER Switch" value="0" />
-    <ctl name="SWR_MIC3 SWR_DMIC_VA_MIXER Switch" value="0" />
-    <ctl name="SWR_MIC0 LP PortMap" value="ZERO" />
-    <ctl name="SWR_MIC1 LP PortMap" value="ZERO" />
-    <ctl name="SWR_MIC2 LP PortMap" value="ZERO" />
-    <ctl name="SWR_MIC3 LP PortMap" value="ZERO" />
-    <ctl name="LPI Enable" value="1" />
+    <ctl name="LPI Enable" value="0" />
     <ctl name="ADC1_MIXER Switch" value="0" />
     <ctl name="ADC2_MIXER Switch" value="0" />
     <ctl name="ADC3_MIXER Switch" value="0" />
@@ -194,6 +161,14 @@
     <ctl name="TX_AIF1_CAP Mixer DEC5" value="0" />
     <ctl name="TX_AIF1_CAP Mixer DEC6" value="0" />
     <ctl name="TX_AIF1_CAP Mixer DEC7" value="0" />
+    <ctl name="TX_AIF2_CAP Mixer DEC0" value="0" />
+    <ctl name="TX_AIF2_CAP Mixer DEC1" value="0" />
+    <ctl name="TX_AIF2_CAP Mixer DEC2" value="0" />
+    <ctl name="TX_AIF2_CAP Mixer DEC3" value="0" />
+    <ctl name="TX_AIF2_CAP Mixer DEC4" value="0" />
+    <ctl name="TX_AIF2_CAP Mixer DEC5" value="0" />
+    <ctl name="TX_AIF2_CAP Mixer DEC6" value="0" />
+    <ctl name="TX_AIF2_CAP Mixer DEC7" value="0" />
     <ctl name="TX DEC0 MUX" value="MSM_DMIC" />
     <ctl name="TX DMIC MUX0" value="ZERO" />
     <ctl name="TX SMIC MUX0" value="ZERO" />
@@ -228,10 +203,6 @@
     <ctl name="TX1 MODE" value="ADC_NORMAL" />
     <ctl name="TX2 MODE" value="ADC_NORMAL" />
     <ctl name="TX3 MODE" value="ADC_NORMAL" />
-    <ctl name="SWR_MIC0 HIFI PortMap" value="ZERO" />
-    <ctl name="SWR_MIC1 HIFI PortMap" value="ZERO" />
-    <ctl name="SWR_MIC2 HIFI PortMap" value="ZERO" />
-    <ctl name="SWR_MIC3 HIFI PortMap" value="ZERO" />
 
     <!-- Volume controls -->
     <ctl name="WSA_RX0 Digital Volume" value="84" />
@@ -241,13 +212,12 @@
     <ctl name="RX_RX2 Digital Volume" value="84" />
     <ctl name="HPHL Volume" value="20" />
     <ctl name="HPHR Volume" value="20" />
-    <ctl name="EAR SPKR PA Gain" value="G_DEFAULT" />
 
     <ctl name="TX_DEC0 Volume" value="102" />
-    <ctl name="TX_DEC1 Volume" value="102" />
-    <ctl name="TX_DEC2 Volume" value="102" />
-    <ctl name="TX_DEC3 Volume" value="102" />
-    <ctl name="TX_DEC4 Volume" value="84" />
+    <ctl name="TX_DEC1 Volume" value="114" />
+    <ctl name="TX_DEC2 Volume" value="114" />
+    <ctl name="TX_DEC3 Volume" value="114" />
+    <ctl name="TX_DEC4 Volume" value="144" />
     <ctl name="TX_DEC5 Volume" value="84" />
     <ctl name="TX_DEC6 Volume" value="84" />
     <ctl name="TX_DEC7 Volume" value="84" />
@@ -255,43 +225,22 @@
     <ctl name="ADC1 Volume" value="12" />
     <ctl name="ADC2 Volume" value="12" />
     <ctl name="ADC3 Volume" value="12" />
+    <ctl name="ADC4 Volume" value="12" />
 
     <!-- Compander controls -->
     <ctl name="WSA_COMP1 Switch" value="0" />
     <ctl name="WSA_COMP2 Switch" value="0" />
-    <ctl name="COMP7 Switch" value="0" />
-    <ctl name="COMP8 Switch" value="0" />
 
     <!-- Headphone class-H mode -->
     <ctl name="RX_HPH_PWR_MODE" value="ULP" />
     <ctl name="RX HPH Mode" value="CLS_H_ULP" />
 
     <!-- IIR/voice anc -->
-    <ctl name="IIR0 Band1" id ="0" value="268435456" />
-    <ctl name="IIR0 Band1" id ="1" value="0" />
-    <ctl name="IIR0 Band1" id ="2" value="0" />
-    <ctl name="IIR0 Band1" id ="3" value="0" />
-    <ctl name="IIR0 Band1" id ="4" value="0" />
-    <ctl name="IIR0 Band2" id ="0" value="268435456" />
-    <ctl name="IIR0 Band2" id ="1" value="0" />
-    <ctl name="IIR0 Band2" id ="2" value="0" />
-    <ctl name="IIR0 Band2" id ="3" value="0" />
-    <ctl name="IIR0 Band2" id ="4" value="0" />
-    <ctl name="IIR0 Band3" id ="0" value="268435456" />
-    <ctl name="IIR0 Band3" id ="1" value="0" />
-    <ctl name="IIR0 Band3" id ="2" value="0" />
-    <ctl name="IIR0 Band3" id ="3" value="0" />
-    <ctl name="IIR0 Band3" id ="4" value="0" />
-    <ctl name="IIR0 Band4" id ="0" value="268435456" />
-    <ctl name="IIR0 Band4" id ="1" value="0" />
-    <ctl name="IIR0 Band4" id ="2" value="0" />
-    <ctl name="IIR0 Band4" id ="3" value="0" />
-    <ctl name="IIR0 Band4" id ="4" value="0" />
-    <ctl name="IIR0 Band5" id ="0" value="268435456" />
-    <ctl name="IIR0 Band5" id ="1" value="0" />
-    <ctl name="IIR0 Band5" id ="2" value="0" />
-    <ctl name="IIR0 Band5" id ="3" value="0" />
-    <ctl name="IIR0 Band5" id ="4" value="0" />
+    <ctl name="IIR0 Band1" value="00 00 00 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00" />
+    <ctl name="IIR0 Band2" value="00 00 00 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00" />
+    <ctl name="IIR0 Band3" value="00 00 00 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00" />
+    <ctl name="IIR0 Band4" value="00 00 00 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00" />
+    <ctl name="IIR0 Band5" value="00 00 00 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00" />
     <ctl name="IIR0 Enable Band1" value="0" />
     <ctl name="IIR0 Enable Band2" value="0" />
     <ctl name="IIR0 Enable Band3" value="0" />
@@ -314,6 +263,15 @@
 
     <!-- defaults for mmap record -->
 
+    <!-- HIFI Filter coefficients for headphones path -->
+    <path name="hifi-filter-coefficients">
+        <ctl name="RX0 FIR Coeff Num" value="8" />
+        <ctl name="RX0 FIR Coeff Group0" value="08 00 00 00 00 00 00 10 00 00 00 10 00 00 00 10 00 00 00 10 00 00 00 10 00 00 00 10 00 00 00 10 00 00 00 10 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0" />
+        <ctl name="RX0 FIR Coeff Group1" value="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0" />
+        <ctl name="RX1 FIR Coeff Num" value="8" />
+        <ctl name="RX1 FIR Coeff Group0" value="08 00 00 00 00 00 00 10 00 00 00 10 00 00 00 10 00 00 00 10 00 00 00 10 00 00 00 10 00 00 00 10 00 00 00 10 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0" />
+        <ctl name="RX1 FIR Coeff Group1" value="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0" />
+    </path>
 
     <!-- These are audio route (FE to BE) specific mixer settings -->
     <path name="gsm-mode">
@@ -1469,7 +1427,7 @@
     <path name="audio-record-compress2 bt-sco">
     </path>
 
-    <path name="audio-record-compress bt-sco-wb">
+    <path name="audio-record-compress2 bt-sco-wb">
         <path name="audio-record-compress2 bt-sco" />
     </path>
 
@@ -1937,25 +1895,21 @@
     </path>
 
     <path name="dmic1">
-        <ctl name="TX_CDC_DMA_TX_3 Channels" value="One" />
         <ctl name="TX_AIF1_CAP Mixer DEC2" value="1" />
         <ctl name="TX DMIC MUX2" value="DMIC0" />
     </path>
 
     <path name="dmic2">
-        <ctl name="TX_CDC_DMA_TX_3 Channels" value="One" />
         <ctl name="TX_AIF1_CAP Mixer DEC2" value="1" />
         <ctl name="TX DMIC MUX2" value="DMIC1" />
     </path>
 
     <path name="dmic3">
-        <ctl name="TX_CDC_DMA_TX_3 Channels" value="One" />
         <ctl name="TX_AIF1_CAP Mixer DEC2" value="1" />
         <ctl name="TX DMIC MUX2" value="DMIC2" />
     </path>
 
     <path name="dmic4">
-        <ctl name="TX_CDC_DMA_TX_3 Channels" value="One" />
         <ctl name="TX_AIF1_CAP Mixer DEC2" value="1" />
         <ctl name="TX DMIC MUX2" value="DMIC3" />
     </path>
@@ -1975,19 +1929,7 @@
         <ctl name="SpkrRight SWR DAC_Port Switch" value="1" />
     </path>
 
-    <path name="speaker-and-haptics">
-        <ctl name="WSA RX0 MUX" value="AIF1_PB" />
-        <ctl name="WSA RX1 MUX" value="AIF1_PB" />
-        <ctl name="WSA_RX0 INP0" value="RX0" />
-        <ctl name="WSA_RX1 INP0" value="RX1" />
-        <ctl name="WSA_COMP1 Switch" value="1" />
-        <ctl name="WSA_COMP2 Switch" value="1" />
-        <ctl name="SpkrLeft COMP Switch" value="1" />
-        <ctl name="SpkrLeft VISENSE Switch" value="1" />
-        <ctl name="SpkrLeft SWR DAC_Port Switch" value="1" />
-        <ctl name="SpkrRight COMP Switch" value="1" />
-        <ctl name="SpkrRight VISENSE Switch" value="1" />
-        <ctl name="SpkrRight SWR DAC_Port Switch" value="1" />
+    <path name="haptics-dev">
         <ctl name="SWR DAC_Port Switch" value="1" />
     </path>
 
@@ -2059,7 +2001,7 @@
 
     <path name="sidetone-handset">
         <path name="sidetone-iir" />
-        <ctl name="IIR0 INP0 Volume" value="54" />
+        <ctl name="IIR0 INP0 Volume" value="0" />
         <ctl name="IIR0 INP0 MUX" value="DEC2" />
         <ctl name="RX INT2 MIX2 INP" value="SRC0" />
         <ctl name="WSA_RX0 INT0 SIDETONE MIX" value="SRC0" />
@@ -2069,11 +2011,11 @@
     </path>
 
     <path name="speaker-mic">
-        <path name="dmic4" />
+        <path name="dmic3" />
     </path>
 
     <path name="speaker-mic-liquid">
-        <path name="dmic4" />
+        <path name="dmic1" />
     </path>
 
     <path name="speaker-mic-sbc">
@@ -2135,11 +2077,26 @@
         <ctl name="SpkrLeft COMP Switch" value="1" />
         <ctl name="SpkrLeft VISENSE Switch" value="1" />
         <ctl name="SpkrLeft SWR DAC_Port Switch" value="1" />
-        <ctl name="WSA_RX0 Digital Volume" value="50" />
+        <ctl name="WSA_RX0 Digital Volume" value="70" />
     </path>
 
     <path name="handset-mic">
-        <path name="dmic1" />
+        <path name="dmic2" />
+    </path>
+
+    <path name="ultrasound-handset">
+        <ctl name="WSA RX_MIX0 MUX" value="AIF_MIX1_PB" />
+        <ctl name="WSA_RX0 MIX INP" value="RX_MIX0" />
+        <ctl name="WSA_COMP1 Switch" value="1" />
+        <ctl name="SpkrLeft COMP Switch" value="1" />
+        <ctl name="SpkrLeft VISENSE Switch" value="1" />
+        <ctl name="SpkrLeft SWR DAC_Port Switch" value="1" />
+        <ctl name="WSA_RX0 Digital Volume" value="50" />
+    </path>
+
+    <path name="ultrasound-mic">
+        <ctl name="TX_AIF2_CAP Mixer DEC4" value="1" />
+        <ctl name="TX DMIC MUX4" value="DMIC2" />
     </path>
 
     <path name="headphones">
@@ -2151,8 +2108,6 @@
         <ctl name="RX INT1 DEM MUX" value="CLSH_DSM_OUT" />
         <ctl name="RX_COMP1 Switch" value="1" />
         <ctl name="RX_COMP2 Switch" value="1" />
-        <ctl name="HPH_L Switch" value="1" />
-        <ctl name="HPH_R Switch" value="1" />
         <ctl name="HPHL_COMP Switch" value="1" />
         <ctl name="HPHR_COMP Switch" value="1" />
         <ctl name="HPHL_RDAC Switch" value="1" />
@@ -2180,6 +2135,7 @@
     </path>
 
     <path name="headphones-hifi-filter">
+        <ctl name="RX_FIR Filter" value="ON" />
         <path name="headphones" />
     </path>
 
@@ -2273,7 +2229,7 @@
     </path>
 
     <path name="speaker-and-headphones-hifi-filter">
-        <path name="headphones" />
+        <path name="headphones-hifi-filter" />
         <path name="speaker" />
     </path>
 
@@ -2334,10 +2290,6 @@
         <path name="handset-mic" />
     </path>
 
-    <path name="camcorder-mic">
-        <path name="handset-mic" />
-    </path>
-
     <path name="bt-sco-headset">
     </path>
 
@@ -2362,37 +2314,37 @@
     <path name="capture-fm">
     </path>
 
+    <path name="ext_ec_ref_tx">
+    </path>
+
     <path name="va-mic-mono">
         <ctl name="VA_AIF1_CAP Mixer DEC0" value="1" />
         <ctl name="VA DEC0 MUX" value="MSM_DMIC" />
-        <ctl name="VA DMIC MUX0" value="DMIC3" />
+        <ctl name="VA DMIC MUX0" value="DMIC1" />
     </path>
 
     <path name="va-mic-dmic">
-        <ctl name="VA_CDC_DMA_TX_0 Channels" value="Two" />
         <ctl name="VA_AIF1_CAP Mixer DEC0" value="1" />
         <ctl name="VA_AIF1_CAP Mixer DEC1" value="1" />
         <ctl name="VA DEC0 MUX" value="MSM_DMIC" />
         <ctl name="VA DEC1 MUX" value="MSM_DMIC" />
-        <ctl name="VA DMIC MUX0" value="DMIC3" />
-        <ctl name="VA DMIC MUX1" value="DMIC0" />
+        <ctl name="VA DMIC MUX0" value="DMIC1" />
+        <ctl name="VA DMIC MUX1" value="DMIC3" />
     </path>
 
     <path name="va-mic-tmic">
-        <ctl name="VA_CDC_DMA_TX_0 Channels" value="Three" />
         <ctl name="VA_AIF1_CAP Mixer DEC0" value="1" />
         <ctl name="VA_AIF1_CAP Mixer DEC1" value="1" />
         <ctl name="VA_AIF1_CAP Mixer DEC2" value="1" />
         <ctl name="VA DEC0 MUX" value="MSM_DMIC" />
         <ctl name="VA DEC1 MUX" value="MSM_DMIC" />
         <ctl name="VA DEC2 MUX" value="MSM_DMIC" />
-        <ctl name="VA DMIC MUX0" value="DMIC3" />
-        <ctl name="VA DMIC MUX1" value="DMIC0" />
+        <ctl name="VA DMIC MUX0" value="DMIC1" />
+        <ctl name="VA DMIC MUX1" value="DMIC3" />
         <ctl name="VA DMIC MUX2" value="DMIC2" />
     </path>
 
     <path name="va-mic-qmic">
-        <ctl name="VA_CDC_DMA_TX_0 Channels" value="Four" />
         <ctl name="VA_AIF1_CAP Mixer DEC0" value="1" />
         <ctl name="VA_AIF1_CAP Mixer DEC1" value="1" />
         <ctl name="VA_AIF1_CAP Mixer DEC2" value="1" />
@@ -2401,10 +2353,10 @@
         <ctl name="VA DEC1 MUX" value="MSM_DMIC" />
         <ctl name="VA DEC2 MUX" value="MSM_DMIC" />
         <ctl name="VA DEC3 MUX" value="MSM_DMIC" />
-        <ctl name="VA DMIC MUX0" value="DMIC3" />
-        <ctl name="VA DMIC MUX1" value="DMIC0" />
+        <ctl name="VA DMIC MUX0" value="DMIC1" />
+        <ctl name="VA DMIC MUX1" value="DMIC3" />
         <ctl name="VA DMIC MUX2" value="DMIC2" />
-        <ctl name="VA DMIC MUX3" value="DMIC1" />
+        <ctl name="VA DMIC MUX3" value="DMIC0" />
     </path>
 
     <path name="va-mic">
@@ -2412,36 +2364,37 @@
     </path>
 
     <path name="va-mic-mono-lpi">
+        <ctl name="LPI Enable" value="1" />
         <ctl name="VA_AIF1_CAP Mixer DEC0" value="1" />
         <ctl name="VA DEC0 MUX" value="MSM_DMIC" />
-        <ctl name="VA DMIC MUX0" value="DMIC0" />
+        <ctl name="VA DMIC MUX0" value="DMIC1" />
     </path>
 
     <path name="va-mic-dmic-lpi">
-        <ctl name="VA_CDC_DMA_TX_0 Channels" value="Two" />
+        <ctl name="LPI Enable" value="1" />
         <ctl name="VA_AIF1_CAP Mixer DEC0" value="1" />
         <ctl name="VA_AIF1_CAP Mixer DEC1" value="1" />
         <ctl name="VA DEC0 MUX" value="MSM_DMIC" />
         <ctl name="VA DEC1 MUX" value="MSM_DMIC" />
-        <ctl name="VA DMIC MUX0" value="DMIC0" />
-        <ctl name="VA DMIC MUX1" value="DMIC3" />
+        <ctl name="VA DMIC MUX0" value="DMIC1" />
+        <ctl name="VA DMIC MUX1" value="DMIC2" />
     </path>
 
     <path name="va-mic-tmic-lpi">
-        <ctl name="VA_CDC_DMA_TX_0 Channels" value="Three" />
+        <ctl name="LPI Enable" value="1" />
         <ctl name="VA_AIF1_CAP Mixer DEC0" value="1" />
         <ctl name="VA_AIF1_CAP Mixer DEC1" value="1" />
         <ctl name="VA_AIF1_CAP Mixer DEC2" value="1" />
         <ctl name="VA DEC0 MUX" value="MSM_DMIC" />
         <ctl name="VA DEC1 MUX" value="MSM_DMIC" />
         <ctl name="VA DEC2 MUX" value="MSM_DMIC" />
-        <ctl name="VA DMIC MUX0" value="DMIC0" />
-        <ctl name="VA DMIC MUX1" value="DMIC3" />
-        <ctl name="VA DMIC MUX2" value="DMIC1" />
+        <ctl name="VA DMIC MUX0" value="DMIC1" />
+        <ctl name="VA DMIC MUX1" value="DMIC2" />
+        <ctl name="VA DMIC MUX2" value="DMIC3" />
     </path>
 
     <path name="va-mic-qmic-lpi">
-        <ctl name="VA_CDC_DMA_TX_0 Channels" value="Four" />
+        <ctl name="LPI Enable" value="1" />
         <ctl name="VA_AIF1_CAP Mixer DEC0" value="1" />
         <ctl name="VA_AIF1_CAP Mixer DEC1" value="1" />
         <ctl name="VA_AIF1_CAP Mixer DEC2" value="1" />
@@ -2450,14 +2403,29 @@
         <ctl name="VA DEC1 MUX" value="MSM_DMIC" />
         <ctl name="VA DEC2 MUX" value="MSM_DMIC" />
         <ctl name="VA DEC3 MUX" value="MSM_DMIC" />
-        <ctl name="VA DMIC MUX0" value="DMIC0" />
-        <ctl name="VA DMIC MUX1" value="DMIC3" />
-        <ctl name="VA DMIC MUX2" value="DMIC1" />
-        <ctl name="VA DMIC MUX3" value="DMIC2" />
+        <ctl name="VA DMIC MUX0" value="DMIC1" />
+        <ctl name="VA DMIC MUX1" value="DMIC2" />
+        <ctl name="VA DMIC MUX2" value="DMIC3" />
+        <ctl name="VA DMIC MUX3" value="DMIC0" />
     </path>
 
     <path name="va-mic-lpi">
         <path name="va-mic-mono-lpi" />
+    </path>
+
+    <path name="headset-va-mic-lpi">
+         <ctl name="LPI Enable" value="1" />
+         <ctl name="VA_AIF1_CAP Mixer DEC0" value="1" />
+         <ctl name="VA DEC0 MUX" value="SWR_MIC" />
+         <ctl name="VA SMIC MUX0" value="SWR_MIC5" />
+         <ctl name="TX1 MODE" value="ADC_LP" />
+         <ctl name="ADC2 MUX" value="INP2" />
+         <ctl name="VA_DEC0 MODE" value="ADC_LOW_PWR" />
+         <ctl name="ADC2 ChMap" value="SWRM_TX2_CH2" />
+         <ctl name="HDR12 MUX" value="NO_HDR12" />
+         <ctl name="ADC2_BCS Disable" value="1" />
+         <ctl name="ADC2_MIXER Switch" value="1" />
+         <ctl name="VA_AMIC2_MIXER Switch" value="1" />
     </path>
 
     <path name="headset-va-mic">
@@ -2477,19 +2445,17 @@
 
     <!-- Dual MIC devices -->
     <path name="handset-dmic-endfire">
-        <ctl name="TX_CDC_DMA_TX_3 Channels" value="Two" />
         <ctl name="TX_AIF1_CAP Mixer DEC1" value="1" />
-        <ctl name="TX DMIC MUX1" value="DMIC0" />
+        <ctl name="TX DMIC MUX1" value="DMIC1" />
         <ctl name="TX_AIF1_CAP Mixer DEC2" value="1" />
-        <ctl name="TX DMIC MUX2" value="DMIC2" />
+        <ctl name="TX DMIC MUX2" value="DMIC3" />
     </path>
 
     <path name="speaker-dmic-endfire">
-        <ctl name="TX_CDC_DMA_TX_3 Channels" value="Two" />
         <ctl name="TX_AIF1_CAP Mixer DEC1" value="1" />
-        <ctl name="TX DMIC MUX1" value="DMIC3" />
+        <ctl name="TX DMIC MUX1" value="DMIC2" />
         <ctl name="TX_AIF1_CAP Mixer DEC2" value="1" />
-        <ctl name="TX DMIC MUX2" value="DMIC0" />
+        <ctl name="TX DMIC MUX2" value="DMIC3" />
     </path>
 
     <path name="dmic-endfire">
@@ -2499,7 +2465,7 @@
 
     <path name="dmic-endfire-liquid">
         <path name="handset-dmic-endfire" />
-        <ctl name="IIR0 INP0 MUX" value="DEC7" />
+        <ctl name="IIR0 INP0 MUX" value="DEC2" />
     </path>
 
     <path name="handset-stereo-dmic-ef">
@@ -2560,9 +2526,9 @@
 
     <path name="speaker-dmic-broadside">
          <ctl name="TX_AIF1_CAP Mixer DEC1" value="1" />
-         <ctl name="TX DMIC MUX1" value="DMIC3" />
+         <ctl name="TX DMIC MUX1" value="DMIC2" />
          <ctl name="TX_AIF1_CAP Mixer DEC2" value="1" />
-         <ctl name="TX DMIC MUX2" value="DMIC0" />
+         <ctl name="TX DMIC MUX2" value="DMIC1" />
     </path>
 
     <path name="dmic-broadside">
@@ -2578,20 +2544,20 @@
 
     <path name="three-mic">
         <ctl name="TX_AIF1_CAP Mixer DEC1" value="1" />
-        <ctl name="TX DMIC MUX1" value="DMIC3" />
+        <ctl name="TX DMIC MUX1" value="DMIC2" />
         <ctl name="TX_AIF1_CAP Mixer DEC2" value="1" />
-        <ctl name="TX DMIC MUX2" value="DMIC0" />
+        <ctl name="TX DMIC MUX2" value="DMIC1" />
         <ctl name="TX_AIF1_CAP Mixer DEC3" value="1" />
-        <ctl name="TX DMIC MUX3" value="DMIC2" />
+        <ctl name="TX DMIC MUX3" value="DMIC3" />
     </path>
 
     <path name="speaker-tmic">
         <ctl name="TX_AIF1_CAP Mixer DEC1" value="1" />
-        <ctl name="TX DMIC MUX1" value="DMIC3" />
+        <ctl name="TX DMIC MUX1" value="DMIC2" />
         <ctl name="TX_AIF1_CAP Mixer DEC2" value="1" />
-        <ctl name="TX DMIC MUX2" value="DMIC0" />
+        <ctl name="TX DMIC MUX2" value="DMIC1" />
         <ctl name="TX_AIF1_CAP Mixer DEC3" value="1" />
-        <ctl name="TX DMIC MUX3" value="DMIC2" />
+        <ctl name="TX DMIC MUX3" value="DMIC3" />
     </path>
 
     <path name="voice-speaker-tmic">
@@ -2602,13 +2568,13 @@
 
     <path name="speaker-qmic">
         <ctl name="TX_AIF1_CAP Mixer DEC1" value="1" />
-        <ctl name="TX DMIC MUX1" value="DMIC3" />
+        <ctl name="TX DMIC MUX1" value="DMIC2" />
         <ctl name="TX_AIF1_CAP Mixer DEC2" value="1" />
-        <ctl name="TX DMIC MUX2" value="DMIC0" />
+        <ctl name="TX DMIC MUX2" value="DMIC1" />
         <ctl name="TX_AIF1_CAP Mixer DEC3" value="1" />
-        <ctl name="TX DMIC MUX3" value="DMIC2" />
+        <ctl name="TX DMIC MUX3" value="DMIC3" />
         <ctl name="TX_AIF1_CAP Mixer DEC4" value="1" />
-        <ctl name="TX DMIC MUX4" value="DMIC1" />
+        <ctl name="TX DMIC MUX4" value="DMIC0" />
     </path>
 
     <path name="speaker-qmic-liquid">
@@ -2628,6 +2594,34 @@
 
     <path name="quad-mic-liquid">
         <path name="speaker-qmic-liquid" />
+    </path>
+
+    <path name="unprocessed-hdr-mic-landscape">
+        <path name="speaker-qmic" />
+    </path>
+
+    <path name="unprocessed-hdr-mic-inverted-landscape">
+        <path name="speaker-qmic" />
+    </path>
+
+    <path name="unprocessed-hdr-mic-portrait">
+        <path name="speaker-qmic" />
+    </path>
+
+    <path name="unprocessed-hdr-mic-inverted-portrait">
+        <path name="speaker-qmic" />
+    </path>
+
+    <path name="camcorder-main-mic">
+        <path name="speaker-mic" />
+    </path>
+
+    <path name="camcorder-dual-mic">
+        <path name="speaker-dmic-endfire" />
+    </path>
+
+    <path name="camcorder-quad-mic">
+        <path name="speaker-qmic" />
     </path>
 
     <!-- TTY devices -->
@@ -2687,7 +2681,7 @@
     </path>
 
     <path name="voice-tty-vco-handset-mic">
-        <path name="dmic3" />
+        <path name="dmic4" />
     </path>
 
     <path name="unprocessed-handset-mic">
@@ -3098,9 +3092,6 @@
     <path name="incall_music_uplink bt-a2dp">
         <path name="incall_music_uplink" />
     </path>
-    <path name="incall_music_uplink afe-proxy">
-        <path name="incall_music_uplink" />
-    </path>
 
     <path name="incall_music_uplink call-proxy">
         <path name="incall_music_uplink" />
@@ -3174,10 +3165,6 @@
     </path>
 
     <path name="incall_music_uplink2 bt-a2dp">
-        <path name="incall_music_uplink2" />
-    </path>
-
-    <path name="incall_music_uplink2 afe-proxy">
         <path name="incall_music_uplink2" />
     </path>
 

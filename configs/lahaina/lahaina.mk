@@ -7,6 +7,8 @@ AUDIO_USE_STUB_HAL := true
 endif
 endif
 
+TARGET_USES_ION_CMA_MEMORY := true
+
 ifneq ($(AUDIO_USE_STUB_HAL), true)
 BOARD_USES_ALSA_AUDIO := true
 TARGET_USES_AOSP_FOR_AUDIO := false
@@ -84,6 +86,7 @@ AUDIO_FEATURE_ENABLED_SVA_MULTI_STAGE := true
 AUDIO_FEATURE_ENABLED_BATTERY_LISTENER := true
 
 AUDIO_FEATURE_ENABLED_PAL_HIDL := true
+AUDIO_FEATURE_ENABLED_LSM_HIDL := false
 ##AUDIO_FEATURE_FLAGS
 
 #AGM
@@ -129,6 +132,7 @@ AUDIO_C2 += libqc2audio_utils
 AUDIO_C2 += libqc2audio_platform
 AUDIO_C2 += libqc2audio_core
 AUDIO_C2 += libqc2audio_basecodec
+AUDIO_C2 += libqc2audio_hooks
 AUDIO_C2 += libqc2audio_swaudiocodec
 AUDIO_C2 += libqc2audio_swaudiocodec_data_common
 AUDIO_C2 += libqc2audio_hwaudiocodec
@@ -148,11 +152,18 @@ PRODUCT_PACKAGES += $(AUDIO_HAL_TEST_APPS)
 PRODUCT_PACKAGES += ftm_test_config_lahaina-qrd-snd-card
 PRODUCT_PACKAGES += audioadsprpcd
 PRODUCT_PACKAGES += vendor.qti.audio-adsprpc-service.rc
+PRODUCT_PACKAGES += android.hardware.audio.service
+PRODUCT_PACKAGES += android.hardware.audio.service.rc
 PRODUCT_PACKAGES += IDP_acdb_cal.acdb
 PRODUCT_PACKAGES += IDP_workspaceFileXml.qwsp
 PRODUCT_PACKAGES += QRD_acdb_cal.acdb
 PRODUCT_PACKAGES += QRD_workspaceFileXml.qwsp
+PRODUCT_PACKAGES += fai__2.3.0_0.1__3.0.0_0.0__eai_1.10.pmd
 PRODUCT_PACKAGES += libfmpal
+PRODUCT_PACKAGES += event.eai
+PRODUCT_PACKAGES += music.eai
+PRODUCT_PACKAGES += speech.eai
+PRODUCT_PACKAGES += libqtigefar
 
 ifneq ($(strip $(TARGET_USES_RRO)), true)
 #Audio Specific device overlays
@@ -163,23 +174,12 @@ PRODUCT_PACKAGES += $(AUDIO_PAL)
 PRODUCT_PACKAGES += $(AUDIO_C2)
 
 PRODUCT_COPY_FILES += \
-    vendor/qcom/opensource/audio-hal/primary-hal/configs/lahaina/audio_io_policy.conf:$(TARGET_COPY_OUT_VENDOR)/etc/audio_io_policy.conf \
     vendor/qcom/opensource/audio-hal/primary-hal/configs/lahaina/audio_effects.conf:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects.conf \
     vendor/qcom/opensource/audio-hal/primary-hal/configs/lahaina/audio_effects.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects.xml \
-    vendor/qcom/opensource/audio-hal/primary-hal/configs/lahaina/sound_trigger_platform_info.xml:$(TARGET_COPY_OUT_VENDOR)/etc/sound_trigger_platform_info.xml \
-    vendor/qcom/opensource/audio-hal/primary-hal/configs/lahaina/audio_platform_info.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_platform_info.xml \
-    vendor/qcom/opensource/audio-hal/primary-hal/configs/lahaina/audio_platform_info_qrd.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_platform_info_qrd.xml \
-    vendor/qcom/opensource/audio-hal/primary-hal/configs/lahaina/audio_platform_info_intcodec.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_platform_info_intcodec.xml \
-    vendor/qcom/opensource/audio-hal/primary-hal/configs/lahaina/sound_trigger_mixer_paths.xml:$(TARGET_COPY_OUT_VENDOR)/etc/sound_trigger_mixer_paths.xml \
-    vendor/qcom/opensource/audio-hal/primary-hal/configs/lahaina/sound_trigger_mixer_paths_qrd.xml:$(TARGET_COPY_OUT_VENDOR)/etc/sound_trigger_mixer_paths_qrd.xml \
-    vendor/qcom/opensource/audio-hal/primary-hal/configs/lahaina/sound_trigger_mixer_paths_cdp.xml:$(TARGET_COPY_OUT_VENDOR)/etc/sound_trigger_mixer_paths_cdp.xml \
     vendor/qcom/opensource/audio-hal/primary-hal/configs/lahaina/card-defs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/card-defs.xml \
     vendor/qcom/opensource/audio-hal/primary-hal/configs/lahaina/mixer_paths.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths.xml \
     vendor/qcom/opensource/audio-hal/primary-hal/configs/lahaina/mixer_paths_qrd.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_qrd.xml \
     vendor/qcom/opensource/audio-hal/primary-hal/configs/lahaina/mixer_paths_cdp.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_cdp.xml \
-    vendor/qcom/opensource/audio-hal/primary-hal/configs/lahaina/audio_configs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_configs.xml \
-    vendor/qcom/opensource/audio-hal/primary-hal/configs/lahaina/audio_configs_stock.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_configs_stock.xml \
-    vendor/qcom/opensource/audio-hal/primary-hal/configs/lahaina/audio_tuning_mixer.txt:$(TARGET_COPY_OUT_VENDOR)/etc/audio_tuning_mixer.txt \
     vendor/qcom/opensource/pal/configs/lahaina/resourcemanager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/resourcemanager.xml \
     vendor/qcom/opensource/pal/configs/lahaina/resourcemanager_qrd.xml:$(TARGET_COPY_OUT_VENDOR)/etc/resourcemanager_qrd.xml \
     vendor/qcom/opensource/pal/configs/lahaina/resourcemanager_cdp.xml:$(TARGET_COPY_OUT_VENDOR)/etc/resourcemanager_cdp.xml \
@@ -212,6 +212,10 @@ PRODUCT_COPY_FILES += \
 # Reduce client buffer size for fast audio output tracks
 PRODUCT_PROPERTY_OVERRIDES += \
     af.fast_track_multiplier=1
+
+# Reduce AF standby time for playback threads (except offload)
+PRODUCT_PROPERTY_OVERRIDES += \
+   ro.audio.flinger_standbytime_ms=2000
 
 # Low latency audio buffer size in frames
 PRODUCT_PROPERTY_OVERRIDES += \

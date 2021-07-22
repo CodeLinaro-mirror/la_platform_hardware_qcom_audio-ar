@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017, 2019 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2017, 2019, 2021 The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -34,16 +34,34 @@
 #include <math.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <inttypes.h>
 
 #include <cutils/list.h>
 #include <log/log.h>
 #include <hardware/audio_effect.h>
 #include <cutils/properties.h>
-
+#include "PalDefs.h"
 
 #define PRIMARY_HAL_PATH XSTR(LIB_AUDIO_HAL)
 #define XSTR(x) STR(x)
 #define STR(x) #x
+#define MAX_LIBRARY_PATH 100
+
+#ifdef __LP64__
+static void get_library_path(char *lib_path)
+{
+    snprintf(lib_path, MAX_LIBRARY_PATH,
+             "/vendor/lib64/hw/audio.primary.%s.so",
+             XSTR(PLATFORM_NAME));
+}
+#else
+static void get_library_path(char *lib_path)
+{
+    snprintf(lib_path, MAX_LIBRARY_PATH,
+             "/vendor/lib/hw/audio.primary.%s.so",
+             XSTR(PLATFORM_NAME));
+}
+#endif
 
 #define VOL_FLAG ( EFFECT_FLAG_TYPE_INSERT | \
                    EFFECT_FLAG_VOLUME_IND | \
@@ -66,12 +84,6 @@
 #define AHAL_GAIN_DEPENDENT_INTERFACE_FUNCTION "audio_hw_send_gain_dep_calibration"
 #define AHAL_GAIN_GET_MAPPING_TABLE "audio_hw_get_gain_level_mapping"
 #define DEFAULT_CAL_STEP 0
-
-struct amp_db_and_gain_table {
-    float amp;
-    float db;
-    uint32_t level;
-};
 
 #ifdef AUDIO_FEATURE_ENABLED_GCOV
 extern void  __gcov_flush();
@@ -185,7 +197,7 @@ const effect_descriptor_t vol_listener_notification_descriptor = {
 static int total_volume_cal_step = MAX_GAIN_LEVELS;
 
 // using gain level for non-drc volume curve
-struct amp_db_and_gain_table  volume_curve_gain_mapping_table[MAX_VOLUME_CAL_STEPS] = {
+struct pal_amp_db_and_gain_table  volume_curve_gain_mapping_table[MAX_VOLUME_CAL_STEPS] = {
     /* Level 0 in the calibration database contains default calibration */
     { 0.001774, -55, 5 },
     { 0.501187,  -6, 4 },
@@ -223,7 +235,7 @@ static float current_vol = 0.0;
 /* HAL interface to send calibration */
 static bool (*send_gain_dep_cal)(int);
 
-static int (*get_custom_gain_table)(struct amp_db_and_gain_table *, int);
+static int (*get_custom_gain_table)(struct pal_amp_db_and_gain_table *, int);
 
 /* if dumping allowed */
 static bool dumping_enabled = false;
@@ -652,7 +664,8 @@ static int vol_effect_get_descriptor(effect_handle_t   self,
 
 static void init_once()
 {
-    int max_table_ent = 0;
+    int64_t max_table_ent = 0;
+    char audio_hal_lib[100];
     if (initialized) {
         ALOGV("%s : already init .. do nothing", __func__);
         return;
@@ -664,19 +677,21 @@ static void init_once()
 
     pthread_mutex_init(&vol_listner_init_lock, NULL);
 
+    get_library_path(audio_hal_lib);
+
     // get hal function pointer
-    if (access(PRIMARY_HAL_PATH, R_OK) == 0) {
-        void *hal_lib_pointer = dlopen(PRIMARY_HAL_PATH, RTLD_NOW);
+    if (access(audio_hal_lib, R_OK) == 0) {
+        void *hal_lib_pointer = dlopen(audio_hal_lib, RTLD_NOW);
         if (hal_lib_pointer == NULL) {
-            ALOGE("%s: DLOPEN failed for %s", __func__, PRIMARY_HAL_PATH);
+            ALOGE("%s: DLOPEN failed for %s", __func__, audio_hal_lib);
         } else {
-            ALOGV("%s: DLOPEN of %s Succes .. next get HAL entry function", __func__, PRIMARY_HAL_PATH);
+            ALOGV("%s: DLOPEN of %s Success .. next get HAL entry function", __func__, audio_hal_lib);
             send_gain_dep_cal = (bool (*)(int))dlsym(hal_lib_pointer, AHAL_GAIN_DEPENDENT_INTERFACE_FUNCTION);
             if (send_gain_dep_cal == NULL) {
                 ALOGE("Couldnt able to get the function symbol");
             }
 
-            get_custom_gain_table = (int (*) (struct amp_db_and_gain_table *, int))
+            get_custom_gain_table = (int (*) (struct pal_amp_db_and_gain_table *, int))
                dlsym(hal_lib_pointer, AHAL_GAIN_GET_MAPPING_TABLE);
             if (get_custom_gain_table == NULL) {
                 ALOGE("Couldnt able to get the function AHAL_GAIN_GET_MAPPING_TABLE  symbol");
@@ -704,7 +719,7 @@ static void init_once()
                 }
 
                 if (dumping_enabled) {
-                    ALOGD("%s: dumping table here .. size of table received %d",
+                    ALOGD("%s: dumping table here .. size of table received %" PRId64,
                            __func__, max_table_ent);
                     for (int i = 0; i < MAX_VOLUME_CAL_STEPS ; i++)
                         ALOGD("[%d]  %f %f %d", i, volume_curve_gain_mapping_table[i].amp,
@@ -714,7 +729,7 @@ static void init_once()
             }
         }
     } else {
-        ALOGE("%s: not able to acces lib %s ", __func__, PRIMARY_HAL_PATH);
+        ALOGE("%s: not able to acces lib %s ", __func__, audio_hal_lib);
     }
 
     // check system property to see if dumping is required
