@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -158,12 +158,10 @@ static int hfp_set_mic_volume(float value)
         return -EINVAL;
     }
 
-    hfpmod.mic_volume = value;
-
     return ret;
 }
 
-static float hfp_get_mic_volume(std::shared_ptr<AudioDevice> adev __unused)
+static float hfp_get_mic_volume(void)
 {
     return hfpmod.mic_volume;
 }
@@ -397,19 +395,16 @@ audio_usecase_t hfp_get_usecase()
  * *
  * * This interface is used for mic mute state control
  * */
-int hfp_set_mic_mute(std::shared_ptr<AudioDevice> adev,
-        bool state)
+int hfp_set_mic_mute(bool state)
 {
     int rc = 0;
 
     if (state == hfpmod.mic_mute)
         return rc;
 
-    if (state == true) {
-        hfpmod.mic_volume = hfp_get_mic_volume(adev);
-    }
     rc = hfp_set_mic_volume((state == true) ? 0.0 : hfpmod.mic_volume);
-    hfpmod.mic_mute = state;
+    if (rc == 0)
+        hfpmod.mic_mute = state;
     AHAL_DBG("Setting mute state %d, rc %d\n", state, rc);
     return rc;
 }
@@ -479,7 +474,8 @@ void hfp_set_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *par
             goto exit;
         }
         AHAL_DBG("set_hfp_mic_volume usecase, Vol: [%f]", vol);
-        hfp_set_mic_volume(vol);
+        if (hfp_set_mic_volume(vol) == 0)
+            hfpmod.mic_volume = vol;
     }
 
 exit:
