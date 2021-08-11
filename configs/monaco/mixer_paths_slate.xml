@@ -69,7 +69,7 @@
         <ctl name="TX1_INP_MUX" value="DMIC_1" />
         <ctl name="DMIC1_MUX" value="DMIC0"/>
         <ctl name="DMIC0_IN_S Switch" value="1" />
-        <ctl name="BB_MIC_BIAS1" value="BIAS_ON" />
+        <ctl name="BB_MIC_BIAS2" value="BIAS_ON" />
     </path>
 
     <path name="dmic2">
@@ -79,7 +79,7 @@
         <ctl name="TX0_INP_MUX" value="DMIC_0" />
         <ctl name="DMIC0_MUX" value="DMIC1"/>
         <ctl name="DMIC1_IN_S Switch" value="1" />
-        <ctl name="BB_MIC_BIAS2" value="BIAS_ON" />
+        <ctl name="BB_MIC_BIAS1" value="BIAS_ON" />
     </path>
 
     <path name="speaker">
@@ -158,7 +158,7 @@
          <ctl name="VA_PCM0_MUX" value="LP_TX_0" />
          <ctl name="VA_CAP_MIXER PCM_0" value="1" />
          <ctl name="DMIC0_IN_S Switch" value="1" />
-         <ctl name="BB_MIC_BIAS1" value="BIAS_ON" />
+         <ctl name="BB_MIC_BIAS2" value="BIAS_ON" />
     </path>
 
     <path name="va-mic">
