@@ -1077,6 +1077,8 @@ int AudioDevice::SetMicMute(bool state) {
     mute_ = state;
 
     ALOGD("%s: enter: %d", __func__, state);
+    if (AudioExtn::audio_extn_hfp_is_active(adev_))
+        ret = AudioExtn::audio_extn_hfp_set_mic_mute(state);
     if (voice_)
         ret = voice_->SetMicMute(state);
     for (int i = 0; i < stream_in_list_.size(); i++) {
