@@ -646,10 +646,6 @@ int adev_get_audio_port(struct audio_hw_device *dev,
 int adev_set_audio_port_config(struct audio_hw_device *dev,
                                const struct audio_port_config *config)
 {
-	/*
-    std::ignore = dev;
-    std::ignore = config;
-    */
     std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance(dev);
     char config_address[AUDIO_DEVICE_MAX_ADDRESS_LEN];
     strlcpy(config_address, config->ext.device.address, AUDIO_DEVICE_MAX_ADDRESS_LEN);
@@ -664,11 +660,12 @@ int adev_set_audio_port_config(struct audio_hw_device *dev,
         for(auto iter = list.begin(); iter != list.end(); ++iter) {
             ALOGI("%s: Stream addres: %s  config address: %s\n", __func__,(*iter)->address_, config_address);
             if(strcmp((*iter)->address_, config_address) == 0) {
-                volume = pow(10.0, ((float)config->gain.values[0] / 2000));
-                if (volume >= 1.0) {
-                    volume = 1.0;
-                } else if (volume < 0.01) {
-                    volume = 0;
+                if (config->gain.values[0] <= (MIN_VOLUME_VALUE_MB + STEP_VALUE_MB)) {
+                    volume = MIN_VOLUME_GAIN;
+                } else if (config->gain.values[0] >= MAX_VOLUME_VALUE_MB) {
+                    volume = MAX_VOLUME_GAIN;
+                } else {
+                    volume = pow(10.0, ((float)config->gain.values[0] / 2000));
                 }
                 ALOGE("%s: set volume to stream", __func__);
                 (*iter)->SetVolume(volume, volume);

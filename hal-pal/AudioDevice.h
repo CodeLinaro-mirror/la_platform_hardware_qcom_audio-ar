@@ -49,6 +49,12 @@
 #define COMPRESS_VOIP_IO_BUF_SIZE_FB 1920
 #define MAX_PERF_LOCK_OPTS 20
 
+#define MIN_VOLUME_VALUE_MB -6000
+#define MAX_VOLUME_VALUE_MB 0
+#define STEP_VALUE_MB 100
+#define MIN_VOLUME_GAIN 0.0f
+#define MAX_VOLUME_GAIN 1.0f
+
 class AudioPatch{
     public:
         enum PatchType{

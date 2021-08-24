@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2021, The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -81,6 +81,7 @@ public:
             bool slow_talk;
             bool hd_voice;
             pal_device_mute_t device_mute;
+            struct pal_volume_data *pal_vol_data;
     };
     struct voice_t {
             voice_session_t session[MAX_VOICE_SESSIONS];
@@ -92,6 +93,7 @@ public:
     voice_t voice_;
     audio_mode_t mode_;
     std::shared_ptr<StreamOutPrimary> stream_out_primary_;
+    struct pal_volume_data *pal_vol_;
     int VoiceSetParameters(const char *kvpairs);
     void VoiceGetParameters(struct str_parms *query, struct str_parms *reply);
     int RouteStream(const std::set<audio_devices_t>&);
