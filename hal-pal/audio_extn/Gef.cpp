@@ -69,7 +69,8 @@ typedef int (*gef_get_pal_info)(void* adev,
                                     const audio_devices_t hal_device_id,
                                     pal_device_id_t *pal_device_id,
                                     audio_output_flags_t hal_stream_flag,
-                                    pal_stream_type_t *pal_stream_type);
+                                    pal_stream_type_t *pal_stream_type,
+                                    char *address);
 typedef void* (*gef_init_t)(void*, gef_get_pal_info);
 typedef void (*gef_deinit_t)(void*);
 typedef void (*gef_device_config_cb_t)(void*, audio_devices_t,
@@ -260,11 +261,12 @@ int audio_extn_get_pal_info(void *hal_data,
                                 const audio_devices_t hal_device_id,
                                  pal_device_id_t *pal_device_id,
                                  audio_output_flags_t hal_stream_flag,
-                                 pal_stream_type_t *pal_stream_type)
+                                 pal_stream_type_t *pal_stream_type,
+                                 char *address)
 {
     int device_count = 0;
     AudioDevice *adev = nullptr;
-    char address[] = "CAR_AUDIO_STREAM_MEDIA";
+    //char address[] = "CAR_AUDIO_STREAM_MEDIA";
     if (hal_data) {
         adev = (AudioDevice *)hal_data;
         device_count = adev->GetPalDeviceIds({hal_device_id}, pal_device_id);
