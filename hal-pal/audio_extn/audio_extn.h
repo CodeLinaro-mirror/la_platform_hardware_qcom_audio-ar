@@ -63,7 +63,8 @@ int audio_extn_get_pal_info(void *hal_data,
                                 const audio_devices_t hal_device_id,
                                 pal_device_id_t *pal_device_id,
                                 audio_output_flags_t hal_stream_flag,
-                                pal_stream_type_t *pal_stream_type);
+                                pal_stream_type_t *pal_stream_type,
+                                char *address);
 void audio_extn_gef_notify_device_config(audio_devices_t audio_device,
                     audio_channel_mask_t channel_mask, int sample_rate,
                     int stream_type);
