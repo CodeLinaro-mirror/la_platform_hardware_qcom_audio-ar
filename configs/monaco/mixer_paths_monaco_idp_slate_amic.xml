@@ -38,10 +38,6 @@
     <ctl name="SLIM7_RX ADM Channels" value="Zero" />
     <!-- split a2dp end-->
 
-    <!-- ADSP testfwk -->
-    <ctl name="RX_CDC_DMA_RX_0_DL_HL Switch" value="0" />
-    <!-- ADSP testfwk end-->
-
     <!-- These are actual sound device specific mixer settings -->
     <path name="amic1">
     </path>
@@ -222,6 +218,90 @@
     <path name="capture-fm">
     </path>
 
+    <!-- Dual MIC devices -->
+    <path name="handset-amic-endfire">
+         <path name="amic1" />
+         <path name="amic2" />
+    </path>
+
+    <path name="speaker-amic-endfire">
+         <path name="amic1" />
+         <path name="amic2" />
+    </path>
+
+    <path name="amic-endfire">
+        <path name="handset-amic-endfire" />
+    </path>
+
+    <path name="amic-endfire-liquid">
+        <path name="handset-amic-endfire" />
+    </path>
+
+    <path name="handset-stereo-amic-ef">
+        <path name="handset-amic-endfire" />
+    </path>
+
+    <path name="speaker-stereo-amic-ef">
+        <path name="speaker-amic-endfire" />
+    </path>
+
+    <path name="voice-amic-ef-tmus">
+        <path name="amic-endfire" />
+    </path>
+
+    <path name="voice-amic-ef">
+        <path name="amic-endfire" />
+    </path>
+
+    <path name="voice-speaker-amic-ef">
+        <path name="speaker-amic-endfire" />
+    </path>
+
+    <path name="voice-rec-amic-ef">
+        <path name="amic-endfire" />
+    </path>
+
+    <path name="voice-rec-amic-ef-fluence">
+        <path name="amic-endfire" />
+    </path>
+
+    <path name="handset-stereo-amic-ef-liquid">
+        <path name="handset-amic-endfire" />
+    </path>
+
+    <path name="speaker-stereo-amic-ef-liquid">
+        <path name="speaker-amic-endfire" />
+    </path>
+
+    <path name="voice-amic-ef-liquid-liquid">
+        <path name="amic-endfire-liquid" />
+    </path>
+
+    <path name="voice-speaker-amic-ef-liquid">
+        <path name="amic-endfire-liquid" />
+    </path>
+
+    <path name="voice-rec-amic-ef-liquid">
+        <path name="amic-endfire-liquid" />
+    </path>
+
+    <path name="voice-rec-amic-ef-fluence-liquid">
+        <path name="amic-endfire-liquid" />
+    </path>
+
+    <path name="speaker-amic-broadside">
+         <path name="amic1" />
+         <path name="amic2" />
+    </path>
+
+    <path name="amic-broadside">
+        <path name="speaker-amic-broadside" />
+    </path>
+
+    <path name="voice-speaker-amic-broadside">
+        <path name="amic-broadside" />
+    </path>
+
     <!-- TTY devices -->
 
     <path name="voice-tty-hco-handset">
@@ -251,7 +331,6 @@
 
     <!-- Added for ADSP testfwk -->
     <path name="ADSP testfwk">
-        <ctl name="RX_CDC_DMA_RX_0_DL_HL Switch" value="1" />
     </path>
 
     <path name="bt-a2dp">
