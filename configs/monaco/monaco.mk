@@ -152,6 +152,7 @@ AUDIO_HAL_TEST_APPS += hal_rec_test
 PRODUCT_PACKAGES += $(AUDIO_HARDWARE)
 PRODUCT_PACKAGES += $(AUDIO_WRAPPER)
 PRODUCT_PACKAGES += $(AUDIO_HAL_TEST_APPS)
+PRODUCT_PACKAGES += ftm_test_config
 ifeq ($(TARGET_SUPPORTS_WEAR_AON),true)
  PRODUCT_PACKAGES += IDP_acdb_cal_monaco_slate.acdb
  PRODUCT_PACKAGES += IDP_workspaceFileXml_monaco_slate.qwsp
