@@ -110,6 +110,7 @@ AUDIO_HARDWARE := audio.a2dp.default
 AUDIO_HARDWARE += audio.usb.default
 AUDIO_HARDWARE += audio.r_submix.default
 AUDIO_HARDWARE += audio.primary.monaco
+AUDIO_HARDWARE += libhfp_pal
 
 #HAL Wrapper
 AUDIO_WRAPPER := libqahw
@@ -122,6 +123,21 @@ AUDIO_HAL_TEST_APPS += hal_rec_test
 PRODUCT_PACKAGES += $(AUDIO_HARDWARE)
 PRODUCT_PACKAGES += $(AUDIO_WRAPPER)
 PRODUCT_PACKAGES += $(AUDIO_HAL_TEST_APPS)
+ifeq ($(TARGET_SUPPORTS_WEAR_AON),true)
+ PRODUCT_PACKAGES += IDP_acdb_cal_monaco_slate.acdb
+ PRODUCT_PACKAGES += IDP_workspaceFileXml_monaco_slate.qwsp
+ PRODUCT_PACKAGES += IDP_acdb_cal_monaco_slate_amic.acdb
+ PRODUCT_PACKAGES += IDP_workspaceFileXml_monaco_slate_amic.qwsp
+ PRODUCT_PACKAGES += IDP_acdb_cal_monaco_slate_wsa.acdb
+ PRODUCT_PACKAGES += IDP_workspaceFileXml_monaco_slate_wsa.qwsp
+else
+ PRODUCT_PACKAGES += IDP_acdb_cal_monaco.acdb
+ PRODUCT_PACKAGES += IDP_workspaceFileXml_monaco.qwsp
+ PRODUCT_PACKAGES += IDP_acdb_cal_monaco_amic.acdb
+ PRODUCT_PACKAGES += IDP_workspaceFileXml_monaco_amic.qwsp
+ PRODUCT_PACKAGES += IDP_acdb_cal_monaco_wsa.acdb
+ PRODUCT_PACKAGES += IDP_workspaceFileXml_monaco_wsa.qwsp
+endif
 
 ifeq ($(AUDIO_FEATURE_ENABLED_DLKM),true)
 BOARD_VENDOR_KERNEL_MODULES += \
@@ -202,32 +218,37 @@ PRODUCT_COPY_FILES += \
     vendor/qcom/opensource/audio-hal/primary-hal/configs/monaco/audio_io_policy.conf:$(TARGET_COPY_OUT_VENDOR)/etc/audio_io_policy.conf \
     vendor/qcom/opensource/audio-hal/primary-hal/configs/monaco/audio_effects.conf:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects.conf \
     vendor/qcom/opensource/audio-hal/primary-hal/configs/monaco/audio_effects.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects.xml \
-    vendor/qcom/opensource/audio-hal/primary-hal/configs/monaco/mixer_paths.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths.xml \
-    vendor/qcom/opensource/audio-hal/primary-hal/configs/monaco/mixer_paths_amic.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_amic.xml \
-    vendor/qcom/opensource/audio-hal/primary-hal/configs/monaco/mixer_paths_wsa.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_wsa.xml \
-    vendor/qcom/opensource/audio-hal/primary-hal/configs/monaco/mixer_paths_slate.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_slate.xml \
-    vendor/qcom/opensource/audio-hal/primary-hal/configs/monaco/mixer_paths_slate_amic.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_slate_amic.xml \
-    vendor/qcom/opensource/audio-hal/primary-hal/configs/monaco/mixer_paths_slate_wsa.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_slate_wsa.xml \
+    vendor/qcom/opensource/audio-hal/primary-hal/configs/monaco/mixer_paths_monaco_idp.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_monaco_idp.xml \
+    vendor/qcom/opensource/audio-hal/primary-hal/configs/monaco/mixer_paths_monaco_idp_amic.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_monaco_idp_amic.xml \
+    vendor/qcom/opensource/audio-hal/primary-hal/configs/monaco/mixer_paths_monaco_idp_wsa.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_monaco_idp_wsa.xml \
+    vendor/qcom/opensource/audio-hal/primary-hal/configs/monaco/mixer_paths_monaco_idp_slate.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_monaco_idp_slate.xml \
+    vendor/qcom/opensource/audio-hal/primary-hal/configs/monaco/mixer_paths_monaco_idp_slate_amic.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_monaco_idp_slate_amic.xml \
+    vendor/qcom/opensource/audio-hal/primary-hal/configs/monaco/mixer_paths_monaco_idp_slate_wsa.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_monaco_idp_slate_wsa.xml \
     vendor/qcom/opensource/audio-hal/primary-hal/configs/monaco/audio_configs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_configs.xml \
     vendor/qcom/opensource/audio-hal/primary-hal/configs/monaco/audio_configs_stock.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_configs_stock.xml \
     frameworks/native/data/etc/android.hardware.audio.pro.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.pro.xml \
     frameworks/native/data/etc/android.hardware.audio.low_latency.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.low_latency.xml \
-    vendor/qcom/opensource/pal/configs/monaco/resourcemanager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/resourcemanager.xml \
-    vendor/qcom/opensource/pal/configs/monaco/resourcemanager_amic.xml:$(TARGET_COPY_OUT_VENDOR)/etc/resourcemanager_amic.xml \
-    vendor/qcom/opensource/pal/configs/monaco/resourcemanager_wsa.xml:$(TARGET_COPY_OUT_VENDOR)/etc/resourcemanager_wsa.xml \
-    vendor/qcom/opensource/pal/configs/monaco/resourcemanager_slate.xml:$(TARGET_COPY_OUT_VENDOR)/etc/resourcemanager_slate.xml \
-    vendor/qcom/opensource/pal/configs/monaco/resourcemanager_slate_amic.xml:$(TARGET_COPY_OUT_VENDOR)/etc/resourcemanager_slate_amic.xml \
-    vendor/qcom/opensource/pal/configs/monaco/resourcemanager_slate_wsa.xml:$(TARGET_COPY_OUT_VENDOR)/etc/resourcemanager_slate_wsa.xml \
+    vendor/qcom/opensource/pal/configs/monaco/resourcemanager_monaco_idp.xml:$(TARGET_COPY_OUT_VENDOR)/etc/resourcemanager_monaco_idp.xml \
+    vendor/qcom/opensource/pal/configs/monaco/resourcemanager_monaco_idp_amic.xml:$(TARGET_COPY_OUT_VENDOR)/etc/resourcemanager_monaco_idp_amic.xml \
+    vendor/qcom/opensource/pal/configs/monaco/resourcemanager_monaco_idp_wsa.xml:$(TARGET_COPY_OUT_VENDOR)/etc/resourcemanager_monaco_idp_wsa.xml \
+    vendor/qcom/opensource/pal/configs/monaco/resourcemanager_monaco_idp_slate.xml:$(TARGET_COPY_OUT_VENDOR)/etc/resourcemanager_monaco_idp_slate.xml \
+    vendor/qcom/opensource/pal/configs/monaco/resourcemanager_monaco_idp_slate_amic.xml:$(TARGET_COPY_OUT_VENDOR)/etc/resourcemanager_monaco_idp_slate_amic.xml \
+    vendor/qcom/opensource/pal/configs/monaco/resourcemanager_monaco_idp_slate_wsa.xml:$(TARGET_COPY_OUT_VENDOR)/etc/resourcemanager_monaco_idp_slate_wsa.xml \
     vendor/qcom/opensource/pal/configs/monaco/usecaseKvManager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usecaseKvManager.xml \
     vendor/qcom/opensource/audio-hal/primary-hal/configs/monaco/card-defs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/card-defs.xml
 
 #XML Audio configuration files
-ifneq ($(TARGET_USES_AOSP_FOR_AUDIO), true)
+ifeq ($(TARGET_SUPPORTS_WEAR_ANDROID), true)
 PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/monaco/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/audio_policy_configuration.xml
+else ifeq ($(TARGET_SUPPORTS_WEAR_OS), true)
+PRODUCT_COPY_FILES += \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/monaco/audio_policy_configuration_lw.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_configuration.xml
+else
+PRODUCT_COPY_FILES += \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_configuration.xml
 endif
 PRODUCT_COPY_FILES += \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_configuration.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/a2dp_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/a2dp_audio_policy_configuration.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/audio_policy_volumes.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_volumes.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/default_volume_tables.xml:$(TARGET_COPY_OUT_VENDOR)/etc/default_volume_tables.xml \
