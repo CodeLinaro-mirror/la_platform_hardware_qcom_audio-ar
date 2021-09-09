@@ -45,6 +45,7 @@
     <ctl name="VA_PCM1_MUX" value="ZERO" />
     <ctl name="VA_CAP_MIXER PCM_0" value="0" />
     <ctl name="VA_CAP_MIXER PCM_1" value="0" />
+    <ctl name="VAD_OP_MODE" value="HW_VAD" />
 
     <!-- split a2dp -->
     <ctl name="BT SampleRate" value="KHZ_8" />
@@ -148,8 +149,28 @@
          <ctl name="DMIC0_IN_S Switch" value="1" />
     </path>
 
+    <path name="va-mic-dmic-hw">
+         <path name="va-mic-dmic" />
+         <ctl name="VAD_OP_MODE" value="HW_VAD" />
+    </path>
+
+    <path name="va-mic-dmic-ld">
+         <path name="va-mic-dmic" />
+         <ctl name="VAD_OP_MODE" value="LVL_DETECTOR" />
+    </path>
+
+    <path name="va-mic-mono-hw">
+         <path name="va-mic-mono" />
+         <ctl name="VAD_OP_MODE" value="HW_VAD" />
+    </path>
+
+    <path name="va-mic-mono-ld">
+         <path name="va-mic-mono" />
+         <ctl name="VAD_OP_MODE" value="LVL_DETECTOR" />
+    </path>
+
     <path name="va-mic">
-        <path name="va-mic-dmic"/>
+        <path name="va-mic-dmic" />
     </path>
 
     <path name="hph-highquality-mode">
