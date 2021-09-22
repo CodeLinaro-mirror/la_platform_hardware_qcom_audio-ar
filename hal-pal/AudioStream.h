@@ -568,6 +568,7 @@ public:
     int GetMmapPosition(struct audio_mmap_position *position);
     bool isDeviceAvailable(pal_device_id_t deviceId);
     int RouteStream(const std::set<audio_devices_t>& new_devices);
+    int GetPalDeviceIds(pal_device_id_t *palDevIds, int *numPalDevs);
 protected:
     int FillHalFnPtrs();
     std::shared_ptr<audio_stream_in>    stream_;
