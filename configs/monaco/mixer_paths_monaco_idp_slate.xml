@@ -58,10 +58,6 @@
     <ctl name="SLIM7_RX ADM Channels" value="Zero" />
     <!-- split a2dp end-->
 
-    <!-- ADSP testfwk -->
-    <ctl name="RX_CDC_DMA_RX_0_DL_HL Switch" value="0" />
-    <!-- ADSP testfwk end-->
-
     <!-- These are actual sound device specific mixer settings -->
     <path name="dmic1">
         <ctl name="TX0_MIXER TX0_CAP" value="1" />
@@ -280,29 +276,13 @@
 
     <!-- Dual MIC devices -->
     <path name="handset-dmic-endfire">
-         <ctl name="DMIC0_MUX" value="DMIC1" />
-         <ctl name="DMIC1_MUX" value="DMIC0" />
-         <ctl name="TX0_INP_MUX" value="DMIC_0" />
-         <ctl name="TX1_INP_MUX" value="DMIC_1" />
-         <ctl name="LP_DEC1_MUX" value="PDM0" />
-         <ctl name="LP_DEC0_MUX" value="PDM1" />
-         <ctl name="VA_PCM0_MUX" value="LP_TX_0" />
-         <ctl name="VA_PCM1_MUX" value="LP_TX_1" />
-         <ctl name="VA_CAP_MIXER PCM_0" value="1" />
-         <ctl name="VA_CAP_MIXER PCM_1" value="1" />
+         <path name="dmic1" />
+         <path name="dmic2" />
     </path>
 
     <path name="speaker-dmic-endfire">
-         <ctl name="DMIC0_MUX" value="DMIC1" />
-         <ctl name="DMIC1_MUX" value="DMIC0" />
-         <ctl name="TX0_INP_MUX" value="DMIC_0" />
-         <ctl name="TX1_INP_MUX" value="DMIC_1" />
-         <ctl name="LP_DEC1_MUX" value="PDM0" />
-         <ctl name="LP_DEC0_MUX" value="PDM1" />
-         <ctl name="VA_PCM0_MUX" value="LP_TX_0" />
-         <ctl name="VA_PCM1_MUX" value="LP_TX_1" />
-         <ctl name="VA_CAP_MIXER PCM_0" value="1" />
-         <ctl name="VA_CAP_MIXER PCM_1" value="1" />
+         <path name="dmic1" />
+         <path name="dmic2" />
     </path>
 
     <path name="dmic-endfire">
@@ -366,16 +346,8 @@
     </path>
 
     <path name="speaker-dmic-broadside">
-         <ctl name="DMIC0_MUX" value="DMIC1" />
-         <ctl name="DMIC1_MUX" value="DMIC0" />
-         <ctl name="TX0_INP_MUX" value="DMIC_0" />
-         <ctl name="TX1_INP_MUX" value="DMIC_1" />
-         <ctl name="LP_DEC1_MUX" value="PDM0" />
-         <ctl name="LP_DEC0_MUX" value="PDM1" />
-         <ctl name="VA_PCM0_MUX" value="LP_TX_0" />
-         <ctl name="VA_PCM1_MUX" value="LP_TX_1" />
-         <ctl name="VA_CAP_MIXER PCM_0" value="1" />
-         <ctl name="VA_CAP_MIXER PCM_1" value="1" />
+         <path name="dmic1" />
+         <path name="dmic2" />
     </path>
 
     <path name="dmic-broadside">
@@ -414,7 +386,6 @@
 
     <!-- Added for ADSP testfwk -->
     <path name="ADSP testfwk">
-        <ctl name="RX_CDC_DMA_RX_0_DL_HL Switch" value="1" />
     </path>
 
     <path name="bt-a2dp">
