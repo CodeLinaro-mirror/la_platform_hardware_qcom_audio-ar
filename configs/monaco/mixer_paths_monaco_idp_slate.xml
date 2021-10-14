@@ -51,6 +51,18 @@
     <ctl name="BB_MIC_BIAS1" value="BIAS_OFF" />
     <ctl name="BB_MIC_BIAS2" value="BIAS_OFF" />
     <ctl name="VAD_OP_MODE" value="HW_VAD" />
+    <ctl name="V_IN_S Switch" value="0" />
+    <ctl name="TX2_INP_MUX" value="ZERO" />
+    <ctl name="TXCH2 Switch" value="0" />
+    <ctl name="CDC_TX2_RDDMA0_P2_MUX" value="ZERO" />
+    <ctl name="I2S0_D3_R_MUX" value="ZERO" />
+    <ctl name="VI_SENS_MIX V_SENS" value="0" />
+    <ctl name="I_IN_S Switch" value="0" />
+    <ctl name="TX3_INP_MUX" value="ZERO" />
+    <ctl name="TXCH3 Switch" value="0" />
+    <ctl name="CDC_TX3_RDDMA0_P3_MUX" value="ZERO" />
+    <ctl name="I2S0_D3_L_MUX" value="ZERO" />
+    <ctl name="VI_SENS_MIX I_SENS" value="0" />
 
     <!-- split a2dp -->
     <ctl name="BT SampleRate" value="KHZ_8" />
@@ -84,6 +96,29 @@
         <ctl name="RX0_SWITCH Switch" value="1" />
         <ctl name="SWR_DAC_PORT_0 Switch" value="1" />
         <ctl name="SPKR_OUT_S Switch" value="1" />
+    </path>
+
+    <path name="v-sens">
+        <ctl name="V_IN_S Switch" value="1" />
+        <ctl name="TX2_INP_MUX" value="SWR_HQ2" />
+        <ctl name="TXCH2 Switch" value="1" />
+        <ctl name="CDC_TX2_RDDMA0_P2_MUX" value="CDC_TX2" />
+        <ctl name="I2S0_D3_R_MUX" value="CDC_TX2_RDDMA0_P2" />
+        <ctl name="VI_SENS_MIX V_SENS" value="1" />
+    </path>
+
+    <path name="i-sens">
+        <ctl name="I_IN_S Switch" value="1" />
+        <ctl name="TX3_INP_MUX" value="SWR_HQ3" />
+        <ctl name="TXCH3 Switch" value="1" />
+        <ctl name="CDC_TX3_RDDMA0_P3_MUX" value="CDC_TX3" />
+        <ctl name="I2S0_D3_L_MUX" value="CDC_TX3_RDDMA0_P3" />
+        <ctl name="VI_SENS_MIX I_SENS" value="1" />
+    </path>
+
+    <path name="vi-feedback">
+        <path name="v-sens" />
+        <path name="i-sens" />
     </path>
 
     <path name="speaker-protected">
