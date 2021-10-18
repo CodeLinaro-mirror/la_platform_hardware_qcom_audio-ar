@@ -772,7 +772,7 @@ feature_disabled:
 
 pal_stream_type_t AudioExtn::audio_extn_autohal_GetCarAudioPalStreamType(char* address)
 {
-    pal_stream_type_t pal_stream_type = PAL_STREAM_GENERIC;
+    pal_stream_type_t pal_stream_type = PAL_STREAM_PLAYBACK_BUS;
 
     if(autohal_GetCarAudioPalStreamType)
         return autohal_GetCarAudioPalStreamType(address);

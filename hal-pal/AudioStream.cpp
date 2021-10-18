@@ -557,26 +557,26 @@ static uint32_t astream_get_latency(const struct audio_stream_out *stream) {
         period_ms = (ULL_PERIOD_MULTIPLIER * ULL_PERIOD_SIZE *
                 1000) / DEFAULT_OUTPUT_SAMPLING_RATE;
         latency = period_ms +
-            StreamOutPrimary::GetRenderLatency(astream_out->flags_, astream_out->address_) / 1000;
+            astream_out->GetRenderLatency(astream_out->flags_, astream_out->address_) / 1000;
         break;
     case USECASE_AUDIO_PLAYBACK_OFFLOAD2:
         latency = PCM_OFFLOAD_OUTPUT_PERIOD_DURATION;
-        latency += StreamOutPrimary::GetRenderLatency(astream_out->flags_, astream_out->address_) / 1000;
+        latency += astream_out->GetRenderLatency(astream_out->flags_, astream_out->address_) / 1000;
         break;
     case USECASE_AUDIO_PLAYBACK_DEEP_BUFFER:
         latency = DEEP_BUFFER_OUTPUT_PERIOD_DURATION;
-        latency += StreamOutPrimary::GetRenderLatency(astream_out->flags_, astream_out->address_) / 1000;
+        latency += astream_out->GetRenderLatency(astream_out->flags_, astream_out->address_) / 1000;
         break;
     case USECASE_AUDIO_PLAYBACK_LOW_LATENCY:
     case USECASE_AUDIO_PLAYBACK_WITH_HAPTICS:
         latency = LOW_LATENCY_OUTPUT_PERIOD_DURATION;
-        latency += StreamOutPrimary::GetRenderLatency(astream_out->flags_, astream_out->address_) / 1000;
+        latency += astream_out->GetRenderLatency(astream_out->flags_, astream_out->address_) / 1000;
         break;
     case USECASE_AUDIO_PLAYBACK_VOIP:
         latency += (VOIP_PERIOD_COUNT_DEFAULT * DEFAULT_VOIP_BUF_DURATION_MS * DEFAULT_VOIP_BIT_DEPTH_BYTE)/2;
         break;
     default:
-        latency += StreamOutPrimary::GetRenderLatency(astream_out->flags_, astream_out->address_) / 1000;
+        latency += astream_out->GetRenderLatency(astream_out->flags_, astream_out->address_) / 1000;
         break;
     }
 
@@ -1506,7 +1506,7 @@ pal_stream_type_t StreamOutPrimary::GetPalStreamType(
         palStreamType = PAL_STREAM_GENERIC;
     }
 
-    if (address && palStreamType == PAL_STREAM_GENERIC) {
+    if (address && (palStreamType == PAL_STREAM_GENERIC)) {
         /* Identify BUS number and retrive PAL stream type for BUS usecase*/
         palStreamType = AudioExtn::audio_extn_autohal_GetCarAudioPalStreamType(address);
     }
@@ -1978,17 +1978,21 @@ int64_t StreamOutPrimary::GetRenderLatency(audio_output_flags_t halStreamFlags, 
 {
     struct pal_stream_attributes streamAttributes_;
     streamAttributes_.type = StreamOutPrimary::GetPalStreamType(halStreamFlags, address);
+    int ret = -EINVAL;
+    long long latency = 0;
     AHAL_DBG("%s:%d type %d", __func__, __LINE__, streamAttributes_.type);
+
+    if(pal_stream_handle_) {
+        ret = pal_stream_get_rendering_latency(pal_stream_handle_, &latency);
+        AHAL_DBG("ret(%x), latency %lld", ret, latency);
+        return latency;
+    }
+
     switch (streamAttributes_.type) {
          case PAL_STREAM_DEEP_BUFFER:
-         case PAL_STREAM_PLAYBACK_MEDIA:
-         case PAL_STREAM_PLAYBACK_NAV_GUIDANCE:
-         case PAL_STREAM_PLAYBACK_FRONT_PASSENGER:
-         case PAL_STREAM_PLAYBACK_REAR_SEAT:
+         case PAL_STREAM_PLAYBACK_BUS:
              return DEEP_BUFFER_PLATFORM_DELAY;
          case PAL_STREAM_LOW_LATENCY:
-         case PAL_STREAM_PLAYBACK_SYS_NOTIFICATION:
-         case PAL_STREAM_PLAYBACK_PHONE:
              return LOW_LATENCY_PLATFORM_DELAY;
          case PAL_STREAM_COMPRESSED:
          case PAL_STREAM_PCM_OFFLOAD:
@@ -2145,14 +2149,9 @@ uint32_t StreamOutPrimary::GetBufferSize() {
         return get_compressed_buffer_size();
     } else if (streamAttributes_.type == PAL_STREAM_PCM_OFFLOAD
               || streamAttributes_.type == PAL_STREAM_DEEP_BUFFER
-              || streamAttributes_.type == PAL_STREAM_PLAYBACK_MEDIA
-              || streamAttributes_.type == PAL_STREAM_PLAYBACK_SYS_NOTIFICATION
-              || streamAttributes_.type == PAL_STREAM_PLAYBACK_NAV_GUIDANCE
-              || streamAttributes_.type == PAL_STREAM_PLAYBACK_FRONT_PASSENGER
-              || streamAttributes_.type == PAL_STREAM_PLAYBACK_REAR_SEAT) {
+              || streamAttributes_.type == PAL_STREAM_PLAYBACK_BUS) {
         return get_pcm_buffer_size();
-    } else if (streamAttributes_.type == PAL_STREAM_LOW_LATENCY
-              || streamAttributes_.type == PAL_STREAM_PLAYBACK_PHONE) {
+    } else if (streamAttributes_.type == PAL_STREAM_LOW_LATENCY) {
         return LOW_LATENCY_PLAYBACK_PERIOD_SIZE *
             audio_bytes_per_frame(
                     audio_channel_count_from_out_mask(config_.channel_mask),
@@ -2205,6 +2204,10 @@ int StreamOutPrimary::Open() {
         ch_info.ch_map[1] = PAL_CHMAP_CHANNEL_FR;
 
     streamAttributes_.type = StreamOutPrimary::GetPalStreamType(flags_, address_);
+    streamAttributes_.bus_addr = address_;
+    streamAttributes_.hal_flags = flags_;
+    streamAttributes_.out_media_config.ch_mask = config_.channel_mask;
+    streamAttributes_.out_media_config.format = config_.format;
     streamAttributes_.flags = (pal_stream_flags_t)flags_;
     streamAttributes_.direction = PAL_AUDIO_OUTPUT;
     streamAttributes_.out_media_config.sample_rate = config_.sample_rate;
@@ -2226,10 +2229,7 @@ int StreamOutPrimary::Open() {
         streamAttributes_.out_media_config.aud_fmt_id = getFormatId.at(config_.format & AUDIO_FORMAT_MAIN_MASK);
     } else if (streamAttributes_.type == PAL_STREAM_PCM_OFFLOAD ||
                streamAttributes_.type == PAL_STREAM_DEEP_BUFFER ||
-               streamAttributes_.type == PAL_STREAM_PLAYBACK_MEDIA ||
-               streamAttributes_.type == PAL_STREAM_PLAYBACK_NAV_GUIDANCE ||
-               streamAttributes_.type == PAL_STREAM_PLAYBACK_FRONT_PASSENGER ||
-               streamAttributes_.type == PAL_STREAM_PLAYBACK_REAR_SEAT) {
+               streamAttributes_.type == PAL_STREAM_PLAYBACK_BUS) {
         halInputFormat = config_.format;
         halOutputFormat = (audio_format_t)(getAlsaSupportedFmt.at(halInputFormat));
         streamAttributes_.out_media_config.aud_fmt_id = getFormatId.at(halOutputFormat);
@@ -2326,30 +2326,14 @@ int StreamOutPrimary::Open() {
         }
     }
 
-    if (usecase_ == USECASE_AUDIO_PLAYBACK_MMAP) {
-        outBufSize = MMAP_PERIOD_SIZE * audio_bytes_per_frame(
-                    audio_channel_count_from_out_mask(config_.channel_mask),
-                    config_.format);
-        outBufCount = MMAP_PERIOD_COUNT_DEFAULT;
-    } else if (usecase_ == USECASE_AUDIO_PLAYBACK_ULL) {
-        outBufSize = ULL_PERIOD_SIZE * audio_bytes_per_frame(
-                    audio_channel_count_from_out_mask(config_.channel_mask),
-                    config_.format);
-        outBufCount = ULL_PERIOD_COUNT_DEFAULT;
-    } else if (usecase_ == USECASE_AUDIO_PLAYBACK_WITH_HAPTICS) {
-        outBufSize = LOW_LATENCY_PLAYBACK_PERIOD_SIZE * audio_bytes_per_frame(
-                    channels,
-                    config_.format);
-        outBufCount = LOW_LATENCY_PLAYBACK_PERIOD_COUNT;
-    } else
-        outBufSize = StreamOutPrimary::GetBufferSize();
-
-    if (usecase_ == USECASE_AUDIO_PLAYBACK_LOW_LATENCY)
-        outBufCount = LOW_LATENCY_PLAYBACK_PERIOD_COUNT;
-    else if (usecase_ == USECASE_AUDIO_PLAYBACK_OFFLOAD2)
-        outBufCount = PCM_OFFLOAD_PLAYBACK_PERIOD_COUNT;
-    else if (usecase_ == USECASE_AUDIO_PLAYBACK_DEEP_BUFFER)
-        outBufCount = DEEP_BUFFER_PLAYBACK_PERIOD_COUNT;
+    ret = pal_stream_get_buffer_size(pal_stream_handle_, &outBufCount, &outBufSize);
+    AHAL_DBG("(%x:ret)",ret);
+    if(ret) {
+        AHAL_ERR("Pal get buffer size failed (%x)", ret);
+        /*Fall-back to default buffer count and size*/
+        outBufCount = NO_OF_BUF;
+        outBufSize = BUF_SIZE_PLAYBACK * NO_OF_BUF;
+    }
 
     if (halInputFormat != halOutputFormat) {
         convertBuffer = realloc(convertBuffer, outBufSize);

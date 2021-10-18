@@ -51,7 +51,7 @@ pal_stream_type_t autohal_GetCarAudioPalStreamType(char * address) {
     char *str = NULL;
     char *last_r = NULL;
     char local_address[AUDIO_DEVICE_MAX_ADDRESS_LEN] = {0};
-    pal_stream_type_t palStreamType = PAL_STREAM_LOW_LATENCY;
+    pal_stream_type_t palStreamType = PAL_STREAM_PLAYBACK_BUS;
 
     /* strtok will modify the original string. make a copy first */
     strlcpy(local_address, address, AUDIO_DEVICE_MAX_ADDRESS_LEN);
@@ -67,30 +67,6 @@ pal_stream_type_t autohal_GetCarAudioPalStreamType(char * address) {
       return palStreamType;
     }
 
-    switch(bus_num) {
-        case CAR_AUDIO_STREAM_MEDIA:
-             palStreamType = PAL_STREAM_PLAYBACK_MEDIA;
-             break;
-        case CAR_AUDIO_STREAM_SYS_NOTIFICATION:
-             palStreamType = PAL_STREAM_PLAYBACK_SYS_NOTIFICATION;
-             break;
-        case CAR_AUDIO_STREAM_PHONE:
-             palStreamType = PAL_STREAM_PLAYBACK_PHONE;
-             break;
-        case CAR_AUDIO_STREAM_FRONT_PASSENGER:
-             palStreamType = PAL_STREAM_PLAYBACK_FRONT_PASSENGER;
-             break;
-        case CAR_AUDIO_STREAM_REAR_SEAT:
-            palStreamType = PAL_STREAM_PLAYBACK_REAR_SEAT;
-            break;
-        case CAR_AUDIO_STREAM_NAV_GUIDANCE:
-            palStreamType = PAL_STREAM_PLAYBACK_NAV_GUIDANCE;
-            break;
-        default:
-            ALOGE("%s: unknown bus number %d. Default to Deep Buffer", __func__, bus_num);
-            palStreamType = PAL_STREAM_DEEP_BUFFER;
-            break;
-    }
     return palStreamType;
 }
 
