@@ -420,6 +420,18 @@
     <path name="bt-sco-mic-swb">
     </path>
 
+    <path name="bt-sco">
+    </path>
+
+    <path name="bt-sco-wb">
+    </path>
+
+    <path name="bt-sco-swb">
+    </path>
+
+    <path name="bt-a2dp-mic">
+    </path>
+
     <path name="capture-fm">
     </path>
 
