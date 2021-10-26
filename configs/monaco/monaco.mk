@@ -108,10 +108,11 @@ AUDIO_AGM += libagm_compress_plugin
 
 #PAL Module
 AUDIO_PAL := libar-pal
-AUDIO_PAL += lib_bt_bundle
 AUDIO_PAL += catf
-AUDIO_PAL += lib_bt_aptx
 AUDIO_PAL += libaudiochargerlistener
+AUDIO_PAL += lib_bt_bundle
+AUDIO_PAL += lib_bt_aptx
+AUDIO_PAL += lib_bt_ble
 BOARD_SUPPORTS_OPENSOURCE_STHAL := true
 
 AUDIO_HARDWARE := audio.a2dp.default
