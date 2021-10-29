@@ -38,7 +38,7 @@
     <ctl name="DMIC0_MUX" value="ZERO"/>
     <ctl name="CDC_RX0_MUX" value="ZERI" />
     <ctl name="RX0_SWITCH Switch" value="0" />
-    <ctl name="SWR_DAC_PORT_0 Switch" value="0" />
+    <ctl name="SPKR_OUT_0_S Switch" value="0" />
     <ctl name="LP_DEC1_MUX" value="ZERO" />
     <ctl name="LP_DEC0_MUX" value="ZERO" />
     <ctl name="VA_PCM0_MUX" value="ZERO" />
@@ -73,7 +73,7 @@
     <path name="speaker">
         <ctl name="CDC_RX0_MUX" value="I2S0_D2_L" />
         <ctl name="RX0_SWITCH Switch" value="1" />
-        <ctl name="SWR_DAC_PORT_0 Switch" value="1" />
+        <ctl name="SPKR_OUT_0_S Switch" value="1" />
     </path>
 
     <path name="speaker-protected">
