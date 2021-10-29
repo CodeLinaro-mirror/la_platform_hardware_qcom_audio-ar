@@ -430,6 +430,17 @@ vendor.audio.use.sw.mpegh.decoder=true
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.hw.aac.encoder=false
 
+#offload minimum duration set to 30sec
+PRODUCT_PRODUCT_PROPERTIES += \
+audio.offload.min.duration.secs=30
+
+#Set AudioFlinger client heap size
+PRODUCT_PRODUCT_PROPERTIES += \
+ro.af.client_heap_size_kbyte=7168
+
+PRODUCT_PRODUCT_PROPERTIES += \
+af.fast_track_multiplier=1
+
 #Set HAL buffer size to samples equal to 3 ms
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio_hal.in_period_size=144
