@@ -318,6 +318,7 @@ static int32_t start_hfp(std::shared_ptr<AudioDevice> adev __unused,
         hfpmod.tx_stream_handle = NULL;
         return ret;
     }
+    hfpmod.mic_mute = false;
     hfpmod.is_hfp_running = true;
     hfp_set_volume(hfpmod.hfp_volume);
 
@@ -399,8 +400,10 @@ int hfp_set_mic_mute(bool state)
 {
     int rc = 0;
 
-    if (state == hfpmod.mic_mute)
+    if (state == hfpmod.mic_mute) {
+        AHAL_DBG("mute state already %d", state);
         return rc;
+    }
 
     rc = hfp_set_mic_volume((state == true) ? 0.0 : hfpmod.mic_volume);
     if (rc == 0)
