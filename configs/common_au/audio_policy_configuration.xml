@@ -232,11 +232,11 @@
             </devicePorts>
             <routes>
                 <route type="mix" sink="Media Bus"
-                       sources="media"/>
+                       sources="media,mmap_no_irq_out"/>
                 <route type="mix" sink="Sys Notification Bus"
-                       sources="sys_notification"/>
+                       sources="sys_notification,mmap_no_irq_out"/>
                 <route type="mix" sink="Nav Guidance Bus"
-                       sources="nav_guidance"/>
+                       sources="nav_guidance,mmap_no_irq_out"/>
                 <route type="mix" sink="Phone Bus"
                        sources="phone"/>
                 <route type="mix" sink="Earpiece"
