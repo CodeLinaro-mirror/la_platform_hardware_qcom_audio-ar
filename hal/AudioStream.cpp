@@ -1815,8 +1815,7 @@ int StreamOutPrimary::RouteStream(const std::set<audio_devices_t>& new_devices) 
     forceRouting = AudioExtn::audio_devices_cmp(new_devices, audio_is_a2dp_out_device);
 
     /* Ignore routing to same device unless it's forced */
-    if ((!AudioExtn::audio_devices_empty(new_devices) && (mAndroidOutDevices != new_devices))
-            || forceRouting) {
+    if (!AudioExtn::audio_devices_empty(new_devices) || forceRouting) {
         // re-allocate mPalOutDevice and mPalOutDeviceIds
         if (new_devices.size() != mAndroidOutDevices.size()) {
             deviceId = (pal_device_id_t*) realloc(mPalOutDeviceIds,
@@ -2076,11 +2075,15 @@ int StreamOutPrimary::get_pcm_buffer_size()
 {
     uint8_t channels = audio_channel_count_from_out_mask(config_.channel_mask);
     uint8_t bytes_per_sample = audio_bytes_per_sample(config_.format);
+    audio_format_t src_format = config_.format;
+    audio_format_t dst_format = (audio_format_t)(getAlsaSupportedFmt.at(src_format));
+    uint32_t hal_op_bytes_per_sample = audio_bytes_per_sample(dst_format);
+    uint32_t hal_ip_bytes_per_sample = audio_bytes_per_sample(src_format);
     uint32_t fragment_size = 0;
 
-    AHAL_DBG("config_ format:%x, SR %d ch_mask 0x%x",
+    AHAL_DBG("config_ format:%x, SR %d ch_mask 0x%x, out format:%x",
             config_.format, config_.sample_rate,
-            config_.channel_mask);
+            config_.channel_mask, dst_format);
     fragment_size = PCM_OFFLOAD_OUTPUT_PERIOD_DURATION *
         config_.sample_rate * bytes_per_sample * channels;
     fragment_size /= 1000;
@@ -2091,6 +2094,16 @@ int StreamOutPrimary::get_pcm_buffer_size()
         fragment_size = MAX_PCM_FRAGMENT_SIZE;
 
     fragment_size = ALIGN(fragment_size, (bytes_per_sample * channels * 32));
+
+    if ((src_format != dst_format) &&
+         hal_op_bytes_per_sample != hal_ip_bytes_per_sample) {
+
+        fragment_size =
+                  (fragment_size * hal_ip_bytes_per_sample) /
+                   hal_op_bytes_per_sample;
+        AHAL_INFO("enable conversion hal_input_fragment_size: src_format %x dst_format %x",
+               src_format, dst_format);
+    }
 
     AHAL_DBG("fragment size: %d", fragment_size);
     return fragment_size;
@@ -2316,18 +2329,12 @@ int StreamOutPrimary::Open() {
         outBufCount = DEEP_BUFFER_PLAYBACK_PERIOD_COUNT;
 
     if (halInputFormat != halOutputFormat) {
-        convertBufSize =  PCM_OFFLOAD_OUTPUT_PERIOD_DURATION *
-                         config_.sample_rate * audio_bytes_per_frame(
-                         audio_channel_count_from_out_mask(config_.channel_mask),
-                         halOutputFormat);
-        convertBufSize /= 1000;
-        convertBuffer = realloc(convertBuffer, convertBufSize);
+        convertBuffer = realloc(convertBuffer, outBufSize);
         if (!convertBuffer) {
             ret = -ENOMEM;
             AHAL_ERR("convert Buffer allocation failed. ret %d", ret);
             goto error_open;
         }
-        outBufSize = convertBufSize;
         AHAL_DBG("convert buffer allocated for size %d", convertBufSize);
     }
 
@@ -2845,6 +2852,7 @@ StreamOutPrimary::StreamOutPrimary(
 
     /* TODO: how to update based on stream parameters and see if device is supported */
     for (int i = 0; i < mAndroidOutDevices.size(); i++) {
+        memset(mPalOutDevice[i].custom_config.custom_key, 0, sizeof(mPalOutDevice[i].custom_config.custom_key));
         mPalOutDevice[i].id = mPalOutDeviceIds[i];
         if (AudioExtn::audio_devices_cmp(mAndroidOutDevices, audio_is_usb_out_device))
             mPalOutDevice[i].config.sample_rate = config_.sample_rate;
@@ -3746,6 +3754,7 @@ StreamInPrimary::StreamInPrimary(audio_io_handle_t handle,
     }
 
     for (int i = 0; i < mAndroidInDevices.size(); i++) {
+        memset(mPalInDevice[i].custom_config.custom_key, 0, sizeof(mPalInDevice[i].custom_config.custom_key));
         mPalInDevice[i].id = mPalInDeviceIds[i];
         mPalInDevice[i].config.sample_rate = config->sample_rate;
         mPalInDevice[i].config.bit_width = CODEC_BACKEND_DEFAULT_BIT_WIDTH;

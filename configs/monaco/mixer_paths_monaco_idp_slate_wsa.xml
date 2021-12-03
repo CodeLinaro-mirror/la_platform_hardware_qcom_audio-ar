@@ -38,13 +38,17 @@
     <ctl name="DMIC0_MUX" value="ZERO"/>
     <ctl name="CDC_RX0_MUX" value="ZERI" />
     <ctl name="RX0_SWITCH Switch" value="0" />
-    <ctl name="SWR_DAC_PORT_0 Switch" value="0" />
+    <ctl name="SPKR_OUT_0_S Switch" value="0" />
     <ctl name="LP_DEC1_MUX" value="ZERO" />
     <ctl name="LP_DEC0_MUX" value="ZERO" />
     <ctl name="VA_PCM0_MUX" value="ZERO" />
     <ctl name="VA_PCM1_MUX" value="ZERO" />
     <ctl name="VA_CAP_MIXER PCM_0" value="0" />
     <ctl name="VA_CAP_MIXER PCM_1" value="0" />
+    <ctl name="DMIC0_IN_S Switch" value="0" />
+    <ctl name="DMIC1_IN_S Switch" value="0" />
+    <ctl name="BB_MIC_BIAS1" value="BIAS_OFF" />
+    <ctl name="BB_MIC_BIAS2" value="BIAS_OFF" />
     <ctl name="VAD_OP_MODE" value="HW_VAD" />
 
     <!-- split a2dp -->
@@ -55,25 +59,29 @@
 
     <!-- These are actual sound device specific mixer settings -->
     <path name="dmic1">
-        <ctl name="TX0_MIXER TX1_CAP" value="1" />
+        <ctl name="TX0_MIXER TX0_CAP" value="1" />
         <ctl name="I2S0_D0_L_MUX" value="CDC_TX1" />
         <ctl name="TXCH1 Switch" value="1" />
         <ctl name="TX1_INP_MUX" value="DMIC_1" />
         <ctl name="DMIC1_MUX" value="DMIC0"/>
+        <ctl name="DMIC0_IN_S Switch" value="1" />
+        <ctl name="BB_MIC_BIAS2" value="BIAS_ON" />
     </path>
 
     <path name="dmic2">
-        <ctl name="TX0_MIXER TX0_CAP" value="1" />
+        <ctl name="TX0_MIXER TX1_CAP" value="1" />
         <ctl name="I2S0_D0_R_MUX" value="CDC_TX0" />
         <ctl name="TXCH0 Switch" value="1" />
         <ctl name="TX0_INP_MUX" value="DMIC_0" />
         <ctl name="DMIC0_MUX" value="DMIC1"/>
+        <ctl name="DMIC1_IN_S Switch" value="1" />
+        <ctl name="BB_MIC_BIAS1" value="BIAS_ON" />
     </path>
 
     <path name="speaker">
         <ctl name="CDC_RX0_MUX" value="I2S0_D2_L" />
         <ctl name="RX0_SWITCH Switch" value="1" />
-        <ctl name="SWR_DAC_PORT_0 Switch" value="1" />
+        <ctl name="SPKR_OUT_0_S Switch" value="1" />
     </path>
 
     <path name="speaker-protected">
@@ -134,6 +142,8 @@
          <ctl name="VA_CAP_MIXER PCM_1" value="1" />
          <ctl name="DMIC0_IN_S Switch" value="1" />
          <ctl name="DMIC1_IN_S Switch" value="1" />
+         <ctl name="BB_MIC_BIAS1" value="BIAS_ON" />
+         <ctl name="BB_MIC_BIAS2" value="BIAS_ON" />
     </path>
 
     <path name="va-mic-mono">
@@ -143,6 +153,7 @@
          <ctl name="VA_PCM0_MUX" value="LP_TX_0" />
          <ctl name="VA_CAP_MIXER PCM_0" value="1" />
          <ctl name="DMIC0_IN_S Switch" value="1" />
+         <ctl name="BB_MIC_BIAS2" value="BIAS_ON" />
     </path>
 
     <path name="va-mic-dmic-hw">
@@ -256,6 +267,18 @@
     </path>
 
     <path name="bt-sco-mic-swb">
+    </path>
+
+    <path name="bt-sco">
+    </path>
+
+    <path name="bt-sco-wb">
+    </path>
+
+    <path name="bt-sco-swb">
+    </path>
+
+    <path name="bt-a2dp-mic">
     </path>
 
     <path name="capture-fm">
