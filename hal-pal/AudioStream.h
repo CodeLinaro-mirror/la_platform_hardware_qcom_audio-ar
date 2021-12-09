@@ -588,8 +588,8 @@ public:
     int GetInputUseCase(audio_input_flags_t halStreamFlags, audio_source_t source);
     int addRemoveAudioEffect(const struct audio_stream *stream, effect_handle_t effect,bool enable);
     int SetParameters(const char *kvpairs);
-    bool is_st_session;
-    bool is_st_session_active;
+    bool is_st_session = false;
+    bool is_st_session_active = false;
     audio_input_flags_t                 flags_;
     int CreateMmapBuffer(int32_t min_size_frames, struct audio_mmap_buffer_info *info);
     int GetMmapPosition(struct audio_mmap_position *position);
