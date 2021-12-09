@@ -278,7 +278,8 @@ PRODUCT_COPY_FILES += \
 ifeq ($(TARGET_SUPPORTS_WEAR_ANDROID), true)
 PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/monaco/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/audio_policy_configuration.xml
-else ifeq ($(TARGET_SUPPORTS_WEAR_OS), true)
+endif
+ifeq ($(TARGET_SUPPORTS_WEAR_OS), true)
 PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/monaco/audio_policy_configuration_lw.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_configuration.xml
 else
