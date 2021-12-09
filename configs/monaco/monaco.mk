@@ -262,7 +262,6 @@ PRODUCT_COPY_FILES += \
     vendor/qcom/opensource/audio-hal/primary-hal/configs/monaco/audio_configs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_configs.xml \
     vendor/qcom/opensource/audio-hal/primary-hal/configs/monaco/audio_configs_stock.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_configs_stock.xml \
     frameworks/native/data/etc/android.hardware.audio.pro.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.pro.xml \
-    frameworks/native/data/etc/android.hardware.audio.low_latency.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.low_latency.xml \
     vendor/qcom/opensource/pal/configs/monaco/resourcemanager_monaco_idp.xml:$(TARGET_COPY_OUT_VENDOR)/etc/resourcemanager_monaco_idp.xml \
     vendor/qcom/opensource/pal/configs/monaco/resourcemanager_monaco_idp_amic.xml:$(TARGET_COPY_OUT_VENDOR)/etc/resourcemanager_monaco_idp_amic.xml \
     vendor/qcom/opensource/pal/configs/monaco/resourcemanager_monaco_idp_wsa.xml:$(TARGET_COPY_OUT_VENDOR)/etc/resourcemanager_monaco_idp_wsa.xml \
