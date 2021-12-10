@@ -177,19 +177,17 @@ bool StreamPrimary::GetSupportedConfig(bool isOutStream,
 
     ret = str_parms_get_str(query, AUDIO_PARAMETER_STREAM_SUP_CHANNELS, value, sizeof(value));
     if (ret >= 0) {
+        value[0] = '\0';
         int stream_chn_mask = GetChannelMask();
-
         table_size = sizeof(channels_name_to_enum_table) / sizeof(struct string_to_enum);
         index = GetLookupTableIndex(channels_name_to_enum_table,
                                     table_size, stream_chn_mask);
-        value[0] = '\0';
 
-        if (isOutStream)
-            strlcat(value, "AUDIO_CHANNEL_OUT_STEREO", sizeof(value));
-        else
-            strlcat(value, "AUDIO_CHANNEL_IN_STEREO", sizeof(value));
-        str_parms_add_str(reply, AUDIO_PARAMETER_STREAM_SUP_CHANNELS, value);
-        found = true;
+        if (index >= 0) {
+            strlcat(value, channels_name_to_enum_table[index].name, sizeof(value));
+            str_parms_add_str(reply, AUDIO_PARAMETER_STREAM_SUP_CHANNELS, value);
+            found = true;
+        }
     }
 
     ret = str_parms_get_str(query, AUDIO_PARAMETER_STREAM_SUP_SAMPLING_RATES, value, sizeof(value));
