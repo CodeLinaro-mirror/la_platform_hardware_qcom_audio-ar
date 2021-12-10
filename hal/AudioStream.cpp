@@ -1709,7 +1709,7 @@ int StreamOutPrimary::Pause() {
 
     if (!pal_stream_handle_ || !stream_started_) {
         AHAL_DBG("Stream not started yet");
-        ret = -EINVAL;
+        ret = -1;
         goto exit;
     }
 
@@ -1717,7 +1717,7 @@ int StreamOutPrimary::Pause() {
         ret = pal_stream_pause(pal_stream_handle_);
     }
     if (ret)
-        ret =  -EINVAL;
+        ret = -EINVAL;
     else {
         stream_paused_ = true;
     }
@@ -1734,7 +1734,7 @@ int StreamOutPrimary::Resume() {
 
     if (!pal_stream_handle_ || !stream_started_) {
         AHAL_DBG("Stream not started yet");
-        ret = -EINVAL;
+        ret = -1;
         goto exit;
     }
 
