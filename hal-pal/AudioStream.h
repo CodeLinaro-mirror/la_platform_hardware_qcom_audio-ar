@@ -495,7 +495,7 @@ public:
     uint32_t GetBufferSize();
     int GetFrames(uint64_t *frames);
     static pal_stream_type_t GetPalStreamType(audio_output_flags_t halStreamFlags, char *address);
-    static int64_t GetRenderLatency(audio_output_flags_t flags, char *address);
+    int64_t GetRenderLatency(audio_output_flags_t flags, char *address);
     int GetOutputUseCase(audio_output_flags_t halStreamFlags);
     int StartOffloadEffects(audio_io_handle_t, pal_stream_handle_t*);
     int StopOffloadEffects(audio_io_handle_t, pal_stream_handle_t*);
@@ -561,13 +561,14 @@ public:
     int GetInputUseCase(audio_input_flags_t halStreamFlags, audio_source_t source);
     int addRemoveAudioEffect(const struct audio_stream *stream, effect_handle_t effect,bool enable);
     int SetParameters(const char *kvpairs);
-    bool is_st_session;
-    bool is_st_session_active;
+    bool is_st_session = false;
+    bool is_st_session_active = false;
     audio_input_flags_t                 flags_;
     int CreateMmapBuffer(int32_t min_size_frames, struct audio_mmap_buffer_info *info);
     int GetMmapPosition(struct audio_mmap_position *position);
     bool isDeviceAvailable(pal_device_id_t deviceId);
     int RouteStream(const std::set<audio_devices_t>& new_devices);
+    int GetPalDeviceIds(pal_device_id_t *palDevIds, int *numPalDevs);
 protected:
     int FillHalFnPtrs();
     std::shared_ptr<audio_stream_in>    stream_;
