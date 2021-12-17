@@ -108,9 +108,11 @@ AUDIO_AGM += libagm_compress_plugin
 
 #PAL Module
 AUDIO_PAL := libar-pal
-AUDIO_PAL += lib_bt_bundle
 AUDIO_PAL += catf
+AUDIO_PAL += libaudiochargerlistener
+AUDIO_PAL += lib_bt_bundle
 AUDIO_PAL += lib_bt_aptx
+AUDIO_PAL += lib_bt_ble
 BOARD_SUPPORTS_OPENSOURCE_STHAL := true
 
 AUDIO_HARDWARE := audio.a2dp.default
@@ -429,6 +431,17 @@ vendor.audio.use.sw.mpegh.decoder=true
 #enable hw aac encoder by default
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.hw.aac.encoder=false
+
+#offload minimum duration set to 30sec
+PRODUCT_PRODUCT_PROPERTIES += \
+audio.offload.min.duration.secs=30
+
+#Set AudioFlinger client heap size
+PRODUCT_PRODUCT_PROPERTIES += \
+ro.af.client_heap_size_kbyte=7168
+
+PRODUCT_PRODUCT_PROPERTIES += \
+af.fast_track_multiplier=1
 
 #Set HAL buffer size to samples equal to 3 ms
 PRODUCT_PROPERTY_OVERRIDES += \
