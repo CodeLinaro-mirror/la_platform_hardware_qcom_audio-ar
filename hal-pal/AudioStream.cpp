@@ -2986,6 +2986,9 @@ int StreamInPrimary::Open() {
     streamAttributes_.flags = (pal_stream_flags_t)0;
     streamAttributes_.direction = PAL_AUDIO_INPUT;
     streamAttributes_.in_media_config.sample_rate = config_.sample_rate;
+    streamAttributes_.bus_addr = address_;
+    AHAL_DBG("%s BUS Address (%s)", __func__, address_);
+
     if (is_pcm_format(config_.format)) {
        streamAttributes_.in_media_config.aud_fmt_id = getFormatId.at(config_.format);
        streamAttributes_.in_media_config.bit_width = format_to_bitwidth_table[config_.format];
@@ -3355,6 +3358,12 @@ StreamInPrimary::StreamInPrimary(audio_io_handle_t handle,
         stream_.get()->create_mmap_buffer = astream_in_create_mmap_buffer;
         stream_.get()->get_mmap_position = astream_in_get_mmap_position;
     }
+    if (address) {
+         strlcpy(address_, address, AUDIO_DEVICE_MAX_ADDRESS_LEN);
+         AHAL_DBG("address = %s\n", address_);
+     } else {
+         AHAL_DBG("address not present");
+     }
     (void)FillHalFnPtrs();
     mInitialized = true;
 error:
