@@ -1997,14 +1997,20 @@ int StreamOutPrimary::SetParameters(struct str_parms *parms) {
         ret1 = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_DELAY_SAMPLES, value, sizeof(value));
         if (ret1 >= 0 ) {
             gaplessMeta.encoderDelay = atoi(value);
+            sendGaplessMetadata = true;
             AHAL_DBG("new encoder delay %u", gaplessMeta.encoderDelay);
+        } else {
+            gaplessMeta.encoderDelay = 0;
         }
+
         ret1 = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_PADDING_SAMPLES, value, sizeof(value));
         if (ret1 >= 0) {
             gaplessMeta.encoderPadding = atoi(value);
+            sendGaplessMetadata = true;
             AHAL_DBG("padding %u", gaplessMeta.encoderPadding);
+        } else {
+            gaplessMeta.encoderPadding = 0;
         }
-        sendGaplessMetadata = true;
     }
 error:
     AHAL_ERR("exit %d", ret);
@@ -2884,6 +2890,8 @@ StreamOutPrimary::StreamOutPrimary(
     mBytesWritten = 0;
     int noPalDevices = 0;
     int ret = 0;
+    /*Initialize the gaplessMeta value with 0*/
+    memset(&gaplessMeta,0,sizeof(struct pal_compr_gapless_mdata));
 
     if (!stream_) {
         AHAL_ERR("No memory allocated for stream_");
