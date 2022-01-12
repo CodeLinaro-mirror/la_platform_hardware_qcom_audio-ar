@@ -26,6 +26,38 @@
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+/*
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted (subject to the limitations in the
+ * disclaimer below) provided that the following conditions are met:
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above
+ *     copyright notice, this list of conditions and the following
+ *     disclaimer in the documentation and/or other materials provided
+ *     with the distribution.
+ *   * Neither the name of Qualcomm Innovation Center, Inc. nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
+
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE
+ * GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT
+ * HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+ * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+ * IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+ * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE
+*/
 
 #define LOG_TAG "AHAL: AudioStream"
 #define ATRACE_TAG (ATRACE_TAG_AUDIO | ATRACE_TAG_HAL)
@@ -245,6 +277,7 @@ static int32_t pal_callback(pal_stream_handle_t *stream_handle,
             std::lock_guard<std::mutex> drain_guard (astream_out->drain_wait_mutex_);
             astream_out->drain_ready_ = true;
             astream_out->sendGaplessMetadata = false;
+            astream_out->sendNextTrackParams = false;
             AHAL_DBG("received DRAIN_READY event");
             (astream_out->drain_condition_).notify_all();
             event = STREAM_CBK_EVENT_DRAIN_READY;
@@ -255,6 +288,7 @@ static int32_t pal_callback(pal_stream_handle_t *stream_handle,
             std::lock_guard<std::mutex> drain_guard (astream_out->drain_wait_mutex_);
             astream_out->drain_ready_ = true;
             astream_out->sendGaplessMetadata = true;
+            astream_out->sendNextTrackParams = true;
             AHAL_DBG("received PARTIAL DRAIN_READY event");
             (astream_out->drain_condition_).notify_all();
             event = STREAM_CBK_EVENT_DRAIN_READY;
@@ -2629,11 +2663,39 @@ ssize_t StreamOutPrimary::configurePalOutputStream() {
         }
         ATRACE_END();
     }
-    if ((streamAttributes_.type == PAL_STREAM_COMPRESSED) && sendGaplessMetadata) {
+    if ((streamAttributes_.type == PAL_STREAM_COMPRESSED) && sendNextTrackParams) {
+        // Send codec params first.
         pal_param_payload *param_payload = nullptr;
         param_payload = (pal_param_payload *) calloc (1,
                                               sizeof(pal_param_payload) +
-                                              sizeof(struct pal_compr_gapless_mdata));
+                                              sizeof(pal_snd_dec_t));
+
+        if (param_payload) {
+            param_payload->payload_size = sizeof(pal_snd_dec_t);
+            memcpy(param_payload->payload, &palSndDec, param_payload->payload_size);
+
+            ret = pal_stream_set_param(pal_stream_handle_,
+                                       PAL_PARAM_ID_CODEC_CONFIGURATION,
+                                       param_payload);
+            if (ret) {
+                AHAL_INFO("Pal Set Param for codec configuration failed (%x)", ret);
+                ret = 0;
+            }
+            free(param_payload);
+
+        } else {
+            AHAL_ERR("calloc failed for size %zu",
+                   sizeof(pal_param_payload) + sizeof(pal_snd_dec_t));
+        }
+        sendNextTrackParams = false;
+    }
+
+    if ((streamAttributes_.type == PAL_STREAM_COMPRESSED) && sendGaplessMetadata) {
+        //Send gapless metadata
+        pal_param_payload *param_payload = nullptr;
+        param_payload = (pal_param_payload *) calloc (1,
+                                          sizeof(pal_param_payload) +
+                                          sizeof(struct pal_compr_gapless_mdata));
         if (param_payload) {
             AHAL_DBG("sending gapless metadata");
             param_payload->payload_size = sizeof(struct pal_compr_gapless_mdata);
@@ -2642,8 +2704,10 @@ ssize_t StreamOutPrimary::configurePalOutputStream() {
             ret = pal_stream_set_param(pal_stream_handle_,
                                        PAL_PARAM_ID_GAPLESS_MDATA,
                                        param_payload);
-            if (ret)
-                AHAL_ERR("PAL set param for gapless failed, error (%x)", ret);
+            if (ret) {
+                AHAL_INFO("PAL set param for gapless failed, error (%x)", ret);
+                ret = 0;
+            }
             free(param_payload);
         } else {
             AHAL_ERR("Failed to allocate gapless payload");
