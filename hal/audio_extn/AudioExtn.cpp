@@ -103,6 +103,10 @@ static bool audio_extn_kpi_optimize_feature_enabled = false;
 
 int AudioExtn::audio_extn_parse_compress_metadata(struct audio_config *config_, pal_snd_dec_t *pal_snd_dec,
                                str_parms *parms, uint32_t *sr, uint16_t *ch, bool *isCompressMetadataAvail) {
+
+   if (config_ == NULL || pal_snd_dec == NULL || parms == NULL || sr == NULL || ch == NULL || isCompressMetadataAvail == NULL) {
+        return -EINVAL;
+   }
    int ret = 0;
    char value[32];
    *sr = 0;
