@@ -121,6 +121,7 @@
 
     <path name="handset-mic">
         <path name="amic1" />
+        <path name="amic2" />
     </path>
 
     <path name="va-mic-mono">

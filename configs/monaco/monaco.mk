@@ -90,6 +90,9 @@ AUDIO_FEATURE_ENABLED_SND_MONITOR := true
 AUDIO_FEATURE_ENABLED_USB_BURST_MODE := true
 AUDIO_FEATURE_ENABLED_SVA_MULTI_STAGE := true
 AUDIO_FEATURE_ENABLED_BATTERY_LISTENER := true
+ifeq ($(TARGET_SUPPORTS_WEAR_AON),true)
+AUDIO_FEATURE_ENABLE_BT_A2DP_LPI := true
+endif
 ##AUDIO_FEATURE_FLAGS
 #AGM
 AUDIO_AGM := libagmclient
@@ -162,6 +165,8 @@ ifeq ($(TARGET_SUPPORTS_WEAR_AON),true)
  PRODUCT_PACKAGES += IDP_workspaceFileXml_monaco_slate_amic.qwsp
  PRODUCT_PACKAGES += IDP_acdb_cal_monaco_slate_wsa.acdb
  PRODUCT_PACKAGES += IDP_workspaceFileXml_monaco_slate_wsa.qwsp
+ PRODUCT_PACKAGES += fai__2.0.0_0.1__3.0.0_0.0__eai_1.10.pmd
+ PRODUCT_PACKAGES += fai__2.2.0_0.1__3.0.0_0.0__eai_1.10.pmd
 else
  PRODUCT_PACKAGES += IDP_acdb_cal_monaco.acdb
  PRODUCT_PACKAGES += IDP_workspaceFileXml_monaco.qwsp
@@ -262,7 +267,6 @@ PRODUCT_COPY_FILES += \
     vendor/qcom/opensource/audio-hal/primary-hal/configs/monaco/audio_configs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_configs.xml \
     vendor/qcom/opensource/audio-hal/primary-hal/configs/monaco/audio_configs_stock.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_configs_stock.xml \
     frameworks/native/data/etc/android.hardware.audio.pro.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.pro.xml \
-    frameworks/native/data/etc/android.hardware.audio.low_latency.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.low_latency.xml \
     vendor/qcom/opensource/pal/configs/monaco/resourcemanager_monaco_idp.xml:$(TARGET_COPY_OUT_VENDOR)/etc/resourcemanager_monaco_idp.xml \
     vendor/qcom/opensource/pal/configs/monaco/resourcemanager_monaco_idp_amic.xml:$(TARGET_COPY_OUT_VENDOR)/etc/resourcemanager_monaco_idp_amic.xml \
     vendor/qcom/opensource/pal/configs/monaco/resourcemanager_monaco_idp_wsa.xml:$(TARGET_COPY_OUT_VENDOR)/etc/resourcemanager_monaco_idp_wsa.xml \
@@ -276,7 +280,8 @@ PRODUCT_COPY_FILES += \
 ifeq ($(TARGET_SUPPORTS_WEAR_ANDROID), true)
 PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/monaco/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/audio_policy_configuration.xml
-else ifeq ($(TARGET_SUPPORTS_WEAR_OS), true)
+endif
+ifeq ($(TARGET_SUPPORTS_WEAR_OS), true)
 PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/monaco/audio_policy_configuration_lw.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_configuration.xml
 else
@@ -294,7 +299,7 @@ PRODUCT_COPY_FILES += \
 # C2 Audio files
 ifeq ($(AUDIO_FEATURE_ENABLED_CODEC_2_0), true)
 PRODUCT_COPY_FILES += \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/codec2/media_codecs_c2_audio.xml:vendor/etc/media_codecs_c2_audio.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/monaco/media_codecs_c2_audio.xml:vendor/etc/media_codecs_c2_audio.xml \
     $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/media_codecs_vendor_audio.xml:vendor/etc/media_codecs_vendor_audio.xml \
     $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/codec2/service/1.0/c2audio.vendor.base-arm.policy:vendor/etc/seccomp_policy/c2audio.vendor.base-arm.policy \
     $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/codec2/service/1.0/c2audio.vendor.base-arm64.policy:vendor/etc/seccomp_policy/c2audio.vendor.base-arm64.policy \

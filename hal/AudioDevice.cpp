@@ -1629,7 +1629,7 @@ int AudioDevice::SetParameters(const char *kvpairs) {
 
 exit:
     AHAL_DBG("exit: %s", kvpairs);
-    return ret;
+    return 0;
 }
 
 int AudioDevice::SetVoiceVolume(float volume) {
