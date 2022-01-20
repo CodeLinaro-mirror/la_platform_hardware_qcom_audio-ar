@@ -431,22 +431,12 @@ void hfp_set_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *par
     status = str_parms_get_str(parms, AUDIO_PARAMETER_HFP_ENABLE, value,
                                     sizeof(value));
     if (status >= 0) {
-        if (!strncmp(value, "true", sizeof(value)) && !hfpmod.is_hfp_running) {
+        if (!strncmp(value, "true", sizeof(value)) && !hfpmod.is_hfp_running)
             status = start_hfp(adev, parms);
-            /*
-             * Sync to adev mic mute state if hfpmod.mic_mute state is lost due
-             * to HFP session tear down during device switch on companion device.
-             */
-            if (hfpmod.mic_mute != adev->mute_) {
-                AHAL_DBG("update mic mute with latest mute state = %d", adev->mute_);
-                hfp_set_mic_mute(adev->mute_);
-            }
-
-        } else if (!strncmp(value, "false", sizeof(value)) && hfpmod.is_hfp_running) {
+        else if (!strncmp(value, "false", sizeof(value)) && hfpmod.is_hfp_running)
             stop_hfp();
-        } else {
+        else
             AHAL_ERR("hfp_enable=%s is unsupported", value);
-        }
     }
 
     memset(value, 0, sizeof(value));
