@@ -2253,8 +2253,8 @@ int StreamOutPrimary::Open() {
     streamAttributes_.type = StreamOutPrimary::GetPalStreamType(flags_, address_);
     streamAttributes_.bus_addr = address_;
     streamAttributes_.hal_flags = flags_;
-    streamAttributes_.out_media_config.ch_mask = config_.channel_mask;
-    streamAttributes_.out_media_config.format = config_.format;
+    streamAttributes_.ch_mask = config_.channel_mask;
+    streamAttributes_.format = config_.format;
     streamAttributes_.flags = (pal_stream_flags_t)flags_;
     streamAttributes_.direction = PAL_AUDIO_OUTPUT;
     streamAttributes_.out_media_config.sample_rate = config_.sample_rate;
