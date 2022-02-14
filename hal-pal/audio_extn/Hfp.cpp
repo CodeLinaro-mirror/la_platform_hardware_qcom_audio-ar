@@ -78,7 +78,7 @@ static struct hfp_module hfpmod = {
 
 static int32_t hfp_set_volume(float value)
 {
-    int32_t vol, ret = 0;
+    int32_t ret = 0;
     struct pal_volume_data *pal_volume = NULL;
 
     AHAL_VERBOSE("entry");
@@ -89,18 +89,14 @@ static int32_t hfp_set_volume(float value)
     if (value < 0.0) {
         ALOGW("(%f) Under 0.0, assuming 0.0\n", value);
         value = 0.0;
-    } else {
-        value = ((value > 15.000000) ? 1.0 : (value / 15));
-        ALOGW("Volume brought with in range (%f)\n", value);
     }
-    vol  = lrint((value * 0x2000) + 0.5);
 
     if (!hfpmod.is_hfp_running) {
         AHAL_VERBOSE("HFP not active, ignoring set_hfp_volume call");
         return -EIO;
     }
 
-    AHAL_DBG("Setting HFP volume to %d \n", vol);
+    AHAL_DBG("Setting HFP volume to %f \n", value);
 
     pal_volume = (struct pal_volume_data *)malloc(sizeof(struct pal_volume_data)
             +sizeof(struct pal_channel_vol_kv));
