@@ -102,30 +102,36 @@ endif
 #Automotive audio specific device overlays
 DEVICE_PACKAGE_OVERLAYS += vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/overlay
 
+
+# Configuration files shared between msmnile_gvmgh and others
+PRODUCT_COPY_FILES += \
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/card-defs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/card-defs.xml \
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/mixer_paths.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths.xml
+
+
+# Configuration files for msmnile_gvmgh only
+ifneq (,$(filter msmnile_gvmgh, $(TARGET_PRODUCT) $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)))
 PRODUCT_COPY_FILES += \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/audio_io_policy.conf:$(TARGET_COPY_OUT_VENDOR)/etc/audio_io_policy.conf \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/audio_effects.conf:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects.conf \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/audio_effects.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects.xml \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/mixer_paths_adp.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_adp.xml \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/audio_tuning_mixer.txt:$(TARGET_COPY_OUT_VENDOR)/etc/audio_tuning_mixer.txt \
-    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/card-defs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/card-defs.xml \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/sound_trigger_platform_info.xml:$(TARGET_COPY_OUT_VENDOR)/etc/sound_trigger_platform_info.xml \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/graphite_ipc_platform_info.xml:$(TARGET_COPY_OUT_VENDOR)/etc/graphite_ipc_platform_info.xml \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/audio_platform_info.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_platform_info.xml \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/audio_platform_info_qrd.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_platform_info_qrd.xml \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/mixer_paths_custom.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_custom.xml \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/sound_trigger_mixer_paths.xml:$(TARGET_COPY_OUT_VENDOR)/etc/sound_trigger_mixer_paths.xml \
-    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/mixer_paths.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths.xml \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/audio_configs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_configs.xml \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/audio_configs_stock.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_configs_stock.xml \
     frameworks/native/data/etc/android.hardware.audio.pro.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.pro.xml \
     frameworks/native/data/etc/android.hardware.audio.low_latency.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.low_latency.xml
 
-#XML Audio configuration files
+# XML Audio configuration files
 PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/audio_policy_configuration.xml \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/microphone_characteristics.xml
-PRODUCT_COPY_FILES += \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/microphone_characteristics.xml \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_configuration.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/a2dp_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/a2dp_audio_policy_configuration.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/audio_policy_volumes.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_volumes.xml \
@@ -139,6 +145,7 @@ PRODUCT_COPY_FILES += \
 # Listen configuration file
 PRODUCT_COPY_FILES += \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/listen_platform_info.xml:$(TARGET_COPY_OUT_VENDOR)/etc/listen_platform_info.xml
+endif
 
 #Audio HAL version
 PRODUCT_PROPERTY_OVERRIDES += \
@@ -269,7 +276,7 @@ PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.use.sw.ape.decoder=true
 
 #enable hw aac encoder by default
-ifneq (,$(filter msmnile_gvmgh,$(TARGET_PRODUCT) $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)))
+ifneq (,$(filter msmnile_gvmgh, $(TARGET_PRODUCT) $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)))
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.hw.aac.encoder=true
 endif
@@ -312,12 +319,12 @@ vendor.audio.hal.output.suspend.supported=false
 
 #Enable AAudio MMAP/NOIRQ data path
 #2 is AAUDIO_POLICY_AUTO so it will try MMAP then fallback to Legacy path
-ifneq (,$(filter msmnile_gvmgh,$(TARGET_PRODUCT) $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)))
+ifneq (,$(filter msmnile_gvmgh, $(TARGET_PRODUCT) $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)))
 PRODUCT_PROPERTY_OVERRIDES += aaudio.mmap_policy=2
 #Allow EXCLUSIVE then fall back to SHARED.
 PRODUCT_PROPERTY_OVERRIDES += aaudio.mmap_exclusive_policy=2
-endif
 PRODUCT_PROPERTY_OVERRIDES += aaudio.hw_burst_min_usec=4000
+endif
 
 #enable mirror-link feature
 PRODUCT_PROPERTY_OVERRIDES += \
@@ -386,7 +393,7 @@ vendor.audio.feature.audiozoom.enable=false \
 vendor.audio.feature.snd_mon.enable=false \
 vendor.audio.feature.auto_hal.enable=true \
 vendor.audio.feature.auto_hal_pal.enable=true
-ifneq (,$(filter msmnile_gvmgh,$(TARGET_PRODUCT) $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)))
+ifneq (,$(filter msmnile_gvmgh, $(TARGET_PRODUCT) $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)))
 PRODUCT_ODM_PROPERTIES += \
 vendor.audio.feature.concurrent_capture.enable=true
 endif
@@ -435,7 +442,7 @@ vendor.audio.feature.audiozoom.enable=false \
 vendor.audio.feature.snd_mon.enable=false \
 vendor.audio.feature.auto_hal.enable=true \
 vendor.audio.feature.auto_hal_pal.enable=true
-ifneq (,$(filter msmnile_gvmgh,$(TARGET_PRODUCT) $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)))
+ifneq (,$(filter msmnile_gvmgh, $(TARGET_PRODUCT) $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)))
 PRODUCT_ODM_PROPERTIES += \
 vendor.audio.feature.concurrent_capture.enable=true
 endif
@@ -483,6 +490,12 @@ PRODUCT_PACKAGES_DEBUG += \
 PRODUCT_PACKAGES += \
     vendor.qti.hardware.automotive.audiocontrol@1.0-service \
     android.hardware.automotive.audiocontrol@1.0
+
+# for AudioReach HAL
+ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_gvmq)
+PRODUCT_PACKAGES += \
+    audio.primary.msmnile.ar
+endif
 
 ifeq ($(ENABLE_HYP),true)
 PRODUCT_PROPERTY_OVERRIDES += \
