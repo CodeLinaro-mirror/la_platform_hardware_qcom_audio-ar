@@ -269,8 +269,10 @@ PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.use.sw.ape.decoder=true
 
 #enable hw aac encoder by default
+ifneq (,$(filter msmnile_gvmgh,$(TARGET_PRODUCT) $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)))
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.hw.aac.encoder=true
+endif
 
 #force offload using hardware decoders for FLAC, WMA & APE
 PRODUCT_PROPERTY_OVERRIDES += \
@@ -310,9 +312,11 @@ vendor.audio.hal.output.suspend.supported=false
 
 #Enable AAudio MMAP/NOIRQ data path
 #2 is AAUDIO_POLICY_AUTO so it will try MMAP then fallback to Legacy path
+ifneq (,$(filter msmnile_gvmgh,$(TARGET_PRODUCT) $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)))
 PRODUCT_PROPERTY_OVERRIDES += aaudio.mmap_policy=2
 #Allow EXCLUSIVE then fall back to SHARED.
 PRODUCT_PROPERTY_OVERRIDES += aaudio.mmap_exclusive_policy=2
+endif
 PRODUCT_PROPERTY_OVERRIDES += aaudio.hw_burst_min_usec=4000
 
 #enable mirror-link feature
@@ -348,7 +352,6 @@ vendor.audio.feature.compr_cap.enable=false \
 vendor.audio.feature.compress_in.enable=false \
 vendor.audio.feature.compress_meta_data.enable=false \
 vendor.audio.feature.compr_voip.enable=false \
-vendor.audio.feature.concurrent_capture.enable=true  \
 vendor.audio.feature.custom_stereo.enable=false \
 vendor.audio.feature.display_port.enable=false \
 vendor.audio.feature.dsm_feedback.enable=false \
@@ -383,6 +386,10 @@ vendor.audio.feature.audiozoom.enable=false \
 vendor.audio.feature.snd_mon.enable=false \
 vendor.audio.feature.auto_hal.enable=true \
 vendor.audio.feature.auto_hal_pal.enable=true
+ifneq (,$(filter msmnile_gvmgh,$(TARGET_PRODUCT) $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)))
+PRODUCT_ODM_PROPERTIES += \
+vendor.audio.feature.concurrent_capture.enable=true
+endif
 else
 # Non-Generic ODM varient related
 PRODUCT_ODM_PROPERTIES += \
@@ -394,7 +401,6 @@ vendor.audio.feature.compr_cap.enable=false \
 vendor.audio.feature.compress_in.enable=true \
 vendor.audio.feature.compress_meta_data.enable=true \
 vendor.audio.feature.compr_voip.enable=false \
-vendor.audio.feature.concurrent_capture.enable=true \
 vendor.audio.feature.custom_stereo.enable=true \
 vendor.audio.feature.display_port.enable=true \
 vendor.audio.feature.dsm_feedback.enable=false \
@@ -429,6 +435,10 @@ vendor.audio.feature.audiozoom.enable=false \
 vendor.audio.feature.snd_mon.enable=false \
 vendor.audio.feature.auto_hal.enable=true \
 vendor.audio.feature.auto_hal_pal.enable=true
+ifneq (,$(filter msmnile_gvmgh,$(TARGET_PRODUCT) $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)))
+PRODUCT_ODM_PROPERTIES += \
+vendor.audio.feature.concurrent_capture.enable=true
+endif
 endif
 
 # for HIDL related packages
