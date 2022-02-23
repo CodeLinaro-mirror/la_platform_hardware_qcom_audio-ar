@@ -177,6 +177,7 @@ persist.vendor.audio.ras.enabled=false
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.offload.buffer.size.kb=32
 
+ifeq ($(PRODUCT_NAME), msmnile_gvmgh)
 #Enable offload audio video playback by default
 PRODUCT_PROPERTY_OVERRIDES += \
 audio.offload.video=false
@@ -184,11 +185,13 @@ audio.offload.video=false
 #Enable audio track offload by default
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.offload.track.enable=false
+endif
 
 #Enable music through deep buffer
 PRODUCT_PROPERTY_OVERRIDES += \
 audio.deep_buffer.media=true
 
+ifeq ($(PRODUCT_NAME), msmnile_gvmgh)
 #enable voice path for PCM VoIP by default
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.voice.path.for.pcm.voip=false
@@ -196,6 +199,7 @@ vendor.voice.path.for.pcm.voip=false
 #Enable multi channel aac through offload
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.offload.multiaac.enable=false
+endif
 
 #Enable DS2, Hardbypass feature for Dolby
 PRODUCT_PROPERTY_OVERRIDES += \
@@ -214,9 +218,11 @@ vendor.audio.offload.passthrough=false
 PRODUCT_PROPERTY_OVERRIDES += \
 ro.vendor.audio.sdk.ssr=false
 
+ifeq ($(PRODUCT_NAME), msmnile_gvmgh)
 #enable dsp gapless mode by default
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.offload.gapless.enabled=false
+endif
 
 #enable pbe effects
 PRODUCT_PROPERTY_OVERRIDES += \
@@ -226,6 +232,7 @@ vendor.audio.safx.pbe.enabled=false
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.parser.ip.buffer.size=262144
 
+ifeq ($(PRODUCT_NAME), msmnile_gvmgh)
 #Enable 16 bit PCM offload by default
 PRODUCT_PROPERTY_OVERRIDES += \
 audio.offload.pcm.16bit.enable=false
@@ -253,11 +260,13 @@ PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.use.sw.alac.decoder=false
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.use.sw.ape.decoder=false
+endif
 
 #enable hw aac encoder by default
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.hw.aac.encoder=false
 
+ifeq ($(PRODUCT_NAME), msmnile_gvmgh)
 #force offload using hardware decoders for FLAC, WMA & APE
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.use.hw.flac.decoder=false
@@ -265,6 +274,7 @@ PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.use.hw.wma.decoder=false
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.use.hw.ape.decoder=false
+endif
 
 #audio becoming noisy intent broadcast delay
 PRODUCT_PROPERTY_OVERRIDES += \
@@ -296,15 +306,18 @@ vendor.audio.hal.output.suspend.supported=false
 
 #Enable AAudio MMAP/NOIRQ data path
 #2 is AAUDIO_POLICY_AUTO so it will try MMAP then fallback to Legacy path
+ifeq ($(PRODUCT_NAME), msmnile_gvmgh)
 PRODUCT_PROPERTY_OVERRIDES += aaudio.mmap_policy=2
 #Allow EXCLUSIVE then fall back to SHARED.
 PRODUCT_PROPERTY_OVERRIDES += aaudio.mmap_exclusive_policy=2
 PRODUCT_PROPERTY_OVERRIDES += aaudio.hw_burst_min_usec=4000
+endif
 
 #enable mirror-link feature
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.enable.mirrorlink=false
 
+ifeq ($(PRODUCT_NAME), msmnile_gvmgh)
 #enable voicecall speaker stereo
 PRODUCT_PROPERTY_OVERRIDES += \
 persist.vendor.audio.voicecall.speaker.stereo=false
@@ -312,6 +325,7 @@ persist.vendor.audio.voicecall.speaker.stereo=false
 #enable AAC frame ctl for A2DP sinks
 PRODUCT_PROPERTY_OVERRIDES += \
 persist.vendor.bt.aac_frm_ctl.enabled=false
+endif
 endif
 
 #enable headset calibration
@@ -326,7 +340,6 @@ persist.vendor.audio.fluence.voicecomm=true
 ifeq ($(TARGET_USES_AOSP_FOR_AUDIO),true)
 # Generic ODM varient related
 PRODUCT_ODM_PROPERTIES += \
-vendor.audio.feature.a2dp_offload.enable=false \
 vendor.audio.feature.afe_proxy.enable=false \
 vendor.audio.feature.anc_headset.enable=false \
 vendor.audio.feature.battery_listener.enable=false \
@@ -350,7 +363,6 @@ vendor.audio.feature.hdmi_passthrough.enable=false \
 vendor.audio.feature.hfp.enable=true  \
 vendor.audio.feature.hifi_audio.enable=false \
 vendor.audio.feature.hwdep_cal.enable=false  \
-vendor.audio.feature.incall_music.enable=false  \
 vendor.audio.feature.keep_alive.enable=false \
 vendor.audio.feature.kpi_optimize.enable=false \
 vendor.audio.feature.maxx_audio.enable=false  \
@@ -359,7 +371,6 @@ vendor.audio.feature.record_play_concurency.enable=false \
 vendor.audio.feature.src_trkn.enable=false \
 vendor.audio.feature.spkr_prot.enable=false  \
 vendor.audio.feature.ssrec.enable=false \
-vendor.audio.feature.usb_offload.enable=false \
 vendor.audio.feature.usb_offload_burst_mode.enable=false  \
 vendor.audio.feature.usb_offload_sidetone_volume.enable=false \
 vendor.audio.feature.deepbuffer_as_primary.enable=false \
@@ -368,6 +379,11 @@ vendor.audio.feature.wsa.enable=false \
 vendor.audio.feature.audiozoom.enable=false \
 vendor.audio.feature.auto_hal.enable=true \
 vendor.audio.feature.auto_hal_pal.enable=true
+ifeq ($(PRODUCT_NAME), msmnile_gvmgh)
+PRODUCT_ODM_PROPERTIES += \
+vendor.audio.feature.a2dp_offload.enable=false \
+vendor.audio.feature.incall_music.enable=false \
+vendor.audio.feature.usb_offload.enable=false
 ifeq ($(AUDIO_FEATURE_ENABLED_SND_MONITOR), true)
 PRODUCT_ODM_PROPERTIES += \
 vendor.audio.feature.snd_mon.enable=true
@@ -375,10 +391,10 @@ else
 PRODUCT_ODM_PROPERTIES += \
 vendor.audio.feature.snd_mon.enable=false
 endif
+endif
 else
 # Non-Generic ODM varient related
 PRODUCT_ODM_PROPERTIES += \
-vendor.audio.feature.a2dp_offload.enable=false \
 vendor.audio.feature.afe_proxy.enable=true \
 vendor.audio.feature.anc_headset.enable=false \
 vendor.audio.feature.battery_listener.enable=false \
@@ -402,7 +418,6 @@ vendor.audio.feature.hdmi_passthrough.enable=false \
 vendor.audio.feature.hfp.enable=true \
 vendor.audio.feature.hifi_audio.enable=false \
 vendor.audio.feature.hwdep_cal.enable=false \
-vendor.audio.feature.incall_music.enable=false \
 vendor.audio.feature.keep_alive.enable=true \
 vendor.audio.feature.kpi_optimize.enable=false \
 vendor.audio.feature.maxx_audio.enable=false \
@@ -411,7 +426,6 @@ vendor.audio.feature.record_play_concurency.enable=false \
 vendor.audio.feature.src_trkn.enable=true \
 vendor.audio.feature.spkr_prot.enable=false \
 vendor.audio.feature.ssrec.enable=false \
-vendor.audio.feature.usb_offload.enable=false \
 vendor.audio.feature.usb_offload_burst_mode.enable=false \
 vendor.audio.feature.usb_offload_sidetone_volume.enable=false \
 vendor.audio.feature.deepbuffer_as_primary.enable=false \
@@ -420,12 +434,18 @@ vendor.audio.feature.wsa.enable=false \
 vendor.audio.feature.audiozoom.enable=false \
 vendor.audio.feature.auto_hal.enable=true \
 vendor.audio.feature.auto_hal_pal.enable=true
+ifeq ($(PRODUCT_NAME), msmnile_gvmgh)
+PRODUCT_ODM_PROPERTIES += \
+vendor.audio.feature.a2dp_offload.enable=false \
+vendor.audio.feature.incall_music.enable=false \
+vendor.audio.feature.usb_offload.enable=false
 ifeq ($(AUDIO_FEATURE_ENABLED_SND_MONITOR), true)
 PRODUCT_ODM_PROPERTIES += \
 vendor.audio.feature.snd_mon.enable=true
 else
 PRODUCT_ODM_PROPERTIES += \
 vendor.audio.feature.snd_mon.enable=false
+endif
 endif
 endif
 
