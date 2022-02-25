@@ -19,6 +19,19 @@ LOCAL_COPY_HEADERS      := \
                            audio_extn/audio_defs_ar.h \
                            audio_extn/AudioExtn.h
 
+# Automotive LAGVM will need to have both AR and Elite
+# audio hals available on target for conditional loading
+# depending on the ro.boot.audio prop.
+# Only msmnile_gvmgh must have AR HAL linked to the
+# audio.primary.msmnile.so name
+ifeq ($(PRODUCT_NAME), msmnile_gvmq)
+LOCAL_MODULE := audio.primary.$(TARGET_BOARD_PLATFORM).ar
+LOCAL_MODULE_RELATIVE_PATH := hw
+LOCAL_MODULE_TAGS := optional
+LOCAL_MODULE_OWNER := qti
+LOCAL_VENDOR_MODULE := true
+endif
+
 ifeq ($(filter true, $(DUAL_AUDIO_FRAMEWORK_AR) $(TARGET_USES_QSSI)),true)
 ifeq ($(DUAL_AUDIO_FRAMEWORK_AR),true)
 LOCAL_MODULE := audio.primary.$(TARGET_BOARD_PLATFORM).casa
