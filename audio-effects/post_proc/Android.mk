@@ -84,13 +84,13 @@ LOCAL_MODULE_OWNER := qti
 LOCAL_ADDITIONAL_DEPENDENCIES += $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr
 
 LOCAL_C_INCLUDES := \
-        vendor/qcom/opensource/audio-hal/primary-hal/hal \
+        vendor/qcom/opensource/audio-hal/primary-hal/hal-pal \
         $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr/include \
         vendor/qcom/opensource/pal \
         $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr/include/audio \
         $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr/techpack/audio/include \
         $(call include-path-for, audio-effects) \
-        vendor/qcom/opensource/audio-hal/primary-hal/hal/audio_extn/
+        vendor/qcom/opensource/audio-hal/primary-hal/hal-pal/audio_extn/
 
 ifeq ($(strip $(AUDIO_FEATURE_ENABLED_DLKM)),true)
   LOCAL_HEADER_LIBRARIES += audio_kernel_headers
@@ -192,14 +192,14 @@ LOCAL_MODULE_OWNER := qti
 LOCAL_ADDITIONAL_DEPENDENCIES += $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr
 
 LOCAL_C_INCLUDES := \
-        vendor/qcom/opensource/audio-hal/primary-hal/hal \
+        vendor/qcom/opensource/audio-hal/primary-hal/hal-pal \
         vendor/qcom/opensource/pal \
         $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr/include \
         $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr/include/audio \
         $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr/techpack/audio/include \
         $(call include-path-for, audio-effects) \
         $(call include-path-for, audio-route) \
-        vendor/qcom/opensource/audio-hal/primary-hal/hal/audio_extn \
+        vendor/qcom/opensource/audio-hal/primary-hal/hal-pal/audio_extn \
         system/media/audio_utils/include
 
 ifeq ($(strip $(AUDIO_FEATURE_ENABLED_DLKM)),true)
