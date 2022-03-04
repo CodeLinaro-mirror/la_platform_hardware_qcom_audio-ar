@@ -92,6 +92,7 @@ AUDIO_FEATURE_ENABLED_SVA_MULTI_STAGE := true
 AUDIO_FEATURE_ENABLED_BATTERY_LISTENER := true
 ifeq ($(TARGET_SUPPORTS_WEAR_AON),true)
 AUDIO_FEATURE_ENABLE_BT_A2DP_LPI := true
+AUDIO_FEATURE_ENABLED_MCS := true
 endif
 ##AUDIO_FEATURE_FLAGS
 #AGM
@@ -174,6 +175,9 @@ else
  PRODUCT_PACKAGES += IDP_workspaceFileXml_monaco_amic.qwsp
  PRODUCT_PACKAGES += IDP_acdb_cal_monaco_wsa.acdb
  PRODUCT_PACKAGES += IDP_workspaceFileXml_monaco_wsa.qwsp
+endif
+ifeq ($(strip $(AUDIO_FEATURE_ENABLED_MCS)), true)
+ PRODUCT_PACKAGES += libmcs
 endif
 
 ifeq ($(AUDIO_FEATURE_ENABLED_DLKM),true)
@@ -279,6 +283,11 @@ PRODUCT_COPY_FILES += \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_monaco_idp_slate_wsa.xml:$(TARGET_COPY_OUT_VENDOR)/etc/resourcemanager_monaco_idp_slate_wsa.xml \
     $(CONFIG_PAL_SRC_DIR)/usecaseKvManager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usecaseKvManager.xml \
     $(CONFIG_HAL_SRC_DIR)/card-defs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/card-defs.xml
+
+ifeq ($(AUDIO_FEATURE_ENABLED_MCS),true)
+PRODUCT_COPY_FILES += \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/monaco/mcs_defs_monaco_idp_slate.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mcs_defs_monaco_idp_slate.xml
+endif
 
 #XML Audio configuration files
 ifeq ($(TARGET_SUPPORTS_WEAR_ANDROID), true)
