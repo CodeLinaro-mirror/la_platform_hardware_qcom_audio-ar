@@ -30,6 +30,12 @@ PRODUCT_PACKAGES_DEBUG += $(MM_AUDIO_DBG)
 #----------------------------------------------------------------------
 # audio specific
 #----------------------------------------------------------------------
+
+# Determines if C2 is compiled or not. Compilation is enabled by default.
+# To disable compilation, set it to false in the target specific .mk file.
+TARGET_USES_VENDOR_C2_AUDIO_HAL := true
+$(warning "C2 audio compilation enabled by default")
+
 TARGET_USES_AOSP := false
 TARGET_USES_AOSP_FOR_AUDIO := false
 ifeq ($(TARGET_USES_QMAA_OVERRIDE_AUDIO), false)
