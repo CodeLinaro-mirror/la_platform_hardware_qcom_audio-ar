@@ -313,7 +313,7 @@ vendor.audio.hal.output.suspend.supported=false
 PRODUCT_PROPERTY_OVERRIDES += aaudio.mmap_policy=2
 #Allow EXCLUSIVE then fall back to SHARED.
 PRODUCT_PROPERTY_OVERRIDES += aaudio.mmap_exclusive_policy=2
-PRODUCT_PROPERTY_OVERRIDES += aaudio.hw_burst_min_usec=2000
+PRODUCT_PROPERTY_OVERRIDES += aaudio.hw_burst_min_usec=4000
 
 #enable mirror-link feature
 PRODUCT_PROPERTY_OVERRIDES += \
