@@ -26,10 +26,9 @@
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-/*
- * Changes from Qualcomm Innovation Center are provided under the following license:
-
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved
+/* Changes from Qualcomm Innovation Center are provided under the following license:
+ *
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted (subject to the limitations in the
@@ -43,7 +42,7 @@
  *   * Neither the name of Qualcomm Innovation Center, Inc. nor the names of its
  *     contributors may be used to endorse or promote products derived
  *     from this software without specific prior written permission.
-
+ *
  * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE
  * GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT
  * HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
@@ -57,8 +56,7 @@
  * IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE
-*/
-
+ */
 
 #ifndef ANDROID_HARDWARE_AHAL_ASTREAM_H_
 #define ANDROID_HARDWARE_AHAL_ASTREAM_H_
@@ -74,7 +72,7 @@
 #include <system/audio.h>
 
 #include "PalDefs.h"
-#include <audio_extn/AudioExtn.h>
+#include <AudioExtn.h>
 #include <mutex>
 #include <map>
 
@@ -520,7 +518,7 @@ public:
                      visualizer_hal_stop_output fnp_visualizer_stop_output_);
 
     ~StreamOutPrimary();
-    bool sendGaplessMetadata = false;
+    bool sendGaplessMetadata = true;
     bool isCompressMetadataAvail = false;
     int Standby();
     int SetVolume(float left, float right);

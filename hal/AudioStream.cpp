@@ -1801,6 +1801,7 @@ int StreamOutPrimary::Flush() {
         }
         mBytesWritten = 0;
     }
+    sendGaplessMetadata = true;
 
     if (ret)
         ret = -EINVAL;
@@ -1856,6 +1857,7 @@ int StreamOutPrimary::Standby() {
 
     stream_started_ = false;
     stream_paused_ = false;
+    sendGaplessMetadata = true;
     if (CheckOffloadEffectsType(streamAttributes_.type)) {
         ret = StopOffloadEffects(handle_, pal_stream_handle_);
         ret = StopOffloadVisualizer(handle_, pal_stream_handle_);
@@ -1982,7 +1984,9 @@ int StreamOutPrimary::SetParameters(struct str_parms *parms) {
     if (ret >= 0) {
         adevice->dp_controller = controller;
         adevice->dp_stream = stream;
-        AHAL_ERR("plugin device cont %d stream %d",controller, stream);
+        AHAL_INFO("ret %d, plugin device cont %d stream %d", ret, controller, stream);
+    } else {
+        AHAL_ERR("error %d, failed to get stream and controller", ret);
     }
 
     //Parse below metadata only if it is compress offload usecase.
@@ -1997,7 +2001,6 @@ int StreamOutPrimary::SetParameters(struct str_parms *parms) {
         ret1 = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_DELAY_SAMPLES, value, sizeof(value));
         if (ret1 >= 0 ) {
             gaplessMeta.encoderDelay = atoi(value);
-            sendGaplessMetadata = true;
             AHAL_DBG("new encoder delay %u", gaplessMeta.encoderDelay);
         } else {
             gaplessMeta.encoderDelay = 0;
@@ -2006,7 +2009,6 @@ int StreamOutPrimary::SetParameters(struct str_parms *parms) {
         ret1 = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_PADDING_SAMPLES, value, sizeof(value));
         if (ret1 >= 0) {
             gaplessMeta.encoderPadding = atoi(value);
-            sendGaplessMetadata = true;
             AHAL_DBG("padding %u", gaplessMeta.encoderPadding);
         } else {
             gaplessMeta.encoderPadding = 0;
@@ -2159,7 +2161,10 @@ uint64_t StreamOutPrimary::GetFramesWritten(struct timespec *timestamp)
 
 int StreamOutPrimary::get_compressed_buffer_size()
 {
+    char value[PROPERTY_VALUE_MAX] = {0};
     int fragment_size = COMPRESS_OFFLOAD_FRAGMENT_SIZE;
+    int fsize = 0;
+
     AHAL_DBG("config_ %x", config_.format);
     if(config_.format ==  AUDIO_FORMAT_FLAC ) {
         fragment_size = FLAC_COMPRESS_OFFLOAD_FRAGMENT_SIZE;
@@ -2169,6 +2174,14 @@ int StreamOutPrimary::get_compressed_buffer_size()
     } else {
         fragment_size =  COMPRESS_OFFLOAD_FRAGMENT_SIZE;
     }
+
+    if((property_get("vendor.audio.offload.buffer.size.kb", value, "")) &&
+            atoi(value)) {
+        fsize = atoi(value) * 1024;
+    }
+    if (fsize > fragment_size)
+        fragment_size = fsize;
+
     return fragment_size;
 }
 
@@ -2359,12 +2372,14 @@ int StreamOutPrimary::Open() {
         hapticsStreamAttributes.out_media_config.aud_fmt_id = PAL_AUDIO_FMT_PCM_S16_LE;
         hapticsStreamAttributes.out_media_config.ch_info = ch_info;
 
-        hapticsDevice = new pal_device;
-        hapticsDevice->id = PAL_DEVICE_OUT_HAPTICS_DEVICE;
-        hapticsDevice->config.sample_rate = DEFAULT_OUTPUT_SAMPLING_RATE;
-        hapticsDevice->config.bit_width = CODEC_BACKEND_DEFAULT_BIT_WIDTH;
-        hapticsDevice->config.ch_info = ch_info;
-        hapticsDevice->config.aud_fmt_id = PAL_AUDIO_FMT_PCM_S16_LE;
+        if (!hapticsDevice) {
+            hapticsDevice = new pal_device;
+            hapticsDevice->id = PAL_DEVICE_OUT_HAPTICS_DEVICE;
+            hapticsDevice->config.sample_rate = DEFAULT_OUTPUT_SAMPLING_RATE;
+            hapticsDevice->config.bit_width = CODEC_BACKEND_DEFAULT_BIT_WIDTH;
+            hapticsDevice->config.ch_info = ch_info;
+            hapticsDevice->config.aud_fmt_id = PAL_AUDIO_FMT_PCM_S16_LE;
+        }
 
         ret = pal_stream_open (&hapticsStreamAttributes,
                           1,
@@ -3047,6 +3062,18 @@ StreamOutPrimary::~StreamOutPrimary() {
     }
     if (convertBuffer)
         free(convertBuffer);
+    if (mPalOutDeviceIds) {
+        delete[] mPalOutDeviceIds;
+        mPalOutDeviceIds = NULL;
+    }
+    if (mPalOutDevice) {
+        delete[] mPalOutDevice;
+        mPalOutDevice = NULL;
+    }
+    if (hapticsDevice) {
+        delete hapticsDevice;
+        hapticsDevice = NULL;
+    }
 }
 
 bool StreamInPrimary::isDeviceAvailable(pal_device_id_t deviceId)
@@ -3940,6 +3967,14 @@ StreamInPrimary::~StreamInPrimary() {
              pal_stream_handle_);
         pal_stream_close(pal_stream_handle_);
         pal_stream_handle_ = NULL;
+    }
+    if (mPalInDeviceIds) {
+        delete[] mPalInDeviceIds;
+        mPalInDeviceIds = NULL;
+    }
+    if (mPalInDevice) {
+        delete[] mPalInDevice;
+        mPalInDevice = NULL;
     }
 }
 
