@@ -337,7 +337,8 @@ static size_t astream_out_get_buffer_size(const struct audio_stream *stream) {
         return 0;
 }
 
-static uint32_t astream_out_get_channels(const struct audio_stream *stream) {
+static audio_channel_mask_t astream_out_get_channels(const struct audio_stream *stream) {
+
 
     std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
     std::shared_ptr<StreamOutPrimary> astream_out;
@@ -347,14 +348,14 @@ static uint32_t astream_out_get_channels(const struct audio_stream *stream) {
         astream_out = adevice->OutGetStream((audio_stream_t*)stream);
     } else {
         AHAL_ERR("unable to get audio device");
-        return 0;
+        return (audio_channel_mask_t)0;
     }
 
     if (astream_out != nullptr) {
-        return astream_out->GetChannelMask();
+        return (audio_channel_mask_t)astream_out->GetChannelMask();
     } else {
         AHAL_ERR("unable to get audio stream");
-        return 0;
+        return (audio_channel_mask_t)0;
     }
 }
 
@@ -1099,7 +1100,7 @@ static uint32_t astream_in_get_sample_rate(const struct audio_stream *stream) {
         return 0;
 }
 
-static uint32_t astream_in_get_channels(const struct audio_stream *stream) {
+static audio_channel_mask_t astream_in_get_channels(const struct audio_stream *stream) {
 
     std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
     std::shared_ptr<StreamInPrimary> astream_in;
@@ -1108,14 +1109,14 @@ static uint32_t astream_in_get_channels(const struct audio_stream *stream) {
         astream_in = adevice->InGetStream((audio_stream_t*)stream);
     } else {
         AHAL_ERR("unable to get audio device");
-        return 0;
+        return (audio_channel_mask_t)0;
     }
 
     if (astream_in) {
-        return astream_in->GetChannelMask();
+        return (audio_channel_mask_t)astream_in->GetChannelMask();
     } else {
         AHAL_ERR("unable to get audio stream");
-        return 0;
+        return (audio_channel_mask_t)0;
     }
 }
 
@@ -2409,7 +2410,7 @@ StreamOutPrimary::StreamOutPrimary(
             delete device_cap_query;
 
             config->sample_rate = dynamic_media_config.sample_rate;
-            config->channel_mask = dynamic_media_config.mask;
+            config->channel_mask = (audio_channel_mask_t)dynamic_media_config.mask;
             config->format = (audio_format_t)dynamic_media_config.format;
             memcpy(&config_, config, sizeof(struct audio_config));
             AHAL_INFO("sample rate = %#x channel_mask=%#x fmt=%#x",
@@ -3291,7 +3292,7 @@ StreamInPrimary::StreamInPrimary(audio_io_handle_t handle,
                 dynamic_media_config.format, dynamic_media_config.mask);
             delete device_cap_query;
             config->sample_rate = dynamic_media_config.sample_rate;
-            config->channel_mask = dynamic_media_config.mask;
+            config->channel_mask = (audio_channel_mask_t) dynamic_media_config.mask;
             config->format = (audio_format_t)dynamic_media_config.format;
             memcpy(&config_, config, sizeof(struct audio_config));
         }
