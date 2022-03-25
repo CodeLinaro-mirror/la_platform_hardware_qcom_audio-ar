@@ -675,6 +675,28 @@ static int astream_dump(const struct audio_stream *stream, int fd) {
     return 0;
 }
 
+static int astream_set_latency_mode(struct audio_stream_out *stream, audio_latency_mode_t mode) {
+    std::ignore = stream;
+    std::ignore = mode;
+    return -ENOSYS;
+}
+
+static int astream_get_recommended_latency_modes(struct audio_stream_out *stream,
+                                                audio_latency_mode_t *modes, size_t *num_modes) {
+    std::ignore = stream;
+    std::ignore = modes;
+    std::ignore = num_modes;
+    return -ENOSYS;
+}
+
+static int astream_set_latency_mode_callback(struct audio_stream_out *stream,
+                                        stream_latency_mode_callback_t callback, void *cookie) {
+    std::ignore = stream;
+    std::ignore = callback;
+    std::ignore = cookie;
+    return -ENOSYS;
+}
+
 static uint32_t astream_get_latency(const struct audio_stream_out *stream) {
     std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
     std::shared_ptr<StreamOutPrimary> astream_out;
@@ -1929,6 +1951,9 @@ int StreamOutPrimary::FillHalFnPtrs() {
     stream_.get()->flush = astream_flush;
     stream_.get()->set_callback = astream_set_callback;
     stream_.get()->update_source_metadata_v7 = out_update_source_metadata_v7;
+    stream_.get()->set_latency_mode = astream_set_latency_mode;
+    stream_.get()->get_recommended_latency_modes = astream_get_recommended_latency_modes;
+    stream_.get()->set_latency_mode_callback = astream_set_latency_mode_callback;
     return ret;
 }
 

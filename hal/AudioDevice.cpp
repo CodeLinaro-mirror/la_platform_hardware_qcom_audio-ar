@@ -1017,6 +1017,15 @@ int get_audio_port_v7(struct audio_hw_device *dev, struct audio_port_v7 *config)
     return 0;
 }
 
+int adev_set_device_connected_state_v7(struct audio_hw_device *dev,
+                                        struct audio_port_v7 *port,
+                                        bool connected) {
+    std::ignore = dev;
+    std::ignore = port;
+    std::ignore = connected;
+    return -ENOSYS;
+}
+
 int adev_set_audio_port_config(struct audio_hw_device *dev,
                                const struct audio_port_config *config)
 {
@@ -1114,6 +1123,7 @@ int AudioDevice::Init(hw_device_t **device, const hw_module_t *module) {
     adev_->device_.get()->set_audio_port_config = adev_set_audio_port_config;
     adev_->device_.get()->dump = adev_dump;
     adev_->device_.get()->get_microphones = adev_get_microphones;
+    adev_->device_.get()->set_device_connected_state_v7 = adev_set_device_connected_state_v7;
     adev_->device_.get()->common.module = (struct hw_module_t *)module;
     *device = &(adev_->device_.get()->common);
 
