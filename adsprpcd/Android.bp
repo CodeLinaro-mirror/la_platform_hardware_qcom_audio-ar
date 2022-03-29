@@ -1,5 +1,5 @@
 cc_binary {
-    name: "audioadsprpcd",
+    name: "audioadsprpcd-ar",
 
     srcs: ["adsprpcd.c"],
 
