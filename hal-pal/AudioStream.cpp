@@ -2010,7 +2010,7 @@ int StreamOutPrimary::SetVolume(float left , float right) {
     if (pal_stream_handle_) {
         ret = pal_stream_set_volume(pal_stream_handle_, volume_);
         if (ret) {
-            AHAL_ERR("Pal Stream volume Error (%x)", ret);
+            AHAL_ERR("Pal Stream volume Error (%d)", (int)ret);
         }
     }
 
@@ -2587,14 +2587,14 @@ ssize_t StreamOutPrimary::configurePalOutputStream() {
         if (volume_) {
             ret = pal_stream_set_volume(pal_stream_handle_, volume_);
             if (ret) {
-                AHAL_ERR("Pal Stream volume Error (%x)", ret);
+                AHAL_ERR("Pal Stream volume Error (%d)", (int)ret);
             }
         }
 
         ATRACE_BEGIN("hal: pal_stream_start");
         ret = pal_stream_start(pal_stream_handle_);
         if (ret) {
-            AHAL_ERR("failed to start stream. ret=%d", ret);
+            AHAL_ERR("failed to start stream. ret=%d", (int)ret);
             pal_stream_close(pal_stream_handle_);
             pal_stream_handle_ = NULL;
             ATRACE_END();
@@ -2609,7 +2609,7 @@ ssize_t StreamOutPrimary::configurePalOutputStream() {
         if (usecase_ == USECASE_AUDIO_PLAYBACK_WITH_HAPTICS) {
             ret = pal_stream_start(pal_haptics_stream_handle);
             if (ret) {
-                AHAL_ERR("failed to start haptics stream. ret=%d", ret);
+                AHAL_ERR("failed to start haptics stream. ret=%d", (int) ret);
                 ATRACE_END();
                 pal_stream_close(pal_haptics_stream_handle);
                 pal_haptics_stream_handle = NULL;
@@ -2638,7 +2638,7 @@ ssize_t StreamOutPrimary::configurePalOutputStream() {
                                        PAL_PARAM_ID_GAPLESS_MDATA,
                                        param_payload);
             if (ret)
-                AHAL_ERR("PAL set param for gapless failed, error (%x)", ret);
+                AHAL_ERR("PAL set param for gapless failed, error (%x)", (int) ret);
             free(param_payload);
         } else {
             AHAL_ERR("Failed to allocate gapless payload");
@@ -3231,7 +3231,7 @@ int StreamInPrimary::SetGain(float gain) {
 
     free(volume);
     if (ret) {
-        AHAL_ERR("Pal Stream volume Error (%x)", ret);
+        AHAL_ERR("Pal Stream volume Error (%d)", (int) ret);
     }
 
 done:
@@ -3664,7 +3664,7 @@ ssize_t StreamInPrimary::read(const void *buffer, size_t bytes) {
         AutoPerfLock perfLock;
         ret = pal_stream_start(pal_stream_handle_);
         if (ret) {
-            AHAL_ERR("failed to start stream. ret=%d", ret);
+            AHAL_ERR("failed to start stream. ret=%d", (int) ret);
             pal_stream_close(pal_stream_handle_);
             pal_stream_handle_ = NULL;
             goto exit;
@@ -3674,7 +3674,7 @@ ssize_t StreamInPrimary::read(const void *buffer, size_t bytes) {
         if (volume_) {
             ret = pal_stream_set_volume(pal_stream_handle_, volume_);
             if (ret) {
-                AHAL_ERR("Pal Stream volume Error (%x)", ret);
+                AHAL_ERR("Pal Stream volume Error (%d)", (int) ret);
             }
         }
     }
