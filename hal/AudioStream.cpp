@@ -736,7 +736,9 @@ static uint32_t astream_get_latency(const struct audio_stream_out *stream) {
     size_t size = 0;
     int32_t ret;
     //TODO : check on PAL_PARAM_ID_BT_A2DP_ENCODER_LATENCY for BLE
-    if ((astream_out->isDeviceAvailable(PAL_DEVICE_OUT_BLUETOOTH_A2DP)) || (astream_out->isDeviceAvailable(PAL_DEVICE_OUT_BLUETOOTH_BLE))) {
+    if ((astream_out->isDeviceAvailable(PAL_DEVICE_OUT_BLUETOOTH_A2DP)) ||
+            (astream_out->isDeviceAvailable(PAL_DEVICE_OUT_BLUETOOTH_BLE)) ||
+            (astream_out->isDeviceAvailable(PAL_DEVICE_OUT_BLUETOOTH_BLE_BROADCAST))) {
         ret = pal_get_param(PAL_PARAM_ID_BT_A2DP_ENCODER_LATENCY,
                             (void **)&param_bt_a2dp, &size, nullptr);
         if (!ret && param_bt_a2dp)
@@ -2686,7 +2688,9 @@ uint64_t StreamOutPrimary::GetFramesWritten(struct timespec *timestamp)
 
     // Adjustment accounts for A2dp encoder latency with non offload usecases
     // Note: Encoder latency is returned in ms, while platform_render_latency in us.
-    if (isDeviceAvailable(PAL_DEVICE_OUT_BLUETOOTH_A2DP) || isDeviceAvailable(PAL_DEVICE_OUT_BLUETOOTH_BLE)) {
+    if (isDeviceAvailable(PAL_DEVICE_OUT_BLUETOOTH_A2DP) ||
+           isDeviceAvailable(PAL_DEVICE_OUT_BLUETOOTH_BLE) ||
+           isDeviceAvailable(PAL_DEVICE_OUT_BLUETOOTH_BLE_BROADCAST)) {
         ret = pal_get_param(PAL_PARAM_ID_BT_A2DP_ENCODER_LATENCY,
                             (void **)&param_bt_a2dp, &size, nullptr);
         if (!ret && param_bt_a2dp) {
@@ -3194,7 +3198,9 @@ int StreamOutPrimary::GetFrames(uint64_t *frames)
 
     // Adjustment accounts for A2dp encoder latency with offload usecases
     // Note: Encoder latency is returned in ms.
-    if (isDeviceAvailable(PAL_DEVICE_OUT_BLUETOOTH_A2DP) || isDeviceAvailable(PAL_DEVICE_OUT_BLUETOOTH_BLE)) {
+    if (isDeviceAvailable(PAL_DEVICE_OUT_BLUETOOTH_A2DP) ||
+           isDeviceAvailable(PAL_DEVICE_OUT_BLUETOOTH_BLE_BROADCAST) ||
+           isDeviceAvailable(PAL_DEVICE_OUT_BLUETOOTH_BLE)) {
         ret = pal_get_param(PAL_PARAM_ID_BT_A2DP_ENCODER_LATENCY,
                             (void **)&param_bt_a2dp, &size, nullptr);
         if (!ret && param_bt_a2dp) {
