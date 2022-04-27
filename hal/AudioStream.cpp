@@ -2143,6 +2143,7 @@ uint64_t StreamOutPrimary::GetFramesWritten(struct timespec *timestamp)
 
     if (!timestamp) {
        AHAL_ERR("timestamp NULL");
+       stream_mutex_.unlock();
        return 0;
     }
     written_frames = mBytesWritten / audio_bytes_per_frame(
