@@ -118,6 +118,9 @@ AUDIO_PAL += lib_bt_bundle
 AUDIO_PAL += lib_bt_aptx
 AUDIO_PAL += lib_bt_ble
 BOARD_SUPPORTS_OPENSOURCE_STHAL := true
+ifeq ($(TARGET_SUPPORTS_DS),true)
+AUDIO_USE_POWER_STATE_MONITOR := true
+endif
 
 AUDIO_HARDWARE := audio.a2dp.default
 AUDIO_HARDWARE += audio.usb.default
@@ -166,8 +169,8 @@ ifeq ($(TARGET_SUPPORTS_WEAR_AON),true)
  PRODUCT_PACKAGES += IDP_workspaceFileXml_monaco_slate_amic.qwsp
  PRODUCT_PACKAGES += IDP_acdb_cal_monaco_slate_wsa.acdb
  PRODUCT_PACKAGES += IDP_workspaceFileXml_monaco_slate_wsa.qwsp
- PRODUCT_PACKAGES += fai__2.0.0_0.1__3.0.0_0.0__eai_1.10.pmd
- PRODUCT_PACKAGES += fai__2.2.0_0.1__3.0.0_0.0__eai_1.10.pmd
+ PRODUCT_PACKAGES += fai__2.6.0_0.0__3.0.0_0.0__eai_1.10.pmd
+ PRODUCT_PACKAGES += fai__3.0.0_0.0__eai_1.10.pmd
 else
  PRODUCT_PACKAGES += IDP_acdb_cal_monaco.acdb
  PRODUCT_PACKAGES += IDP_workspaceFileXml_monaco.qwsp
