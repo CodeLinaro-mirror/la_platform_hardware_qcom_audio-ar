@@ -317,10 +317,15 @@ void AudioExtn::audio_extn_get_parameters(std::shared_ptr<AudioDevice> adev,
     free(kv_pairs);
 }
 
-void AudioExtn::audio_extn_set_parameters(std::shared_ptr<AudioDevice> adev,
+int AudioExtn::audio_extn_set_parameters(std::shared_ptr<AudioDevice> adev,
                                      struct str_parms *params){
-    audio_extn_hfp_set_parameters(adev, params);
-    audio_extn_fm_set_parameters(adev, params);
+    int ret = 0;
+
+    ret = audio_extn_hfp_set_parameters(adev, params);
+    if (ret == 0) {
+        audio_extn_fm_set_parameters(adev, params);
+    }
+    return ret;
 }
 
 int AudioExtn::get_controller_stream_from_params(struct str_parms *parms,
@@ -475,11 +480,15 @@ int AudioExtn::audio_extn_hfp_set_mic_mute(bool state)
         hfp_set_mic_mute(state) : -1);
 }
 
-void AudioExtn::audio_extn_hfp_set_parameters(std::shared_ptr<AudioDevice> adev,
+int AudioExtn::audio_extn_hfp_set_parameters(std::shared_ptr<AudioDevice> adev,
     struct str_parms *parms)
 {
+    int ret = 0;
+
     if (hfp_set_parameters)
-        hfp_set_parameters(adev, parms);
+        ret = hfp_set_parameters(adev, parms);
+
+    return ret;
 }
 
 int AudioExtn::audio_extn_hfp_set_mic_mute2(std::shared_ptr<AudioDevice> adev, bool state)
