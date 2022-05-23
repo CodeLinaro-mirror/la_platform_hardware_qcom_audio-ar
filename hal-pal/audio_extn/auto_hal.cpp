@@ -34,12 +34,15 @@
 #include <log/log.h>
 #include <stdlib.h>
 #include <cutils/properties.h>
+#include <utils/Trace.h>
 #include "PalApi.h"
 #include "AudioDevice.h"
 
 #ifdef __cplusplus
  extern "C" {
 #endif
+
+#define MARKER_STRING_WIDTH 128
 
 void autohal_init()
 {
@@ -68,6 +71,26 @@ pal_stream_type_t autohal_GetCarAudioPalStreamType(char * address) {
     }
 
     return palStreamType;
+}
+
+/*Enable Place Marker*/
+void place_marker(char const *name, bool isEnter)
+{
+    int fd=open("/sys/kernel/boot_kpi/kpi_values", O_WRONLY);
+    if (fd > 0)
+    {
+        /* Only allow marker text shorter than MARKER_STRING_WIDTH */
+        char earlyapp[MARKER_STRING_WIDTH] = {0};
+        strlcpy(earlyapp, name, sizeof(earlyapp));
+        write(fd, earlyapp, strlen(earlyapp));
+        close(fd);
+    }
+
+    if (isEnter) {
+        ATRACE_BEGIN(name);
+    } else {
+        ATRACE_END();
+    }
 }
 
 #ifdef __cplusplus

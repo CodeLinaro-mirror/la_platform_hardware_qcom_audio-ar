@@ -739,6 +739,7 @@ void AudioExtn::audio_extn_perf_lock_release(int *handle)
 static void *autohal_lib_handle = NULL;
 static autohal_init_t autohal_init;
 static autohal_GetCarAudioPalStreamType_t autohal_GetCarAudioPalStreamType;
+static place_marker_t place_marker;
 
 int AudioExtn::autohal_feature_init(bool is_feature_enabled)
 {
@@ -756,7 +757,9 @@ int AudioExtn::autohal_feature_init(bool is_feature_enabled)
             autohal_lib_handle, "autohal_init")) ||
             !(autohal_GetCarAudioPalStreamType =
             (autohal_GetCarAudioPalStreamType_t)dlsym(
-                autohal_lib_handle, "autohal_GetCarAudioPalStreamType"))) {
+                autohal_lib_handle, "autohal_GetCarAudioPalStreamType")) ||
+            !(place_marker = (place_marker_t)dlsym(
+                autohal_lib_handle, "place_marker"))) {
             AHAL_ERR("dlsym failed \n");
             goto feature_disabled;
         }
@@ -774,6 +777,7 @@ feature_disabled:
 
     autohal_init = NULL;
     autohal_GetCarAudioPalStreamType = NULL;
+    place_marker = NULL;
 
     AHAL_INFO(":: ---- Feature AUTO HAL is disabled ----");
     return -ENOSYS;
@@ -787,6 +791,13 @@ pal_stream_type_t AudioExtn::audio_extn_autohal_GetCarAudioPalStreamType(char* a
         return autohal_GetCarAudioPalStreamType(address);
     else
         return pal_stream_type;
+}
+
+void AudioExtn::audio_extn_place_marker(char const *name, bool isEnter)
+{
+    if (place_marker) {
+        return place_marker(name, isEnter);
+    }
 }
 
 // END: AUTO HAL ================================================================

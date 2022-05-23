@@ -2227,6 +2227,7 @@ int StreamOutPrimary::Open() {
     struct pal_buffer_config outBufCfg = {0, 0, 0};
 
     AHAL_DBG("Enter OutPrimary ");
+    AudioExtn::audio_extn_place_marker("M - AHAL stream out open Enter", true);
 
     if (!mInitialized) {
         AHAL_ERR("Not initialized, returning error");
@@ -2421,6 +2422,7 @@ int StreamOutPrimary::Open() {
 
 error_open:
     AHAL_DBG("Exit ret: %d", ret);
+    AudioExtn::audio_extn_place_marker("M - AHAL stream out open Exit", false);
     return ret;
 }
 
@@ -3354,6 +3356,7 @@ int StreamInPrimary::Open() {
     void *handle = nullptr;
 
     AHAL_DBG("Enter InPrimary");
+    AudioExtn::audio_extn_place_marker("M - AHAL stream in open Enter", true);
     if (!mInitialized) {
         AHAL_ERR("Not initialized, returning error");
         ret = -EINVAL;
@@ -3519,6 +3522,7 @@ set_buff_size:
 
 exit:
     AHAL_DBG("Exit ret: %d", ret);
+    AudioExtn::audio_extn_place_marker("M - AHAL stream in open Exit", false);
     return ret;
 }
 
