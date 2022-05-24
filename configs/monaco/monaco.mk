@@ -162,23 +162,23 @@ PRODUCT_PACKAGES += $(AUDIO_HARDWARE)
 PRODUCT_PACKAGES += $(AUDIO_WRAPPER)
 PRODUCT_PACKAGES += $(AUDIO_HAL_TEST_APPS)
 PRODUCT_PACKAGES += ftm_test_config
-ifeq ($(TARGET_SUPPORTS_WEAR_AON),true)
- PRODUCT_PACKAGES += IDP_acdb_cal_monaco_slate.acdb
- PRODUCT_PACKAGES += IDP_workspaceFileXml_monaco_slate.qwsp
- PRODUCT_PACKAGES += IDP_acdb_cal_monaco_slate_amic.acdb
- PRODUCT_PACKAGES += IDP_workspaceFileXml_monaco_slate_amic.qwsp
- PRODUCT_PACKAGES += IDP_acdb_cal_monaco_slate_wsa.acdb
- PRODUCT_PACKAGES += IDP_workspaceFileXml_monaco_slate_wsa.qwsp
- PRODUCT_PACKAGES += fai__2.6.0_0.0__3.0.0_0.0__eai_1.10.pmd
- PRODUCT_PACKAGES += fai__3.0.0_0.0__eai_1.10.pmd
-else
- PRODUCT_PACKAGES += IDP_acdb_cal_monaco.acdb
- PRODUCT_PACKAGES += IDP_workspaceFileXml_monaco.qwsp
- PRODUCT_PACKAGES += IDP_acdb_cal_monaco_amic.acdb
- PRODUCT_PACKAGES += IDP_workspaceFileXml_monaco_amic.qwsp
- PRODUCT_PACKAGES += IDP_acdb_cal_monaco_wsa.acdb
- PRODUCT_PACKAGES += IDP_workspaceFileXml_monaco_wsa.qwsp
-endif
+
+PRODUCT_PACKAGES += IDP_acdb_cal_monaco_slate.acdb
+PRODUCT_PACKAGES += IDP_workspaceFileXml_monaco_slate.qwsp
+PRODUCT_PACKAGES += IDP_acdb_cal_monaco_slate_amic.acdb
+PRODUCT_PACKAGES += IDP_workspaceFileXml_monaco_slate_amic.qwsp
+PRODUCT_PACKAGES += IDP_acdb_cal_monaco_slate_wsa.acdb
+PRODUCT_PACKAGES += IDP_workspaceFileXml_monaco_slate_wsa.qwsp
+PRODUCT_PACKAGES += fai__2.6.0_0.0__3.0.0_0.0__eai_1.10.pmd
+PRODUCT_PACKAGES += fai__3.0.0_0.0__eai_1.10.pmd
+
+PRODUCT_PACKAGES += IDP_acdb_cal_monaco.acdb
+PRODUCT_PACKAGES += IDP_workspaceFileXml_monaco.qwsp
+PRODUCT_PACKAGES += IDP_acdb_cal_monaco_amic.acdb
+PRODUCT_PACKAGES += IDP_workspaceFileXml_monaco_amic.qwsp
+PRODUCT_PACKAGES += IDP_acdb_cal_monaco_wsa.acdb
+PRODUCT_PACKAGES += IDP_workspaceFileXml_monaco_wsa.qwsp
+
 ifeq ($(strip $(AUDIO_FEATURE_ENABLED_MCS)), true)
  PRODUCT_PACKAGES += libmcs
 endif
