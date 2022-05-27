@@ -404,6 +404,7 @@ int AudioDevice::CreateAudioPatch(audio_patch_handle_t *handle,
 
     AHAL_DBG("enter: num sources %zu, num_sinks %zu", sources.size(), sinks.size());
 
+    AudioExtn::audio_extn_place_marker("M - CreateAudioPatch Enter", true);
     if (!handle || sources.empty() || sources.size() > AUDIO_PATCH_PORTS_MAX ||
         sinks.empty() || sinks.size() > AUDIO_PATCH_PORTS_MAX) {
         AHAL_ERR("Invalid patch arguments");
@@ -500,6 +501,7 @@ int AudioDevice::CreateAudioPatch(audio_patch_handle_t *handle,
     }
 exit:
     AHAL_DBG("Exit ret: %d", ret);
+    AudioExtn::audio_extn_place_marker("M - CreateAudioPatch Exit", false);
     return ret;
 }
 
@@ -950,7 +952,9 @@ int adev_set_audio_port_config(struct audio_hw_device *dev,
                     volume = pow(10.0, ((float)config->gain.values[0] / 2000));
                 }
                 ALOGE("%s: set volume to stream", __func__);
+                AudioExtn::audio_extn_place_marker("M - AHAL SetVolume Enter", true);
                 (*iter)->SetVolume(volume, volume);
+                AudioExtn::audio_extn_place_marker("M - AHAL SetVolume Exit", false);
             }
         }
     }
@@ -978,6 +982,7 @@ int AudioDevice::Init(hw_device_t **device, const hw_module_t *module) {
     uint32_t maj_version = 3;
     bool is_charging = false;
 
+    AudioExtn::audio_extn_place_marker("M - AHAL Init Enter", true);
     ret = pal_init();
     if (ret) {
         AHAL_ERR("pal_init failed ret=(%d)", ret);
@@ -1092,6 +1097,7 @@ int AudioDevice::Init(hw_device_t **device, const hw_module_t *module) {
     if (!parse_xml())
         mic_characteristics_available = true;
 
+    AudioExtn::audio_extn_place_marker("M - AHAL Init Exit", false);
     return ret;
 }
 
