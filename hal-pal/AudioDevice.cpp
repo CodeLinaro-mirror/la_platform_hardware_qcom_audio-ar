@@ -1268,7 +1268,11 @@ int AudioDevice::SetParameters(const char *kvpairs) {
         ret = 0;
         goto exit;
     }
-    AudioExtn::audio_extn_set_parameters(adev_, parms);
+    ret = AudioExtn::audio_extn_set_parameters(adev_, parms);
+    if (ret) {
+        AHAL_ERR(" audio_extn_set_parameters failed %d",ret);
+        goto exit;
+    }
 
     if (property_get_bool("vendor.audio.hdr.record.enable", false))
         hdr_set_parameters(adev_, parms);

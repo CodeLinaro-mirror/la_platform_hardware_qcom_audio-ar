@@ -92,8 +92,8 @@ static int32_t hfp_set_volume(float value)
     }
 
     if (!hfpmod.is_hfp_running) {
-        AHAL_VERBOSE("HFP not active, ignoring set_hfp_volume call");
-        return -EIO;
+        AHAL_ERR("HFP not active, ignoring set_hfp_volume call");
+        return -ENODEV;
     }
 
     AHAL_DBG("Setting HFP volume to %f \n", value);
@@ -414,7 +414,7 @@ int hfp_set_mic_mute2(std::shared_ptr<AudioDevice> adev __unused, bool state __u
     return 0;
 }
 
-void hfp_set_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *parms)
+int hfp_set_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *parms)
 {
     int status = 0;
     char value[32]={0};
@@ -460,7 +460,11 @@ void hfp_set_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *par
             goto exit;
         }
         AHAL_DBG("set_hfp_volume usecase, Vol: [%f]", vol);
-        hfp_set_volume(vol);
+        status= hfp_set_volume(vol);
+        if (status) {
+            AHAL_ERR("set volume failed: %d \n", status);
+            goto exit;
+        }
     }
 
     memset(value, 0, sizeof(value));
@@ -473,12 +477,14 @@ void hfp_set_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *par
             goto exit;
         }
         AHAL_DBG("set_hfp_mic_volume usecase, Vol: [%f]", vol);
-        if (hfp_set_mic_volume(vol) == 0)
+        status = hfp_set_mic_volume(vol);
+        if (status == 0)
             hfpmod.mic_volume = vol;
     }
 
 exit:
     AHAL_VERBOSE("Exit");
+    return status;
 }
 
 #ifdef __cplusplus
