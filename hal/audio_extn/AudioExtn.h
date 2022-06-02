@@ -25,6 +25,10 @@
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
 #ifndef AUDIOEXTN_H
@@ -84,6 +88,8 @@ public:
 
     //A2DP
     static int a2dp_source_feature_init(bool is_feature_enabled);
+    static int bta2dp_sink_feature_init(bool is_feature_enabled);
+    static void audio_extn_btsink_set_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *parms);
 
     /* start device utils */
     static bool audio_devices_cmp(const std::set<audio_devices_t>&, audio_device_cmp_fn_t);

@@ -25,6 +25,10 @@
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
 #define LOG_TAG "AHAL: AudioExtn"
@@ -59,8 +63,9 @@ using android::OK;
 #endif
 
 #define BATTERY_LISTENER_LIB_PATH LIBS"libbatterylistener.so"
-#define HFP_LIB_PATH LIBS"libhfp_pal.so"
+#define HFP_LIB_PATH LIBS"libhfppal.so"
 #define FM_LIB_PATH LIBS"libfmpal.so"
+#define BTA2DP_SINK_LIB_PATH "libbtsinkpal.so"
 
 #define BT_IPC_SOURCE_LIB_NAME LIBS"btaudio_offload_if.so"
 
@@ -358,6 +363,7 @@ void AudioExtn::audio_extn_get_parameters(std::shared_ptr<AudioDevice> adev,
 void AudioExtn::audio_extn_set_parameters(std::shared_ptr<AudioDevice> adev,
                                      struct str_parms *params){
     audio_extn_hfp_set_parameters(adev, params);
+    audio_extn_btsink_set_parameters(adev, params);
     audio_extn_fm_set_parameters(adev, params);
 }
 
@@ -438,6 +444,49 @@ static hfp_get_usecase_t hfp_get_usecase;
 static hfp_set_mic_mute_t hfp_set_mic_mute;
 static set_parameters_t hfp_set_parameters;
 static hfp_set_mic_mute2_t hfp_set_mic_mute2;
+
+static void *btsink_lib_handle = NULL;
+static set_parameters_t btsink_set_parameters;
+
+int AudioExtn::bta2dp_sink_feature_init(bool is_feature_enabled)
+{
+    AHAL_DBG("Called with feature %s",
+        is_feature_enabled ? "Enabled" : "NOT Enabled");
+    if (is_feature_enabled) {
+        // dlopen lib
+        btsink_lib_handle = dlopen(BTA2DP_SINK_LIB_PATH, RTLD_NOW);
+
+        if (!btsink_lib_handle) {
+            AHAL_ERR("dlopen failed with: %s", dlerror());
+            goto feature_disabled;
+        }
+        if (!(btsink_set_parameters = (set_parameters_t)dlsym(
+                btsink_lib_handle, "btsink_set_parameters")))
+        {
+            AHAL_ERR("dlsym failed with %s ",dlerror());
+            goto  feature_disabled;
+        }
+        AHAL_DBG("---- Feature BT A2DP Sink is Enabled ----");
+        return 0;
+    }
+feature_disabled:
+    if (btsink_lib_handle) {
+        dlclose(btsink_lib_handle);
+        btsink_lib_handle = NULL;
+    }
+
+    btsink_set_parameters = NULL;
+
+    AHAL_INFO("---- Feature BT A2DP is disabled ----");
+    return -ENOSYS;
+}
+
+void AudioExtn::audio_extn_btsink_set_parameters(std::shared_ptr<AudioDevice> adev,
+    struct str_parms *parms)
+{
+    if (btsink_set_parameters)
+        btsink_set_parameters(adev, parms);
+}
 
 int AudioExtn::hfp_feature_init(bool is_feature_enabled)
 {
