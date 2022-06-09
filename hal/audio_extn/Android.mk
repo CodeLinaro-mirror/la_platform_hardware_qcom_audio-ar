@@ -40,7 +40,7 @@ include $(BUILD_SHARED_LIBRARY)
 #-------------------------------------------
 include $(CLEAR_VARS)
 
-LOCAL_MODULE := libhfp_pal
+LOCAL_MODULE := libhfppal
 LOCAL_VENDOR_MODULE := true
 
 ifeq ($(TARGET_BOARD_AUTO),true)
