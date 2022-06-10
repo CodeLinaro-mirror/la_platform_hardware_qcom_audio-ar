@@ -442,6 +442,7 @@ public:
     audio_format_t  GetFormat();
     audio_channel_mask_t GetChannelMask();
     int getPalDeviceIds(const std::set<audio_devices_t> &halDeviceIds, pal_device_id_t* palOutDeviceIds);
+    int getPalDeviceIds(const std::set<audio_devices_t> &halDeviceIds, pal_device_id_t *palOutDeviceIds, const char *address);
     audio_io_handle_t GetHandle();
     int             GetUseCase();
     std::mutex write_wait_mutex_;

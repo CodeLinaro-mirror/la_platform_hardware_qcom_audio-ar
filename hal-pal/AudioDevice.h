@@ -174,6 +174,9 @@ public:
     int GetPalDeviceIds(
             const std::set<audio_devices_t>& hal_device_id,
             pal_device_id_t* pal_device_id);
+    int GetPalDeviceIds(
+            const std::set<audio_devices_t> &hal_device_id,
+            pal_device_id_t *pal_device_id, const char *address);
     int usb_card_id_;
     int usb_dev_num_;
     int dp_controller;

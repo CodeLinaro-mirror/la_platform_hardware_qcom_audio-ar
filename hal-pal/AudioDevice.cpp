@@ -1868,7 +1868,7 @@ void AudioDevice::FillAndroidDeviceMap() {
     android_device_map_.insert(std::make_pair(AUDIO_DEVICE_OUT_AUX_LINE, PAL_DEVICE_OUT_AUX_LINE));
     //android_device_map_.insert(std::make_pair(AUDIO_DEVICE_OUT_SPEAKER_SAFE, PAL_DEVICE_OUT_SPEAKER_SAFE));
     //android_device_map_.insert(std::make_pair(AUDIO_DEVICE_OUT_IP, PAL_DEVICE_OUT_IP));
-    //android_device_map_.insert(std::make_pair(AUDIO_DEVICE_OUT_BUS, PAL_DEVICE_OUT_BUS));
+    android_device_map_.insert(std::make_pair(AUDIO_DEVICE_OUT_BUS, PAL_DEVICE_OUT_SPEAKER));
     android_device_map_.insert(std::make_pair(AUDIO_DEVICE_OUT_PROXY, PAL_DEVICE_OUT_PROXY));
     android_device_map_.insert(std::make_pair(AUDIO_DEVICE_OUT_USB_HEADSET, PAL_DEVICE_OUT_USB_HEADSET));
     android_device_map_.insert(std::make_pair(AUDIO_DEVICE_OUT_DEFAULT, PAL_DEVICE_OUT_SPEAKER));
@@ -1904,7 +1904,6 @@ void AudioDevice::FillAndroidDeviceMap() {
     //android_device_map_.insert(std::make_pair(AUDIO_DEVICE_IN_HDMI_ARC, PAL_DEVICE_IN_HDMI_ARC);
     //android_device_map_.insert(std::make_pair(AUDIO_DEVICE_IN_BLUETOOTH_BLE, PAL_DEVICE_IN_BLUETOOTH_BLE);
     //android_device_map_.insert(std::make_pair(AUDIO_DEVICE_IN_DEFAULT, PAL_DEVICE_IN_DEFAULT));
-    android_device_map_.insert(std::make_pair(AUDIO_DEVICE_OUT_BUS, PAL_DEVICE_OUT_SPEAKER));
     android_device_map_.insert(std::make_pair(AUDIO_DEVICE_IN_BUS, PAL_DEVICE_IN_HANDSET_MIC));
 }
 
@@ -1936,6 +1935,65 @@ int AudioDevice::GetPalDeviceIds(const std::set<audio_devices_t>& hal_device_ids
                }
             } else {
                pal_device_id[device_count] = it->second;
+            }
+        }
+        ++device_count;
+    }
+
+error:
+    AHAL_DBG("devices allocated %zu, pal device ids before returning %d",
+             hal_device_ids.size(), device_count);
+    return device_count;
+}
+
+int AudioDevice::GetPalDeviceIds(const std::set<audio_devices_t> &hal_device_ids,
+                                 pal_device_id_t *pal_device_id, const char *address) {
+    int device_count = 0;
+    if (!pal_device_id) {
+        AHAL_ERR("invalid pal device id");
+        goto error;
+    }
+
+    // pal device ids is supposed to have to space for the new ids
+    AHAL_DBG("haldeviceIds: %zu", hal_device_ids.size());
+
+    for (auto hal_device_id : hal_device_ids) {
+        // Assign PAL devices based on BUS Address for AUDIO_DEVICE_OUT_BUS
+        if (AUDIO_DEVICE_OUT_BUS == hal_device_id) {
+            if ((strcmp(address, "BUS00_MEDIA") == 0) ||
+                (strcmp(address, "BUS01_SYS_NOTIFICATION") == 0) ||
+                (strcmp(address, "BUS02_NAV_GUIDANCE") == 0) ||
+                (strcmp(address, "BUS03_PHONE") == 0)) {
+                pal_device_id[device_count] = PAL_DEVICE_OUT_SPEAKER;
+            } else if (strcmp(address, "BUS08_FRONT_PASSENGER") == 0) {
+                pal_device_id[device_count] = PAL_DEVICE_OUT_A2B_SPKR;
+            } else if (strcmp(address, "BUS16_REAR_SEAT") == 0) {
+                pal_device_id[device_count] = PAL_DEVICE_OUT_A2B2_SPKR;
+            } else {
+                pal_device_id[device_count] = PAL_DEVICE_OUT_SPEAKER;
+            }
+            AHAL_DBG("Found haldeviceId: %x and PAL Device ID %d",
+                     AUDIO_DEVICE_OUT_BUS, pal_device_id[device_count]);
+            ++device_count;
+            continue;
+        }
+
+        auto it = android_device_map_.find(hal_device_id);
+        if (it != android_device_map_.end() &&
+            audio_is_input_device(it->first) == audio_is_input_device(hal_device_id)) {
+            AHAL_DBG("Found haldeviceId: %x and PAL Device ID %d",
+                     it->first, it->second);
+            if (it->second == PAL_DEVICE_OUT_AUX_DIGITAL ||
+                it->second == PAL_DEVICE_OUT_HDMI) {
+                AHAL_ERR("dp_controller: %d dp_stream: %d",
+                         dp_controller, dp_stream);
+                if (dp_controller * MAX_STREAMS_PER_CONTROLLER + dp_stream) {
+                    pal_device_id[device_count] = PAL_DEVICE_OUT_AUX_DIGITAL_1;
+                } else {
+                    pal_device_id[device_count] = it->second;
+                }
+            } else {
+                pal_device_id[device_count] = it->second;
             }
         }
         ++device_count;

@@ -1399,6 +1399,12 @@ int StreamPrimary::getPalDeviceIds(const std::set<audio_devices_t>& halDeviceIds
     return adevice->GetPalDeviceIds(halDeviceIds, qualIds);
 }
 
+int StreamPrimary::getPalDeviceIds(const std::set<audio_devices_t> &halDeviceIds,
+                                   pal_device_id_t *qualIds, const char *address) {
+    std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
+    return adevice->GetPalDeviceIds(halDeviceIds, qualIds, address);
+}
+
 int StreamPrimary::GetDeviceAddress(struct str_parms *parms, int *card_id,
                                       int *device_num) {
     int ret = -EINVAL;
@@ -1900,7 +1906,8 @@ int StreamOutPrimary::RouteStream(const std::set<audio_devices_t>& new_devices) 
     forceRouting = AudioExtn::audio_devices_cmp(new_devices, audio_is_a2dp_out_device);
 
     /* Ignore routing to same device unless it's forced */
-    if (!AudioExtn::audio_devices_empty(new_devices) || forceRouting) {
+    if (((new_devices != mAndroidOutDevices) && (!AudioExtn::audio_devices_empty(new_devices))) ||
+        forceRouting) {
         // re-allocate mPalOutDevice and mPalOutDeviceIds
         if (new_devices.size() != mAndroidOutDevices.size()) {
             deviceId = (pal_device_id_t*) realloc(mPalOutDeviceIds,
@@ -1934,7 +1941,7 @@ int StreamOutPrimary::RouteStream(const std::set<audio_devices_t>& new_devices) 
             mPalOutDevice[i].config.ch_info = {0, {0}};
             mPalOutDevice[i].config.aud_fmt_id = PAL_AUDIO_FMT_PCM_S16_LE;
             if ((mPalOutDeviceIds[i] == PAL_DEVICE_OUT_USB_DEVICE) ||
-               (mPalOutDeviceIds[i] == PAL_DEVICE_OUT_USB_HEADSET)) {
+                (mPalOutDeviceIds[i] == PAL_DEVICE_OUT_USB_HEADSET)) {
                 mPalOutDevice[i].address.card_id = adevice->usb_card_id_;
                 mPalOutDevice[i].address.device_num = adevice->usb_dev_num_;
             }
@@ -2932,7 +2939,7 @@ StreamOutPrimary::StreamOutPrimary(
            goto error;
     }
 
-    noPalDevices = getPalDeviceIds(mAndroidOutDevices, mPalOutDeviceIds);
+    noPalDevices = getPalDeviceIds(mAndroidOutDevices, mPalOutDeviceIds, address);
     if (noPalDevices != mAndroidOutDevices.size()) {
         AHAL_ERR("mismatched pal no of devices %d and hal devices %zu", noPalDevices, mAndroidOutDevices.size());
         goto error;
@@ -2953,7 +2960,8 @@ StreamOutPrimary::StreamOutPrimary(
             mPalOutDevice[i].config.sample_rate = DEFAULT_OUTPUT_SAMPLING_RATE;
         mPalOutDevice[i].config.bit_width = CODEC_BACKEND_DEFAULT_BIT_WIDTH;
         mPalOutDevice[i].config.aud_fmt_id = PAL_AUDIO_FMT_PCM_S16_LE; // TODO: need to convert this from output format
-        AHAL_INFO("device rate = %#x width=%#x fmt=%#x",
+        AHAL_INFO("PalOutDevice id = %d, rate = %#x, width = %#x, fmt = %#x",
+            mPalOutDevice[i].id,
             mPalOutDevice[i].config.sample_rate,
             mPalOutDevice[i].config.bit_width,
             mPalOutDevice[i].config.aud_fmt_id);
