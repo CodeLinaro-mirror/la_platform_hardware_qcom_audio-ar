@@ -194,6 +194,7 @@ QCV_FAMILY_SKUS := neo
 DEVICE_SKU := neo
 
 CONFIG_PAL_SRC_DIR := vendor/qcom/opensource/pal/configs/neo
+CONFIG_AGM_SRC_DIR := vendor/qcom/opensource/agm/plugins/tinyalsa/test
 CONFIG_HAL_SRC_DIR := vendor/qcom/opensource/audio-hal/primary-hal/configs/neo
 CONFIG_SKU_OUT_DIR := $(TARGET_COPY_OUT_VENDOR)/etc/audio/sku_$(DEVICE_SKU)
 
@@ -215,6 +216,7 @@ PRODUCT_COPY_FILES += \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_neo_idp_sg.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_neo_idp_sg.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_neo_idp_sg.xml:$(CONFIG_SKU_OUT_DIR)/../../resourcemanager_neo_idp_sg.xml \
     $(CONFIG_PAL_SRC_DIR)/usecaseKvManager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usecaseKvManager.xml \
+    $(CONFIG_AGM_SRC_DIR)/backend_conf.xml:$(TARGET_COPY_OUT_VENDOR)/etc/backend_conf.xml \
     vendor/qcom/opensource/audio-hal/primary-hal/configs/common/media_codecs_vendor_audio.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_vendor_audio.xml \
     frameworks/native/data/etc/android.hardware.audio.pro.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.pro.xml \
     frameworks/native/data/etc/android.hardware.audio.low_latency.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.low_latency.xml
