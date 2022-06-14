@@ -78,6 +78,7 @@ AUDIO_FEATURE_ENABLED_SOURCE_TRACKING := true
 AUDIO_FEATURE_ENABLED_GEF_SUPPORT := true
 BOARD_SUPPORTS_QAHW := false
 AUDIO_FEATURE_ENABLED_RAS := true
+AUDIO_FEATURE_ENABLED_SND_MONITOR := false
 AUDIO_FEATURE_ENABLED_DLKM := true
 AUDIO_FEATURE_ENABLED_USB_BURST_MODE := false
 AUDIO_FEATURE_ENABLED_SVA_MULTI_STAGE := true
@@ -89,9 +90,6 @@ AUDIO_FEATURE_ENABLED_EXT_HW_PLUGIN := true
 AUDIO_FEATURE_ENABLED_AUDIO_CONTROL_HAL := true
 ifneq ($(ENABLE_HYP),true)
 AUDIO_FEATURE_ENABLED_AUTO_AUDIOD := true
-AUDIO_FEATURE_ENABLED_SND_MONITOR := false
-else
-AUDIO_FEATURE_ENABLED_SND_MONITOR := true
 endif
 AUDIO_FEATURE_ENABLED_FM_TUNER_EXT := true
 ##AUTOMOTIVE_AUDIO_FEATURE_FLAGS
@@ -393,18 +391,12 @@ vendor.audio.feature.deepbuffer_as_primary.enable=false \
 vendor.audio.feature.vbat.enable=false \
 vendor.audio.feature.wsa.enable=false \
 vendor.audio.feature.audiozoom.enable=false \
+vendor.audio.feature.snd_mon.enable=false \
 vendor.audio.feature.auto_hal.enable=true \
 vendor.audio.feature.auto_hal_pal.enable=true
 ifneq (,$(filter msmnile_gvmgh, $(TARGET_PRODUCT) $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)))
 PRODUCT_ODM_PROPERTIES += \
 vendor.audio.feature.concurrent_capture.enable=true
-endif
-ifeq ($(AUDIO_FEATURE_ENABLED_SND_MONITOR), true)
-PRODUCT_ODM_PROPERTIES += \
-vendor.audio.feature.snd_mon.enable=true
-else
-PRODUCT_ODM_PROPERTIES += \
-vendor.audio.feature.snd_mon.enable=false
 endif
 else
 # Non-Generic ODM varient related
@@ -448,18 +440,12 @@ vendor.audio.feature.deepbuffer_as_primary.enable=false \
 vendor.audio.feature.vbat.enable=true \
 vendor.audio.feature.wsa.enable=false \
 vendor.audio.feature.audiozoom.enable=false \
+vendor.audio.feature.snd_mon.enable=false \
 vendor.audio.feature.auto_hal.enable=true \
 vendor.audio.feature.auto_hal_pal.enable=true
 ifneq (,$(filter msmnile_gvmgh, $(TARGET_PRODUCT) $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)))
 PRODUCT_ODM_PROPERTIES += \
 vendor.audio.feature.concurrent_capture.enable=true
-endif
-ifeq ($(AUDIO_FEATURE_ENABLED_SND_MONITOR), true)
-PRODUCT_ODM_PROPERTIES += \
-vendor.audio.feature.snd_mon.enable=true
-else
-PRODUCT_ODM_PROPERTIES += \
-vendor.audio.feature.snd_mon.enable=false
 endif
 endif
 
