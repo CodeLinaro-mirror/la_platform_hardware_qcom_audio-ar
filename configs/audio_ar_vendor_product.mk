@@ -25,7 +25,7 @@ PRODUCT_PACKAGES += $(MM_AUDIO_AR)
 # audio specific
 # ------
 TARGET_USES_AOSP := true
-TARGET_USES_AOSP_FOR_AUDIO := true
+TARGET_USES_AOSP_FOR_AUDIO := false
 
 # Audio configuration file
 -include $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/msmnile_au.mk
