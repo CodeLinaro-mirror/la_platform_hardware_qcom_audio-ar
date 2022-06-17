@@ -2134,6 +2134,7 @@ uint64_t StreamOutPrimary::GetFramesWritten(struct timespec *timestamp)
     size_t size = 0, kernel_buffer_size = 0;
     int32_t ret;
 
+    stream_mutex_.lock();
     /* This adjustment accounts for buffering after app processor
      * It is based on estimated DSP latency per use case, rather than exact.
      */
@@ -2142,9 +2143,10 @@ uint64_t StreamOutPrimary::GetFramesWritten(struct timespec *timestamp)
 
     if (!timestamp) {
        AHAL_ERR("timestamp NULL");
+       stream_mutex_.unlock();
        return 0;
     }
-    written_frames = std::atomic_load(&mBytesWritten) / audio_bytes_per_frame(
+    written_frames = mBytesWritten / audio_bytes_per_frame(
         audio_channel_count_from_out_mask(config_.channel_mask),
         config_.format);
 
@@ -2176,6 +2178,7 @@ uint64_t StreamOutPrimary::GetFramesWritten(struct timespec *timestamp)
 
         }
     }
+    stream_mutex_.unlock();
 
     if (signed_frames <= 0) {
        clock_gettime(CLOCK_MONOTONIC, timestamp);
@@ -2823,7 +2826,7 @@ ssize_t StreamOutPrimary::write(const void *buffer, size_t bytes)
     ATRACE_END();
 
 exit:
-    if (std::atomic_load(&mBytesWritten) <= UINT64_MAX - bytes) {
+    if (mBytesWritten <= UINT64_MAX - bytes) {
         mBytesWritten += bytes;
     } else {
         mBytesWritten = UINT64_MAX;
