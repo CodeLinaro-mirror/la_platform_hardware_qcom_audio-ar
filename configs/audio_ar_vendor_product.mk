@@ -1,5 +1,5 @@
 # MM_AUDIO_AR
-ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_gvmq)
+ifneq (,$(filter $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_gvmq msmnile_au))
 MM_AUDIO_AR := acdb_cal.acdb
 
 MM_AUDIO_AR += agmplay

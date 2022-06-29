@@ -89,9 +89,9 @@ endif
 # Automotive LAGVM will need to have both AR and Elite
 # audio hals available on target for conditional loading
 # depending on the ro.boot.audio prop.
-# Only msmnile_gvmgh must have AR HAL linked to the
+# Only msmnile_gvmgh/msmnile_au must have AR HAL linked to the
 # audio.primary.msmnile.so name
-ifeq ($(PRODUCT_NAME), msmnile_gvmq)
+ifneq (,$(filter $(PRODUCT_NAME), msmnile_gvmq msmnile_au))
 LOCAL_MODULE := audio.primary.$(TARGET_BOARD_PLATFORM).ar
 LOCAL_MODULE_RELATIVE_PATH := hw
 LOCAL_MODULE_TAGS := optional
