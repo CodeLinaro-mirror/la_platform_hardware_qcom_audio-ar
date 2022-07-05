@@ -26,6 +26,12 @@
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+/* Changes from Qualcomm Innovation Center are provided under the following license:
+ *
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
 
 #define LOG_TAG "AHAL: AudioVoice"
 #define ATRACE_TAG (ATRACE_TAG_AUDIO|ATRACE_TAG_HAL)
@@ -400,6 +406,18 @@ int AudioVoice::RouteStream(const std::set<audio_devices_t>& rx_devices) {
     }
 
     GetMatchingTxDevices(rx_devices, tx_devices);
+
+    /**
+     * if device_none is in Tx/Rx devices,
+     * which is invalid, teardown the usecase.
+     */
+    if (tx_devices.find(AUDIO_DEVICE_NONE) != tx_devices.end() ||
+        rx_devices.find(AUDIO_DEVICE_NONE) != rx_devices.end()) {
+        AHAL_ERR("Invalid Tx/Rx device");
+        ret = 0;
+        goto exit;
+    }
+
     device_count = tx_devices.size() > rx_devices.size() ? tx_devices.size() : rx_devices.size();
 
     pal_device_ids = (pal_device_id_t *)calloc(1, device_count * sizeof(pal_device_id_t));
