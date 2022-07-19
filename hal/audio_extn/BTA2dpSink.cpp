@@ -124,6 +124,8 @@ int32_t start_btsink(std::shared_ptr<AudioDevice> adev __unused, struct str_parm
     pal_devs[1].config.bit_width = BIT_WIDTH;
     pal_devs[1].config.ch_info = ch_info;
     pal_devs[1].config.aud_fmt_id = PAL_AUDIO_FMT_PCM_S16_LE;
+    strlcpy(pal_devs[1].custom_config.custom_key, "btsink-usecase",
+        sizeof(pal_devs[1].custom_config.custom_key));
 
     ret = pal_stream_open(&stream_attr, num_pal_devs, pal_devs,
             0, NULL, NULL, 0, &btsink.stream_handle);
