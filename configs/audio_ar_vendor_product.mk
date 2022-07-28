@@ -19,6 +19,7 @@ MM_AUDIO_AR += libhfp_pal
 MM_AUDIO_AR += lib_default_plugin_controls
 
 ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_au)
+MM_AUDIO_AR += workspaceFileXml.qwsp
 MM_AUDIO_AR += capi_avc
 MM_AUDIO_AR += capi_peq
 MM_AUDIO_AR += capi_bmt
