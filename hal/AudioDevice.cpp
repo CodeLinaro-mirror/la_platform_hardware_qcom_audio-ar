@@ -33,6 +33,10 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
 #define LOG_TAG "AHAL: AudioDevice"
@@ -1116,6 +1120,7 @@ int AudioDevice::Init(hw_device_t **device, const hw_module_t *module) {
         }
     }
     audio_extn_sound_trigger_init(adev_);
+    AudioExtn::bta2dp_sink_feature_init(property_get_bool("vendor.audio.feature.a2dp_sink.enable", false));
     AudioExtn::hfp_feature_init(property_get_bool("vendor.audio.feature.hfp.enable", false));
     AudioExtn::a2dp_source_feature_init(property_get_bool("vendor.audio.feature.a2dp_offload.enable", false));
 

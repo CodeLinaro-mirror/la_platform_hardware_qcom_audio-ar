@@ -265,12 +265,14 @@ static int32_t start_hfp(std::shared_ptr<AudioDevice> adev __unused,
             &hfpmod.rx_stream_handle);
     if (ret != 0) {
         AHAL_ERR("HFP rx stream (BT SCO->Spkr) open failed, rc %d", ret);
+        hfpmod.rx_stream_handle = NULL;
         return ret;
     }
     ret = pal_stream_start(hfpmod.rx_stream_handle);
     if (ret != 0) {
         AHAL_ERR("HFP rx stream (BT SCO->Spkr) start failed, rc %d", ret);
         pal_stream_close(hfpmod.rx_stream_handle);
+        hfpmod.rx_stream_handle = NULL;
         return ret;
     }
 
@@ -308,6 +310,7 @@ static int32_t start_hfp(std::shared_ptr<AudioDevice> adev __unused,
         pal_stream_stop(hfpmod.rx_stream_handle);
         pal_stream_close(hfpmod.rx_stream_handle);
         hfpmod.rx_stream_handle = NULL;
+        hfpmod.tx_stream_handle = NULL;
         return ret;
     }
     ret = pal_stream_start(hfpmod.tx_stream_handle);
