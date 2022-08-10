@@ -18,6 +18,14 @@ MM_AUDIO_AR += libar-pal
 MM_AUDIO_AR += libhfp_pal
 MM_AUDIO_AR += lib_default_plugin_controls
 
+ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_au)
+MM_AUDIO_AR += capi_avc
+MM_AUDIO_AR += capi_peq
+MM_AUDIO_AR += capi_bmt
+MM_AUDIO_AR += capi_sumx
+MM_AUDIO_AR += capi_fnb
+endif
+
 MM_AUDIO_AR += sound_trigger.primary.$(TARGET_BOARD_PLATFORM).ar
 PRODUCT_PACKAGES += $(MM_AUDIO_AR)
 

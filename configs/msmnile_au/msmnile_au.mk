@@ -318,7 +318,7 @@ vendor.audio.hal.output.suspend.supported=false
 #Enable AAudio MMAP/NOIRQ data path
 #2 is AAUDIO_POLICY_AUTO so it will try MMAP then fallback to Legacy path
 ifeq ($(PRODUCT_NAME), msmnile_gvmgh)
-PRODUCT_PROPERTY_OVERRIDES += aaudio.mmap_policy=2
+PRODUCT_PROPERTY_OVERRIDES += aaudio.mmap_policy=1
 #Allow EXCLUSIVE then fall back to SHARED.
 PRODUCT_PROPERTY_OVERRIDES += aaudio.mmap_exclusive_policy=2
 PRODUCT_PROPERTY_OVERRIDES += aaudio.hw_burst_min_usec=4000
