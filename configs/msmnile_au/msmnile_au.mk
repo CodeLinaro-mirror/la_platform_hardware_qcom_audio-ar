@@ -113,7 +113,13 @@ PRODUCT_COPY_FILES += \
 # Configuration files for msmnile_gvmq only
 ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_gvmq)
 PRODUCT_COPY_FILES += \
-    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/mixer_paths_gvmauto8295_adp_star.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_gvmauto8295_adp_star.xml
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/mixer_paths_gvmauto8295_adp_star.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_gvmauto8295_adp_star.xml \
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/mixer_paths_gvmauto_8155.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_gvmauto_8155.xml \
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/mixer_paths_gvmauto_6155.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_gvmauto_6155.xml
+endif
+ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_au)
+PRODUCT_COPY_FILES += \
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/mixer_paths_sa8155_adp_star.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_sa8155_adp_star.xml
 endif
 
 # Configuration files for msmnile_gvmgh only
@@ -498,13 +504,16 @@ PRODUCT_PACKAGES_ENG += \
 PRODUCT_PACKAGES_DEBUG += \
     AudioSettings
 
+# enable HIDL related audiocontrol packages for msmnile_gvmgh only
+ifeq ($(PRODUCT_NAME), msmnile_gvmgh)
 # for HIDL related audiocontrol packages
 PRODUCT_PACKAGES += \
     vendor.qti.hardware.automotive.audiocontrol@1.0-service \
     android.hardware.automotive.audiocontrol@1.0
+endif
 
 # for AudioReach HAL
-ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_gvmq)
+ifneq (,$(filter $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_gvmq msmnile_au))
 PRODUCT_PACKAGES += \
     audio.primary.msmnile.ar
 endif
