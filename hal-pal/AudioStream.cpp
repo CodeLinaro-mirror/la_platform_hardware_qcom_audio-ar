@@ -1244,7 +1244,9 @@ static int astream_in_get_active_microphones(
         }
     }
 done:
-    *mic_count = total_mic_count;
+    if (mic_count != NULL) {
+        *mic_count = total_mic_count;
+    }
     return ret;
 }
 
@@ -2936,10 +2938,11 @@ StreamOutPrimary::StreamOutPrimary(
 
     mPalOutDeviceIds = new pal_device_id_t[mAndroidOutDevices.size()];
     if (!mPalOutDeviceIds) {
-           goto error;
+        goto error;
     }
-
-    noPalDevices = getPalDeviceIds(mAndroidOutDevices, mPalOutDeviceIds, address);
+    if (address != NULL) {
+        noPalDevices = getPalDeviceIds(mAndroidOutDevices, mPalOutDeviceIds, address);
+    }
     if (noPalDevices != mAndroidOutDevices.size()) {
         AHAL_ERR("mismatched pal no of devices %d and hal devices %zu", noPalDevices, mAndroidOutDevices.size());
         goto error;

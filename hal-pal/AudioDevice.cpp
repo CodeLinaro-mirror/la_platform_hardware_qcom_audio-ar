@@ -1185,7 +1185,7 @@ std::shared_ptr<StreamInPrimary> AudioDevice::InGetStream (audio_stream_t* strea
 }
 
 int AudioDevice::SetMicMute(bool state) {
-    int ret;
+    int ret = 0;
     std::shared_ptr<StreamInPrimary> astream_in;
     mute_ = state;
 
@@ -1249,7 +1249,7 @@ int AudioDevice::add_input_headset_if_usb_out_headset(int *device_count,
 }
 
 int AudioDevice::SetParameters(const char *kvpairs) {
-    int ret = 0, val = 0;
+    int ret = 0, val = 0, rc = 0;
     struct str_parms *parms;
     char value[256];
     int pal_device_count = 0;
@@ -1523,7 +1523,12 @@ int AudioDevice::SetParameters(const char *kvpairs) {
             pal_device_count = GetPalDeviceIds({device}, pal_device_ids);
             for (int i = 0; i < pal_device_count; i++) {
                 param_device_connection.connection_state = false;
-                param_device_connection.id = pal_device_ids[i];
+                if (pal_device_ids != NULL) {
+                    param_device_connection.id = pal_device_ids[i];
+                } else {
+                    rc = -ENOMEM;
+                    goto exit;
+                }
                 ret = pal_set_param(PAL_PARAM_ID_DEVICE_CONNECTION,
                         (void*)&param_device_connection,
                         sizeof(pal_param_device_connection_t));
@@ -1685,15 +1690,19 @@ int AudioDevice::SetParameters(const char *kvpairs) {
         struct pal_volume_data* volume = NULL;
         volume = (struct pal_volume_data *)malloc(sizeof(struct pal_volume_data)
                       +sizeof(struct pal_channel_vol_kv));
-        volume->no_of_volpair = 1;
-        //For haptics, there is only one channel (FL).
-        volume->volume_pair[0].channel_mask = 0x01;
-        volume->volume_pair[0].vol = atof(value);
-        AHAL_INFO("Setting Haptics Volume as %f", volume->volume_pair[0].vol);
-        ret = pal_set_param(PAL_PARAM_ID_HAPTICS_VOLUME, (void *)volume,
+        if (volume != NULL) {
+            volume->no_of_volpair = 1;
+            //For haptics, there is only one channel (FL).
+            volume->volume_pair[0].channel_mask = 0x01;
+            volume->volume_pair[0].vol = atof(value);
+            AHAL_INFO("Setting Haptics Volume as %f", volume->volume_pair[0].vol);
+            ret = pal_set_param(PAL_PARAM_ID_HAPTICS_VOLUME, (void *)volume,
                  sizeof(pal_volume_data));
-        if (volume)
             free(volume);
+        } else {
+            rc = -EINVAL;
+            goto exit;
+        }
     }
 
     if (str_parms_get_str(parms, "haptics_intensity", value, sizeof(value)) >=0) {
