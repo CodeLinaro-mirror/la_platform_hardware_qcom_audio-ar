@@ -805,27 +805,27 @@ int AudioVoice::VoiceSetDevice(voice_session_t *session) {
         palDevices[0].id = PAL_DEVICE_IN_HANDSET_MIC;  //overwrite the device for VCO
     }
 
-    if (session->volume_boost) {
-            /* volume boost if device is not supported */
-            param_payload = (pal_param_payload *)calloc(1, sizeof(pal_param_payload) +
-                                               sizeof(session->volume_boost));
-            if (!param_payload) {
-                AHAL_ERR("calloc for size %zu failed",
-                     sizeof(pal_param_payload) + sizeof(session->volume_boost));
-            } else {
-                param_payload->payload_size = sizeof(session->volume_boost);
-                if (palDevices[1].id != PAL_DEVICE_OUT_HANDSET &&
-                    palDevices[1].id != PAL_DEVICE_OUT_SPEAKER)
-                    param_payload->payload[0] = false;
-                else
-                    param_payload->payload[0] = true;
-                ret = pal_stream_set_param(session->pal_voice_handle, PAL_PARAM_ID_VOLUME_BOOST,
-                                           param_payload);
-                if (ret)
-                    AHAL_ERR("Volume Boost enable/disable failed %x", ret);
-                free(param_payload);
-                param_payload = nullptr;
-            }
+    if (session && session->volume_boost) {
+        /* volume boost if device is not supported */
+        param_payload = (pal_param_payload *)calloc(1, sizeof(pal_param_payload) +
+                                           sizeof(session->volume_boost));
+        if (!param_payload) {
+            AHAL_ERR("calloc for size %zu failed",
+                 sizeof(pal_param_payload) + sizeof(session->volume_boost));
+        } else {
+            param_payload->payload_size = sizeof(session->volume_boost);
+            if (palDevices[1].id != PAL_DEVICE_OUT_HANDSET &&
+                palDevices[1].id != PAL_DEVICE_OUT_SPEAKER)
+                param_payload->payload[0] = false;
+            else
+                param_payload->payload[0] = true;
+            ret = pal_stream_set_param(session->pal_voice_handle, PAL_PARAM_ID_VOLUME_BOOST,
+                                       param_payload);
+            if (ret)
+                AHAL_ERR("Volume Boost enable/disable failed %x", ret);
+            free(param_payload);
+            param_payload = nullptr;
+        }
     }
 
     if (session && session->pal_voice_handle) {
