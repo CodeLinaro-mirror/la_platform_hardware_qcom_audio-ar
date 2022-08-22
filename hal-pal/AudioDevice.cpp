@@ -1272,6 +1272,13 @@ int AudioDevice::SetParameters(const char *kvpairs) {
         goto exit;
     }
 
+    ret = str_parms_get_str(parms, "pal_plugin_param", value, sizeof(value));
+    if (ret >= 0) {
+        ret = pal_set_param(PAL_PARAM_ID_PLUGIN_PARAM, (void*)parms, sizeof(value));
+        str_parms_destroy(parms);
+        goto exit;
+    }
+
     ret = str_parms_get_str(parms, "effect_control", value, sizeof(value));
     if (ret >= 0 && (strncmp(value, "hfp", 3) == 0)) {
 

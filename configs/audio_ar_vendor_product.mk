@@ -17,6 +17,7 @@ MM_AUDIO_AR += init.qti.AGMIPC.sh
 MM_AUDIO_AR += libar-pal
 MM_AUDIO_AR += libhfp_pal
 MM_AUDIO_AR += lib_default_plugin_controls
+MM_AUDIO_AR += lib_default_set_param_plugin_controls
 
 ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_au)
 MM_AUDIO_AR += workspaceFileXml.qwsp
