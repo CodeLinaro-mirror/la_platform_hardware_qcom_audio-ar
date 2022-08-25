@@ -1382,6 +1382,10 @@ int AudioDevice::SetParameters(const char *kvpairs) {
                 free(pal_device_ids);
                 pal_device_ids = NULL;
             }
+            if (ret != 0) {
+                AHAL_INFO("usb mic not supported for %d", device);
+                return 0;
+            }
         }
     }
 
