@@ -93,7 +93,7 @@ static int32_t hfp_set_volume(float value)
 
     if (!hfpmod.is_hfp_running) {
         AHAL_ERR("HFP not active, ignoring set_hfp_volume call");
-        return -ENODEV;
+        goto exit;
     }
 
     AHAL_DBG("Setting HFP volume to %f \n", value);
@@ -112,6 +112,7 @@ static int32_t hfp_set_volume(float value)
         AHAL_ERR("set volume failed: %d \n", ret);
 
     free(pal_volume);
+exit:
     AHAL_VERBOSE("exit");
     return ret;
 }
