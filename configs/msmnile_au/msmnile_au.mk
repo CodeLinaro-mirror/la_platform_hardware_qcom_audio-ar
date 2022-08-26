@@ -78,7 +78,6 @@ AUDIO_FEATURE_ENABLED_SOURCE_TRACKING := false
 AUDIO_FEATURE_ENABLED_GEF_SUPPORT := true
 BOARD_SUPPORTS_QAHW := false
 AUDIO_FEATURE_ENABLED_RAS := false
-AUDIO_FEATURE_ENABLED_SND_MONITOR := false
 AUDIO_FEATURE_ENABLED_DLKM := true
 AUDIO_FEATURE_ENABLED_USB_BURST_MODE := false
 AUDIO_FEATURE_ENABLED_SVA_MULTI_STAGE := false
@@ -90,6 +89,9 @@ AUDIO_FEATURE_ENABLED_EXT_HW_PLUGIN := true
 AUDIO_FEATURE_ENABLED_AUDIO_CONTROL_HAL := false
 ifneq ($(ENABLE_HYP),true)
 AUDIO_FEATURE_ENABLED_AUTO_AUDIOD := true
+AUDIO_FEATURE_ENABLED_SND_MONITOR := false
+else
+AUDIO_FEATURE_ENABLED_SND_MONITOR := true
 endif
 AUDIO_FEATURE_ENABLED_FM_TUNER_EXT := false
 ##AUTOMOTIVE_AUDIO_FEATURE_FLAGS
@@ -102,23 +104,40 @@ endif
 #Automotive audio specific device overlays
 DEVICE_PACKAGE_OVERLAYS += vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/overlay
 
+
+# Configuration files shared between msmnile_gvmgh and others
+PRODUCT_COPY_FILES += \
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/card-defs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/card-defs.xml \
+    vendor/qcom/opensource/agm/plugins/tinyalsa/test/backend_conf.xml:$(TARGET_COPY_OUT_VENDOR)/etc/backend_conf.xml
+
+# Configuration files for msmnile_gvmq only
+ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_gvmq)
+PRODUCT_COPY_FILES += \
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/mixer_paths_gvmauto8295_adp_star.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_gvmauto8295_adp_star.xml \
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/mixer_paths_gvmauto_8155.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_gvmauto_8155.xml \
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/mixer_paths_gvmauto_6155.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_gvmauto_6155.xml
+endif
+ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_au)
+PRODUCT_COPY_FILES += \
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/mixer_paths_sa8155_adp_star.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_sa8155_adp_star.xml
+endif
+
+# Configuration files for msmnile_gvmgh only
+ifeq ($(PRODUCT_NAME), msmnile_gvmgh)
 PRODUCT_COPY_FILES += \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/audio_effects.conf:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects.conf \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/audio_effects.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects.xml \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/mixer_paths_gvmauto_8155.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_gvmauto_8155.xml \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/mixer_paths_gvmauto_6155.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_gvmauto_6155.xml \
-    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/card-defs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/card-defs.xml \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/mixer_paths_custom.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_custom.xml \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/sound_trigger_mixer_paths.xml:$(TARGET_COPY_OUT_VENDOR)/etc/sound_trigger_mixer_paths.xml \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/audio_configs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_configs.xml \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/audio_configs_stock.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_configs_stock.xml \
     frameworks/native/data/etc/android.hardware.audio.low_latency.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.low_latency.xml
 
-#XML Audio configuration files
 PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/audio_policy_configuration.xml \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/microphone_characteristics.xml
-PRODUCT_COPY_FILES += \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/microphone_characteristics.xml \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_configuration.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/a2dp_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/a2dp_audio_policy_configuration.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/audio_policy_volumes.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_volumes.xml \
@@ -128,7 +147,7 @@ PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common/bluetooth_qti_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/bluetooth_qti_audio_policy_configuration.xml \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/car_audio_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/car_audio_configuration.xml \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/microphone_characteristics.xml
-
+endif # Configuration files for msmnile_gvmgh only
 
 #Audio HAL version
 PRODUCT_PROPERTY_OVERRIDES += \
@@ -175,6 +194,7 @@ persist.vendor.audio.ras.enabled=false
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.offload.buffer.size.kb=32
 
+ifeq ($(PRODUCT_NAME), msmnile_gvmgh)
 #Enable offload audio video playback by default
 PRODUCT_PROPERTY_OVERRIDES += \
 audio.offload.video=false
@@ -182,11 +202,13 @@ audio.offload.video=false
 #Enable audio track offload by default
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.offload.track.enable=false
+endif
 
 #Enable music through deep buffer
 PRODUCT_PROPERTY_OVERRIDES += \
 audio.deep_buffer.media=true
 
+ifeq ($(PRODUCT_NAME), msmnile_gvmgh)
 #enable voice path for PCM VoIP by default
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.voice.path.for.pcm.voip=false
@@ -194,6 +216,7 @@ vendor.voice.path.for.pcm.voip=false
 #Enable multi channel aac through offload
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.offload.multiaac.enable=false
+endif
 
 #Enable DS2, Hardbypass feature for Dolby
 PRODUCT_PROPERTY_OVERRIDES += \
@@ -212,9 +235,11 @@ vendor.audio.offload.passthrough=false
 PRODUCT_PROPERTY_OVERRIDES += \
 ro.vendor.audio.sdk.ssr=false
 
+ifeq ($(PRODUCT_NAME), msmnile_gvmgh)
 #enable dsp gapless mode by default
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.offload.gapless.enabled=false
+endif
 
 #enable pbe effects
 PRODUCT_PROPERTY_OVERRIDES += \
@@ -224,6 +249,7 @@ vendor.audio.safx.pbe.enabled=false
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.parser.ip.buffer.size=262144
 
+ifeq ($(PRODUCT_NAME), msmnile_gvmgh)
 #Enable 16 bit PCM offload by default
 PRODUCT_PROPERTY_OVERRIDES += \
 audio.offload.pcm.16bit.enable=false
@@ -251,11 +277,13 @@ PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.use.sw.alac.decoder=false
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.use.sw.ape.decoder=false
+endif
 
 #enable hw aac encoder by default
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.hw.aac.encoder=false
 
+ifeq ($(PRODUCT_NAME), msmnile_gvmgh)
 #force offload using hardware decoders for FLAC, WMA & APE
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.use.hw.flac.decoder=false
@@ -263,6 +291,7 @@ PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.use.hw.wma.decoder=false
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.use.hw.ape.decoder=false
+endif
 
 #audio becoming noisy intent broadcast delay
 PRODUCT_PROPERTY_OVERRIDES += \
@@ -294,15 +323,18 @@ vendor.audio.hal.output.suspend.supported=false
 
 #Enable AAudio MMAP/NOIRQ data path
 #2 is AAUDIO_POLICY_AUTO so it will try MMAP then fallback to Legacy path
-PRODUCT_PROPERTY_OVERRIDES += aaudio.mmap_policy=2
+ifeq ($(PRODUCT_NAME), msmnile_gvmgh)
+PRODUCT_PROPERTY_OVERRIDES += aaudio.mmap_policy=1
 #Allow EXCLUSIVE then fall back to SHARED.
 PRODUCT_PROPERTY_OVERRIDES += aaudio.mmap_exclusive_policy=2
 PRODUCT_PROPERTY_OVERRIDES += aaudio.hw_burst_min_usec=4000
+endif
 
 #enable mirror-link feature
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.enable.mirrorlink=false
 
+ifeq ($(PRODUCT_NAME), msmnile_gvmgh)
 #enable voicecall speaker stereo
 PRODUCT_PROPERTY_OVERRIDES += \
 persist.vendor.audio.voicecall.speaker.stereo=false
@@ -310,6 +342,7 @@ persist.vendor.audio.voicecall.speaker.stereo=false
 #enable AAC frame ctl for A2DP sinks
 PRODUCT_PROPERTY_OVERRIDES += \
 persist.vendor.bt.aac_frm_ctl.enabled=false
+endif
 endif
 
 #enable headset calibration
@@ -324,7 +357,6 @@ persist.vendor.audio.fluence.voicecomm=true
 ifeq ($(TARGET_USES_AOSP_FOR_AUDIO),true)
 # Generic ODM varient related
 PRODUCT_ODM_PROPERTIES += \
-vendor.audio.feature.a2dp_offload.enable=false \
 vendor.audio.feature.afe_proxy.enable=false \
 vendor.audio.feature.anc_headset.enable=false \
 vendor.audio.feature.battery_listener.enable=false \
@@ -348,7 +380,6 @@ vendor.audio.feature.hdmi_passthrough.enable=false \
 vendor.audio.feature.hfp.enable=true  \
 vendor.audio.feature.hifi_audio.enable=false \
 vendor.audio.feature.hwdep_cal.enable=false  \
-vendor.audio.feature.incall_music.enable=false  \
 vendor.audio.feature.keep_alive.enable=false \
 vendor.audio.feature.kpi_optimize.enable=false \
 vendor.audio.feature.maxx_audio.enable=false  \
@@ -357,26 +388,36 @@ vendor.audio.feature.record_play_concurency.enable=false \
 vendor.audio.feature.src_trkn.enable=false \
 vendor.audio.feature.spkr_prot.enable=false  \
 vendor.audio.feature.ssrec.enable=false \
-vendor.audio.feature.usb_offload.enable=false \
 vendor.audio.feature.usb_offload_burst_mode.enable=false  \
 vendor.audio.feature.usb_offload_sidetone_volume.enable=false \
 vendor.audio.feature.deepbuffer_as_primary.enable=false \
 vendor.audio.feature.vbat.enable=false \
 vendor.audio.feature.wsa.enable=false \
 vendor.audio.feature.audiozoom.enable=false \
-vendor.audio.feature.snd_mon.enable=false \
 vendor.audio.feature.auto_hal.enable=true \
 vendor.audio.feature.auto_hal_pal.enable=true
+ifeq ($(PRODUCT_NAME), msmnile_gvmgh)
+PRODUCT_ODM_PROPERTIES += \
+vendor.audio.feature.a2dp_offload.enable=false \
+vendor.audio.feature.incall_music.enable=false \
+vendor.audio.feature.usb_offload.enable=false
+ifeq ($(AUDIO_FEATURE_ENABLED_SND_MONITOR), true)
+PRODUCT_ODM_PROPERTIES += \
+vendor.audio.feature.snd_mon.enable=true
+else
+PRODUCT_ODM_PROPERTIES += \
+vendor.audio.feature.snd_mon.enable=false
+endif
+endif
 else
 # Non-Generic ODM varient related
 PRODUCT_ODM_PROPERTIES += \
-vendor.audio.feature.a2dp_offload.enable=false \
 vendor.audio.feature.afe_proxy.enable=true \
-vendor.audio.feature.anc_headset.enable=false \
-vendor.audio.feature.battery_listener.enable=false \
+vendor.audio.feature.anc_headset.enable=true \
+vendor.audio.feature.battery_listener.enable=true \
 vendor.audio.feature.compr_cap.enable=false \
-vendor.audio.feature.compress_in.enable=false \
-vendor.audio.feature.compress_meta_data.enable=false \
+vendor.audio.feature.compress_in.enable=true \
+vendor.audio.feature.compress_meta_data.enable=true \
 vendor.audio.feature.compr_voip.enable=false \
 vendor.audio.feature.concurrent_capture.enable=true \
 vendor.audio.feature.custom_stereo.enable=true \
@@ -388,31 +429,41 @@ vendor.audio.feature.external_dsp.enable=false \
 vendor.audio.feature.external_speaker.enable=false \
 vendor.audio.feature.external_speaker_tfa.enable=false \
 vendor.audio.feature.fluence.enable=true \
-vendor.audio.feature.fm.enable=false \
-vendor.audio.feature.hdmi_edid.enable=false \
-vendor.audio.feature.hdmi_passthrough.enable=false \
+vendor.audio.feature.fm.enable=true \
+vendor.audio.feature.hdmi_edid.enable=true \
+vendor.audio.feature.hdmi_passthrough.enable=true \
 vendor.audio.feature.hfp.enable=true \
 vendor.audio.feature.hifi_audio.enable=false \
 vendor.audio.feature.hwdep_cal.enable=false \
-vendor.audio.feature.incall_music.enable=false \
 vendor.audio.feature.keep_alive.enable=true \
-vendor.audio.feature.kpi_optimize.enable=false \
+vendor.audio.feature.kpi_optimize.enable=true \
 vendor.audio.feature.maxx_audio.enable=false \
 vendor.audio.feature.ras.enable=true \
 vendor.audio.feature.record_play_concurency.enable=false \
 vendor.audio.feature.src_trkn.enable=true \
 vendor.audio.feature.spkr_prot.enable=false \
-vendor.audio.feature.ssrec.enable=false \
-vendor.audio.feature.usb_offload.enable=false \
-vendor.audio.feature.usb_offload_burst_mode.enable=false \
+vendor.audio.feature.ssrec.enable=true \
+vendor.audio.feature.usb_offload_burst_mode.enable=true \
 vendor.audio.feature.usb_offload_sidetone_volume.enable=false \
 vendor.audio.feature.deepbuffer_as_primary.enable=false \
-vendor.audio.feature.vbat.enable=false \
+vendor.audio.feature.vbat.enable=true \
 vendor.audio.feature.wsa.enable=false \
 vendor.audio.feature.audiozoom.enable=false \
-vendor.audio.feature.snd_mon.enable=false \
 vendor.audio.feature.auto_hal.enable=true \
 vendor.audio.feature.auto_hal_pal.enable=true
+ifeq ($(PRODUCT_NAME), msmnile_gvmgh)
+PRODUCT_ODM_PROPERTIES += \
+vendor.audio.feature.a2dp_offload.enable=false \
+vendor.audio.feature.incall_music.enable=false \
+vendor.audio.feature.usb_offload.enable=false
+ifeq ($(AUDIO_FEATURE_ENABLED_SND_MONITOR), true)
+PRODUCT_ODM_PROPERTIES += \
+vendor.audio.feature.snd_mon.enable=true
+else
+PRODUCT_ODM_PROPERTIES += \
+vendor.audio.feature.snd_mon.enable=false
+endif
+endif
 endif
 
 # for HIDL related packages
@@ -453,10 +504,19 @@ PRODUCT_PACKAGES_ENG += \
 PRODUCT_PACKAGES_DEBUG += \
     AudioSettings
 
+# enable HIDL related audiocontrol packages for msmnile_gvmgh only
+ifeq ($(PRODUCT_NAME), msmnile_gvmgh)
 # for HIDL related audiocontrol packages
 PRODUCT_PACKAGES += \
     vendor.qti.hardware.automotive.audiocontrol@1.0-service \
     android.hardware.automotive.audiocontrol@1.0
+endif
+
+# for AudioReach HAL
+ifneq (,$(filter $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_gvmq msmnile_au))
+PRODUCT_PACKAGES += \
+    audio.primary.msmnile.ar
+endif
 
 ifeq ($(ENABLE_HYP),true)
 PRODUCT_PROPERTY_OVERRIDES += \

@@ -1277,8 +1277,7 @@ int AudioDevice::SetParameters(const char *kvpairs) {
     if (property_get_bool("vendor.audio.hdr.record.enable", false))
         hdr_set_parameters(adev_, parms);
 
-    ret = str_parms_get_str(parms, "screen_state", value, sizeof(value));
-    if (ret >= 0) {
+    if (str_parms_get_str(parms, "screen_state", value, sizeof(value)) >= 0) {
         pal_param_screen_state_t param_screen_st;
         if (strcmp(value, AUDIO_PARAMETER_VALUE_ON) == 0) {
             param_screen_st.screen_state = true;
@@ -1291,8 +1290,7 @@ int AudioDevice::SetParameters(const char *kvpairs) {
         }
     }
 
-    ret = str_parms_get_str(parms, "UHQA", value, sizeof(value));
-    if (ret >= 0) {
+    if (str_parms_get_str(parms, "UHQA", value, sizeof(value)) >= 0) {
         pal_param_uhqa_t param_uhqa_flag;
         if (strcmp(value, AUDIO_PARAMETER_VALUE_ON) == 0) {
             param_uhqa_flag.uhqa_state = true;
@@ -1307,16 +1305,13 @@ int AudioDevice::SetParameters(const char *kvpairs) {
         }
     }
 
-    ret = str_parms_get_str(parms, AUDIO_PARAMETER_DEVICE_CONNECT,
-                            value, sizeof(value));
-    if (ret >= 0) {
+    if (str_parms_get_str(parms, AUDIO_PARAMETER_DEVICE_CONNECT,value, sizeof(value)) >= 0) {
         pal_param_device_connection_t param_device_connection;
         val = atoi(value);
         audio_devices_t device = (audio_devices_t)val;
 
         if (audio_is_usb_out_device(device) || audio_is_usb_in_device(device)) {
-            ret = str_parms_get_str(parms, "card", value, sizeof(value));
-            if (ret >= 0) {
+            if (str_parms_get_str(parms, "card", value, sizeof(value)) >= 0) {
                 param_device_connection.device_config.usb_addr.card_id = atoi(value);
                 if ((usb_card_id_ == param_device_connection.device_config.usb_addr.card_id) &&
                     (audio_is_usb_in_device(device)) && (usb_input_dev_enabled == true)) {
@@ -1330,8 +1325,7 @@ int AudioDevice::SetParameters(const char *kvpairs) {
                 AHAL_INFO("plugin card=%d",
                     param_device_connection.device_config.usb_addr.card_id);
             }
-            ret = str_parms_get_str(parms, "device", value, sizeof(value));
-            if (ret >= 0) {
+            if (str_parms_get_str(parms, "device", value, sizeof(value)) >= 0) {
                 param_device_connection.device_config.usb_addr.device_num = atoi(value);
                 usb_dev_num_ = param_device_connection.device_config.usb_addr.device_num;
                 AHAL_INFO("plugin device num=%d",
@@ -1392,8 +1386,7 @@ int AudioDevice::SetParameters(const char *kvpairs) {
     }
 
     /* Checking for Device rotation */
-    ret = str_parms_get_int(parms, "rotation", &val);
-    if (ret >= 0) {
+    if (str_parms_get_int(parms, "rotation", &val) >= 0) {
         int isRotationReq = 0;
         pal_param_device_rotation_t param_device_rotation;
         switch (val) {
@@ -1436,8 +1429,7 @@ int AudioDevice::SetParameters(const char *kvpairs) {
     }
 
     /* Speaker Protection: Factory Test Mode */
-    ret = str_parms_get_str(parms, "fbsp_cfg_wait_time", value, sizeof(value));
-    if (ret >= 0) {
+    if (str_parms_get_str(parms, "fbsp_cfg_wait_time", value, sizeof(value)) >= 0) {
         str_parms_del(parms, "fbsp_cfg_wait_time");
         cfg_str = strtok_r(value, ";", &test_r);
         if (cfg_str != NULL) {
@@ -1445,8 +1437,7 @@ int AudioDevice::SetParameters(const char *kvpairs) {
             spPayload.operationMode = PAL_SP_MODE_FACTORY_TEST;
             spPayload.spkrHeatupTime = atoi(cfg_str);
 
-            ret = str_parms_get_str(parms, "fbsp_cfg_ftm_time", value, sizeof(value));
-            if (ret >= 0) {
+            if (str_parms_get_str(parms, "fbsp_cfg_ftm_time", value, sizeof(value)) >= 0) {
                 str_parms_del(parms, "fbsp_cfg_ftm_time");
                 cfg_str = strtok_r(value, ";", &test_r);
                 if (cfg_str != NULL) {
@@ -1465,8 +1456,7 @@ int AudioDevice::SetParameters(const char *kvpairs) {
     }
 
     /* Speaker Protection: V-validation mode */
-    ret = str_parms_get_str(parms, "fbsp_v_vali_wait_time", value, sizeof(value));
-    if (ret >= 0) {
+    if ( str_parms_get_str(parms, "fbsp_v_vali_wait_time", value, sizeof(value)) >= 0) {
         str_parms_del(parms, "fbsp_v_vali_wait_time");
         cfg_str = strtok_r(value, ";", &test_r);
         if (cfg_str != NULL) {
@@ -1474,8 +1464,7 @@ int AudioDevice::SetParameters(const char *kvpairs) {
             spPayload.operationMode = PAL_SP_MODE_V_VALIDATION;
             spPayload.spkrHeatupTime = atoi(cfg_str);
 
-            ret = str_parms_get_str(parms, "fbsp_v_vali_vali_time", value, sizeof(value));
-            if (ret >= 0) {
+            if (str_parms_get_str(parms, "fbsp_v_vali_vali_time", value, sizeof(value)) >= 0) {
                 str_parms_del(parms, "fbsp_v_vali_vali_time");
                 cfg_str = strtok_r(value, ";", &test_r);
                 if (cfg_str != NULL) {
@@ -1494,8 +1483,7 @@ int AudioDevice::SetParameters(const char *kvpairs) {
     }
 
     /* Speaker Protection: Dynamic calibration mode */
-    ret = str_parms_get_str(parms, "trigger_spkr_cal", value, sizeof(value));
-    if (ret >= 0) {
+    if (str_parms_get_str(parms, "trigger_spkr_cal", value, sizeof(value)) >= 0) {
         if ((strcmp(value, "true") == 0) || (strcmp(value, "yes") == 0)) {
             pal_spkr_prot_payload spPayload;
             spPayload.operationMode = PAL_SP_MODE_DYNAMIC_CAL;
@@ -1504,18 +1492,14 @@ int AudioDevice::SetParameters(const char *kvpairs) {
         }
     }
 
-    ret = str_parms_get_str(parms, AUDIO_PARAMETER_DEVICE_DISCONNECT,
-                            value, sizeof(value));
-    if (ret >= 0) {
+    if (str_parms_get_str(parms, AUDIO_PARAMETER_DEVICE_DISCONNECT,value, sizeof(value)) >= 0) {
         pal_param_device_connection_t param_device_connection;
         val = atoi(value);
         audio_devices_t device = (audio_devices_t)val;
         if (audio_is_usb_out_device(device) || audio_is_usb_in_device(device)) {
-            ret = str_parms_get_str(parms, "card", value, sizeof(value));
-            if (ret >= 0)
+            if (str_parms_get_str(parms, "card", value, sizeof(value)) >= 0)
                 param_device_connection.device_config.usb_addr.card_id = atoi(value);
-            ret = str_parms_get_str(parms, "device", value, sizeof(value));
-            if (ret >= 0)
+            if (str_parms_get_str(parms, "device", value, sizeof(value)) >= 0)
                 param_device_connection.device_config.usb_addr.device_num = atoi(value);
             if ((usb_card_id_ == param_device_connection.device_config.usb_addr.card_id) &&
                 (audio_is_usb_in_device(device)) && (usb_input_dev_enabled == true)) {
@@ -1557,8 +1541,7 @@ int AudioDevice::SetParameters(const char *kvpairs) {
     }
 
     /* A2DP parameters */
-    ret = str_parms_get_str(parms, AUDIO_PARAMETER_RECONFIG_A2DP, value, sizeof(value));
-    if (ret >= 0) {
+    if (str_parms_get_str(parms, AUDIO_PARAMETER_RECONFIG_A2DP, value, sizeof(value)) >= 0) {
         pal_param_bta2dp_t param_bt_a2dp;
         param_bt_a2dp.reconfig = true;
 
@@ -1567,8 +1550,7 @@ int AudioDevice::SetParameters(const char *kvpairs) {
                             sizeof(pal_param_bta2dp_t));
     }
 
-    ret = str_parms_get_str(parms, "A2dpSuspended" , value, sizeof(value));
-    if (ret >= 0) {
+    if ( str_parms_get_str(parms, "A2dpSuspended" , value, sizeof(value)) >= 0) {
         pal_param_bta2dp_t param_bt_a2dp;
 
         if (strncmp(value, "true", 4) == 0)
@@ -1581,8 +1563,7 @@ int AudioDevice::SetParameters(const char *kvpairs) {
                             sizeof(pal_param_bta2dp_t));
     }
 
-    ret = str_parms_get_str(parms, "TwsChannelConfig", value, sizeof(value));
-    if (ret >= 0) {
+    if (str_parms_get_str(parms, "TwsChannelConfig", value, sizeof(value)) >= 0) {
         pal_param_bta2dp_t param_bt_a2dp;
 
         AHAL_INFO("Setting tws channel mode to %s", value);
@@ -1594,8 +1575,7 @@ int AudioDevice::SetParameters(const char *kvpairs) {
                             sizeof(pal_param_bta2dp_t));
     }
 
-    ret = str_parms_get_str(parms, "LEAMono", value, sizeof(value));
-    if (ret >= 0) {
+    if ( str_parms_get_str(parms, "LEAMono", value, sizeof(value)) >= 0) {
         pal_param_bta2dp_t param_bt_a2dp;
 
         AHAL_INFO("Setting LC3 channel mode to %s", value);
@@ -1608,8 +1588,7 @@ int AudioDevice::SetParameters(const char *kvpairs) {
     }
 
     /* SCO parameters */
-    ret = str_parms_get_str(parms, "BT_SCO", value, sizeof(value));
-    if (ret >= 0) {
+    if (str_parms_get_str(parms, "BT_SCO", value, sizeof(value)) >= 0) {
         pal_param_btsco_t param_bt_sco;
         if (strcmp(value, AUDIO_PARAMETER_VALUE_ON) == 0)
             param_bt_sco.bt_sco_on = true;
@@ -1622,8 +1601,7 @@ int AudioDevice::SetParameters(const char *kvpairs) {
                             sizeof(pal_param_btsco_t));
     }
 
-    ret = str_parms_get_str(parms, AUDIO_PARAMETER_KEY_BT_SCO_WB, value, sizeof(value));
-    if (ret >= 0) {
+    if (str_parms_get_str(parms, AUDIO_PARAMETER_KEY_BT_SCO_WB, value, sizeof(value)) >= 0) {
         pal_param_btsco_t param_bt_sco;
         if (strcmp(value, AUDIO_PARAMETER_VALUE_ON) == 0)
             param_bt_sco.bt_wb_speech_enabled = true;
@@ -1635,8 +1613,7 @@ int AudioDevice::SetParameters(const char *kvpairs) {
                             sizeof(pal_param_btsco_t));
     }
 
-    ret = str_parms_get_str(parms, "bt_swb", value, sizeof(value));
-    if (ret >= 0) {
+    if (str_parms_get_str(parms, "bt_swb", value, sizeof(value)) >= 0) {
         pal_param_btsco_t param_bt_sco;
 
         val = atoi(value);
@@ -1647,8 +1624,7 @@ int AudioDevice::SetParameters(const char *kvpairs) {
     }
 
     for (auto& key : lc3_reserved_params) {
-        ret = str_parms_get_str(parms, key, value, sizeof(value));
-        if (ret < 0)
+        if (str_parms_get_str(parms, key, value, sizeof(value)) < 0)
             continue;
 
         if (!strcmp(key, "Codec") && !strcmp(value, "LC3")) {
@@ -1691,8 +1667,7 @@ int AudioDevice::SetParameters(const char *kvpairs) {
         memset(&btsco_lc3_cfg, 0, sizeof(btsco_lc3_cfg_t));
     }
 
-    ret = str_parms_get_str(parms, "wfd_channel_cap", value, sizeof(value));
-    if (ret >= 0) {
+    if ( str_parms_get_str(parms, "wfd_channel_cap", value, sizeof(value)) >= 0) {
         pal_param_proxy_channel_config_t param_out_proxy;
 
         val = atoi(value);
@@ -1702,8 +1677,7 @@ int AudioDevice::SetParameters(const char *kvpairs) {
                 sizeof(pal_param_proxy_channel_config_t));
     }
 
-    ret = str_parms_get_str(parms, "haptics_volume", value, sizeof(value));
-    if (ret >= 0) {
+    if (str_parms_get_str(parms, "haptics_volume", value, sizeof(value)) >= 0) {
         struct pal_volume_data* volume = NULL;
         volume = (struct pal_volume_data *)malloc(sizeof(struct pal_volume_data)
                       +sizeof(struct pal_channel_vol_kv));
@@ -1718,8 +1692,7 @@ int AudioDevice::SetParameters(const char *kvpairs) {
             free(volume);
     }
 
-    ret = str_parms_get_str(parms, "haptics_intensity", value, sizeof(value));
-    if (ret >=0) {
+    if (str_parms_get_str(parms, "haptics_intensity", value, sizeof(value)) >=0) {
         pal_param_haptics_intensity_t hIntensity;
         val = atoi(value);
         hIntensity.intensity = val;
@@ -1728,8 +1701,7 @@ int AudioDevice::SetParameters(const char *kvpairs) {
                  sizeof(pal_param_haptics_intensity_t));
     }
 
-    ret = str_parms_get_str(parms, "A2dpCaptureSuspend", value, sizeof(value));
-    if (ret >= 0) {
+    if (str_parms_get_str(parms, "A2dpCaptureSuspend", value, sizeof(value)) >= 0) {
         pal_param_bta2dp_t param_bt_a2dp;
 
         if (strncmp(value, "true", 4) == 0)
@@ -1868,7 +1840,7 @@ void AudioDevice::FillAndroidDeviceMap() {
     android_device_map_.insert(std::make_pair(AUDIO_DEVICE_OUT_AUX_LINE, PAL_DEVICE_OUT_AUX_LINE));
     //android_device_map_.insert(std::make_pair(AUDIO_DEVICE_OUT_SPEAKER_SAFE, PAL_DEVICE_OUT_SPEAKER_SAFE));
     //android_device_map_.insert(std::make_pair(AUDIO_DEVICE_OUT_IP, PAL_DEVICE_OUT_IP));
-    //android_device_map_.insert(std::make_pair(AUDIO_DEVICE_OUT_BUS, PAL_DEVICE_OUT_BUS));
+    android_device_map_.insert(std::make_pair(AUDIO_DEVICE_OUT_BUS, PAL_DEVICE_OUT_SPEAKER));
     android_device_map_.insert(std::make_pair(AUDIO_DEVICE_OUT_PROXY, PAL_DEVICE_OUT_PROXY));
     android_device_map_.insert(std::make_pair(AUDIO_DEVICE_OUT_USB_HEADSET, PAL_DEVICE_OUT_USB_HEADSET));
     android_device_map_.insert(std::make_pair(AUDIO_DEVICE_OUT_DEFAULT, PAL_DEVICE_OUT_SPEAKER));
@@ -1904,7 +1876,6 @@ void AudioDevice::FillAndroidDeviceMap() {
     //android_device_map_.insert(std::make_pair(AUDIO_DEVICE_IN_HDMI_ARC, PAL_DEVICE_IN_HDMI_ARC);
     //android_device_map_.insert(std::make_pair(AUDIO_DEVICE_IN_BLUETOOTH_BLE, PAL_DEVICE_IN_BLUETOOTH_BLE);
     //android_device_map_.insert(std::make_pair(AUDIO_DEVICE_IN_DEFAULT, PAL_DEVICE_IN_DEFAULT));
-    android_device_map_.insert(std::make_pair(AUDIO_DEVICE_OUT_BUS, PAL_DEVICE_OUT_SPEAKER));
     android_device_map_.insert(std::make_pair(AUDIO_DEVICE_IN_BUS, PAL_DEVICE_IN_HANDSET_MIC));
 }
 
@@ -1936,6 +1907,65 @@ int AudioDevice::GetPalDeviceIds(const std::set<audio_devices_t>& hal_device_ids
                }
             } else {
                pal_device_id[device_count] = it->second;
+            }
+        }
+        ++device_count;
+    }
+
+error:
+    AHAL_DBG("devices allocated %zu, pal device ids before returning %d",
+             hal_device_ids.size(), device_count);
+    return device_count;
+}
+
+int AudioDevice::GetPalDeviceIds(const std::set<audio_devices_t> &hal_device_ids,
+                                 pal_device_id_t *pal_device_id, const char *address) {
+    int device_count = 0;
+    if (!pal_device_id) {
+        AHAL_ERR("invalid pal device id");
+        goto error;
+    }
+
+    // pal device ids is supposed to have to space for the new ids
+    AHAL_DBG("haldeviceIds: %zu", hal_device_ids.size());
+
+    for (auto hal_device_id : hal_device_ids) {
+        // Assign PAL devices based on BUS Address for AUDIO_DEVICE_OUT_BUS
+        if (AUDIO_DEVICE_OUT_BUS == hal_device_id) {
+            if ((strcmp(address, "BUS00_MEDIA") == 0) ||
+                (strcmp(address, "BUS01_SYS_NOTIFICATION") == 0) ||
+                (strcmp(address, "BUS02_NAV_GUIDANCE") == 0) ||
+                (strcmp(address, "BUS03_PHONE") == 0)) {
+                pal_device_id[device_count] = PAL_DEVICE_OUT_SPEAKER;
+            } else if (strcmp(address, "BUS08_FRONT_PASSENGER") == 0) {
+                pal_device_id[device_count] = PAL_DEVICE_OUT_A2B_SPKR;
+            } else if (strcmp(address, "BUS16_REAR_SEAT") == 0) {
+                pal_device_id[device_count] = PAL_DEVICE_OUT_A2B2_SPKR;
+            } else {
+                pal_device_id[device_count] = PAL_DEVICE_OUT_SPEAKER;
+            }
+            AHAL_DBG("Found haldeviceId: %x and PAL Device ID %d",
+                     AUDIO_DEVICE_OUT_BUS, pal_device_id[device_count]);
+            ++device_count;
+            continue;
+        }
+
+        auto it = android_device_map_.find(hal_device_id);
+        if (it != android_device_map_.end() &&
+            audio_is_input_device(it->first) == audio_is_input_device(hal_device_id)) {
+            AHAL_DBG("Found haldeviceId: %x and PAL Device ID %d",
+                     it->first, it->second);
+            if (it->second == PAL_DEVICE_OUT_AUX_DIGITAL ||
+                it->second == PAL_DEVICE_OUT_HDMI) {
+                AHAL_ERR("dp_controller: %d dp_stream: %d",
+                         dp_controller, dp_stream);
+                if (dp_controller * MAX_STREAMS_PER_CONTROLLER + dp_stream) {
+                    pal_device_id[device_count] = PAL_DEVICE_OUT_AUX_DIGITAL_1;
+                } else {
+                    pal_device_id[device_count] = it->second;
+                }
+            } else {
+                pal_device_id[device_count] = it->second;
             }
         }
         ++device_count;

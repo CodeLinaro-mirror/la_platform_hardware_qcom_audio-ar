@@ -288,7 +288,7 @@ static int32_t start_hfp(std::shared_ptr<AudioDevice> adev __unused,
     devices[0].config.ch_info = ch_info;
     devices[0].config.aud_fmt_id = PAL_AUDIO_FMT_PCM_S16_LE;
 
-    devices[1].id = PAL_DEVICE_IN_SPEAKER_MIC;
+    devices[1].id = PAL_DEVICE_IN_HANDSET_MIC;
 
     ret = pal_stream_open(&stream_tx_attr,
             no_of_devices, devices,
@@ -424,9 +424,7 @@ int hfp_set_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *parm
 
     AHAL_DBG("enter");
 
-    status = str_parms_get_str(parms, AUDIO_PARAMETER_HFP_ENABLE, value,
-                                    sizeof(value));
-    if (status >= 0) {
+    if (str_parms_get_str(parms, AUDIO_PARAMETER_HFP_ENABLE, value,sizeof(value)) >= 0) {
         if (!strncmp(value, "true", sizeof(value)) && !hfpmod.is_hfp_running)
             status = start_hfp(adev, parms);
         else if (!strncmp(value, "false", sizeof(value)) && hfpmod.is_hfp_running)
@@ -436,9 +434,7 @@ int hfp_set_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *parm
     }
 
     memset(value, 0, sizeof(value));
-    status = str_parms_get_str(parms,AUDIO_PARAMETER_HFP_SET_SAMPLING_RATE, value,
-                                    sizeof(value));
-    if (status >= 0) {
+    if (str_parms_get_str(parms,AUDIO_PARAMETER_HFP_SET_SAMPLING_RATE, value,sizeof(value)) >= 0) {
         rate = atoi(value);
         if (rate == 8000){
             hfpmod.ucid = USECASE_AUDIO_HFP_SCO;
@@ -451,9 +447,7 @@ int hfp_set_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *parm
     }
 
     memset(value, 0, sizeof(value));
-    status = str_parms_get_str(parms, AUDIO_PARAMETER_KEY_HFP_VOLUME,
-                                    value, sizeof(value));
-    if (status >= 0) {
+    if (str_parms_get_str(parms, AUDIO_PARAMETER_KEY_HFP_VOLUME,value, sizeof(value)) >= 0) {
         if (sscanf(value, "%f", &vol) != 1){
             AHAL_ERR("error in retrieving hfp volume");
             status = -EIO;
@@ -468,9 +462,7 @@ int hfp_set_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *parm
     }
 
     memset(value, 0, sizeof(value));
-    status = str_parms_get_str(parms, AUDIO_PARAMETER_KEY_HFP_MIC_VOLUME,
-                                    value, sizeof(value));
-    if (status >= 0) {
+    if (str_parms_get_str(parms, AUDIO_PARAMETER_KEY_HFP_MIC_VOLUME,value, sizeof(value)) >= 0) {
         if (sscanf(value, "%f", &vol) != 1){
             AHAL_ERR("error in retrieving hfp mic volume");
             status = -EIO;
