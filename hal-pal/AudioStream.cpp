@@ -1726,7 +1726,7 @@ int StreamOutPrimary::Pause() {
     if (!pal_stream_handle_ || !stream_started_) {
         AHAL_DBG("Stream not started yet");
         stream_mutex_.unlock();
-        ret = -EINVAL;
+        ret = -1;
         goto exit;
     }
 
@@ -1755,7 +1755,7 @@ int StreamOutPrimary::Resume() {
     if (!pal_stream_handle_ || !stream_started_) {
         AHAL_DBG("Stream not started yet");
         stream_mutex_.unlock();
-        ret = -EINVAL;
+        ret = -1;
         goto exit;
     }
 
