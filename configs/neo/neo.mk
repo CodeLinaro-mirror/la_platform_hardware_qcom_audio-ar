@@ -224,6 +224,11 @@ PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.audio.pro.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.pro.xml \
     frameworks/native/data/etc/android.hardware.audio.low_latency.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.low_latency.xml
 
+ifeq ($(AUDIO_FEATURE_ENABLED_MCS),true)
+PRODUCT_COPY_FILES += \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/neo/mcs_defs_neo_idp_sg.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mcs_defs_neo_idp_sg.xml
+endif
+
 ifeq ($(TARGET_USES_VENDOR_C2_AUDIO_HAL), true)
 PRODUCT_COPY_FILES +=  \
 	vendor/qcom:/opensource/audio-hal/primary-hal/configs/common/media_codecs_vendor_audio.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_vendor_audio.xml
