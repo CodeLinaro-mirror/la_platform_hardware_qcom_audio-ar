@@ -944,7 +944,7 @@ int adev_set_audio_port_config(struct audio_hw_device *dev,
         for(auto iter = list.begin(); iter != list.end(); ++iter) {
             ALOGI("%s: Stream addres: %s  config address: %s\n", __func__,(*iter)->address_, config_address);
             if(strcmp((*iter)->address_, config_address) == 0) {
-                if (config->gain.values[0] <= (MIN_VOLUME_VALUE_MB + STEP_VALUE_MB)) {
+                if (config->gain.values[0] <= MIN_VOLUME_VALUE_MB) {
                     volume = MIN_VOLUME_GAIN;
                 } else if (config->gain.values[0] >= MAX_VOLUME_VALUE_MB) {
                     volume = MAX_VOLUME_GAIN;
