@@ -93,8 +93,6 @@
 #define AFE_PROXY_RECORD_PERIOD_SIZE  768
 
 static bool karaoke = false;
-static sink_metadata_t btSinkMetadata = {};
-std::vector<record_track_metadata_t> tracks;
 
 static bool is_pcm_format(audio_format_t format)
 {
@@ -222,31 +220,65 @@ bool StreamPrimary::GetSupportedConfig(bool isOutStream,
     bool found = false;
     int index = 0;
     int table_size = 0;
+    int i = 0;
 
     ret = str_parms_get_str(query, AUDIO_PARAMETER_STREAM_SUP_FORMATS, value, sizeof(value));
     if (ret >= 0) {
         value[0] = '\0';
-        int stream_format = GetFormat();
+        int stream_format = 0;
+        bool first = true;
         table_size = sizeof(formats_name_to_enum_table) / sizeof(struct string_to_enum);
-        index = GetLookupTableIndex(formats_name_to_enum_table,
-                                    table_size, stream_format);
-        if (index >= 0 && index < table_size) {
-            strlcat(value, formats_name_to_enum_table[index].name, sizeof(value));
-            str_parms_add_str(reply, AUDIO_PARAMETER_STREAM_SUP_FORMATS, value);
-            found = true;
+        if (device_cap_query_) {
+            while (device_cap_query_->config->format[i]!= 0) {
+                stream_format = device_cap_query_->config->format[i];
+                index = GetLookupTableIndex(formats_name_to_enum_table,
+                                            table_size, stream_format);
+                if (!first) {
+                    strlcat(value, "|", sizeof(value));
+                }
+                if (index >= 0 && index < table_size) {
+                    strlcat(value, formats_name_to_enum_table[index].name, sizeof(value));
+                    found = true;
+                    first = false;
+                }
+                i++;
+            }
+        } else {
+            stream_format = GetFormat();
+            index = GetLookupTableIndex(formats_name_to_enum_table,
+                                        table_size, stream_format);
+            if (index >= 0 && index < table_size) {
+                strlcat(value, formats_name_to_enum_table[index].name, sizeof(value));
+                found = true;
+            }
         }
+        str_parms_add_str(reply, AUDIO_PARAMETER_STREAM_SUP_FORMATS, value);
     }
 
     ret = str_parms_get_str(query, AUDIO_PARAMETER_STREAM_SUP_CHANNELS, value, sizeof(value));
     if (ret >= 0) {
-        int stream_chn_mask = GetChannelMask();
-
+        bool first = true;
         value[0] = '\0';
-
-        if (isOutStream)
-            strlcat(value, "AUDIO_CHANNEL_OUT_STEREO", sizeof(value));
-        else
-            strlcat(value, "AUDIO_CHANNEL_IN_STEREO", sizeof(value));
+        i = 0;
+        if (device_cap_query_) {
+            while (device_cap_query_->config->mask[i] != 0) {
+                for (int j = 0; j < ARRAY_SIZE(channels_name_to_enum_table); j++) {
+                    if (channels_name_to_enum_table[j].value == device_cap_query_->config->mask[i]) {
+                        if (!first)
+                            strlcat(value, "|", sizeof(value));
+                        strlcat(value, channels_name_to_enum_table[j].name, sizeof(value));
+                        first = false;
+                        break;
+                    }
+                }
+                i++;
+            }
+        } else {
+            if (isOutStream)
+                strlcat(value, "AUDIO_CHANNEL_OUT_STEREO", sizeof(value));
+            else
+                strlcat(value, "AUDIO_CHANNEL_IN_STEREO", sizeof(value));
+        }
         str_parms_add_str(reply, AUDIO_PARAMETER_STREAM_SUP_CHANNELS, value);
         found = true;
     }
@@ -254,12 +286,33 @@ bool StreamPrimary::GetSupportedConfig(bool isOutStream,
     ret = str_parms_get_str(query, AUDIO_PARAMETER_STREAM_SUP_SAMPLING_RATES, value, sizeof(value));
     if (ret >= 0) {
         value[0] = '\0';
-        int stream_sample_rate = GetSampleRate();
+        i = 0;
         int cursor = 0;
-        int avail = sizeof(value) - cursor;
-        ret = snprintf(value + cursor, avail, "%s%d",
-                       cursor > 0 ? "|" : "",
-                       stream_sample_rate);
+        if (device_cap_query_) {
+            while (device_cap_query_->config->sample_rate[i] != 0) {
+                int avail = sizeof(value) - cursor;
+                ret = snprintf(value + cursor, avail, "%s%d",
+                               cursor > 0 ? "|" : "",
+                               device_cap_query_->config->sample_rate[i]);
+                if (ret < 0 || ret >= avail) {
+                    // if cursor is at the last element of the array
+                    //    overwrite with \0 is duplicate work as
+                    //    snprintf already put a \0 in place.
+                    // else
+                    //    we had space to write the '|' at value[cursor]
+                    //    (which will be overwritten) or no space to fill
+                    //    the first element (=> cursor == 0)
+                    value[cursor] = '\0';
+                    break;
+                }
+                cursor += ret;
+                ++i;
+            }
+        } else {
+            int stream_sample_rate = GetSampleRate();
+            int avail = sizeof(value);
+            ret = snprintf(value, avail, "%d", stream_sample_rate);
+        }
         str_parms_add_str(reply, AUDIO_PARAMETER_STREAM_SUP_SAMPLING_RATES,
                           value);
         found = true;
@@ -774,15 +827,21 @@ static int astream_out_get_presentation_position(
     }
     if (astream_out) {
        switch (astream_out->GetPalStreamType(astream_out->flags_)) {
-       case PAL_STREAM_COMPRESSED:
        case PAL_STREAM_PCM_OFFLOAD:
-          ret = astream_out->GetFrames(frames);
-          if (ret != 0) {
-             AHAL_ERR("GetTimestamp failed %d", ret);
-             return ret;
-          }
-          clock_gettime(CLOCK_MONOTONIC, timestamp);
-          break;
+           if (AudioDevice::sndCardState == CARD_STATUS_OFFLINE) {
+               *frames = astream_out->GetFramesWritten(timestamp);
+               astream_out->UpdatemCachedPosition(*frames);
+               break;
+           }
+            /* fall through if the card is online for PCM OFFLOAD stream */
+       case PAL_STREAM_COMPRESSED:
+           ret = astream_out->GetFrames(frames);
+           if (ret) {
+               AHAL_ERR("GetTimestamp failed %d", ret);
+               return ret;
+           }
+           clock_gettime(CLOCK_MONOTONIC, timestamp);
+           break;
        default:
           *frames = astream_out->GetFramesWritten(timestamp);
           break;
@@ -813,10 +872,17 @@ static int out_get_render_position(const struct audio_stream_out *stream,
     }
     if (astream_out) {
         switch (astream_out->GetPalStreamType(astream_out->flags_)) {
-        case PAL_STREAM_COMPRESSED:
         case PAL_STREAM_PCM_OFFLOAD:
+            if (AudioDevice::sndCardState == CARD_STATUS_OFFLINE) {
+                frames =  astream_out->GetFramesWritten(NULL);
+                *dsp_frames = (uint32_t) frames;
+                astream_out->UpdatemCachedPosition(*dsp_frames);
+                break;
+            }
+             /* fall through if the card is online for PCM OFFLOAD stream */
+        case PAL_STREAM_COMPRESSED:
             ret = astream_out->GetFrames(&frames);
-            if (ret != 0) {
+            if (ret) {
                 AHAL_ERR("Get DSP Frames failed %d", ret);
                 return ret;
             }
@@ -969,9 +1035,7 @@ static void out_update_source_metadata_v7(
 
     int32_t ret = 0;
     if (stream == NULL
-            || (source_metadata == NULL)
-            || (source_metadata->track_count == 0)
-            || (source_metadata->tracks == NULL)) {
+            || (source_metadata == NULL)) {
         AHAL_ERR("%s: stream or source_metadata is NULL", __func__);
         return;
     }
@@ -984,21 +1048,14 @@ static void out_update_source_metadata_v7(
     }
 
     if (astream_out) {
-        // this stream is not on BLE device, so ignore the metadata
-        if(!astream_out->isDeviceAvailable(PAL_DEVICE_OUT_BLUETOOTH_BLE)) {
-            return;
-        }
-
         ssize_t track_count = source_metadata->track_count;
         struct playback_track_metadata_v7* track = source_metadata->tracks;
-        std::vector<playback_track_metadata_t> tracks;
-        tracks.resize(track_count);
+        astream_out->tracks.resize(track_count);
 
         AHAL_ERR("track count is %d",track_count);
 
-        source_metadata_t btSourceMetadata;
-        btSourceMetadata.track_count = track_count;
-        btSourceMetadata.tracks = tracks.data();
+        astream_out->btSourceMetadata.track_count = track_count;
+        astream_out->btSourceMetadata.tracks = astream_out->tracks.data();
         audio_mode_t mode;
         bool voice_active = false;
 
@@ -1008,7 +1065,7 @@ static void out_update_source_metadata_v7(
             AHAL_ERR("adevice voice is null");
         }
 
-        // copy all tracks info from source_metadata_v7 to source_metadata
+        // copy all tracks info from source_metadata_v7 to source_metadata per stream basis
         while (track_count && track) {
             /* currently after cs call ends, we are getting metadata as
              * usage voice and content speech, this is causing BT to again
@@ -1019,23 +1076,26 @@ static void out_update_source_metadata_v7(
                 track->base.usage == AUDIO_USAGE_VOICE_COMMUNICATION &&
                 track->base.content_type == AUDIO_CONTENT_TYPE_SPEECH) {
                 AHAL_ERR("Unwanted track removed from the list");
-                btSourceMetadata.track_count--;
+                astream_out->btSourceMetadata.track_count--;
                 --track_count;
                 ++track;
             } else {
-                btSourceMetadata.tracks->usage = track->base.usage;
-                btSourceMetadata.tracks->content_type = track->base.content_type;
+                astream_out->btSourceMetadata.tracks->usage = track->base.usage;
+                astream_out->btSourceMetadata.tracks->content_type = track->base.content_type;
+                AHAL_DBG("Source metadata usage:%d content_type:%d",
+                    astream_out->btSourceMetadata.tracks->usage,
+                    astream_out->btSourceMetadata.tracks->content_type);
                 --track_count;
                 ++track;
-                ++btSourceMetadata.tracks;
+                ++astream_out->btSourceMetadata.tracks;
             }
         }
 
         // move pointer to base address and do setparam
-        btSourceMetadata.tracks = tracks.data();
+        astream_out->btSourceMetadata.tracks = astream_out->tracks.data();
 
-        // pass the metadata to PAL
-        ret = pal_set_param(PAL_PARAM_ID_SET_SOURCE_METADATA,(void*)&btSourceMetadata,0);
+        //Send aggregated metadata of all active stream o/ps
+        ret = astream_out->SetAggregateSourceMetadata(voice_active);
         if (ret != 0) {
             AHAL_ERR("Set PAL_PARAM_ID_SET_SOURCE_METADATA for %d failed", ret);
         }
@@ -1400,13 +1460,12 @@ static void in_update_sink_metadata_v7(
     if (adevice) {
         astream_in = adevice->InGetStream((audio_stream_t*)stream);
 
-    //If its BLE, send update sink metadata
-    if ((device == AUDIO_DEVICE_OUT_BLE_HEADSET) || (astream_in && astream_in->isDeviceAvailable(PAL_DEVICE_IN_BLUETOOTH_BLE))) {
+    if (astream_in) {
        ssize_t track_count = sink_metadata->track_count;
        struct record_track_metadata_v7* track = sink_metadata->tracks;
        AHAL_DBG("track count is %d with channel_mask %d",track_count, track->channel_mask);
-
-       if (!track_count) return;
+       audio_mode_t mode;
+       bool voice_active = false;
 
        /* When BLE gets connected, adev_input_stream opens from mixports capabilities. In this
         * case channel mask is set to "0" by FWK whereas when actual usecase starts,
@@ -1416,22 +1475,31 @@ static void in_update_sink_metadata_v7(
         */
        if (track->channel_mask == 0) return;
 
-       tracks.resize(track_count);
+       astream_in->tracks.resize(track_count);
 
-       btSinkMetadata.track_count = track_count;
-       btSinkMetadata.tracks = tracks.data();
+       astream_in->btSinkMetadata.track_count = track_count;
+       astream_in->btSinkMetadata.tracks = astream_in->tracks.data();
 
-       // copy all tracks info from sink_metadata_v7 to sink_metadata
-       while (track_count && track) {
-           btSinkMetadata.tracks->source = track->base.source;
-           --track_count;
-           ++track;
-           ++btSinkMetadata.tracks;
+       if (adevice && adevice->voice_) {
+           voice_active = adevice->voice_->get_voice_call_state(&mode);
+       } else {
+           AHAL_ERR("adevice voice is null");
        }
 
-       btSinkMetadata.tracks = tracks.data();
-       //pass the metadata to PAL
-       ret = pal_set_param(PAL_PARAM_ID_SET_SINK_METADATA,(void*)&btSinkMetadata,0);
+       // copy all tracks info from sink_metadata_v7 to sink_metadata per stream basis
+       while (track_count && track) {
+           astream_in->btSinkMetadata.tracks->source = track->base.source;
+           AHAL_DBG("Sink metadata source:%d", astream_in->btSinkMetadata.tracks->source);
+           --track_count;
+           ++track;
+           ++astream_in->btSinkMetadata.tracks;
+       }
+
+       astream_in->btSinkMetadata.tracks = astream_in->tracks.data();
+
+       //Send aggregated metadata of all active stream i/ps
+       ret = astream_in->SetAggregateSinkMetadata(voice_active);
+
        if (ret != 0) {
            AHAL_ERR("Set PAL_PARAM_ID_SET_SINK_METADATA for %d failed", ret);
        }
@@ -2143,14 +2211,33 @@ int StreamOutPrimary::Drain(audio_drain_type_t type) {
     return ret;
 }
 
+void StreamOutPrimary::UpdatemCachedPosition(uint64_t val)
+{
+    mCachedPosition = val;
+}
+
 int StreamOutPrimary::Standby() {
     int ret = 0;
 
     AHAL_DBG("Enter");
     stream_mutex_.lock();
     if (pal_stream_handle_) {
-        if (streamAttributes_.type == PAL_STREAM_PCM_OFFLOAD)
-            GetFrames(&mCachedPosition);
+        if (streamAttributes_.type == PAL_STREAM_PCM_OFFLOAD) {
+            /*
+             * when ssr happens, dsp position for pcm offload could be 0,
+             * so get written frames. Else, get frames.
+             */
+            if (AudioDevice::sndCardState == CARD_STATUS_OFFLINE) {
+                struct timespec ts;
+                // release stream lock as GetFramesWritten will lock/unlock stream mutex
+                stream_mutex_.unlock();
+                mCachedPosition = GetFramesWritten(&ts);
+                stream_mutex_.lock();
+                AHAL_DBG("card is offline, return written frames %lld", (long long)mCachedPosition);
+            } else {
+                GetFrames(&mCachedPosition);
+            }
+        }
         ret = pal_stream_stop(pal_stream_handle_);
         if (ret) {
             AHAL_ERR("failed to stop stream.");
@@ -3058,18 +3145,6 @@ int StreamOutPrimary::GetFrames(uint64_t *frames)
         *frames = 0;
         return 0;
     }
-    /*
-     * when ssr happens, dsp position for pcm offload could be 0,
-     * so return written frames instead
-     */
-    if ((PAL_STREAM_PCM_OFFLOAD == streamAttributes_.type) &&
-        (CARD_STATUS_OFFLINE == AudioDevice::sndCardState)) {
-        struct timespec ts;
-        *frames = GetFramesWritten(&ts);
-        mCachedPosition = *frames;
-        AHAL_DBG("card is offline, return written frames %lld", (long long) *frames);
-        goto exit;
-    }
 
     ret = pal_get_timestamp(pal_stream_handle_, &tstamp);
     if (ret != 0) {
@@ -3483,6 +3558,55 @@ int StreamOutPrimary::StopOffloadVisualizer(
     return ret;
 }
 
+int StreamOutPrimary::SetAggregateSourceMetadata(bool voice_active) {
+    ssize_t track_count_total = 0;
+    std::vector<playback_track_metadata_t> total_tracks;
+    source_metadata_t btSourceMetadata;
+    int32_t ret = 0;
+
+    std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
+
+    /* During an active voice call, if new media/game session is launched APM sends
+     * source metadata to AHAL, in that case don't send it
+     * to BT as it may be misinterpreted as reconfig.
+     */
+    if (!voice_active) {
+        //Get stream o/p list
+        std::vector<std::shared_ptr<StreamOutPrimary>> astream_out_list = adevice->OutGetBLEStreamOutputs();
+        for (int i = 0; i < astream_out_list.size(); i++) {
+            //total tracks on stream o/ps
+            track_count_total += astream_out_list[i]->btSourceMetadata.track_count;
+        }
+
+        total_tracks.resize(track_count_total);
+        btSourceMetadata.track_count = track_count_total;
+        btSourceMetadata.tracks = total_tracks.data();
+
+        //Get the metadata of all tracks on different stream o/ps
+        for (int i = 0; i < astream_out_list.size(); i++) {
+            struct playback_track_metadata* track = astream_out_list[i]->btSourceMetadata.tracks;
+            ssize_t track_count = astream_out_list[i]->btSourceMetadata.track_count;
+            while (track_count && track) {
+                btSourceMetadata.tracks->usage = track->usage;
+                btSourceMetadata.tracks->content_type = track->content_type;
+                AHAL_DBG("Agreegated Source metadata usage:%d content_type:%d",
+                    btSourceMetadata.tracks->usage,
+                    btSourceMetadata.tracks->content_type);
+                --track_count;
+                ++track;
+                ++btSourceMetadata.tracks;
+            }
+        }
+        btSourceMetadata.tracks = total_tracks.data();
+
+        // pass the metadata to PAL
+        ret = pal_set_param(PAL_PARAM_ID_SET_SOURCE_METADATA,
+            (void*)&btSourceMetadata, 0);
+    }
+
+    return ret;
+}
+
 StreamOutPrimary::StreamOutPrimary(
                         audio_io_handle_t handle,
                         const std::set<audio_devices_t> &devices,
@@ -3526,29 +3650,39 @@ StreamOutPrimary::StreamOutPrimary(
 
     //TODO: check if USB device is connected or not
     if (AudioExtn::audio_devices_cmp(mAndroidOutDevices, audio_is_usb_out_device)){
+        // get capability from device of USB
+        device_cap_query_ = (pal_param_device_capability_t *)
+                                calloc(1, sizeof(pal_param_device_capability_t));
+        if (!device_cap_query_) {
+            AHAL_ERR("Failed to allocate mem for device_cap_query_");
+            goto error;
+        }
+        dynamic_media_config_t *dynamic_media_config = (dynamic_media_config_t *)
+                                                  calloc(1, sizeof(dynamic_media_config_t));
+        if (!dynamic_media_config) {
+            free(device_cap_query_);
+            AHAL_ERR("Failed to allocate mem for dynamic_media_config");
+            goto error;
+        }
+        size_t payload_size = 0;
+        device_cap_query_->id = PAL_DEVICE_OUT_USB_DEVICE;
+        device_cap_query_->addr.card_id = adevice->usb_card_id_;
+        device_cap_query_->addr.device_num = adevice->usb_dev_num_;
+        device_cap_query_->config = dynamic_media_config;
+        device_cap_query_->is_playback = true;
+        ret = pal_get_param(PAL_PARAM_ID_DEVICE_CAPABILITY,
+                            (void **)&device_cap_query_,
+                            &payload_size, nullptr);
+        if (ret < 0) {
+            AHAL_ERR("Error usb device is not connected");
+            free(dynamic_media_config);
+            free(device_cap_query_);
+            goto error;
+        }
         if (!config->sample_rate || !config->format || !config->channel_mask) {
-            // get capability from device of USB
-            pal_param_device_capability_t *device_cap_query = (pal_param_device_capability_t *)
-                                                      malloc(sizeof(pal_param_device_capability_t));
-            if (!device_cap_query) {
-                AHAL_ERR("Failed to allocate mem for device_cap_query");
-                goto error;
-            }
-            dynamic_media_config_t dynamic_media_config;
-            size_t payload_size = 0;
-            device_cap_query->id = PAL_DEVICE_OUT_USB_DEVICE;
-            device_cap_query->addr.card_id = adevice->usb_card_id_;
-            device_cap_query->addr.device_num = adevice->usb_dev_num_;
-            device_cap_query->config = &dynamic_media_config;
-            device_cap_query->is_playback = true;
-            ret = pal_get_param(PAL_PARAM_ID_DEVICE_CAPABILITY,
-                                (void **)&device_cap_query,
-                                &payload_size, nullptr);
-            free(device_cap_query);
-
-            config->sample_rate = dynamic_media_config.sample_rate;
-            config->channel_mask = (audio_channel_mask_t) dynamic_media_config.mask;
-            config->format = (audio_format_t)dynamic_media_config.format;
+            config->sample_rate = dynamic_media_config->sample_rate[0];
+            config->channel_mask = (audio_channel_mask_t) dynamic_media_config->mask[0];
+            config->format = (audio_format_t)dynamic_media_config->format[0];
             if (config->sample_rate == 0)
                 config->sample_rate = DEFAULT_OUTPUT_SAMPLING_RATE;
             if (config->channel_mask == AUDIO_CHANNEL_NONE)
@@ -4011,6 +4145,52 @@ done:
     return ret;
 }
 
+int StreamInPrimary::SetAggregateSinkMetadata(bool voice_active) {
+    ssize_t track_count_total = 0;
+    std::vector<record_track_metadata_t> total_tracks;
+    sink_metadata_t btSinkMetadata;
+    int32_t ret = 0;
+
+    std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
+
+    /* During an active voice call, if new record/vbc session is launched APM sends
+     * sink metadata to AHAL, in that case don't send it
+     * to BT as it may be misinterpreted as reconfig.
+     */
+    if (!voice_active) {
+        //Get stream i/p list
+        std::vector<std::shared_ptr<StreamInPrimary>> astream_in_list = adevice->InGetBLEStreamInputs();
+        for (int i = 0; i < astream_in_list.size(); i++) {
+            //total tracks on stream i/ps
+            track_count_total += astream_in_list[i]->btSinkMetadata.track_count;
+        }
+
+        total_tracks.resize(track_count_total);
+        btSinkMetadata.track_count = track_count_total;
+        btSinkMetadata.tracks = total_tracks.data();
+
+        //Get the metadata of all tracks on different stream i/ps
+        for (int i = 0; i < astream_in_list.size(); i++) {
+            struct record_track_metadata* track = astream_in_list[i]->btSinkMetadata.tracks;
+            ssize_t track_count = astream_in_list[i]->btSinkMetadata.track_count;
+            while (track_count && track) {
+                btSinkMetadata.tracks->source = track->source;
+                AHAL_DBG("Aggregated Sink metadata source:%d", btSinkMetadata.tracks->source);
+                --track_count;
+                ++track;
+                ++btSinkMetadata.tracks;
+            }
+        }
+        btSinkMetadata.tracks = total_tracks.data();
+
+        // pass the metadata to PAL
+        ret = pal_set_param(PAL_PARAM_ID_SET_SINK_METADATA,
+            (void*)&btSinkMetadata, 0);
+    }
+
+    return ret;
+}
+
 int StreamInPrimary::RouteStream(const std::set<audio_devices_t>& new_devices, bool force_device_switch) {
     bool is_empty, is_input;
     int ret = 0, noPalDevices = 0;
@@ -4134,18 +4314,6 @@ int StreamInPrimary::RouteStream(const std::set<audio_devices_t>& new_devices, b
                 ((get_hdr_mode() == AUDIO_RECORD_SPF_HDR) &&
                 (source_ == AUDIO_SOURCE_CAMCORDER || source_ == AUDIO_SOURCE_MIC)))
                 setup_hdr_usecase(&mPalInDevice[i]);
-
-            /* During ongoing stereorecording, if BT device is reconncted send metadata so that
-             * decoder session will be configured for record and then switch to BLE device
-             */
-            if ((mPalInDeviceIds[i] == PAL_DEVICE_IN_BLUETOOTH_BLE) &&
-                (btSinkMetadata.track_count != 0)) {
-                //pass the metadata to PAL
-                ret = pal_set_param(PAL_PARAM_ID_SET_SINK_METADATA, (void*)&btSinkMetadata, 0);
-                if (ret != 0) {
-                    AHAL_ERR("Set PAL_PARAM_ID_SET_SINK_METADATA for %d failed", ret);
-                }
-            }
         }
 
         mAndroidInDevices = new_devices;
@@ -4733,26 +4901,42 @@ StreamInPrimary::StreamInPrimary(audio_io_handle_t handle,
     }
 
     if (AudioExtn::audio_devices_cmp(mAndroidInDevices, audio_is_usb_in_device)) {
+        // get capability from device of USB
+        device_cap_query_ = (pal_param_device_capability_t *)
+                                calloc(1, sizeof(pal_param_device_capability_t));
+        if (!device_cap_query_) {
+            AHAL_ERR("Failed to allocate mem for device_cap_query_");
+            goto error;
+        }
+        dynamic_media_config_t *dynamic_media_config = (dynamic_media_config_t *)
+                                                  calloc(1, sizeof(dynamic_media_config_t));
+        if (!dynamic_media_config) {
+            free(device_cap_query_);
+            AHAL_ERR("Failed to allocate mem for dynamic_media_config");
+            goto error;
+        }
+        size_t payload_size = 0;
+        device_cap_query_->id = PAL_DEVICE_IN_USB_HEADSET;
+        device_cap_query_->addr.card_id = adevice->usb_card_id_;
+        device_cap_query_->addr.device_num = adevice->usb_dev_num_;
+        device_cap_query_->config = dynamic_media_config;
+        device_cap_query_->is_playback = false;
+        ret = pal_get_param(PAL_PARAM_ID_DEVICE_CAPABILITY,
+                            (void **)&device_cap_query_,
+                            &payload_size, nullptr);
+        if (ret < 0) {
+            AHAL_ERR("Error usb device is not connected");
+            free(dynamic_media_config);
+            free(device_cap_query_);
+            goto error;
+        }
+        AHAL_DBG("usb fs=%d format=%d mask=%x",
+            dynamic_media_config->sample_rate[0],
+            dynamic_media_config->format[0], dynamic_media_config->mask[0]);
         if (!config->sample_rate) {
-            // get capability from device of USB
-            pal_param_device_capability_t *device_cap_query = new pal_param_device_capability_t();
-            dynamic_media_config_t dynamic_media_config;
-            size_t payload_size = 0;
-            device_cap_query->id = PAL_DEVICE_IN_USB_HEADSET;
-            device_cap_query->addr.card_id = adevice->usb_card_id_;
-            device_cap_query->addr.device_num = adevice->usb_dev_num_;
-            device_cap_query->config = &dynamic_media_config;
-            device_cap_query->is_playback = false;
-            ret = pal_get_param(PAL_PARAM_ID_DEVICE_CAPABILITY,
-                                (void **)&device_cap_query,
-                                &payload_size, nullptr);
-            AHAL_DBG("usb fs=%d format=%d mask=%x",
-                dynamic_media_config.sample_rate,
-                dynamic_media_config.format, dynamic_media_config.mask);
-            delete device_cap_query;
-            config->sample_rate = dynamic_media_config.sample_rate;
-            config->channel_mask = (audio_channel_mask_t) dynamic_media_config.mask;
-            config->format = (audio_format_t)dynamic_media_config.format;
+            config->sample_rate = dynamic_media_config->sample_rate[0];
+            config->channel_mask = (audio_channel_mask_t) dynamic_media_config->mask[0];
+            config->format = (audio_format_t)dynamic_media_config->format[0];
             memcpy(&config_, config, sizeof(struct audio_config));
         }
     }
@@ -4867,6 +5051,18 @@ StreamInPrimary::StreamInPrimary(audio_io_handle_t handle,
             AHAL_INFO("Setting custom key as %s", mPalInDevice[i].custom_config.custom_key);
         }
 
+        usecase_ = GetInputUseCase(flags, source);
+        if (usecase_ == USECASE_AUDIO_RECORD_LOW_LATENCY ||
+            usecase_ == USECASE_AUDIO_RECORD_MMAP) {
+            uint8_t channels =
+                audio_channel_count_from_in_mask(config_.channel_mask);
+            if (channels == 2) {
+                strlcpy(mPalInDevice[i].custom_config.custom_key, "dual-mic",
+                sizeof(mPalInDevice[i].custom_config.custom_key));
+                AHAL_INFO("Setting custom key as %s", mPalInDevice[i].custom_config.custom_key);
+           }
+        }
+
         if ((get_hdr_mode() == AUDIO_RECORD_SPF_HDR) &&
             (source_ == AUDIO_SOURCE_CAMCORDER || source_ == AUDIO_SOURCE_MIC)) {
             setup_hdr_usecase(&mPalInDevice[i]);
@@ -4912,7 +5108,8 @@ StreamPrimary::StreamPrimary(audio_io_handle_t handle,
     handle_(handle),
     config_(*config),
     volume_(NULL),
-    mmap_shared_memory_fd(-1)
+    mmap_shared_memory_fd(-1),
+    device_cap_query_(NULL)
 {
     memset(&streamAttributes_, 0, sizeof(streamAttributes_));
     memset(&address_, 0, sizeof(address_));
@@ -4924,6 +5121,14 @@ StreamPrimary::~StreamPrimary(void)
     if (volume_) {
         free(volume_);
         volume_ = NULL;
+    }
+    if (device_cap_query_) {
+        if (device_cap_query_->config) {
+            free(device_cap_query_->config);
+            device_cap_query_->config = NULL;
+        }
+        free(device_cap_query_);
+        device_cap_query_ = NULL;
     }
 }
 

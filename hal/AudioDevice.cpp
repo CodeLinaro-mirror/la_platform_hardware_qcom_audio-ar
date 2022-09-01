@@ -676,6 +676,9 @@ std::shared_ptr<StreamInPrimary> AudioDevice::CreateStreamIn(
     stream_in_list_.push_back(astream);
     in_list_mutex.unlock();
     AHAL_DBG("input stream %d %p",(int)stream_in_list_.size(), stream_in);
+    if (voice_) {
+        voice_->stream_in_primary_ = astream;
+    }
     return astream;
 }
 
@@ -1308,6 +1311,26 @@ std::shared_ptr<StreamOutPrimary> AudioDevice::OutGetStream(audio_io_handle_t ha
     return astream_out;
 }
 
+std::vector<std::shared_ptr<StreamOutPrimary>> AudioDevice::OutGetBLEStreamOutputs() {
+
+   std::shared_ptr<StreamOutPrimary> astream_out;
+   std::vector<std::shared_ptr<StreamOutPrimary>> astream_out_list;
+   audio_stream_out* stream_out = NULL;
+
+   /* In case of dev switch to BLE device, stream is associated with old
+    * device but not the BLE until dev switch process completed. Thus get the all
+    * active output streams.
+    */
+   for (int i = 0; i < stream_out_list_.size(); i++) {
+       stream_out_list_[i]->GetStreamHandle(&stream_out);
+       astream_out = adev_->OutGetStream((audio_stream_t*)stream_out);
+       if (astream_out) {
+           astream_out_list.push_back(astream_out);
+       }
+   }
+   return astream_out_list;
+}
+
 std::shared_ptr<StreamOutPrimary> AudioDevice::OutGetStream(audio_stream_t* stream_out) {
 
     std::shared_ptr<StreamOutPrimary> astream_out;
@@ -1357,6 +1380,26 @@ std::shared_ptr<StreamInPrimary> AudioDevice::InGetStream (audio_stream_t* strea
     in_list_mutex.unlock();
     AHAL_VERBOSE("astream_in(%p)", astream_in->stream_.get());
     return astream_in;
+}
+
+std::vector<std::shared_ptr<StreamInPrimary>> AudioDevice::InGetBLEStreamInputs() {
+
+    std::shared_ptr<StreamInPrimary> astream_in;
+    std::vector<std::shared_ptr<StreamInPrimary>> astream_in_list;
+    audio_stream_in* stream_in = NULL;
+
+   /* In case of dev switch to BLE device, stream is associated with old
+    * device but not the BLE until dev switch process completed. Thus get the all
+    * active input streams.
+    */
+    for (int i = 0; i < stream_in_list_.size(); i++) {
+        stream_in_list_[i]->GetStreamHandle(&stream_in);
+        astream_in = adev_->InGetStream((audio_stream_t*)stream_in);
+        if (astream_in) {
+            astream_in_list.push_back(astream_in);
+        }
+    }
+    return astream_in_list;
 }
 
 int AudioDevice::SetMicMute(bool state) {
@@ -1601,8 +1644,8 @@ int AudioDevice::SetParameters(const char *kvpairs) {
                     ret = pal_get_param(PAL_PARAM_ID_DEVICE_CAPABILITY,
                             (void **)&device_cap_query,
                             &payload_size, nullptr);
-                    if ((dynamic_media_config.sample_rate == 0 && dynamic_media_config.format == 0 &&
-                            dynamic_media_config.mask == 0) || (dynamic_media_config.jack_status == false))
+                    if ((dynamic_media_config.sample_rate[0] == 0 && dynamic_media_config.format[0] == 0 &&
+                            dynamic_media_config.mask[0] == 0) || (dynamic_media_config.jack_status == false))
                         usb_input_dev_enabled = false;
                     else
                         usb_input_dev_enabled = true;
@@ -2163,7 +2206,7 @@ void AudioDevice::FillAndroidDeviceMap() {
     android_device_map_.insert(std::make_pair(AUDIO_DEVICE_OUT_USB_HEADSET, PAL_DEVICE_OUT_USB_HEADSET));
     android_device_map_.insert(std::make_pair(AUDIO_DEVICE_OUT_DEFAULT, PAL_DEVICE_OUT_SPEAKER));
     android_device_map_.insert(std::make_pair(AUDIO_DEVICE_OUT_HEARING_AID, PAL_DEVICE_OUT_HEARING_AID));
-#ifdef USEHILD7_1
+#ifdef USEHIDL7_1
     android_device_map_.insert(std::make_pair(AUDIO_DEVICE_OUT_BLE_BROADCAST, PAL_DEVICE_OUT_BLUETOOTH_BLE_BROADCAST));
 #endif
     /* go through all in devices and pushback */

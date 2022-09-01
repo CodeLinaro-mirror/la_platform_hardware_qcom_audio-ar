@@ -519,6 +519,7 @@ protected:
     struct pal_volume_data *volume_; /* used to cache volume */
     std::map <audio_devices_t, pal_device_id_t> mAndroidDeviceMap;
     int mmap_shared_memory_fd;
+    pal_param_device_capability_t *device_cap_query_;
 };
 
 class StreamOutPrimary : public StreamPrimary {
@@ -546,6 +547,7 @@ public:
     ~StreamOutPrimary();
     bool sendGaplessMetadata = true;
     bool isCompressMetadataAvail = false;
+    void UpdatemCachedPosition(uint64_t val);
     int Standby();
     int SetVolume(float left, float right);
     uint64_t GetFramesWritten(struct timespec *timestamp);
@@ -577,6 +579,9 @@ public:
     int RouteStream(const std::set<audio_devices_t>&, bool force_device_switch = false);
     ssize_t splitAndWriteAudioHapticsStream(const void *buffer, size_t bytes);
     bool period_size_is_plausible_for_low_latency(int period_size);
+    source_metadata_t btSourceMetadata;
+    std::vector<playback_track_metadata_t> tracks;
+    int SetAggregateSourceMetadata(bool voice_active);
 protected:
     struct timespec writeAt;
     int get_compressed_buffer_size();
@@ -652,6 +657,9 @@ public:
     int64_t GetSourceLatency(audio_input_flags_t halStreamFlags);
     uint64_t GetFramesRead(int64_t *time);
     int GetPalDeviceIds(pal_device_id_t *palDevIds, int *numPalDevs);
+    sink_metadata_t btSinkMetadata;
+    std::vector<record_track_metadata_t> tracks;
+    int SetAggregateSinkMetadata(bool voice_active);
 protected:
     struct timespec readAt;
     uint32_t fragments_ = 0;
