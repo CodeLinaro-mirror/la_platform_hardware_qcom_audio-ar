@@ -59,6 +59,37 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+/* Changes from Qualcomm Innovation Center are provided under the following license:
+ *
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted (subject to the limitations in the
+ * disclaimer below) provided that the following conditions are met:
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above
+ *     copyright notice, this list of conditions and the following
+ *     disclaimer in the documentation and/or other materials provided
+ *     with the distribution.
+ *   * Neither the name of Qualcomm Innovation Center, Inc. nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
+ *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE
+ * GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT
+ * HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+ * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+ * IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+ * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE
+ */
 
 #define LOG_TAG "AHAL: hfp"
 #define LOG_NDDEBUG 0
@@ -183,6 +214,10 @@ static int hfp_set_mic_volume(float value)
 
     pal_volume = (struct pal_volume_data *)malloc(sizeof(struct pal_volume_data)
             +sizeof(struct pal_channel_vol_kv));
+
+    if (!pal_volume)
+        return -ENOMEM;
+
     pal_volume->no_of_volpair = 1;
     pal_volume->volume_pair[0].channel_mask = 0x03;
     pal_volume->volume_pair[0].vol = value;
@@ -466,12 +501,22 @@ void hfp_set_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *par
     status = str_parms_get_str(parms, AUDIO_PARAMETER_HFP_ENABLE, value,
                                     sizeof(value));
     if (status >= 0) {
-        if (!strncmp(value, "true", sizeof(value)) && !hfpmod.is_hfp_running)
+        if (!strncmp(value, "true", sizeof(value)) && !hfpmod.is_hfp_running) {
             status = start_hfp(adev, parms);
-        else if (!strncmp(value, "false", sizeof(value)) && hfpmod.is_hfp_running)
+            /*
+             * Sync to adev mic mute state if hfpmod.mic_mute state is lost due
+             * to HFP session tear down during device switch on companion device.
+             */
+            if (hfpmod.mic_mute != adev->mute_) {
+                AHAL_DBG("update mic mute with latest mute state = %d", adev->mute_);
+                hfp_set_mic_mute(adev->mute_);
+            }
+
+        } else if (!strncmp(value, "false", sizeof(value)) && hfpmod.is_hfp_running) {
             stop_hfp();
-        else
+        } else {
             AHAL_ERR("hfp_enable=%s is unsupported", value);
+        }
     }
 
     memset(value, 0, sizeof(value));

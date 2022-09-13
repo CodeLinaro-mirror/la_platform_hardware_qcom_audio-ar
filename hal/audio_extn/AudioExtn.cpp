@@ -26,6 +26,38 @@
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+/*
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted (subject to the limitations in the
+ * disclaimer below) provided that the following conditions are met:
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above
+ *     copyright notice, this list of conditions and the following
+ *     disclaimer in the documentation and/or other materials provided
+ *     with the distribution.
+ *   * Neither the name of Qualcomm Innovation Center, Inc. nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
+
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE
+ * GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT
+ * HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+ * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+ * IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+ * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE
+*/
 
 #define LOG_TAG "AHAL: AudioExtn"
 #include <dlfcn.h>
@@ -69,7 +101,12 @@ static bool battery_listener_enabled;
 static void *batt_listener_lib_handle;
 static bool audio_extn_kpi_optimize_feature_enabled = false;
 
-int AudioExtn::audio_extn_parse_compress_metadata(struct audio_config *config_, pal_snd_dec_t *pal_snd_dec, str_parms *parms, uint32_t *sr, uint16_t *ch) {
+int AudioExtn::audio_extn_parse_compress_metadata(struct audio_config *config_, pal_snd_dec_t *pal_snd_dec,
+                               str_parms *parms, uint32_t *sr, uint16_t *ch, bool *isCompressMetadataAvail) {
+
+   if (config_ == NULL || pal_snd_dec == NULL || parms == NULL || sr == NULL || ch == NULL || isCompressMetadataAvail == NULL) {
+        return -EINVAL;
+   }
    int ret = 0;
    char value[32];
    *sr = 0;
@@ -80,19 +117,22 @@ int AudioExtn::audio_extn_parse_compress_metadata(struct audio_config *config_, 
         ret = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_FLAC_MIN_BLK_SIZE, value, sizeof(value));
         if (ret >= 0) {
             pal_snd_dec->flac_dec.min_blk_size = atoi(value);
-            //out->is_compr_metadata_avail = true; check about this
+            *isCompressMetadataAvail = true;
         }
         ret = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_FLAC_MAX_BLK_SIZE, value, sizeof(value));
         if (ret >= 0) {
             pal_snd_dec->flac_dec.max_blk_size = atoi(value);
+            *isCompressMetadataAvail = true;
         }
         ret = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_FLAC_MIN_FRAME_SIZE, value, sizeof(value));
         if (ret >= 0) {
             pal_snd_dec->flac_dec.min_frame_size = atoi(value);
+            *isCompressMetadataAvail = true;
         }
         ret = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_FLAC_MAX_FRAME_SIZE, value, sizeof(value));
         if (ret >= 0) {
             pal_snd_dec->flac_dec.max_frame_size = atoi(value);
+            *isCompressMetadataAvail = true;
         }
         pal_snd_dec->flac_dec.sample_size = flac_sample_size;
         AHAL_DBG("FLAC metadata: sample_size %d min_blk_size %d, max_blk_size %d min_frame_size %d max_frame_size %d",
@@ -106,51 +146,63 @@ int AudioExtn::audio_extn_parse_compress_metadata(struct audio_config *config_, 
     else if (config_->offload_info.format == AUDIO_FORMAT_ALAC) {
         ret = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_ALAC_FRAME_LENGTH, value, sizeof(value));
         if (ret >= 0) {
+            *isCompressMetadataAvail = true;
             pal_snd_dec->alac_dec.frame_length = atoi(value);
         }
         ret = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_ALAC_COMPATIBLE_VERSION, value, sizeof(value));
         if (ret >= 0) {
+            *isCompressMetadataAvail = true;
             pal_snd_dec->alac_dec.compatible_version = atoi(value);
         }
         ret = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_ALAC_BIT_DEPTH, value, sizeof(value));
         if (ret >= 0) {
+            *isCompressMetadataAvail = true;
             pal_snd_dec->alac_dec.bit_depth = atoi(value);
         }
         ret = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_ALAC_PB, value, sizeof(value));
         if (ret >= 0) {
+            *isCompressMetadataAvail = true;
             pal_snd_dec->alac_dec.pb = atoi(value);
         }
         ret = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_ALAC_MB, value, sizeof(value));
         if (ret >= 0) {
+            *isCompressMetadataAvail = true;
             pal_snd_dec->alac_dec.mb = atoi(value);
         }
 
         ret = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_ALAC_KB, value, sizeof(value));
         if (ret >= 0) {
+            *isCompressMetadataAvail = true;
             pal_snd_dec->alac_dec.kb = atoi(value);
         }
         ret = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_ALAC_NUM_CHANNELS, value, sizeof(value));
         if (ret >= 0) {
+            *isCompressMetadataAvail = true;
             pal_snd_dec->alac_dec.num_channels = atoi(value);
         }
         ret = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_ALAC_MAX_RUN, value, sizeof(value));
         if (ret >= 0) {
+            *isCompressMetadataAvail = true;
             pal_snd_dec->alac_dec.max_run = atoi(value);
         }
         ret = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_ALAC_MAX_FRAME_BYTES, value, sizeof(value));
         if (ret >= 0) {
+            *isCompressMetadataAvail = true;
             pal_snd_dec->alac_dec.max_frame_bytes = atoi(value);
         }
         ret = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_ALAC_AVG_BIT_RATE, value, sizeof(value));
         if (ret >= 0) {
+            *isCompressMetadataAvail = true;
             pal_snd_dec->alac_dec.avg_bit_rate = atoi(value);
         }
         ret = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_ALAC_SAMPLING_RATE, value, sizeof(value));
         if (ret >= 0) {
+            *isCompressMetadataAvail = true;
             pal_snd_dec->alac_dec.sample_rate = atoi(value);
         }
         ret = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_ALAC_CHANNEL_LAYOUT_TAG, value, sizeof(value));
         if (ret >= 0) {
+            *isCompressMetadataAvail = true;
             pal_snd_dec->alac_dec.channel_layout_tag = atoi(value);
         }
         *sr = pal_snd_dec->alac_dec.sample_rate;
@@ -168,42 +220,52 @@ int AudioExtn::audio_extn_parse_compress_metadata(struct audio_config *config_, 
     else if (config_->offload_info.format == AUDIO_FORMAT_APE) {
         ret = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_APE_COMPATIBLE_VERSION, value, sizeof(value));
         if (ret >= 0) {
+            *isCompressMetadataAvail = true;
             pal_snd_dec->ape_dec.compatible_version = atoi(value);
         }
         ret = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_APE_COMPRESSION_LEVEL, value, sizeof(value));
         if (ret >= 0) {
+            *isCompressMetadataAvail = true;
             pal_snd_dec->ape_dec.compression_level = atoi(value);
         }
         ret = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_APE_FORMAT_FLAGS, value, sizeof(value));
         if (ret >= 0) {
+            *isCompressMetadataAvail = true;
             pal_snd_dec->ape_dec.format_flags = atoi(value);
         }
         ret = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_APE_BLOCKS_PER_FRAME, value, sizeof(value));
         if (ret >= 0) {
+            *isCompressMetadataAvail = true;
             pal_snd_dec->ape_dec.blocks_per_frame = atoi(value);
         }
         ret = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_APE_FINAL_FRAME_BLOCKS, value, sizeof(value));
         if (ret >= 0) {
+            *isCompressMetadataAvail = true;
             pal_snd_dec->ape_dec.final_frame_blocks = atoi(value);
         }
         ret = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_APE_TOTAL_FRAMES, value, sizeof(value));
         if (ret >= 0) {
+            *isCompressMetadataAvail = true;
             pal_snd_dec->ape_dec.total_frames = atoi(value);
         }
         ret = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_APE_BITS_PER_SAMPLE, value, sizeof(value));
         if (ret >= 0) {
+            *isCompressMetadataAvail = true;
             pal_snd_dec->ape_dec.bits_per_sample = atoi(value);
         }
         ret = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_APE_NUM_CHANNELS, value, sizeof(value));
         if (ret >= 0) {
+            *isCompressMetadataAvail = true;
             pal_snd_dec->ape_dec.num_channels = atoi(value);
         }
         ret = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_APE_SAMPLE_RATE, value, sizeof(value));
         if (ret >= 0) {
+            *isCompressMetadataAvail = true;
             pal_snd_dec->ape_dec.sample_rate = atoi(value);
         }
         ret = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_APE_SEEK_TABLE_PRESENT, value, sizeof(value));
         if (ret >= 0) {
+            *isCompressMetadataAvail = true;
             pal_snd_dec->ape_dec.seek_table_present = atoi(value);
         }
         *sr = pal_snd_dec->ape_dec.sample_rate;
@@ -226,40 +288,49 @@ int AudioExtn::audio_extn_parse_compress_metadata(struct audio_config *config_, 
     else if (config_->offload_info.format == AUDIO_FORMAT_VORBIS) {
         ret = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_VORBIS_BITSTREAM_FMT, value, sizeof(value));
         if (ret >= 0) {
+            *isCompressMetadataAvail = true;
             pal_snd_dec->vorbis_dec.bit_stream_fmt = atoi(value);
         }
     }
     else if (config_->offload_info.format == AUDIO_FORMAT_WMA || config_->offload_info.format == AUDIO_FORMAT_WMA_PRO) {
         ret = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_WMA_FORMAT_TAG, value, sizeof(value));
         if (ret >= 0) {
+            *isCompressMetadataAvail = true;
             pal_snd_dec->wma_dec.fmt_tag = atoi(value);
         }
         ret = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_AVG_BIT_RATE, value, sizeof(value));
         if (ret >= 0) {
+            *isCompressMetadataAvail = true;
             pal_snd_dec->wma_dec.avg_bit_rate = atoi(value);
         }
         ret = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_WMA_BLOCK_ALIGN, value, sizeof(value));
         if (ret >= 0) {
+            *isCompressMetadataAvail = true;
             pal_snd_dec->wma_dec.super_block_align = atoi(value);
         }
         ret = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_WMA_BIT_PER_SAMPLE, value, sizeof(value));
         if (ret >= 0) {
+            *isCompressMetadataAvail = true;
             pal_snd_dec->wma_dec.bits_per_sample = atoi(value);
         }
         ret = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_WMA_CHANNEL_MASK, value, sizeof(value));
         if (ret >= 0) {
+            *isCompressMetadataAvail = true;
             pal_snd_dec->wma_dec.channelmask = atoi(value);
         }
         ret = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_WMA_ENCODE_OPTION, value, sizeof(value));
         if (ret >= 0) {
+            *isCompressMetadataAvail = true;
             pal_snd_dec->wma_dec.encodeopt = atoi(value);
         }
         ret = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_WMA_ENCODE_OPTION1, value, sizeof(value));
         if (ret >= 0) {
+            *isCompressMetadataAvail = true;
             pal_snd_dec->wma_dec.encodeopt1 = atoi(value);
         }
         ret = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_WMA_ENCODE_OPTION2, value, sizeof(value));
         if (ret >= 0) {
+            *isCompressMetadataAvail = true;
             pal_snd_dec->wma_dec.encodeopt2 = atoi(value);
         }
         AHAL_DBG("WMA params: fmt %x, bit rate %x, balgn %x, sr %d, chmsk %x"
@@ -279,6 +350,7 @@ int AudioExtn::audio_extn_parse_compress_metadata(struct audio_config *config_, 
              (config_->offload_info.format & AUDIO_FORMAT_MAIN_MASK) == AUDIO_FORMAT_AAC_ADIF ||
              (config_->offload_info.format & AUDIO_FORMAT_MAIN_MASK) == AUDIO_FORMAT_AAC_LATM) {
 
+       *isCompressMetadataAvail = true;
        pal_snd_dec->aac_dec.audio_obj_type = 29;
        pal_snd_dec->aac_dec.pce_bits_size = 0;
        AHAL_VERBOSE("AAC params: aot %d pce %d", pal_snd_dec->aac_dec.audio_obj_type, pal_snd_dec->aac_dec.pce_bits_size);
@@ -325,14 +397,14 @@ void AudioExtn::audio_extn_set_parameters(std::shared_ptr<AudioDevice> adev,
 
 int AudioExtn::get_controller_stream_from_params(struct str_parms *parms,
                                            int *controller, int *stream) {
-
-    str_parms_get_int(parms, "controller", controller);
-    str_parms_get_int(parms, "stream", stream);
-    if (*controller < 0 || *controller >= MAX_CONTROLLERS ||
-           *stream < 0 || *stream >= MAX_STREAMS_PER_CONTROLLER) {
-        *controller = 0;
-        *stream = 0;
-        return -EINVAL;
+    if ((str_parms_get_int(parms, "controller", controller) >= 0)
+       && (str_parms_get_int(parms, "stream", stream) >=0 )) {
+        if (*controller < 0 || *controller >= MAX_CONTROLLERS ||
+            *stream < 0 || *stream >= MAX_STREAMS_PER_CONTROLLER) {
+            *controller = 0;
+            *stream = 0;
+            return -EINVAL;
+        }
     }
     return 0;
 }

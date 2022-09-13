@@ -26,6 +26,12 @@
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+/* Changes from Qualcomm Innovation Center are provided under the following license:
+ *
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
 
 #define LOG_TAG "AHAL: AudioVoice"
 #define ATRACE_TAG (ATRACE_TAG_AUDIO|ATRACE_TAG_HAL)
@@ -400,6 +406,18 @@ int AudioVoice::RouteStream(const std::set<audio_devices_t>& rx_devices) {
     }
 
     GetMatchingTxDevices(rx_devices, tx_devices);
+
+    /**
+     * if device_none is in Tx/Rx devices,
+     * which is invalid, teardown the usecase.
+     */
+    if (tx_devices.find(AUDIO_DEVICE_NONE) != tx_devices.end() ||
+        rx_devices.find(AUDIO_DEVICE_NONE) != rx_devices.end()) {
+        AHAL_ERR("Invalid Tx/Rx device");
+        ret = 0;
+        goto exit;
+    }
+
     device_count = tx_devices.size() > rx_devices.size() ? tx_devices.size() : rx_devices.size();
 
     pal_device_ids = (pal_device_id_t *)calloc(1, device_count * sizeof(pal_device_id_t));
@@ -702,7 +720,7 @@ int AudioVoice::VoiceStart(voice_session_t *session) {
     } else {
         if (!session->pal_voice_handle || !session->pal_vol_data)
             AHAL_ERR("Invalid voice handle or volume data");
-        if (session->pal_vol_data->volume_pair[0].vol == -1.0)
+        if (session->pal_vol_data && session->pal_vol_data->volume_pair[0].vol == -1.0)
             AHAL_DBG("session volume is not set");
     }
 
@@ -805,7 +823,7 @@ int AudioVoice::VoiceSetDevice(voice_session_t *session) {
         palDevices[0].id = PAL_DEVICE_IN_HANDSET_MIC;  //overwrite the device for VCO
     }
 
-    if (session->volume_boost) {
+    if (session && session->volume_boost) {
             /* volume boost if device is not supported */
             param_payload = (pal_param_payload *)calloc(1, sizeof(pal_param_payload) +
                                                sizeof(session->volume_boost));

@@ -26,6 +26,38 @@
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+/*
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted (subject to the limitations in the
+ * disclaimer below) provided that the following conditions are met:
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above
+ *     copyright notice, this list of conditions and the following
+ *     disclaimer in the documentation and/or other materials provided
+ *     with the distribution.
+ *   * Neither the name of Qualcomm Innovation Center, Inc. nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
+
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE
+ * GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT
+ * HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+ * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+ * IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+ * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE
+*/
 
 #define LOG_TAG "AHAL: AudioStream"
 #define ATRACE_TAG (ATRACE_TAG_AUDIO | ATRACE_TAG_HAL)
@@ -168,7 +200,7 @@ bool StreamPrimary::GetSupportedConfig(bool isOutStream,
         table_size = sizeof(formats_name_to_enum_table) / sizeof(struct string_to_enum);
         index = GetLookupTableIndex(formats_name_to_enum_table,
                                     table_size, stream_format);
-        if (index >= 0) {
+        if (index >= 0 && index < table_size) {
             strlcat(value, formats_name_to_enum_table[index].name, sizeof(value));
             str_parms_add_str(reply, AUDIO_PARAMETER_STREAM_SUP_FORMATS, value);
             found = true;
@@ -183,7 +215,7 @@ bool StreamPrimary::GetSupportedConfig(bool isOutStream,
         index = GetLookupTableIndex(channels_name_to_enum_table,
                                     table_size, stream_chn_mask);
 
-        if (index >= 0) {
+        if (index >= 0 && index < table_size) {
             strlcat(value, channels_name_to_enum_table[index].name, sizeof(value));
             str_parms_add_str(reply, AUDIO_PARAMETER_STREAM_SUP_CHANNELS, value);
             found = true;
@@ -671,6 +703,7 @@ static int astream_out_get_presentation_position(
     if (astream_out) {
        switch (astream_out->GetPalStreamType(astream_out->flags_)) {
        case PAL_STREAM_COMPRESSED:
+       case PAL_STREAM_PCM_OFFLOAD:
           ret = astream_out->GetFrames(frames);
           if (ret != 0) {
              AHAL_ERR("GetTimestamp failed %d", ret);
@@ -709,6 +742,7 @@ static int out_get_render_position(const struct audio_stream_out *stream,
     if (astream_out) {
         switch (astream_out->GetPalStreamType(astream_out->flags_)) {
         case PAL_STREAM_COMPRESSED:
+	case PAL_STREAM_PCM_OFFLOAD:
            ret = astream_out->GetFrames(&frames);
            if (ret != 0) {
               AHAL_ERR("Get DSP Frames failed %d", ret);
@@ -1111,6 +1145,8 @@ uint64_t StreamInPrimary::GetFramesRead(int64_t* time)
     /* This adjustment accounts for buffering after app processor
      * It is based on estimated DSP latency per use case, rather than exact.
      */
+    //TODO: need to get this latency from xml instead of hardcoding
+    stream_mutex_.lock();
     dsp_latency = StreamInPrimary::GetSourceLatency(flags_);
 
     read_frames = mBytesRead / audio_bytes_per_frame(
@@ -1145,6 +1181,7 @@ uint64_t StreamInPrimary::GetFramesRead(int64_t* time)
             *time -= param_bt_a2dp->latency * 1000000LL;
         }
     }
+    stream_mutex_.unlock();
 
     AHAL_VERBOSE("signed frames %lld read frames %lld kernel frames %lld",
         (long long)signed_frames, (long long)read_frames, (long long)kernel_frames);
@@ -1603,14 +1640,17 @@ int StreamOutPrimary::GetMmapPosition(struct audio_mmap_position *position)
     struct pal_mmap_position pal_mmap_pos;
     int32_t ret = 0;
 
+    stream_mutex_.lock();
     if (pal_stream_handle_ == nullptr) {
         AHAL_ERR("pal handle is null\n");
+        stream_mutex_.unlock();
         return -EINVAL;
     }
 
     ret = pal_stream_get_mmap_position(pal_stream_handle_, &pal_mmap_pos);
     if (ret) {
         AHAL_ERR("failed to get mmap position %d\n", ret);
+        stream_mutex_.unlock();
         return ret;
     }
     position->position_frames = pal_mmap_pos.position_frames;
@@ -1625,6 +1665,7 @@ int StreamOutPrimary::GetMmapPosition(struct audio_mmap_position *position)
     position->time_nanoseconds += mmap_time_offset_micros * (int64_t)1000;
 #endif
 
+    stream_mutex_.unlock();
     return 0;
 }
 
@@ -1644,20 +1685,25 @@ int StreamOutPrimary::CreateMmapBuffer(int32_t min_size_frames,
     int ret;
     struct pal_mmap_buffer palMmapBuf;
 
+    stream_mutex_.lock();
     if (pal_stream_handle_) {
         AHAL_ERR("pal handle already created\n");
+        stream_mutex_.unlock();
         return -EINVAL;
     }
 
     ret = Open();
     if (ret) {
         AHAL_ERR("failed to open stream.");
+        stream_mutex_.unlock();
         return ret;
     }
     ret = pal_stream_create_mmap_buffer(pal_stream_handle_,
             min_size_frames, &palMmapBuf);
     if (ret) {
         AHAL_ERR("failed to create mmap buffer: %d", ret);
+        // release stream lock as Standby will lock/unlock stream mutex
+        stream_mutex_.unlock();
         Standby();
         return ret;
     }
@@ -1667,6 +1713,7 @@ int StreamOutPrimary::CreateMmapBuffer(int32_t min_size_frames,
     info->burst_size_frames = palMmapBuf.burst_size_frames;
     info->flags = (audio_mmap_buffer_flag) AUDIO_MMAP_APPLICATION_SHAREABLE;
 
+    stream_mutex_.unlock();
     return ret;
 }
 
@@ -1674,6 +1721,7 @@ int StreamOutPrimary::Stop() {
     int ret = -ENOSYS;
 
     AHAL_DBG("Enter");
+    stream_mutex_.lock();
     if (usecase_ == USECASE_AUDIO_PLAYBACK_MMAP &&
             pal_stream_handle_ && stream_started_) {
 
@@ -1683,6 +1731,7 @@ int StreamOutPrimary::Stop() {
             stream_paused_ = false;
         }
     }
+    stream_mutex_.unlock();
     AHAL_DBG("Exit ret: %d", ret);
     return ret;
 }
@@ -1691,6 +1740,7 @@ int StreamOutPrimary::Start() {
     int ret = -ENOSYS;
 
     AHAL_DBG("Enter");
+    stream_mutex_.lock();
     if (usecase_ == USECASE_AUDIO_PLAYBACK_MMAP &&
             pal_stream_handle_ && !stream_started_) {
 
@@ -1698,6 +1748,7 @@ int StreamOutPrimary::Start() {
         if (ret == 0)
             stream_started_ = true;
     }
+    stream_mutex_.unlock();
     AHAL_DBG("Exit ret: %d", ret);
     return ret;
 }
@@ -1707,6 +1758,7 @@ int StreamOutPrimary::Pause() {
 
     AHAL_DBG("Enter" );
 
+    stream_mutex_.lock();
     if (!pal_stream_handle_ || !stream_started_) {
         AHAL_DBG("Stream not started yet");
         ret = -1;
@@ -1723,6 +1775,7 @@ int StreamOutPrimary::Pause() {
     }
 
 exit:
+    stream_mutex_.unlock();
     AHAL_DBG("Exit ret: %d", ret);
     return ret;
 }
@@ -1732,6 +1785,7 @@ int StreamOutPrimary::Resume() {
 
     AHAL_DBG("Enter" );
 
+    stream_mutex_.lock();
     if (!pal_stream_handle_ || !stream_started_) {
         AHAL_DBG("Stream not started yet");
         ret = -1;
@@ -1748,6 +1802,7 @@ int StreamOutPrimary::Resume() {
     }
 
 exit:
+    stream_mutex_.unlock();
     AHAL_DBG("Exit ret: %d", ret);
     return ret;
 }
@@ -1755,6 +1810,8 @@ exit:
 int StreamOutPrimary::Flush() {
     int ret = 0;
     AHAL_DBG("Enter");
+
+    stream_mutex_.lock();
     if (pal_stream_handle_) {
         if(stream_paused_ == true)
         {
@@ -1769,6 +1826,8 @@ int StreamOutPrimary::Flush() {
         }
         mBytesWritten = 0;
     }
+    sendGaplessMetadata = true;
+    stream_mutex_.unlock();
 
     if (ret)
         ret = -EINVAL;
@@ -1793,8 +1852,10 @@ int StreamOutPrimary::Drain(audio_drain_type_t type) {
            return -EINVAL;
     }
 
+    stream_mutex_.lock();
     if (pal_stream_handle_)
         ret = pal_stream_drain(pal_stream_handle_, palDrainType);
+    stream_mutex_.unlock();
 
     if (ret) {
         AHAL_ERR("Invalid drain type:%d", type);
@@ -1807,7 +1868,10 @@ int StreamOutPrimary::Standby() {
     int ret = 0;
 
     AHAL_DBG("Enter");
+    stream_mutex_.lock();
     if (pal_stream_handle_) {
+        if (streamAttributes_.type == PAL_STREAM_PCM_OFFLOAD)
+	    GetFrames(&mCachedPosition);
         ret = pal_stream_stop(pal_stream_handle_);
         if (ret) {
             AHAL_ERR("failed to stop stream.");
@@ -1824,6 +1888,7 @@ int StreamOutPrimary::Standby() {
 
     stream_started_ = false;
     stream_paused_ = false;
+    sendGaplessMetadata = true;
     if (CheckOffloadEffectsType(streamAttributes_.type)) {
         ret = StopOffloadEffects(handle_, pal_stream_handle_);
         ret = StopOffloadVisualizer(handle_, pal_stream_handle_);
@@ -1847,6 +1912,7 @@ int StreamOutPrimary::Standby() {
         ret = -EINVAL;
 
 exit:
+    stream_mutex_.unlock();
     AHAL_DBG("Exit ret: %d", ret);
     return ret;
 }
@@ -1858,6 +1924,7 @@ int StreamOutPrimary::RouteStream(const std::set<audio_devices_t>& new_devices) 
     struct pal_device* deviceIdConfigs;
     std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
 
+    stream_mutex_.lock();
     if (!mInitialized) {
         AHAL_ERR("Not initialized, returning error");
         ret = -EINVAL;
@@ -1930,13 +1997,14 @@ int StreamOutPrimary::RouteStream(const std::set<audio_devices_t>& new_devices) 
     }
 
 done:
+    stream_mutex_.unlock();
     AHAL_DBG("exit %d", ret);
     return ret;
 }
 
 int StreamOutPrimary::SetParameters(struct str_parms *parms) {
     char value[64];
-    int ret =  -EINVAL, controller = -1, stream = -1;
+    int ret =  0, controller = -1, stream = -1;
     int ret1 = 0;
 
     std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
@@ -1950,25 +2018,35 @@ int StreamOutPrimary::SetParameters(struct str_parms *parms) {
     if (ret >= 0) {
         adevice->dp_controller = controller;
         adevice->dp_stream = stream;
-        AHAL_ERR("plugin device cont %d stream %d",controller, stream);
+        AHAL_INFO("ret %d, plugin device cont %d stream %d", ret, controller, stream);
+    } else {
+        AHAL_ERR("error %d, failed to get stream and controller", ret);
     }
 
-    //TBD: check if its offload and check call the following
-    ret = AudioExtn::audio_extn_parse_compress_metadata(&config_, &palSndDec, parms, &msample_rate, &mchannels);
-    if (ret) {
-        AHAL_ERR("parse_compress_metadata Error (%x)", ret);
-        goto error;
-    }
+    //Parse below metadata only if it is compress offload usecase.
+    if (usecase_ == USECASE_AUDIO_PLAYBACK_OFFLOAD) {
+        ret = AudioExtn::audio_extn_parse_compress_metadata(&config_, &palSndDec, parms,
+                                         &msample_rate, &mchannels, &isCompressMetadataAvail);
+        if (ret) {
+            AHAL_ERR("parse_compress_metadata Error (%x)", ret);
+            goto error;
+        }
 
-    ret1 = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_DELAY_SAMPLES, value, sizeof(value));
-    if (ret1 >= 0 ) {
-        gaplessMeta.encoderDelay = atoi(value);
-        AHAL_DBG("new encoder delay %u", gaplessMeta.encoderDelay);
-    }
-    ret1 = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_PADDING_SAMPLES, value, sizeof(value));
-    if (ret1 >= 0) {
-        gaplessMeta.encoderPadding = atoi(value);
-        AHAL_DBG("padding %u", gaplessMeta.encoderPadding);
+        ret1 = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_DELAY_SAMPLES, value, sizeof(value));
+        if (ret1 >= 0 ) {
+            gaplessMeta.encoderDelay = atoi(value);
+            AHAL_DBG("new encoder delay %u", gaplessMeta.encoderDelay);
+        } else {
+            gaplessMeta.encoderDelay = 0;
+        }
+
+        ret1 = str_parms_get_str(parms, AUDIO_OFFLOAD_CODEC_PADDING_SAMPLES, value, sizeof(value));
+        if (ret1 >= 0) {
+            gaplessMeta.encoderPadding = atoi(value);
+            AHAL_DBG("padding %u", gaplessMeta.encoderPadding);
+        } else {
+            gaplessMeta.encoderPadding = 0;
+        }
     }
 error:
     AHAL_ERR("exit %d", ret);
@@ -1979,6 +2057,7 @@ int StreamOutPrimary::SetVolume(float left , float right) {
     int ret = 0;
     AHAL_DBG("Enter: left %f, right %f", left, right);
 
+    stream_mutex_.lock();
     /* free previously cached volume if any */
     if (volume_) {
         free(volume_);
@@ -2020,6 +2099,7 @@ int StreamOutPrimary::SetVolume(float left , float right) {
     }
 
 done:
+    stream_mutex_.unlock();
     AHAL_DBG("Exit ret: %d", ret);
     return ret;
 }
@@ -2058,6 +2138,7 @@ uint64_t StreamOutPrimary::GetFramesWritten(struct timespec *timestamp)
     size_t size = 0, kernel_buffer_size = 0;
     int32_t ret;
 
+    stream_mutex_.lock();
     /* This adjustment accounts for buffering after app processor
      * It is based on estimated DSP latency per use case, rather than exact.
      */
@@ -2066,6 +2147,7 @@ uint64_t StreamOutPrimary::GetFramesWritten(struct timespec *timestamp)
 
     if (!timestamp) {
        AHAL_ERR("timestamp NULL");
+       stream_mutex_.unlock();
        return 0;
     }
     written_frames = mBytesWritten / audio_bytes_per_frame(
@@ -2100,6 +2182,7 @@ uint64_t StreamOutPrimary::GetFramesWritten(struct timespec *timestamp)
 
         }
     }
+    stream_mutex_.unlock();
 
     if (signed_frames <= 0) {
        clock_gettime(CLOCK_MONOTONIC, timestamp);
@@ -2117,7 +2200,10 @@ uint64_t StreamOutPrimary::GetFramesWritten(struct timespec *timestamp)
 
 int StreamOutPrimary::get_compressed_buffer_size()
 {
+    char value[PROPERTY_VALUE_MAX] = {0};
     int fragment_size = COMPRESS_OFFLOAD_FRAGMENT_SIZE;
+    int fsize = 0;
+
     AHAL_DBG("config_ %x", config_.format);
     if(config_.format ==  AUDIO_FORMAT_FLAC ) {
         fragment_size = FLAC_COMPRESS_OFFLOAD_FRAGMENT_SIZE;
@@ -2127,6 +2213,14 @@ int StreamOutPrimary::get_compressed_buffer_size()
     } else {
         fragment_size =  COMPRESS_OFFLOAD_FRAGMENT_SIZE;
     }
+
+    if((property_get("vendor.audio.offload.buffer.size.kb", value, "")) &&
+            atoi(value)) {
+        fsize = atoi(value) * 1024;
+    }
+    if (fsize > fragment_size)
+        fragment_size = fsize;
+
     return fragment_size;
 }
 
@@ -2317,12 +2411,14 @@ int StreamOutPrimary::Open() {
         hapticsStreamAttributes.out_media_config.aud_fmt_id = PAL_AUDIO_FMT_PCM_S16_LE;
         hapticsStreamAttributes.out_media_config.ch_info = ch_info;
 
-        hapticsDevice = new pal_device;
-        hapticsDevice->id = PAL_DEVICE_OUT_HAPTICS_DEVICE;
-        hapticsDevice->config.sample_rate = DEFAULT_OUTPUT_SAMPLING_RATE;
-        hapticsDevice->config.bit_width = CODEC_BACKEND_DEFAULT_BIT_WIDTH;
-        hapticsDevice->config.ch_info = ch_info;
-        hapticsDevice->config.aud_fmt_id = PAL_AUDIO_FMT_PCM_S16_LE;
+        if (!hapticsDevice) {
+            hapticsDevice = new pal_device;
+            hapticsDevice->id = PAL_DEVICE_OUT_HAPTICS_DEVICE;
+            hapticsDevice->config.sample_rate = DEFAULT_OUTPUT_SAMPLING_RATE;
+            hapticsDevice->config.bit_width = CODEC_BACKEND_DEFAULT_BIT_WIDTH;
+            hapticsDevice->config.ch_info = ch_info;
+            hapticsDevice->config.aud_fmt_id = PAL_AUDIO_FMT_PCM_S16_LE;
+        }
 
         ret = pal_stream_open (&hapticsStreamAttributes,
                           1,
@@ -2358,8 +2454,8 @@ int StreamOutPrimary::Open() {
             if (ret)
                 AHAL_ERR("Pal Set Param Error (%x)", ret);
             free(param_payload);
-
         }
+        isCompressMetadataAvail = false;
     }
 
     if (usecase_ == USECASE_AUDIO_PLAYBACK_MMAP) {
@@ -2459,6 +2555,7 @@ int StreamOutPrimary::GetFrames(uint64_t *frames)
     timestamp *= (streamAttributes_.out_media_config.sample_rate);
     AHAL_VERBOSE("timestamp %lld", ((long long) timestamp));
     *frames = timestamp/1000000;
+    *frames += mCachedPosition;
 exit:
     return ret;
 }
@@ -2629,11 +2726,39 @@ ssize_t StreamOutPrimary::configurePalOutputStream() {
         }
         ATRACE_END();
     }
-    if ((streamAttributes_.type == PAL_STREAM_COMPRESSED) && sendGaplessMetadata) {
+    if ((streamAttributes_.type == PAL_STREAM_COMPRESSED) && isCompressMetadataAvail) {
+        // Send codec params first.
         pal_param_payload *param_payload = nullptr;
         param_payload = (pal_param_payload *) calloc (1,
                                               sizeof(pal_param_payload) +
-                                              sizeof(struct pal_compr_gapless_mdata));
+                                              sizeof(pal_snd_dec_t));
+
+        if (param_payload) {
+            param_payload->payload_size = sizeof(pal_snd_dec_t);
+            memcpy(param_payload->payload, &palSndDec, param_payload->payload_size);
+
+            ret = pal_stream_set_param(pal_stream_handle_,
+                                       PAL_PARAM_ID_CODEC_CONFIGURATION,
+                                       param_payload);
+            if (ret) {
+                AHAL_INFO("Pal Set Param for codec configuration failed (%x)", ret);
+                ret = 0;
+            }
+            free(param_payload);
+
+        } else {
+            AHAL_ERR("calloc failed for size %zu",
+                   sizeof(pal_param_payload) + sizeof(pal_snd_dec_t));
+        }
+        isCompressMetadataAvail = false;
+    }
+
+    if ((streamAttributes_.type == PAL_STREAM_COMPRESSED) && sendGaplessMetadata) {
+        //Send gapless metadata
+        pal_param_payload *param_payload = nullptr;
+        param_payload = (pal_param_payload *) calloc (1,
+                                          sizeof(pal_param_payload) +
+                                          sizeof(struct pal_compr_gapless_mdata));
         if (param_payload) {
             AHAL_DBG("sending gapless metadata");
             param_payload->payload_size = sizeof(struct pal_compr_gapless_mdata);
@@ -2642,8 +2767,10 @@ ssize_t StreamOutPrimary::configurePalOutputStream() {
             ret = pal_stream_set_param(pal_stream_handle_,
                                        PAL_PARAM_ID_GAPLESS_MDATA,
                                        param_payload);
-            if (ret)
-                AHAL_ERR("PAL set param for gapless failed, error (%x)", ret);
+            if (ret) {
+                AHAL_INFO("PAL set param for gapless failed, error (%x)", ret);
+                ret = 0;
+            }
             free(param_payload);
         } else {
             AHAL_ERR("Failed to allocate gapless payload");
@@ -2665,6 +2792,7 @@ ssize_t StreamOutPrimary::write(const void *buffer, size_t bytes)
 
     AHAL_VERBOSE("handle_ %x bytes:(%zu)", handle_, bytes);
 
+    stream_mutex_.lock();
     ret = configurePalOutputStream();
     if (ret < 0)
         goto exit;
@@ -2673,6 +2801,7 @@ ssize_t StreamOutPrimary::write(const void *buffer, size_t bytes)
         if (bytes > fragment_size_) {
             AHAL_ERR("Error written bytes %zu > %d (fragment_size)", bytes, fragment_size_);
             ATRACE_END();
+            stream_mutex_.unlock();
             return -EINVAL;
         }
         /* prevent division-by-zero */
@@ -2682,6 +2811,7 @@ ssize_t StreamOutPrimary::write(const void *buffer, size_t bytes)
         if (inputBitWidth == 0 || outputBitWidth == 0) {
             AHAL_ERR("Error inputBitWidth %u, outputBitWidth %u", inputBitWidth, outputBitWidth);
             ATRACE_END();
+            stream_mutex_.unlock();
             return -EINVAL;
         }
 
@@ -2706,6 +2836,7 @@ exit:
     } else {
         mBytesWritten = UINT64_MAX;
     }
+    stream_mutex_.unlock();
     clock_gettime(CLOCK_MONOTONIC, &writeAt);
 
     return (ret < 0 ? onWriteError(bytes) : ret);
@@ -2811,6 +2942,7 @@ StreamOutPrimary::StreamOutPrimary(
     mPalOutDeviceIds = nullptr;
     mPalOutDevice = nullptr;
     convertBuffer = NULL;
+    hapticsDevice = NULL;
     hapticBuffer = NULL;
     hapticsBufSize = 0;
     writeAt.tv_sec = 0;
@@ -2818,6 +2950,8 @@ StreamOutPrimary::StreamOutPrimary(
     mBytesWritten = 0;
     int noPalDevices = 0;
     int ret = 0;
+    /*Initialize the gaplessMeta value with 0*/
+    memset(&gaplessMeta,0,sizeof(struct pal_compr_gapless_mdata));
 
     if (!stream_) {
         AHAL_ERR("No memory allocated for stream_");
@@ -2952,6 +3086,7 @@ StreamOutPrimary::~StreamOutPrimary() {
     AHAL_DBG("close stream, handle(%x), pal_stream_handle (%p)",
           handle_, pal_stream_handle_);
 
+    stream_mutex_.lock();
     if (pal_stream_handle_) {
         if (CheckOffloadEffectsType(streamAttributes_.type)) {
             StopOffloadEffects(handle_, pal_stream_handle_);
@@ -2971,8 +3106,22 @@ StreamOutPrimary::~StreamOutPrimary() {
         }
         hapticsBufSize = 0;
     }
+
     if (convertBuffer)
         free(convertBuffer);
+    if (mPalOutDeviceIds) {
+        delete[] mPalOutDeviceIds;
+        mPalOutDeviceIds = NULL;
+    }
+    if (mPalOutDevice) {
+        delete[] mPalOutDevice;
+        mPalOutDevice = NULL;
+    }
+    if (hapticsDevice) {
+        delete hapticsDevice;
+        hapticsDevice = NULL;
+    }
+    stream_mutex_.unlock();
 }
 
 bool StreamInPrimary::isDeviceAvailable(pal_device_id_t deviceId)
@@ -2988,6 +3137,7 @@ bool StreamInPrimary::isDeviceAvailable(pal_device_id_t deviceId)
 int StreamInPrimary::Stop() {
     int ret = -ENOSYS;
 
+    stream_mutex_.lock();
     if (usecase_ == USECASE_AUDIO_RECORD_MMAP &&
             pal_stream_handle_ && stream_started_) {
 
@@ -2995,6 +3145,7 @@ int StreamInPrimary::Stop() {
         if (ret == 0)
             stream_started_ = false;
     }
+    stream_mutex_.unlock();
     return ret;
 }
 
@@ -3002,7 +3153,7 @@ int StreamInPrimary::Start() {
     int ret = -ENOSYS;
 
     AHAL_DBG("Enter");
-
+    stream_mutex_.lock();
     if (usecase_ == USECASE_AUDIO_RECORD_MMAP &&
             pal_stream_handle_ && !stream_started_) {
 
@@ -3010,6 +3161,7 @@ int StreamInPrimary::Start() {
         if (ret == 0)
             stream_started_ = true;
     }
+    stream_mutex_.unlock();
     AHAL_DBG("Exit ret: %d", ret);
     return ret;
 }
@@ -3020,20 +3172,25 @@ int StreamInPrimary::CreateMmapBuffer(int32_t min_size_frames,
     int ret;
     struct pal_mmap_buffer palMmapBuf;
 
+    stream_mutex_.lock();
     if (pal_stream_handle_) {
         AHAL_ERR("pal handle already created\n");
+        stream_mutex_.unlock();
         return -EINVAL;
     }
 
     ret = Open();
     if (ret) {
         AHAL_ERR("failed to open stream.");
+        stream_mutex_.unlock();
         return ret;
     }
     ret = pal_stream_create_mmap_buffer(pal_stream_handle_,
             min_size_frames, &palMmapBuf);
     if (ret) {
         AHAL_ERR("failed to create mmap buffer: %d", ret);
+        // release stream lock as Standby will lock/unlock stream mutex
+        stream_mutex_.unlock();
         Standby();
         return ret;
     }
@@ -3043,6 +3200,7 @@ int StreamInPrimary::CreateMmapBuffer(int32_t min_size_frames,
     info->burst_size_frames = palMmapBuf.burst_size_frames;
     info->flags = (audio_mmap_buffer_flag)palMmapBuf.flags;
 
+    stream_mutex_.unlock();
     return ret;
 }
 
@@ -3051,19 +3209,23 @@ int StreamInPrimary::GetMmapPosition(struct audio_mmap_position *position)
     struct pal_mmap_position pal_mmap_pos;
     int32_t ret = 0;
 
+    stream_mutex_.lock();
     if (pal_stream_handle_ == nullptr) {
         AHAL_ERR("pal handle is null\n");
+        stream_mutex_.unlock();
         return -EINVAL;
     }
 
     ret = pal_stream_get_mmap_position(pal_stream_handle_, &pal_mmap_pos);
     if (ret) {
         AHAL_ERR("failed to get mmap position %d\n", ret);
+        stream_mutex_.unlock();
         return ret;
     }
     position->position_frames = pal_mmap_pos.position_frames;
     position->time_nanoseconds = pal_mmap_pos.time_nanoseconds;
 
+    stream_mutex_.unlock();
     return 0;
 }
 
@@ -3072,6 +3234,7 @@ int StreamInPrimary::Standby() {
     std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
 
     AHAL_DBG("Enter");
+    stream_mutex_.lock();
     if (pal_stream_handle_) {
         if (!is_st_session) {
             ret = pal_stream_stop(pal_stream_handle_);
@@ -3094,6 +3257,7 @@ int StreamInPrimary::Standby() {
     if (ret)
         ret = -EINVAL;
 
+    stream_mutex_.unlock();
     AHAL_DBG("Exit ret: %d", ret);
     return ret;
 }
@@ -3202,6 +3366,7 @@ int StreamInPrimary::SetGain(float gain) {
     int ret = 0;
 
     AHAL_DBG("Enter");
+    stream_mutex_.lock();
     volume = (struct pal_volume_data*)malloc(sizeof(uint32_t)
                 +sizeof(struct pal_channel_vol_kv));
     if (!volume) {
@@ -3222,6 +3387,7 @@ int StreamInPrimary::SetGain(float gain) {
     }
 
 done:
+    stream_mutex_.unlock();
     AHAL_DBG("Exit ret: %d", ret);
     return ret;
 }
@@ -3236,6 +3402,7 @@ int StreamInPrimary::RouteStream(const std::set<audio_devices_t>& new_devices) {
 
     AHAL_DBG("enter ");
 
+    stream_mutex_.lock();
     if (!mInitialized){
         AHAL_ERR("Not initialized, returning error");
         ret = -EINVAL;
@@ -3310,8 +3477,9 @@ int StreamInPrimary::RouteStream(const std::set<audio_devices_t>& new_devices) {
     }
 
 done:
-   AHAL_DBG("exit %d", ret);
-   return ret;
+    stream_mutex_.unlock();
+    AHAL_DBG("exit %d", ret);
+    return ret;
 }
 
 int StreamInPrimary::SetParameters(const char* kvpairs) {
@@ -3569,12 +3737,14 @@ int StreamInPrimary::GetInputUseCase(audio_input_flags_t halStreamFlags, audio_s
 int StreamInPrimary::SetMicMute(bool mute) {
     int ret = 0;
     AHAL_DBG("Enter mute %d for input session", mute);
+    stream_mutex_.lock();
     if (pal_stream_handle_) {
         AHAL_DBG("Enter if mute %d for input session", mute);
         ret = pal_stream_set_mute(pal_stream_handle_, mute);
         if (ret)
             AHAL_ERR("Error applying mute %d for input session", mute);
     }
+    stream_mutex_.unlock();
     AHAL_DBG("Exit");
     return ret;
 }
@@ -3610,6 +3780,7 @@ ssize_t StreamInPrimary::read(const void *buffer, size_t bytes) {
 
     AHAL_VERBOSE("Bytes:(%zu)", bytes);
 
+    stream_mutex_.lock();
     if (!pal_stream_handle_) {
         AutoPerfLock perfLock;
         ret = Open();
@@ -3691,6 +3862,7 @@ exit:
     } else {
         mBytesRead = UINT64_MAX;
     }
+    stream_mutex_.unlock();
     clock_gettime(CLOCK_MONOTONIC, &readAt);
 
     return (ret < 0 ? onReadError(bytes) : bytes);
@@ -3861,12 +4033,22 @@ error:
 }
 
 StreamInPrimary::~StreamInPrimary() {
+    stream_mutex_.lock();
     if (pal_stream_handle_ && !is_st_session) {
         AHAL_DBG("close stream, pal_stream_handle (%p)",
              pal_stream_handle_);
         pal_stream_close(pal_stream_handle_);
         pal_stream_handle_ = NULL;
     }
+    if (mPalInDeviceIds) {
+        delete[] mPalInDeviceIds;
+        mPalInDeviceIds = NULL;
+    }
+    if (mPalInDevice) {
+        delete[] mPalInDevice;
+        mPalInDevice = NULL;
+    }
+    stream_mutex_.unlock();
 }
 
 StreamPrimary::StreamPrimary(audio_io_handle_t handle,

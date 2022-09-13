@@ -34,6 +34,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* Changes from Qualcomm Innovation Center are provided under the following license:
+ *
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted (subject to the limitations in the
+ * disclaimer below) provided that the following conditions are met:
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above
+ *     copyright notice, this list of conditions and the following
+ *     disclaimer in the documentation and/or other materials provided
+ *     with the distribution.
+ *   * Neither the name of Qualcomm Innovation Center, Inc. nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
+ *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE
+ * GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT
+ * HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+ * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+ * IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+ * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE
+ */
 
 #define LOG_TAG "AHAL: AudioDevice"
 #define ATRACE_TAG (ATRACE_TAG_AUDIO|ATRACE_TAG_HAL)
@@ -51,7 +82,7 @@
 #include "PalApi.h"
 #include "PalDefs.h"
 
-#include <audio_extn/AudioExtn.h>
+#include <AudioExtn.h>
 #include "audio_extn.h"
 #include "battery_listener.h"
 
@@ -479,8 +510,6 @@ int AudioDevice::ReleaseAudioPatch(audio_patch_handle_t handle) {
     }
 
     ret = stream->RouteStream({AUDIO_DEVICE_NONE});
-    if (patch_type == AudioPatch::PATCH_PLAYBACK)
-        ret |= voice_->RouteStream({AUDIO_DEVICE_NONE});
 
     if (ret)
         AHAL_ERR("Stream routing failed for io_handle %d", io_handle);
@@ -1072,7 +1101,7 @@ std::shared_ptr<StreamInPrimary> AudioDevice::InGetStream (audio_stream_t* strea
 }
 
 int AudioDevice::SetMicMute(bool state) {
-    int ret;
+    int ret = 0;
     std::shared_ptr<StreamInPrimary> astream_in;
     mute_ = state;
 
@@ -1090,7 +1119,7 @@ int AudioDevice::SetMicMute(bool state) {
     }
 
     AHAL_DBG("exit: ret %d", ret);
-    return 0;
+    return ret;
 }
 
 int AudioDevice::GetMicMute(bool *state) {
@@ -1252,21 +1281,26 @@ int AudioDevice::SetParameters(const char *kvpairs) {
             }
             AHAL_INFO("pal set param success  for device connection");
             /* check if capture profile is supported or not */
-            pal_param_device_capability_t *device_cap_query = new pal_param_device_capability_t();
-            dynamic_media_config_t dynamic_media_config;
-            size_t payload_size = 0;
-            device_cap_query->id = PAL_DEVICE_IN_USB_HEADSET;
-            device_cap_query->addr.card_id = usb_card_id_;
-            device_cap_query->addr.device_num = usb_dev_num_;
-            device_cap_query->config = &dynamic_media_config;
-            device_cap_query->is_playback = false;
-            ret = pal_get_param(PAL_PARAM_ID_DEVICE_CAPABILITY,
-                    (void **)&device_cap_query,
-                    &payload_size, nullptr);
-            if (dynamic_media_config.sample_rate == 0 && dynamic_media_config.format == 0 &&
-                    dynamic_media_config.mask == 0)
-                usb_input_dev_enabled = false;
-            delete device_cap_query;
+            pal_param_device_capability_t *device_cap_query = (pal_param_device_capability_t *)
+                                                          malloc(sizeof(pal_param_device_capability_t));
+            if (device_cap_query) {
+                dynamic_media_config_t dynamic_media_config;
+                size_t payload_size = 0;
+                device_cap_query->id = PAL_DEVICE_IN_USB_HEADSET;
+                device_cap_query->addr.card_id = usb_card_id_;
+                device_cap_query->addr.device_num = usb_dev_num_;
+                device_cap_query->config = &dynamic_media_config;
+                device_cap_query->is_playback = false;
+                ret = pal_get_param(PAL_PARAM_ID_DEVICE_CAPABILITY,
+                        (void **)&device_cap_query,
+                        &payload_size, nullptr);
+                if (dynamic_media_config.sample_rate == 0 && dynamic_media_config.format == 0 &&
+                        dynamic_media_config.mask == 0)
+                    usb_input_dev_enabled = false;
+                free(device_cap_query);
+            } else {
+                    AHAL_ERR("Failed to allocate mem for device_cap_query");
+            }
             if (pal_device_ids) {
                 free(pal_device_ids);
                 pal_device_ids = NULL;
@@ -1591,15 +1625,16 @@ int AudioDevice::SetParameters(const char *kvpairs) {
         struct pal_volume_data* volume = NULL;
         volume = (struct pal_volume_data *)malloc(sizeof(struct pal_volume_data)
                       +sizeof(struct pal_channel_vol_kv));
-        volume->no_of_volpair = 1;
-        //For haptics, there is only one channel (FL).
-        volume->volume_pair[0].channel_mask = 0x01;
-        volume->volume_pair[0].vol = atof(value);
-        AHAL_INFO("Setting Haptics Volume as %f", volume->volume_pair[0].vol);
-        ret = pal_set_param(PAL_PARAM_ID_HAPTICS_VOLUME, (void *)volume,
-                 sizeof(pal_volume_data));
-        if (volume)
+        if (volume) {
+            volume->no_of_volpair = 1;
+            //For haptics, there is only one channel (FL).
+            volume->volume_pair[0].channel_mask = 0x01;
+            volume->volume_pair[0].vol = atof(value);
+            AHAL_INFO("Setting Haptics Volume as %f", volume->volume_pair[0].vol);
+            ret = pal_set_param(PAL_PARAM_ID_HAPTICS_VOLUME, (void *)volume,
+                     sizeof(pal_volume_data));
             free(volume);
+        }
     }
 
     ret = str_parms_get_str(parms, "haptics_intensity", value, sizeof(value));
@@ -1632,6 +1667,7 @@ exit:
     AHAL_DBG("exit: %s", kvpairs);
     return 0;
 }
+
 
 int AudioDevice::SetVoiceVolume(float volume) {
     return voice_->SetVoiceVolume(volume);

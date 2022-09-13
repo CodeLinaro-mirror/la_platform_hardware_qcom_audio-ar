@@ -26,6 +26,37 @@
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+/* Changes from Qualcomm Innovation Center are provided under the following license:
+ *
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted (subject to the limitations in the
+ * disclaimer below) provided that the following conditions are met:
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above
+ *     copyright notice, this list of conditions and the following
+ *     disclaimer in the documentation and/or other materials provided
+ *     with the distribution.
+ *   * Neither the name of Qualcomm Innovation Center, Inc. nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
+ *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE
+ * GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT
+ * HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+ * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+ * IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+ * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE
+ */
 
 #ifndef ANDROID_HARDWARE_AHAL_ASTREAM_H_
 #define ANDROID_HARDWARE_AHAL_ASTREAM_H_
@@ -41,7 +72,7 @@
 #include <system/audio.h>
 
 #include "PalDefs.h"
-#include <audio_extn/AudioExtn.h>
+#include <AudioExtn.h>
 #include <mutex>
 #include <map>
 
@@ -436,6 +467,7 @@ public:
     int             GetUseCase();
     std::mutex write_wait_mutex_;
     std::condition_variable write_condition_;
+    std::mutex stream_mutex_;
     bool write_ready_;
     std::mutex drain_wait_mutex_;
     std::condition_variable drain_condition_;
@@ -488,6 +520,7 @@ public:
 
     ~StreamOutPrimary();
     bool sendGaplessMetadata = true;
+    bool isCompressMetadataAvail = false;
     int Standby();
     int SetVolume(float left, float right);
     uint64_t GetFramesWritten(struct timespec *timestamp);
@@ -532,6 +565,7 @@ protected:
     uint16_t mchannels;
     std::shared_ptr<audio_stream_out>   stream_;
     uint64_t mBytesWritten; /* total bytes written, not cleared when entering standby */
+    uint64_t mCachedPosition = 0; /* cache pcm offload position when entering standby */
     offload_effects_start_output fnp_offload_effect_start_output_ = nullptr;
     offload_effects_stop_output fnp_offload_effect_stop_output_ = nullptr;
     visualizer_hal_start_output fnp_visualizer_start_output_ = nullptr;
