@@ -1528,7 +1528,7 @@ pal_stream_type_t StreamOutPrimary::GetPalStreamType(
     }
     if ((halStreamFlags & AUDIO_OUTPUT_FLAG_RAW) != 0) {
         palStreamType = PAL_STREAM_ULTRA_LOW_LATENCY;
-    } else if ((halStreamFlags & AUDIO_OUTPUT_FLAG_FAST) != 0) {
+    } else if (((halStreamFlags & AUDIO_OUTPUT_FLAG_FAST) && !address)) {
         palStreamType = PAL_STREAM_LOW_LATENCY;
     } else if (halStreamFlags ==
                     (AUDIO_OUTPUT_FLAG_FAST|AUDIO_OUTPUT_FLAG_RAW)) {
@@ -2090,7 +2090,12 @@ int64_t StreamOutPrimary::GetRenderLatency(audio_output_flags_t halStreamFlags, 
     switch (streamAttributes_.type) {
          case PAL_STREAM_DEEP_BUFFER:
          case PAL_STREAM_PLAYBACK_BUS:
-             return DEEP_BUFFER_PLATFORM_DELAY;
+              if (((strncmp(address,"BUS03_PHONE",strlen("BUS03_PHONE"))) == 0 )){
+                    return LOW_LATENCY_PLATFORM_DELAY;
+                 }
+              else {
+                    return DEEP_BUFFER_PLATFORM_DELAY;
+                 }
          case PAL_STREAM_LOW_LATENCY:
              return LOW_LATENCY_PLATFORM_DELAY;
          case PAL_STREAM_COMPRESSED:
@@ -2252,7 +2257,20 @@ uint32_t StreamOutPrimary::GetBufferSize() {
     } else if (streamAttributes_.type == PAL_STREAM_PCM_OFFLOAD
               || streamAttributes_.type == PAL_STREAM_DEEP_BUFFER
               || streamAttributes_.type == PAL_STREAM_PLAYBACK_BUS) {
-        return get_pcm_buffer_size();
+        if(streamAttributes_.type == PAL_STREAM_PLAYBACK_BUS) {
+            if( (strncmp(address_,"BUS03_PHONE",strlen("BUS03_PHONE"))) == 0 ) {
+                return  LOW_LATENCY_PLAYBACK_PERIOD_SIZE *
+                    audio_bytes_per_frame(
+                            audio_channel_count_from_out_mask(config_.channel_mask),
+                            config_.format);
+             }
+             else {
+               return get_pcm_buffer_size();
+             }
+        }
+        else {
+            return get_pcm_buffer_size();
+        }
     } else if (streamAttributes_.type == PAL_STREAM_LOW_LATENCY) {
         return LOW_LATENCY_PLAYBACK_PERIOD_SIZE *
             audio_bytes_per_frame(
