@@ -315,7 +315,7 @@ PRODUCT_COPY_FILES += \
 # C2 Audio files
 ifeq ($(AUDIO_FEATURE_ENABLED_CODEC_2_0), true)
 PRODUCT_COPY_FILES += \
-    $(CONFIG_HAL_COMMON_SRC_DIR)/codec2/media_codecs_c2_audio.xml:vendor/etc/media_codecs_c2_audio.xml \
+    $(CONFIG_HAL_SRC_DIR)/media_codecs_c2_audio.xml:vendor/etc/media_codecs_c2_audio.xml \
     $(CONFIG_HAL_COMMON_SRC_DIR)/media_codecs_vendor_audio.xml:vendor/etc/media_codecs_vendor_audio.xml \
     $(CONFIG_HAL_COMMON_SRC_DIR)/codec2/service/1.0/c2audio.vendor.base-arm.policy:vendor/etc/seccomp_policy/c2audio.vendor.base-arm.policy \
     $(CONFIG_HAL_COMMON_SRC_DIR)/codec2/service/1.0/c2audio.vendor.base-arm64.policy:vendor/etc/seccomp_policy/c2audio.vendor.base-arm64.policy \
