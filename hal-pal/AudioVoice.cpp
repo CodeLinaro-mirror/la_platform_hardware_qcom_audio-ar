@@ -700,8 +700,11 @@ int AudioVoice::VoiceStart(voice_session_t *session) {
         if (ret)
             AHAL_ERR("Failed to apply volume on voice session %x", ret);
     } else {
-        if (!session->pal_voice_handle || !session->pal_vol_data)
+        if (!session->pal_voice_handle || !session->pal_vol_data) {
             AHAL_ERR("Invalid voice handle or volume data");
+            ret = -EINVAL;
+            goto error_open;
+        }
         if (session->pal_vol_data->volume_pair[0].vol == -1.0)
             AHAL_DBG("session volume is not set");
     }

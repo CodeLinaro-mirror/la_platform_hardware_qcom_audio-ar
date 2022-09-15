@@ -1307,6 +1307,7 @@ int AudioDevice::SetParameters(const char *kvpairs) {
 
     if (str_parms_get_str(parms, AUDIO_PARAMETER_DEVICE_CONNECT,value, sizeof(value)) >= 0) {
         pal_param_device_connection_t param_device_connection;
+        memset(&param_device_connection, 0, sizeof(pal_param_device_connection_t));
         val = atoi(value);
         audio_devices_t device = (audio_devices_t)val;
 
@@ -1498,6 +1499,7 @@ int AudioDevice::SetParameters(const char *kvpairs) {
 
     if (str_parms_get_str(parms, AUDIO_PARAMETER_DEVICE_DISCONNECT,value, sizeof(value)) >= 0) {
         pal_param_device_connection_t param_device_connection;
+        param_device_connection.device_config.usb_addr.card_id = 0;
         val = atoi(value);
         audio_devices_t device = (audio_devices_t)val;
         if (audio_is_usb_out_device(device) || audio_is_usb_in_device(device)) {

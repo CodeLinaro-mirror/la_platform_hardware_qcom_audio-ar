@@ -516,8 +516,10 @@ static int astream_out_standby(struct audio_stream *stream) {
         return -EINVAL;
     }
 
-    AHAL_DBG("enter: stream (%p), usecase(%d: %s)", astream_out.get(),
+    if (astream_out != nullptr) {
+        AHAL_DBG("enter: stream (%p), usecase(%d: %s)", astream_out.get(),
           astream_out->GetUseCase(), use_case_table[astream_out->GetUseCase()]);
+    }
 
     if (astream_out) {
         ret = astream_out->Standby();
@@ -683,9 +685,14 @@ static int astream_out_set_parameters(struct audio_stream *stream,
         AHAL_ERR("unable to get audio device");
         return ret;
     }
-
-    AHAL_DBG("enter: usecase(%d: %s) kvpairs: %s",
-             astream_out->GetUseCase(), use_case_table[astream_out->GetUseCase()], kvpairs);
+    if (astream_out != nullptr) {
+        AHAL_DBG("enter: usecase(%d: %s) kvpairs: %s",
+                 astream_out->GetUseCase(), use_case_table[astream_out->GetUseCase()], kvpairs);
+    } else {
+        ret = -EINVAL;
+        AHAL_DBG("Exit ret: %d", ret);
+        goto exit;
+    }
 
     parms = str_parms_create_str(kvpairs);
     if (!parms) {
@@ -740,7 +747,7 @@ static char* astream_out_get_parameters(const struct audio_stream *stream,
     if (ret >= 0) {
         value[0] = '\0';
 
-        if (astream_out->flags_ & AUDIO_OUTPUT_FLAG_DIRECT &&
+        if (astream_out && (astream_out->flags_ & AUDIO_OUTPUT_FLAG_DIRECT) &&
              !(astream_out->flags_ & AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD)) {
             AHAL_VERBOSE("in direct_pcm");
             strlcat(value, "true", sizeof(value));
@@ -756,7 +763,7 @@ static char* astream_out_get_parameters(const struct audio_stream *stream,
 
     if (str_parms_get_str(query, "supports_hw_suspend", value, sizeof(value)) >= 0) {
         //only low latency track supports suspend_resume
-        if (astream_out->flags_ & AUDIO_OUTPUT_FLAG_FAST)
+        if (astream_out && (astream_out->flags_ & AUDIO_OUTPUT_FLAG_FAST))
             hal_output_suspend_supported = 1;
         str_parms_add_int(reply, "supports_hw_suspend", hal_output_suspend_supported);
         if (str)
@@ -1316,8 +1323,10 @@ static int astream_in_standby(struct audio_stream *stream) {
         return ret;
     }
 
-    AHAL_DBG("enter: stream (%p) usecase(%d: %s)", astream_in.get(),
-          astream_in->GetUseCase(), use_case_table[astream_in->GetUseCase()]);
+    if (astream_in != nullptr) {
+        AHAL_DBG("enter: stream (%p) usecase(%d: %s)", astream_in.get(),
+              astream_in->GetUseCase(), use_case_table[astream_in->GetUseCase()]);
+    }
 
     if (astream_in) {
         ret = astream_in->Standby();
@@ -2577,7 +2586,7 @@ ssize_t StreamOutPrimary::splitAndWriteAudioHapticsStream(const void *buffer, si
      hapticBuf.offset = 0;
 
      for (size_t i = 0; i < frameCount; i++) {
-         memcpy((uint8_t *)(audioBuf.buffer) + audIndex, (uint8_t *)(audioBuf.buffer) + srcIndex,
+         memmove((uint8_t *)(audioBuf.buffer) + audIndex, (uint8_t *)(audioBuf.buffer) + srcIndex,
                 audioFrameSize);
          audIndex += audioFrameSize;
          srcIndex += audioFrameSize;
@@ -2937,6 +2946,7 @@ StreamOutPrimary::StreamOutPrimary(
     AHAL_DBG("No of Android devices %zu", mAndroidOutDevices.size());
 
     mPalOutDeviceIds = new pal_device_id_t[mAndroidOutDevices.size()];
+    memset(mPalOutDeviceIds, 0, mAndroidOutDevices.size() * sizeof(pal_device_id_t));
     if (!mPalOutDeviceIds) {
         goto error;
     }
