@@ -272,11 +272,11 @@
             </devicePorts>
             <routes>
                 <route type="mix" sink="Media Bus"
-                       sources="media,mmap_no_irq_out"/>
+                       sources="media"/>
                 <route type="mix" sink="Sys Notification Bus"
-                       sources="sys_notification,mmap_no_irq_out"/>
+                       sources="sys_notification"/>
                 <route type="mix" sink="Nav Guidance Bus"
-                       sources="nav_guidance,mmap_no_irq_out"/>
+                       sources="nav_guidance"/>
                 <route type="mix" sink="Phone Bus"
                        sources="phone"/>
                 <route type="mix" sink="Front Passenger Bus"
@@ -284,11 +284,11 @@
                 <route type="mix" sink="Rear Seat Bus"
                        sources="rear_seat"/>
                 <route type="mix" sink="Earpiece"
-                       sources="primary output,raw,deep_buffer,mmap_no_irq_out,voip_rx"/>
+                       sources="primary output,raw,deep_buffer,voip_rx"/>
                 <route type="mix" sink="Speaker"
-                       sources="primary output,raw,deep_buffer,compressed_offload,mmap_no_irq_out,voip_rx"/>
+                       sources="primary output,raw,deep_buffer,compressed_offload,voip_rx"/>
                 <route type="mix" sink="Speaker Safe"
-                       sources="primary output,raw,deep_buffer,compressed_offload,mmap_no_irq_out,voip_rx"/>
+                       sources="primary output,raw,deep_buffer,compressed_offload,voip_rx"/>
                 <route type="mix" sink="BT SCO"
                        sources="primary output,raw,deep_buffer,voip_rx"/>
                 <route type="mix" sink="BT SCO Headset"
@@ -296,15 +296,13 @@
                 <route type="mix" sink="BT SCO Car Kit"
                        sources="primary output,raw,deep_buffer,voip_rx"/>
                 <route type="mix" sink="Telephony Tx"
-                       sources="voice_tx,incall_music_uplink"/>
+                       sources="voice_tx"/>
                 <route type="mix" sink="primary input"
                        sources="Built-In Mic,Built-In Back Mic,BT SCO Headset Mic,Primary In Bus,Front Passenger In Bus,Rear Seat In Bus"/>
                 <route type="mix" sink="fast input"
                        sources="Built-In Mic,Built-In Back Mic,BT SCO Headset Mic"/>
                 <route type="mix" sink="voice_rx"
                        sources="Telephony Rx"/>
-                <route type="mix" sink="mmap_no_irq_in"
-                       sources="Built-In Mic,Built-In Back Mic"/>
                 <route type="mix" sink="voip_tx"
                        sources="Built-In Mic,Built-In Back Mic,BT SCO Headset Mic"/>
                 <route type="mix" sink="BT A2DP Out"
