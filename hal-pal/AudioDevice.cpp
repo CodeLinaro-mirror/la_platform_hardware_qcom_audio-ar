@@ -366,7 +366,10 @@ std::shared_ptr<StreamOutPrimary> AudioDevice::CreateStreamOut(
         AHAL_ERR("Failed to create StreamOutPrimary");
         return nullptr;
     }
-    astream->GetStreamHandle(stream_out);
+
+    if (astream != NULL) {
+        astream->GetStreamHandle(stream_out);
+    }
     out_list_mutex.lock();
     stream_out_list_.push_back(astream);
     AHAL_ERR("output stream %d %p",(int)stream_out_list_.size(), stream_out);
