@@ -1460,7 +1460,7 @@ pal_stream_type_t StreamInPrimary::GetPalStreamType(
     if (sample_rate == LOW_LATENCY_CAPTURE_SAMPLE_RATE &&
             (halStreamFlags & AUDIO_INPUT_FLAG_TIMESTAMP) == 0 &&
             (halStreamFlags & AUDIO_INPUT_FLAG_COMPRESS) == 0 &&
-            (halStreamFlags & AUDIO_INPUT_FLAG_FAST) != 0) {
+            (halStreamFlags == (AUDIO_INPUT_FLAG_FAST|AUDIO_INPUT_FLAG_RAW))) {
         if (isDeviceAvailable(PAL_DEVICE_IN_PROXY))
             palStreamType = PAL_STREAM_PROXY;
         else
@@ -3581,10 +3581,8 @@ set_buff_size:
                     config_.format);
         inBufCount = MMAP_PERIOD_COUNT_DEFAULT;
     } else if (usecase_ == USECASE_AUDIO_RECORD_LOW_LATENCY) {
-        inBufSize = ULL_PERIOD_SIZE * audio_bytes_per_frame(
-                    audio_channel_count_from_in_mask(config_.channel_mask),
-                    config_.format);
-        inBufCount = ULL_PERIOD_COUNT_DEFAULT;
+        inBufSize = BUF_SIZE_CAPTURE;
+        inBufCount = NO_OF_BUF;
     } else
         inBufSize = StreamInPrimary::GetBufferSize();
     if (!handle) {
