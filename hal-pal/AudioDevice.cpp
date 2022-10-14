@@ -1290,10 +1290,10 @@ int AudioDevice::SetParameters(const char *kvpairs) {
 
         char effect_persist[MAX_LENGTH_OF_INTEGER_IN_STRING];
         char effect_direction[MAX_LENGTH_OF_INTEGER_IN_STRING];
-        int effect_tag = 0;
-        int effect_tag_key = 0;
-        int effect_tkv = 0;
-        int valid_effect_input = 0;
+        uint32_t effect_tag = 0;
+        uint32_t effect_tag_key = 0;
+        uint32_t effect_tkv = 0;
+        uint32_t valid_effect_input = 0;
         bool is_play = true;
         pal_device_id_t hfp_effect_device = PAL_DEVICE_OUT_SPEAKER;
         pal_key_value_pair_t pal_key_vector_pair;
@@ -1362,7 +1362,7 @@ int AudioDevice::SetParameters(const char *kvpairs) {
             str_parms_del(parms, "effect_tkv");
             effect_tkv = strtoul(value, NULL, 0);
             AHAL_VERBOSE("Inside setparam based effect control %d, params: value is %s:0x%x", __LINE__, str_parms_to_str(parms), effect_tkv);
-            valid_effect_input = valid_effect_input | 0x16;
+            valid_effect_input = valid_effect_input | 0x10;
         } //effect_tkv
 
         AHAL_INFO("Parsed payload is effect_persist: %s, effect_direction: %s, tag: 0x%x, tag_key: 0x%x, tkv value: 0x%x validity_check %d", effect_persist, effect_direction, effect_tag, effect_tag_key, effect_tkv, valid_effect_input);
@@ -1380,7 +1380,7 @@ int AudioDevice::SetParameters(const char *kvpairs) {
         } else {
             is_play = false;
             AHAL_INFO("Setting device to mic");
-            hfp_effect_device = PAL_DEVICE_IN_SPEAKER_MIC;
+            hfp_effect_device = PAL_DEVICE_IN_HANDSET_MIC;
 		}
 
         payload = (uint8_t*) calloc (1, payload_size);
@@ -1394,8 +1394,8 @@ int AudioDevice::SetParameters(const char *kvpairs) {
         //create payload to be sent to GEF
 
         pal_payload = (pal_param_payload *) payload;
-        pal_payload->payload_size = payload_size;
-
+        pal_payload->payload_size = sizeof(effect_pal_payload_t) +
+                                sizeof(pal_key_vector_t) + (no_of_kvps * sizeof(pal_key_value_pair_t));
         effect_payload = (effect_pal_payload_t *)(payload + sizeof(pal_param_payload));
         effect_payload->isTKV = PARAM_TKV;
         effect_payload->tag = effect_tag;
