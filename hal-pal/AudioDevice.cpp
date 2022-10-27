@@ -326,6 +326,14 @@ static void hdr_get_parameters(std::shared_ptr<AudioDevice> adev,
 AudioDevice::~AudioDevice() {
     audio_extn_gef_deinit(adev_);
     audio_extn_sound_trigger_deinit(adev_);
+
+    for(int i = 0; i < payloadpersv.size(); i++) {
+        if (payloadpersv[i].pal_payload) {
+            free(payloadpersv[i].pal_payload);
+            payloadpersv[i].pal_payload = NULL;
+        }
+    }
+    payloadpersv.clear();
     pal_deinit();
 }
 
@@ -1099,6 +1107,8 @@ int AudioDevice::Init(hw_device_t **device, const hw_module_t *module) {
     memset(&microphone_maps, 0, sizeof(PAL_MAX_INPUT_DEVICES*sizeof(snd_device_to_mic_map_t)));
     if (!parse_xml())
         mic_characteristics_available = true;
+    //Flag to be used for hfp effect use case
+    hfp_params_sent = false;
 
     AudioExtn::audio_extn_place_marker("M - AHAL Init Exit", false);
     return ret;
@@ -1288,12 +1298,12 @@ int AudioDevice::SetParameters(const char *kvpairs) {
 #define VALID_INPUT_VALUE 31
 #define NUM_OF_KEY_VALUE_PAIR 1
 
-        char effect_persist[MAX_LENGTH_OF_INTEGER_IN_STRING];
         char effect_direction[MAX_LENGTH_OF_INTEGER_IN_STRING];
         uint32_t effect_tag = 0;
         uint32_t effect_tag_key = 0;
         uint32_t effect_tkv = 0;
         uint32_t valid_effect_input = 0;
+        bool effect_persist = false;
         bool is_play = true;
         pal_device_id_t hfp_effect_device = PAL_DEVICE_OUT_SPEAKER;
         pal_key_value_pair_t pal_key_vector_pair;
@@ -1305,7 +1315,6 @@ int AudioDevice::SetParameters(const char *kvpairs) {
         uint32_t payload_size = (sizeof(pal_param_payload) + sizeof(effect_pal_payload_t) +
                                 sizeof(pal_key_vector_t) + (no_of_kvps * sizeof(pal_key_value_pair_t)));
 
-        memset(effect_persist, 0, MAX_LENGTH_OF_INTEGER_IN_STRING);
         memset(effect_direction, 0, MAX_LENGTH_OF_INTEGER_IN_STRING);
         AHAL_INFO("Inside setparam based effect control, payload is %s", value);
         str_parms_del(parms, "effect_control");
@@ -1315,15 +1324,18 @@ int AudioDevice::SetParameters(const char *kvpairs) {
             str_parms_del(parms, "effect_persist");
 
             //validate that effect_persist is either true or false
-            if (strncmp(value, "true", 4) == 0 || strncmp(value, "false", 5) == 0) {
-                strlcpy(effect_persist, value, MAX_LENGTH_OF_INTEGER_IN_STRING);
-                AHAL_VERBOSE("Inside setparam based effect control %d, params: value is %s:%s", __LINE__, str_parms_to_str(parms), value);
-                valid_effect_input = valid_effect_input | 0x1;
+            if (!strncmp(value, "true", 4)) {
+                effect_persist = true;
+            } else if (!strncmp(value, "false", 5)) {
+                effect_persist = false;
             } else {
                 AHAL_ERR("Invalid value for effect_persist, valid values are either true or false, value was %s", value);
                 ret = -1;
                 goto exit;
             }
+
+            AHAL_VERBOSE("Inside setparam based effect control %d, params: value is %s:%s", __LINE__, str_parms_to_str(parms), value);
+            valid_effect_input = valid_effect_input | 0x1;
         } //effect_persist
 
         ret = str_parms_get_str(parms, "effect_direction", value, sizeof(value));
@@ -1365,7 +1377,7 @@ int AudioDevice::SetParameters(const char *kvpairs) {
             valid_effect_input = valid_effect_input | 0x10;
         } //effect_tkv
 
-        AHAL_INFO("Parsed payload is effect_persist: %s, effect_direction: %s, tag: 0x%x, tag_key: 0x%x, tkv value: 0x%x validity_check %d", effect_persist, effect_direction, effect_tag, effect_tag_key, effect_tkv, valid_effect_input);
+        AHAL_INFO("Parsed payload is effect_persist: %d, effect_direction: %s, tag: 0x%x, tag_key: 0x%x, tkv value: 0x%x validity_check %d", effect_persist, effect_direction, effect_tag, effect_tag_key, effect_tkv, valid_effect_input);
 
         if (valid_effect_input != VALID_INPUT_VALUE) {
             AHAL_ERR("Input is invalid and is missing some fields, expected %d: got %d", VALID_INPUT_VALUE, valid_effect_input);
@@ -1406,25 +1418,41 @@ int AudioDevice::SetParameters(const char *kvpairs) {
                                              sizeof(effect_pal_payload_t));
         pal_key_vector->num_tkvs = no_of_kvps;
 
-		//there is only one tkv
+        //there is only one tkv
         pal_key_vector_pair.key = effect_tag_key;
         pal_key_vector_pair.value = effect_tkv;
 
         memcpy(pal_key_vector->kvp, &pal_key_vector_pair, (no_of_kvps * sizeof(pal_key_value_pair_t)));
 
-
-        if (!strncmp(effect_persist, "true", 4)) {
-            AHAL_INFO("persist is true, storing parameters to ACDB and also to the active usecase");
+        if (effect_persist == true) {
+            AHAL_INFO("persist is true, storing parameters locally and then will be applied when session starts");
             //cache it and send it to any active stream that matches
-            ret =   pal_gef_rw_param_acdb(PAL_PARAM_ID_UIEFFECT, (void*)pal_payload, payload_size,  hfp_effect_device, PAL_STREAM_LOOPBACK, 48000, 1, GEF_PARAM_WRITE, is_play);
+
+            payloadpers.pal_payload = (pal_param_payload *)calloc(1, pal_payload->payload_size + sizeof(pal_param_payload));
+            if (!payloadpers.pal_payload) {
+                AHAL_ERR("%s:%d Failed to alloc payload buffer\n", __func__, __LINE__);
+                ret = -ENOMEM;
+                goto exit;
+            }
+
+            memcpy(payloadpers.pal_payload,pal_payload,pal_payload->payload_size + sizeof(pal_param_payload));
+            payloadpers.hfp_effect_device = hfp_effect_device;
+            payloadpersv.push_back(payloadpers);
+
+            if (AudioExtn::audio_extn_hfp_is_active(adev_)) {
+                ret = pal_gef_rw_param(PAL_PARAM_ID_UIEFFECT, (void*) pal_payload, payload_size,  hfp_effect_device, PAL_STREAM_LOOPBACK, GEF_PARAM_WRITE, NULL);
+            }
+            else {
+                ret = 0;
+            }
         } else {
             AHAL_INFO("persist is false, trying to send to stream, if active");
-            ret =   pal_gef_rw_param(PAL_PARAM_ID_UIEFFECT, (void*) pal_payload, payload_size,  hfp_effect_device, PAL_STREAM_LOOPBACK, GEF_PARAM_WRITE, NULL);
+            ret = pal_gef_rw_param(PAL_PARAM_ID_UIEFFECT, (void*) pal_payload, payload_size,  hfp_effect_device, PAL_STREAM_LOOPBACK, GEF_PARAM_WRITE, NULL);
         }
 
         free(payload);
         payload = NULL;
-		pal_payload = NULL;
+        pal_payload = NULL;
         effect_payload = NULL;
         pal_key_vector = NULL;
 
@@ -1435,13 +1463,32 @@ int AudioDevice::SetParameters(const char *kvpairs) {
             AHAL_INFO("Set parameter succesfully");
             goto exit;
         }
-
     }
 
     ret = AudioExtn::audio_extn_set_parameters(adev_, parms);
     if (ret) {
         AHAL_ERR(" audio_extn_set_parameters failed %d",ret);
         goto exit;
+    }
+
+    if (AudioExtn::audio_extn_hfp_is_active(adev_)) {
+        if (!hfp_params_sent) {
+            AHAL_ERR("HFP is active, checking if %u number of stored payloads to be sent to the HFP session \n", (uint32_t)payloadpersv.size());
+            for (uint32_t i = 0; i < payloadpersv.size(); i++) {
+                if (payloadpersv[i].pal_payload) {
+                    ret = pal_gef_rw_param(PAL_PARAM_ID_UIEFFECT, (void*)(payloadpersv[i].pal_payload), payloadpersv[i].pal_payload->payload_size,
+                                        payloadpersv[i].hfp_effect_device, PAL_STREAM_LOOPBACK, GEF_PARAM_WRITE, NULL);
+                    if (ret) {
+                        AHAL_ERR("pal_set_param for stored parameters failed with %d",ret);
+                        goto exit;
+                    }
+                    AHAL_INFO("Set parameter succesfully");
+                }
+            }
+            hfp_params_sent = true;
+        }
+    } else {
+        hfp_params_sent = false;
     }
 
     if (property_get_bool("vendor.audio.hdr.record.enable", false))
