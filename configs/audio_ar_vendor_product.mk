@@ -20,6 +20,16 @@ MM_AUDIO_AR += lib_default_plugin_controls
 MM_AUDIO_AR += lib_default_set_param_plugin_controls
 MM_AUDIO_AR += gpio_latency
 
+MM_AUDIO_AR += libams
+MM_AUDIO_AR += libamscore
+MM_AUDIO_AR += libamsclient
+MM_AUDIO_AR += libamsosal
+MM_AUDIO_AR += vendor.qti.hardware.AMSIPC@1.0
+MM_AUDIO_AR += vendor.qti.hardware.AMSIPC@1.0-impl
+MM_AUDIO_AR += vendor.qti.hardware.AMSIPC@1.0-service
+MM_AUDIO_AR += init.qti.AMSIPC.sh
+MM_AUDIO_AR += ams_test
+MM_AUDIO_AR += libar-gpr-ams
 ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_au)
 MM_AUDIO_AR += workspaceFileXml.qwsp
 MM_AUDIO_AR += capi_avc
