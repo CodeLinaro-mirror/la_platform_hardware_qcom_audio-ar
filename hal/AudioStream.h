@@ -28,7 +28,7 @@
  *
  * Changes from Qualcomm Innovation Center are provided under the following license:
  *
- * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025, Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted (subject to the limitations in the
@@ -594,6 +594,7 @@ public:
     source_metadata_t btSourceMetadata;
     std::vector<playback_track_metadata_t> tracks;
     int SetAggregateSourceMetadata(bool voice_active);
+    static std::mutex sourceMetadata_mutex_;
 protected:
     struct timespec writeAt;
     int get_compressed_buffer_size();
@@ -673,6 +674,7 @@ public:
     sink_metadata_t btSinkMetadata;
     std::vector<record_track_metadata_t> tracks;
     int SetAggregateSinkMetadata(bool voice_active);
+    static std::mutex sinkMetadata_mutex_;
 protected:
     struct timespec readAt;
     uint32_t fragments_ = 0;
