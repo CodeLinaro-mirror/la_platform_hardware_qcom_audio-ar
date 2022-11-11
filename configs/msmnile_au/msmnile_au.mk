@@ -118,9 +118,6 @@ PRODUCT_COPY_FILES += \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/mixer_paths_gvmauto_6155.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_gvmauto_6155.xml
 endif
 ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_au)
-# Enable flag to support shared memory
-AUDIO_ENABLE_SHARED_MEM_FEATURE := true
-
 PRODUCT_COPY_FILES += \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/mixer_paths_sa8155_adp_star.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_sa8155_adp_star.xml
 endif
@@ -475,6 +472,8 @@ PRODUCT_PACKAGES += \
     android.hardware.audio@2.0-impl \
     android.hardware.audio.effect@2.0-impl \
     android.hardware.soundtrigger@2.1-impl \
+    android.hardware.soundtrigger@2.2-impl \
+    android.hardware.soundtrigger@2.3-impl \
     android.hardware.audio@4.0 \
     android.hardware.audio.common@4.0 \
     android.hardware.audio.common@4.0-util \
