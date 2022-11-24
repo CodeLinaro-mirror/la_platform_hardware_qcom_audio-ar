@@ -7,6 +7,10 @@ AUDIO_USE_STUB_HAL := true
 endif
 endif
 
+ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_au)
+    TARGET_USES_ION_CMA_MEMORY := true
+endif
+
 ifneq ($(AUDIO_USE_STUB_HAL), true)
 BOARD_USES_ALSA_AUDIO := true
 
@@ -472,6 +476,8 @@ PRODUCT_PACKAGES += \
     android.hardware.audio@2.0-impl \
     android.hardware.audio.effect@2.0-impl \
     android.hardware.soundtrigger@2.1-impl \
+    android.hardware.soundtrigger@2.2-impl \
+    android.hardware.soundtrigger@2.3-impl \
     android.hardware.audio@4.0 \
     android.hardware.audio.common@4.0 \
     android.hardware.audio.common@4.0-util \

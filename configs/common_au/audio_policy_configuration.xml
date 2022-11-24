@@ -80,7 +80,8 @@
                     <profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
                              samplingRates="48000" channelMasks="AUDIO_CHANNEL_OUT_STEREO"/>
                 </mixPort>
-                <mixPort name="phone" role="source">
+                <mixPort name="phone" role="source"
+                         flags="AUDIO_OUTPUT_FLAG_FAST">
                     <profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
                              samplingRates="48000" channelMasks="AUDIO_CHANNEL_OUT_STEREO"/>
                 </mixPort>
@@ -125,39 +126,24 @@
                     <profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
                              samplingRates="8000,16000,48000" channelMasks="AUDIO_CHANNEL_OUT_MONO,AUDIO_CHANNEL_OUT_STEREO"/>
                 </mixPort>
-                <mixPort name="mmap_no_irq_out" role="source" flags="AUDIO_OUTPUT_FLAG_DIRECT|AUDIO_OUTPUT_FLAG_MMAP_NOIRQ">
-                    <profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
-                             samplingRates="8000,16000,24000,32000,48000" channelMasks="AUDIO_CHANNEL_OUT_STEREO,AUDIO_CHANNEL_OUT_2POINT1,AUDIO_CHANNEL_OUT_PENTA"/>
-                </mixPort>
                 <mixPort name="voip_rx" role="source"
                          flags="AUDIO_OUTPUT_FLAG_VOIP_RX">
                     <profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
                            samplingRates="8000,16000,32000,48000" channelMasks="AUDIO_CHANNEL_OUT_STEREO"/>
                 </mixPort>
-                <mixPort name="incall_music_uplink" role="source"
-                        flags="AUDIO_OUTPUT_FLAG_INCALL_MUSIC">
-                    <profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
-                             samplingRates="8000,16000,48000"
-                             channelMasks="AUDIO_CHANNEL_OUT_STEREO"/>
-                </mixPort>
                 <mixPort name="primary input" role="sink">
-                    <profile name="" format="AUDIO_FORMAT_PCM_8_24_BIT"
+                    <profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
                              samplingRates="8000,11025,12000,16000,22050,24000,32000,44100,48000"
-                             channelMasks="AUDIO_CHANNEL_IN_MONO,AUDIO_CHANNEL_IN_STEREO,AUDIO_CHANNEL_IN_FRONT_BACK,AUDIO_CHANNEL_INDEX_MASK_3"/>
+                             channelMasks="AUDIO_CHANNEL_IN_MONO,AUDIO_CHANNEL_IN_STEREO,AUDIO_CHANNEL_IN_FRONT_BACK,AUDIO_CHANNEL_INDEX_MASK_3,AUDIO_CHANNEL_INDEX_MASK_5"/>
                 </mixPort>
                 <mixPort name="fast input" role="sink" flags="AUDIO_INPUT_FLAG_FAST">
-                    <profile name="" format="AUDIO_FORMAT_PCM_8_24_BIT"
+                    <profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
                              samplingRates="8000,11025,12000,16000,22050,24000,32000,44100,48000"
-                             channelMasks="AUDIO_CHANNEL_IN_MONO,AUDIO_CHANNEL_IN_STEREO,AUDIO_CHANNEL_IN_FRONT_BACK,AUDIO_CHANNEL_INDEX_MASK_3"/>
+                             channelMasks="AUDIO_CHANNEL_IN_MONO,AUDIO_CHANNEL_IN_STEREO,AUDIO_CHANNEL_IN_FRONT_BACK,AUDIO_CHANNEL_INDEX_MASK_3,AUDIO_CHANNEL_INDEX_MASK_5"/>
                 </mixPort>
                 <mixPort name="voice_rx" role="sink">
                     <profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
                              samplingRates="8000,16000,48000" channelMasks="AUDIO_CHANNEL_IN_MONO,AUDIO_CHANNEL_IN_STEREO"/>
-                </mixPort>
-                <mixPort name="mmap_no_irq_in" role="sink" flags="AUDIO_INPUT_FLAG_MMAP_NOIRQ">
-                    <profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
-                             samplingRates="8000,11025,12000,16000,22050,24000,32000,44100,48000"
-                             channelMasks="AUDIO_CHANNEL_IN_MONO,AUDIO_CHANNEL_IN_STEREO,AUDIO_CHANNEL_IN_FRONT_BACK,AUDIO_CHANNEL_INDEX_MASK_3,,AUDIO_CHANNEL_INDEX_MASK_5"/>
                 </mixPort>
                 <mixPort name="voip_tx" role="sink"
                          flags="AUDIO_INPUT_FLAG_VOIP_TX">
@@ -287,11 +273,11 @@
             </devicePorts>
             <routes>
                 <route type="mix" sink="Media Bus"
-                       sources="media,mmap_no_irq_out"/>
+                       sources="media"/>
                 <route type="mix" sink="Sys Notification Bus"
-                       sources="sys_notification,mmap_no_irq_out"/>
+                       sources="sys_notification"/>
                 <route type="mix" sink="Nav Guidance Bus"
-                       sources="nav_guidance,mmap_no_irq_out"/>
+                       sources="nav_guidance"/>
                 <route type="mix" sink="Phone Bus"
                        sources="phone"/>
                 <route type="mix" sink="Front Passenger Bus"
@@ -299,11 +285,11 @@
                 <route type="mix" sink="Rear Seat Bus"
                        sources="rear_seat"/>
                 <route type="mix" sink="Earpiece"
-                       sources="primary output,raw,deep_buffer,mmap_no_irq_out,voip_rx"/>
+                       sources="primary output,raw,deep_buffer,voip_rx"/>
                 <route type="mix" sink="Speaker"
-                       sources="primary output,raw,deep_buffer,compressed_offload,mmap_no_irq_out,voip_rx"/>
+                       sources="primary output,raw,deep_buffer,compressed_offload,voip_rx"/>
                 <route type="mix" sink="Speaker Safe"
-                       sources="primary output,raw,deep_buffer,compressed_offload,mmap_no_irq_out,voip_rx"/>
+                       sources="primary output,raw,deep_buffer,compressed_offload,voip_rx"/>
                 <route type="mix" sink="BT SCO"
                        sources="primary output,raw,deep_buffer,voip_rx"/>
                 <route type="mix" sink="BT SCO Headset"
@@ -311,15 +297,13 @@
                 <route type="mix" sink="BT SCO Car Kit"
                        sources="primary output,raw,deep_buffer,voip_rx"/>
                 <route type="mix" sink="Telephony Tx"
-                       sources="voice_tx,incall_music_uplink"/>
+                       sources="voice_tx"/>
                 <route type="mix" sink="primary input"
                        sources="Built-In Mic,Built-In Back Mic,BT SCO Headset Mic,Primary In Bus,Front Passenger In Bus,Rear Seat In Bus"/>
                 <route type="mix" sink="fast input"
                        sources="Built-In Mic,Built-In Back Mic,BT SCO Headset Mic"/>
                 <route type="mix" sink="voice_rx"
                        sources="Telephony Rx"/>
-                <route type="mix" sink="mmap_no_irq_in"
-                       sources="Built-In Mic,Built-In Back Mic"/>
                 <route type="mix" sink="voip_tx"
                        sources="Built-In Mic,Built-In Back Mic,BT SCO Headset Mic"/>
                 <route type="mix" sink="BT A2DP Out"

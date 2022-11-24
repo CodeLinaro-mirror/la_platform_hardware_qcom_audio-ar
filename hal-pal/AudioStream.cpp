@@ -516,15 +516,15 @@ static int astream_out_standby(struct audio_stream *stream) {
         return -EINVAL;
     }
 
-    AHAL_DBG("enter: stream (%p), usecase(%d: %s)", astream_out.get(),
-          astream_out->GetUseCase(), use_case_table[astream_out->GetUseCase()]);
-
     if (astream_out) {
-        ret = astream_out->Standby();
+        AHAL_DBG("enter: stream (%p), usecase(%d: %s)", astream_out.get(),
+          astream_out->GetUseCase(), use_case_table[astream_out->GetUseCase()]);
     } else {
-        AHAL_ERR("unable to get audio stream");
+        AHAL_ERR("unable to get audio stream, error, exit");
         ret = -EINVAL;
     }
+
+    ret = astream_out->Standby();
     AHAL_DBG("Exit ret: %d", ret);
     return ret;
 }
@@ -546,6 +546,10 @@ static uint32_t astream_get_latency(const struct audio_stream_out *stream) {
     } else {
         AHAL_ERR("unable to get audio device");
         return -EINVAL;
+    }
+    if(astream_out == nullptr) {
+       AHAL_ERR("astream_out is NULL, error, exit");
+       return -EINVAL;
     }
 
     switch (astream_out->GetUseCase()) {
@@ -683,9 +687,14 @@ static int astream_out_set_parameters(struct audio_stream *stream,
         AHAL_ERR("unable to get audio device");
         return ret;
     }
-
-    AHAL_DBG("enter: usecase(%d: %s) kvpairs: %s",
-             astream_out->GetUseCase(), use_case_table[astream_out->GetUseCase()], kvpairs);
+    if (astream_out != nullptr) {
+        AHAL_DBG("enter: usecase(%d: %s) kvpairs: %s",
+                 astream_out->GetUseCase(), use_case_table[astream_out->GetUseCase()], kvpairs);
+    } else {
+        ret = -EINVAL;
+        AHAL_DBG("Exit ret: %d", ret);
+        goto exit;
+    }
 
     parms = str_parms_create_str(kvpairs);
     if (!parms) {
@@ -740,7 +749,7 @@ static char* astream_out_get_parameters(const struct audio_stream *stream,
     if (ret >= 0) {
         value[0] = '\0';
 
-        if (astream_out->flags_ & AUDIO_OUTPUT_FLAG_DIRECT &&
+        if (astream_out && (astream_out->flags_ & AUDIO_OUTPUT_FLAG_DIRECT) &&
              !(astream_out->flags_ & AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD)) {
             AHAL_VERBOSE("in direct_pcm");
             strlcat(value, "true", sizeof(value));
@@ -756,7 +765,7 @@ static char* astream_out_get_parameters(const struct audio_stream *stream,
 
     if (str_parms_get_str(query, "supports_hw_suspend", value, sizeof(value)) >= 0) {
         //only low latency track supports suspend_resume
-        if (astream_out->flags_ & AUDIO_OUTPUT_FLAG_FAST)
+        if (astream_out && (astream_out->flags_ & AUDIO_OUTPUT_FLAG_FAST))
             hal_output_suspend_supported = 1;
         str_parms_add_int(reply, "supports_hw_suspend", hal_output_suspend_supported);
         if (str)
@@ -1244,7 +1253,9 @@ static int astream_in_get_active_microphones(
         }
     }
 done:
-    *mic_count = total_mic_count;
+    if (mic_count != NULL) {
+        *mic_count = total_mic_count;
+    }
     return ret;
 }
 
@@ -1314,15 +1325,15 @@ static int astream_in_standby(struct audio_stream *stream) {
         return ret;
     }
 
-    AHAL_DBG("enter: stream (%p) usecase(%d: %s)", astream_in.get(),
-          astream_in->GetUseCase(), use_case_table[astream_in->GetUseCase()]);
-
-    if (astream_in) {
-        ret = astream_in->Standby();
+    if (astream_in != nullptr) {
+        AHAL_DBG("enter: stream (%p) usecase(%d: %s)", astream_in.get(),
+              astream_in->GetUseCase(), use_case_table[astream_in->GetUseCase()]);
     } else {
-        AHAL_ERR("unable to get audio stream");
+        AHAL_ERR("unable to get audio stream, error, exit");
         ret = -EINVAL;
     }
+
+    ret = astream_in->Standby();
 exit:
     AHAL_DBG("Exit ret: %d", ret);
     return ret;
@@ -1449,7 +1460,7 @@ pal_stream_type_t StreamInPrimary::GetPalStreamType(
     if (sample_rate == LOW_LATENCY_CAPTURE_SAMPLE_RATE &&
             (halStreamFlags & AUDIO_INPUT_FLAG_TIMESTAMP) == 0 &&
             (halStreamFlags & AUDIO_INPUT_FLAG_COMPRESS) == 0 &&
-            (halStreamFlags & AUDIO_INPUT_FLAG_FAST) != 0) {
+            (halStreamFlags == (AUDIO_INPUT_FLAG_FAST|AUDIO_INPUT_FLAG_RAW))) {
         if (isDeviceAvailable(PAL_DEVICE_IN_PROXY))
             palStreamType = PAL_STREAM_PROXY;
         else
@@ -1517,7 +1528,7 @@ pal_stream_type_t StreamOutPrimary::GetPalStreamType(
     }
     if ((halStreamFlags & AUDIO_OUTPUT_FLAG_RAW) != 0) {
         palStreamType = PAL_STREAM_ULTRA_LOW_LATENCY;
-    } else if ((halStreamFlags & AUDIO_OUTPUT_FLAG_FAST) != 0) {
+    } else if (((halStreamFlags & AUDIO_OUTPUT_FLAG_FAST) && !address)) {
         palStreamType = PAL_STREAM_LOW_LATENCY;
     } else if (halStreamFlags ==
                     (AUDIO_OUTPUT_FLAG_FAST|AUDIO_OUTPUT_FLAG_RAW)) {
@@ -1726,7 +1737,7 @@ int StreamOutPrimary::Pause() {
     if (!pal_stream_handle_ || !stream_started_) {
         AHAL_DBG("Stream not started yet");
         stream_mutex_.unlock();
-        ret = -EINVAL;
+        ret = -1;
         goto exit;
     }
 
@@ -1755,7 +1766,7 @@ int StreamOutPrimary::Resume() {
     if (!pal_stream_handle_ || !stream_started_) {
         AHAL_DBG("Stream not started yet");
         stream_mutex_.unlock();
-        ret = -EINVAL;
+        ret = -1;
         goto exit;
     }
 
@@ -2079,7 +2090,12 @@ int64_t StreamOutPrimary::GetRenderLatency(audio_output_flags_t halStreamFlags, 
     switch (streamAttributes_.type) {
          case PAL_STREAM_DEEP_BUFFER:
          case PAL_STREAM_PLAYBACK_BUS:
-             return DEEP_BUFFER_PLATFORM_DELAY;
+              if (((strncmp(address,"BUS03_PHONE",strlen("BUS03_PHONE"))) == 0 )){
+                    return LOW_LATENCY_PLATFORM_DELAY;
+                 }
+              else {
+                    return DEEP_BUFFER_PLATFORM_DELAY;
+                 }
          case PAL_STREAM_LOW_LATENCY:
              return LOW_LATENCY_PLATFORM_DELAY;
          case PAL_STREAM_COMPRESSED:
@@ -2241,7 +2257,20 @@ uint32_t StreamOutPrimary::GetBufferSize() {
     } else if (streamAttributes_.type == PAL_STREAM_PCM_OFFLOAD
               || streamAttributes_.type == PAL_STREAM_DEEP_BUFFER
               || streamAttributes_.type == PAL_STREAM_PLAYBACK_BUS) {
-        return get_pcm_buffer_size();
+        if(streamAttributes_.type == PAL_STREAM_PLAYBACK_BUS) {
+            if( (strncmp(address_,"BUS03_PHONE",strlen("BUS03_PHONE"))) == 0 ) {
+                return  LOW_LATENCY_PLAYBACK_PERIOD_SIZE *
+                    audio_bytes_per_frame(
+                            audio_channel_count_from_out_mask(config_.channel_mask),
+                            config_.format);
+             }
+             else {
+               return get_pcm_buffer_size();
+             }
+        }
+        else {
+            return get_pcm_buffer_size();
+        }
     } else if (streamAttributes_.type == PAL_STREAM_LOW_LATENCY) {
         return LOW_LATENCY_PLAYBACK_PERIOD_SIZE *
             audio_bytes_per_frame(
@@ -2575,7 +2604,7 @@ ssize_t StreamOutPrimary::splitAndWriteAudioHapticsStream(const void *buffer, si
      hapticBuf.offset = 0;
 
      for (size_t i = 0; i < frameCount; i++) {
-         memcpy((uint8_t *)(audioBuf.buffer) + audIndex, (uint8_t *)(audioBuf.buffer) + srcIndex,
+         memmove((uint8_t *)(audioBuf.buffer) + audIndex, (uint8_t *)(audioBuf.buffer) + srcIndex,
                 audioFrameSize);
          audIndex += audioFrameSize;
          srcIndex += audioFrameSize;
@@ -2935,11 +2964,13 @@ StreamOutPrimary::StreamOutPrimary(
     AHAL_DBG("No of Android devices %zu", mAndroidOutDevices.size());
 
     mPalOutDeviceIds = new pal_device_id_t[mAndroidOutDevices.size()];
+    memset(mPalOutDeviceIds, 0, mAndroidOutDevices.size() * sizeof(pal_device_id_t));
     if (!mPalOutDeviceIds) {
-           goto error;
+        goto error;
     }
-
-    noPalDevices = getPalDeviceIds(mAndroidOutDevices, mPalOutDeviceIds, address);
+    if (address != NULL) {
+        noPalDevices = getPalDeviceIds(mAndroidOutDevices, mPalOutDeviceIds, address);
+    }
     if (noPalDevices != mAndroidOutDevices.size()) {
         AHAL_ERR("mismatched pal no of devices %d and hal devices %zu", noPalDevices, mAndroidOutDevices.size());
         goto error;
@@ -3568,10 +3599,8 @@ set_buff_size:
                     config_.format);
         inBufCount = MMAP_PERIOD_COUNT_DEFAULT;
     } else if (usecase_ == USECASE_AUDIO_RECORD_LOW_LATENCY) {
-        inBufSize = ULL_PERIOD_SIZE * audio_bytes_per_frame(
-                    audio_channel_count_from_in_mask(config_.channel_mask),
-                    config_.format);
-        inBufCount = ULL_PERIOD_COUNT_DEFAULT;
+        inBufSize = BUF_SIZE_CAPTURE;
+        inBufCount = NO_OF_BUF;
     } else
         inBufSize = StreamInPrimary::GetBufferSize();
     if (!handle) {

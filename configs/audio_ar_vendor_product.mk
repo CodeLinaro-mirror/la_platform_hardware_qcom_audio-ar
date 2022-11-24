@@ -17,13 +17,17 @@ MM_AUDIO_AR += init.qti.AGMIPC.sh
 MM_AUDIO_AR += libar-pal
 MM_AUDIO_AR += libhfp_pal
 MM_AUDIO_AR += lib_default_plugin_controls
+MM_AUDIO_AR += lib_default_set_param_plugin_controls
 
 ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_au)
+MM_AUDIO_AR += workspaceFileXml.qwsp
 MM_AUDIO_AR += capi_avc
 MM_AUDIO_AR += capi_peq
 MM_AUDIO_AR += capi_bmt
 MM_AUDIO_AR += capi_sumx
 MM_AUDIO_AR += capi_fnb
+MM_AUDIO_AR += capi_load
+MM_AUDIO_AR += capi_gpio
 endif
 
 MM_AUDIO_AR += sound_trigger.primary.$(TARGET_BOARD_PLATFORM).ar

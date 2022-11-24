@@ -65,7 +65,6 @@
 
 #define MIN_VOLUME_VALUE_MB -6000
 #define MAX_VOLUME_VALUE_MB 0
-#define STEP_VALUE_MB 100
 #define MIN_VOLUME_GAIN 0.0f
 #define MAX_VOLUME_GAIN 1.0f
 
@@ -106,6 +105,11 @@ typedef struct snd_device_to_mic_map_t {
     mic_info_t microphones[AUDIO_MICROPHONE_MAX_COUNT];
     uint32_t mic_count;
 } snd_device_to_mic_map_t;
+
+typedef struct payload_pers_t {
+    pal_param_payload *pal_payload;
+    pal_device_id_t hfp_effect_device;
+} payload_pers_t;
 
 class AudioPatch{
     public:
@@ -200,6 +204,9 @@ public:
     int  hdr_sample_rate = 0;
     int cameraOrientation = CAMERA_DEFAULT;
     bool usb_input_dev_enabled = false;
+    std::vector<payload_pers_t> payloadpersv;
+    bool hfp_params_sent;
+    payload_pers_t payloadpers;
     static bool mic_characteristics_available;
     static microphone_characteristics_t microphones;
     static snd_device_to_mic_map_t microphone_maps[PAL_MAX_INPUT_DEVICES];
