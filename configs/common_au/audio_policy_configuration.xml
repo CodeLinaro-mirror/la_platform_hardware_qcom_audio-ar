@@ -16,7 +16,11 @@
      See the License for the specific language governing permissions and
      limitations under the License.
 -->
+<!-- Changes from Qualcomm Innovation Center are provided under the following license:
 
+     Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+     SPDX-License-Identifier: BSD-3-Clause-Clear
+-->
 <audioPolicyConfiguration version="1.0" xmlns:xi="http://www.w3.org/2001/XInclude">
     <!-- version section contains a “version” tag in the form “major.minor” e.g version=”1.0” -->
 
@@ -314,6 +318,10 @@
                        sources="primary output,deep_buffer,compressed_offload,voip_rx"/>
             </routes>
         </module>
+
+        <!-- Remote Submix Audio HAL -->
+        <xi:include href="r_submix_audio_policy_configuration.xml"/>
+
     </modules>
     <!-- End of Modules section -->
 
