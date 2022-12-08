@@ -123,7 +123,9 @@ PRODUCT_COPY_FILES += \
 endif
 ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_au)
 PRODUCT_COPY_FILES += \
-    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/mixer_paths_sa8155_adp_star.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_sa8155_adp_star.xml
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/mixer_paths_sa8155_adp_star.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_sa8155_adp_star.xml \
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/modules.audio.ar.blocklist:$(TARGET_COPY_OUT_VENDOR_DLKM)/lib/modules/modules.audio.ar.blocklist \
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/modules.audio.legacy.blocklist:$(TARGET_COPY_OUT_VENDOR_DLKM)/lib/modules/modules.audio.legacy.blocklist
 endif
 
 # Configuration files for msmnile_gvmgh only
