@@ -27,6 +27,11 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/* Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
+
 #define LOG_TAG "AHAL: AudioStream"
 #define ATRACE_TAG (ATRACE_TAG_AUDIO | ATRACE_TAG_HAL)
 #include "AudioCommon.h"
@@ -2090,7 +2095,8 @@ int64_t StreamOutPrimary::GetRenderLatency(audio_output_flags_t halStreamFlags, 
     switch (streamAttributes_.type) {
          case PAL_STREAM_DEEP_BUFFER:
          case PAL_STREAM_PLAYBACK_BUS:
-              if (((strncmp(address,"BUS03_PHONE",strlen("BUS03_PHONE"))) == 0 )){
+              if (((strncmp(address,"BUS03_PHONE",strlen("BUS03_PHONE"))) == 0 ) ||
+                  ((strncmp(address,"BUS01_SYS",strlen("BUS01_SYS"))) == 0 )) {
                     return LOW_LATENCY_PLATFORM_DELAY;
                  }
               else {
@@ -2258,7 +2264,8 @@ uint32_t StreamOutPrimary::GetBufferSize() {
               || streamAttributes_.type == PAL_STREAM_DEEP_BUFFER
               || streamAttributes_.type == PAL_STREAM_PLAYBACK_BUS) {
         if(streamAttributes_.type == PAL_STREAM_PLAYBACK_BUS) {
-            if( (strncmp(address_,"BUS03_PHONE",strlen("BUS03_PHONE"))) == 0 ) {
+            if( (strncmp(address_,"BUS03_PHONE",strlen("BUS03_PHONE"))) == 0 ||
+                (strncmp(address_,"BUS01_SYS",strlen("BUS01_SYS"))) == 0 ) {
                 return  LOW_LATENCY_PLAYBACK_PERIOD_SIZE *
                     audio_bytes_per_frame(
                             audio_channel_count_from_out_mask(config_.channel_mask),
