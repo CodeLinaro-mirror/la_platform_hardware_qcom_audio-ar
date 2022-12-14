@@ -53,6 +53,7 @@ extern "C" {
 #define AUDIO_PARAMETER_HFP_PCM_DEV_ID "hfp_pcm_dev_id"
 
 #define AUDIO_PARAMETER_KEY_HFP_MIC_VOLUME "hfp_mic_volume"
+#define AUDIO_PARAMETER_HFP_ZONE        "hfp_zone"
 
 struct hfp_module {
     bool is_hfp_running;
@@ -422,6 +423,7 @@ int hfp_set_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *parm
     float vol;
     int val;
     int rate;
+    int zone_id;
 
     AHAL_DBG("enter");
 
@@ -473,6 +475,21 @@ int hfp_set_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *parm
         status = hfp_set_mic_volume(vol);
         if (status == 0)
             hfpmod.mic_volume = vol;
+    }
+
+    memset(value, 0, sizeof(value));
+    if (str_parms_get_str(parms, AUDIO_PARAMETER_HFP_ZONE,value, sizeof(value)) >= 0) {
+        if (sscanf(value, "%d", &zone_id) != 1){
+            AHAL_ERR("zonal_hfp zone_id=%d", zone_id);
+            status = -EIO;
+            goto exit;
+        }
+        AHAL_DBG("zonal_hfp get zone_id=%d", zone_id);
+        status = pal_set_param(PAL_PARAM_ID_SET_HFP_ZONE, (void*)&zone_id, sizeof(int));
+        if (status) {
+            AHAL_ERR("zonal_hfp set HFP zone failed");
+            goto exit;
+        }
     }
 
 exit:
