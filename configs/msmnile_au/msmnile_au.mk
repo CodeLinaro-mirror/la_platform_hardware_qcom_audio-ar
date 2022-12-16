@@ -118,6 +118,7 @@ PRODUCT_COPY_FILES += \
 ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_gvmq)
 PRODUCT_COPY_FILES += \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/mixer_paths_gvmauto8295_adp_star.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_gvmauto8295_adp_star.xml \
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/mixer_paths_gvmauto8295_adp_star.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_gvmauto8255_adp_star.xml \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/mixer_paths_gvmauto_8155.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_gvmauto_8155.xml \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/mixer_paths_gvmauto_6155.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_gvmauto_6155.xml
 endif
