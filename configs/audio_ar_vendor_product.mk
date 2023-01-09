@@ -1,5 +1,5 @@
 # MM_AUDIO_AR
-ifneq (,$(filter $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_gvmq msmnile_au))
+ifeq ($(TARGET_GVMGH_SPECIFIC), false)
 MM_AUDIO_AR := acdb_cal.acdb
 
 MM_AUDIO_AR += agmplay
@@ -23,7 +23,8 @@ MM_AUDIO_AR += lib_default_set_param_plugin_controls
 MM_AUDIO_AR += libqtigefar
 MM_AUDIO_AR += libicc_pal
 
-ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_au)
+ifeq ($(ENABLE_HYP), false)
+ifeq ($(TARGET_GVMGH_SPECIFIC), false)
 MM_AUDIO_AR += workspaceFileXml.qwsp
 MM_AUDIO_AR += acdb_cal.acdbdelta
 MM_AUDIO_AR += capi_avc
@@ -33,6 +34,7 @@ MM_AUDIO_AR += capi_sumx
 MM_AUDIO_AR += capi_fnb
 MM_AUDIO_AR += capi_load
 MM_AUDIO_AR += capi_gpio
+endif
 endif
 
 MM_AUDIO_AR += sound_trigger.primary.$(TARGET_BOARD_PLATFORM).ar
