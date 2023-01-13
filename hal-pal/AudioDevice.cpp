@@ -36,7 +36,7 @@
  */
 
 /* Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -1404,7 +1404,7 @@ int AudioDevice::SetParameters(const char *kvpairs) {
         } else {
             is_play = false;
             AHAL_INFO("Setting device to mic");
-            hfp_effect_device = PAL_DEVICE_IN_HANDSET_MIC;
+            hfp_effect_device = PAL_DEVICE_IN_SPEAKER_MIC;
 		}
 
         payload = (uint8_t*) calloc (1, payload_size);
