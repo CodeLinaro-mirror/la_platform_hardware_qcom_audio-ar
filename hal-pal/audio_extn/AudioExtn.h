@@ -27,9 +27,12 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Changes from Qualcomm Innovation Center are provided under the following license:
+/*
+ * ​​​​​Changes from Qualcomm Innovation Center are provided under the following license:
+ *
  * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
+ *
  */
 
 #ifndef AUDIOEXTN_H
@@ -115,6 +118,12 @@ public:
     static void audio_extn_fm_init(bool enabled=true);
     static void audio_extn_fm_set_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *params);
     static void audio_extn_fm_get_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *query, struct str_parms *reply);
+
+    // ICC
+    static int audio_extn_icc_set_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *parms);
+    static void audio_extn_icc_get_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *query, struct str_parms *reply);
+    static int icc_feature_init(bool is_feature_enabled);
+    static void icc_feature_deinit();
 
     /* start kpi optimize perf apis */
     static void audio_extn_kpi_optimize_feature_init(bool is_feature_enabled);

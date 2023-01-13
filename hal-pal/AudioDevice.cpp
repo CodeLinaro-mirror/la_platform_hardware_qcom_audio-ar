@@ -331,6 +331,7 @@ static void hdr_get_parameters(std::shared_ptr<AudioDevice> adev,
 AudioDevice::~AudioDevice() {
     audio_extn_gef_deinit(adev_);
     audio_extn_sound_trigger_deinit(adev_);
+    AudioExtn::icc_feature_deinit();
 
     for(int i = 0; i < payloadpersv.size(); i++) {
         if (payloadpersv[i].pal_payload) {
@@ -1089,6 +1090,7 @@ int AudioDevice::Init(hw_device_t **device, const hw_module_t *module) {
     AudioExtn::audio_extn_fm_init();
     AudioExtn::audio_extn_kpi_optimize_feature_init(
             property_get_bool("vendor.audio.feature.kpi_optimize.enable", false));
+    AudioExtn::icc_feature_init(property_get_bool("vendor.audio.feature.icc.enable", false));
     /* no feature configurations yet */
     AudioExtn::battery_listener_feature_init(true);
     AudioExtn::battery_properties_listener_init(adev_on_battery_status_changed);

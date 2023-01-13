@@ -21,6 +21,7 @@ MM_AUDIO_AR += libhfp_ag_pal
 MM_AUDIO_AR += lib_default_plugin_controls
 MM_AUDIO_AR += lib_default_set_param_plugin_controls
 MM_AUDIO_AR += libqtigefar
+MM_AUDIO_AR += libicc_pal
 
 ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_au)
 MM_AUDIO_AR += workspaceFileXml.qwsp
