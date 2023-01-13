@@ -27,6 +27,11 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/* Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
+
 #define LOG_TAG "AHAL: AudioExtn"
 #include <dlfcn.h>
 #include <unistd.h>
@@ -58,6 +63,7 @@ using android::OK;
 
 #define BATTERY_LISTENER_LIB_PATH LIBS"libbatterylistener.so"
 #define HFP_LIB_PATH LIBS"libhfp_pal.so"
+#define HFP_AG_LIB_PATH LIBS"libhfp_ag_pal.so"
 #define FM_LIB_PATH LIBS"libfmpal.so"
 
 #define BT_IPC_SOURCE_LIB_NAME LIBS"btaudio_offload_if.so"
@@ -325,6 +331,7 @@ int AudioExtn::audio_extn_set_parameters(std::shared_ptr<AudioDevice> adev,
     if (ret == 0) {
         audio_extn_fm_set_parameters(adev, params);
     }
+    audio_extn_hfp_ag_set_parameters(adev, params);
     return ret;
 }
 
@@ -497,6 +504,95 @@ int AudioExtn::audio_extn_hfp_set_mic_mute2(std::shared_ptr<AudioDevice> adev, b
         hfp_set_mic_mute2(adev, state) : -1);
 }
 // END: HFP ========================================================================
+
+// START: HFP AG ======================================================================
+
+static void *hfp_ag_lib_handle = NULL;
+static hfp_ag_init_t hfp_ag_init;
+static hfp_ag_is_active_t hfp_ag_is_active;
+static hfp_ag_get_usecase_t hfp_ag_get_usecase;
+static hfp_ag_set_mic_mute_t hfp_ag_set_mic_mute;
+static set_parameters_t hfp_ag_set_parameters;
+
+int AudioExtn::hfp_ag_feature_init(bool is_feature_enabled)
+{
+    if (is_feature_enabled) {
+        // dlopen lib
+        hfp_ag_lib_handle = dlopen(HFP_AG_LIB_PATH, RTLD_NOW);
+
+        if (!hfp_ag_lib_handle) {
+            ALOGE("%s: dlopen failed with: %s", __func__, dlerror());
+            goto feature_disabled;
+        }
+
+        if (!(hfp_ag_init = (hfp_ag_init_t)dlsym(
+            hfp_ag_lib_handle, "hfp_ag_init")) ||
+            !(hfp_ag_is_active =
+            (hfp_ag_is_active_t)dlsym(
+                hfp_ag_lib_handle, "hfp_ag_is_active")) ||
+            !(hfp_ag_get_usecase =
+            (hfp_ag_get_usecase_t)dlsym(
+                hfp_ag_lib_handle, "hfp_ag_get_usecase")) ||
+            !(hfp_ag_set_mic_mute =
+            (hfp_ag_set_mic_mute_t)dlsym(
+                hfp_ag_lib_handle, "hfp_ag_set_mic_mute")) ||
+            !(hfp_ag_set_parameters =
+            (set_parameters_t)dlsym(
+                hfp_ag_lib_handle, "hfp_ag_set_parameters"))) {
+            AHAL_ERR("dlsym failed");
+            goto feature_disabled;
+        }
+
+        AHAL_DBG("---- Feature HFP AG is Enabled ----");
+
+        return 0;
+    }
+
+feature_disabled:
+    if (hfp_ag_lib_handle) {
+        dlclose(hfp_ag_lib_handle);
+        hfp_ag_lib_handle = NULL;
+    }
+
+    hfp_ag_init = NULL;
+    hfp_ag_is_active = NULL;
+    hfp_ag_get_usecase = NULL;
+    hfp_ag_set_mic_mute = NULL;
+    hfp_ag_set_parameters = NULL;
+
+    AHAL_INFO("---- Feature HFP AG is disabled ----");
+    return -ENOSYS;
+}
+
+bool AudioExtn::audio_extn_hfp_ag_is_active(std::shared_ptr<AudioDevice> adev)
+{
+    return ((hfp_ag_is_active) ?
+        hfp_ag_is_active(adev) : false);
+}
+
+audio_usecase_t AudioExtn::audio_extn_hfp_ag_get_usecase()
+{
+    return ((hfp_ag_get_usecase) ?
+        hfp_ag_get_usecase() : -1);
+}
+
+int AudioExtn::audio_extn_hfp_ag_set_mic_mute(bool state)
+{
+    return ((hfp_ag_set_mic_mute) ?
+        hfp_ag_set_mic_mute(state) : -1);
+}
+
+int AudioExtn::audio_extn_hfp_ag_set_parameters(std::shared_ptr<AudioDevice> adev,
+    struct str_parms *parms)
+{
+    int ret = 0;
+
+    if (hfp_ag_set_parameters)
+        ret = hfp_ag_set_parameters(adev, parms);
+
+    return ret;
+}
+// END: HFP AG ========================================================================
 
 // START: A2DP ======================================================================
 // Need to call this init for BT HIDL registration. It is expected that Audio HAL

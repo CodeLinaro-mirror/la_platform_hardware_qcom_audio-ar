@@ -27,6 +27,11 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/* Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
+
 #ifndef AUDIOEXTN_H
 #define AUDIOEXTN_H
 #include <cutils/str_parms.h>
@@ -49,6 +54,11 @@ typedef bool(*hfp_is_active_t)(std::shared_ptr<AudioDevice> adev);
 typedef audio_usecase_t(*hfp_get_usecase_t)();
 typedef int(*hfp_set_mic_mute_t)(bool state);
 typedef int(*hfp_set_mic_mute2_t)(std::shared_ptr<AudioDevice> adev, bool state);
+//HFP AG
+typedef void(*hfp_ag_init_t)();
+typedef bool(*hfp_ag_is_active_t)(std::shared_ptr<AudioDevice> adev);
+typedef audio_usecase_t(*hfp_ag_get_usecase_t)();
+typedef int(*hfp_ag_set_mic_mute_t)(bool state);
 //AUTO HAL
 typedef void(*autohal_init_t)();
 typedef pal_stream_type_t (*autohal_GetCarAudioPalStreamType_t)(char * address);
@@ -83,6 +93,13 @@ public:
     static int audio_extn_hfp_set_mic_mute(bool state);
     static int audio_extn_hfp_set_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *parms);
     static int audio_extn_hfp_set_mic_mute2(std::shared_ptr<AudioDevice> adev, bool state);
+
+    //HFP AG
+    static int hfp_ag_feature_init(bool is_feature_enabled);
+    static bool audio_extn_hfp_ag_is_active(std::shared_ptr<AudioDevice> adev);
+    audio_usecase_t audio_extn_hfp_ag_get_usecase();
+    static int audio_extn_hfp_ag_set_mic_mute(bool state);
+    static int audio_extn_hfp_ag_set_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *parms);
 
     //A2DP
     static int a2dp_source_feature_init(bool is_feature_enabled);
