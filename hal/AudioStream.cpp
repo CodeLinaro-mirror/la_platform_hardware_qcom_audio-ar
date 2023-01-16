@@ -93,6 +93,8 @@
 #define AFE_PROXY_RECORD_PERIOD_SIZE  768
 
 static bool karaoke = false;
+std::mutex StreamOutPrimary::sourceMetadata_mutex_;
+std::mutex StreamInPrimary::sinkMetadata_mutex_;
 
 static bool is_pcm_format(audio_format_t format)
 {
@@ -1048,11 +1050,14 @@ static void out_update_source_metadata_v7(
     }
 
     if (astream_out) {
+        astream_out->sourceMetadata_mutex_.lock();
+
         ssize_t track_count = source_metadata->track_count;
         struct playback_track_metadata_v7* track = source_metadata->tracks;
         astream_out->tracks.resize(track_count);
 
-        AHAL_ERR("track count is %d",track_count);
+        AHAL_DBG("track count is %d for usecase(%d: %s)",track_count,
+            astream_out->GetUseCase(), use_case_table[astream_out->GetUseCase()]);
 
         astream_out->btSourceMetadata.track_count = track_count;
         astream_out->btSourceMetadata.tracks = astream_out->tracks.data();
@@ -1099,6 +1104,8 @@ static void out_update_source_metadata_v7(
         if (ret != 0) {
             AHAL_ERR("Set PAL_PARAM_ID_SET_SOURCE_METADATA for %d failed", ret);
         }
+
+        astream_out->sourceMetadata_mutex_.unlock();
     }
 }
 
@@ -1463,7 +1470,8 @@ static void in_update_sink_metadata_v7(
     if (astream_in) {
        ssize_t track_count = sink_metadata->track_count;
        struct record_track_metadata_v7* track = sink_metadata->tracks;
-       AHAL_DBG("track count is %d with channel_mask %d",track_count, track->channel_mask);
+       AHAL_DBG("track count is %d for usecase (%d: %s)",track_count,
+           astream_in->GetUseCase(), use_case_table[astream_in->GetUseCase()]);
        audio_mode_t mode;
        bool voice_active = false;
 
@@ -1473,7 +1481,12 @@ static void in_update_sink_metadata_v7(
         * track. Thus channel mask value is checked here to avoid sending unnecessary sink
         * metadata BT HAL
         */
-       if (track->channel_mask == 0) return;
+       if (track != NULL) {
+           AHAL_DBG("channel_mask %d", track->channel_mask);
+           if (track->channel_mask == 0) return;
+       }
+
+       astream_in->sinkMetadata_mutex_.lock();
 
        astream_in->tracks.resize(track_count);
 
@@ -1503,6 +1516,8 @@ static void in_update_sink_metadata_v7(
        if (ret != 0) {
            AHAL_ERR("Set PAL_PARAM_ID_SET_SINK_METADATA for %d failed", ret);
        }
+
+       astream_in->sinkMetadata_mutex_.unlock();
     }
   }
 }
@@ -2306,6 +2321,7 @@ exit:
 
 int StreamOutPrimary::RouteStream(const std::set<audio_devices_t>& new_devices, bool force_device_switch __unused) {
     int ret = 0, noPalDevices = 0;
+    bool skipDeviceSet = false;
     pal_device_id_t * deviceId = nullptr;
     struct pal_device* deviceIdConfigs = nullptr;
     pal_param_device_capability_t *device_cap_query = nullptr;
@@ -2316,7 +2332,6 @@ int StreamOutPrimary::RouteStream(const std::set<audio_devices_t>& new_devices, 
     bool isHifiFilterEnabled = false;
     bool *payload_hifiFilter = &isHifiFilterEnabled;
     size_t param_size = 0;
-
     stream_mutex_.lock();
     if (!mInitialized) {
         AHAL_ERR("Not initialized, returning error");
@@ -2382,6 +2397,14 @@ int StreamOutPrimary::RouteStream(const std::set<audio_devices_t>& new_devices, 
         mAndroidOutDevices = new_devices;
 
         for (int i = 0; i < noPalDevices; i++) {
+            /*Skip device set for Handset profile as Halliday does not support Handset profile for VoIP call*/
+            if ((mPalOutDevice[i].id == PAL_DEVICE_OUT_SPEAKER &&
+                streamAttributes_.type == PAL_STREAM_VOIP_RX) &&
+                (mPalOutDeviceIds[i] == PAL_DEVICE_OUT_SPEAKER ||
+                mPalOutDeviceIds[i] == PAL_DEVICE_OUT_HANDSET)) {
+                skipDeviceSet = true;
+                AHAL_DBG("Skip pal_stream_set_device as the stream is already on speaker");
+            }
             mPalOutDevice[i].id = mPalOutDeviceIds[i];
             mPalOutDevice[i].config.sample_rate = mPalOutDevice[0].config.sample_rate;
             mPalOutDevice[i].config.bit_width = CODEC_BACKEND_DEFAULT_BIT_WIDTH;
@@ -2436,6 +2459,13 @@ int StreamOutPrimary::RouteStream(const std::set<audio_devices_t>& new_devices, 
                        "hifi-filter_custom_key",
                        sizeof(mPalOutDevice[i].custom_config.custom_key));
             }
+
+            /*Halliday does not support Handset profile for VoIP call so set the speaker profile for VoIP call*/
+            if (mPalOutDevice[i].id == PAL_DEVICE_OUT_HANDSET &&
+                streamAttributes_.type == PAL_STREAM_VOIP_RX && !skipDeviceSet) {
+                mPalOutDevice[i].id = PAL_DEVICE_OUT_SPEAKER;
+                AHAL_DBG("set PAL_DEVICE_OUT_SPEAKER instead of Handset_speaker for VoIP_RX ");
+            }
         }
 
         std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
@@ -2444,7 +2474,8 @@ int StreamOutPrimary::RouteStream(const std::set<audio_devices_t>& new_devices, 
                     sizeof(mPalOutDevice->custom_config.custom_key));
         }
 
-        if (pal_stream_handle_) {
+        /*Skip device set for Handset profile as Halliday does not support Handset profile for VoIP call*/
+        if (pal_stream_handle_ && !skipDeviceSet)  {
             ret = pal_stream_set_device(pal_stream_handle_, noPalDevices, mPalOutDevice);
             if (!ret) {
                 for (const auto &dev : mAndroidOutDevices)
@@ -2962,6 +2993,13 @@ int StreamOutPrimary::Open() {
            streamAttributes_.out_media_config.aud_fmt_id, streamAttributes_.type,
            streamAttributes_.out_media_config.bit_width);
     AHAL_DBG("msample_rate %d mchannels %d mNoOfOutDevices %zu", msample_rate, mchannels, mAndroidOutDevices.size());
+
+    /*Halliday does not support Handset profile for VoIP call, setting the speaker profile for VoIP call*/
+    if(mPalOutDevice->id == PAL_DEVICE_OUT_HANDSET && streamAttributes_.type == PAL_STREAM_VOIP_RX) {
+        mPalOutDevice->id = PAL_DEVICE_OUT_SPEAKER;
+        AHAL_DBG("set PAL_DEVICE_OUT_SPEAKER instead of Handset_speaker for VoIP_RX");
+    }
+
     ret = pal_stream_open(&streamAttributes_,
                           mAndroidOutDevices.size(),
                           mPalOutDevice,
@@ -4194,6 +4232,7 @@ int StreamInPrimary::SetAggregateSinkMetadata(bool voice_active) {
 int StreamInPrimary::RouteStream(const std::set<audio_devices_t>& new_devices, bool force_device_switch) {
     bool is_empty, is_input;
     int ret = 0, noPalDevices = 0;
+    bool skipDeviceSet = false;
     pal_device_id_t * deviceId = nullptr;
     struct pal_device* deviceIdConfigs = nullptr;
     pal_param_device_capability_t *device_cap_query = nullptr;
@@ -4203,7 +4242,6 @@ int StreamInPrimary::RouteStream(const std::set<audio_devices_t>& new_devices, b
     std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
 
     AHAL_INFO("Enter: InPrimary usecase(%d: %s)", GetUseCase(), use_case_table[GetUseCase()]);
-
     stream_mutex_.lock();
     if (!mInitialized){
         AHAL_ERR("Not initialized, returning error");
@@ -4271,10 +4309,17 @@ int StreamInPrimary::RouteStream(const std::set<audio_devices_t>& new_devices, b
         }
 
         for (int i = 0; i < noPalDevices; i++) {
+            /*Skip device set for Handset profile as Halliday does not support Handset profile for VoIP call*/
+            if ((mPalInDevice[i].id == PAL_DEVICE_IN_SPEAKER_MIC &&
+                streamAttributes_.type == PAL_STREAM_VOIP_TX) &&
+                (mPalInDeviceIds[i] == PAL_DEVICE_IN_SPEAKER_MIC ||
+                mPalInDeviceIds[i] == PAL_DEVICE_IN_HANDSET_MIC)) {
+                skipDeviceSet = true;
+                AHAL_DBG("Skip pal_stream_set_device as the stream is already on speaker");
+            }
             mPalInDevice[i].id = mPalInDeviceIds[i];
             if (((mPalInDeviceIds[i] == PAL_DEVICE_IN_USB_DEVICE) ||
                (mPalInDeviceIds[i] == PAL_DEVICE_IN_USB_HEADSET)) && device_cap_query) {
-
                 mPalInDevice[i].address.card_id = adevice->usb_card_id_;
                 mPalInDevice[i].address.device_num = adevice->usb_dev_num_;
                 device_cap_query->id = mPalInDeviceIds[i];
@@ -4314,11 +4359,19 @@ int StreamInPrimary::RouteStream(const std::set<audio_devices_t>& new_devices, b
                 ((get_hdr_mode() == AUDIO_RECORD_SPF_HDR) &&
                 (source_ == AUDIO_SOURCE_CAMCORDER || source_ == AUDIO_SOURCE_MIC)))
                 setup_hdr_usecase(&mPalInDevice[i]);
+
+            /*Halliday does not support Handset profile for VoIP call, setting the speaker profile for VoIP call*/
+            if (mPalInDevice[i].id == PAL_DEVICE_IN_HANDSET_MIC &&
+                streamAttributes_.type == PAL_STREAM_VOIP_TX && !skipDeviceSet) {
+                mPalInDevice[i].id = PAL_DEVICE_IN_SPEAKER_MIC;
+                AHAL_DBG("set PAL_DEVICE_IN_SPEAKER_MIC instead of Handset_mic for VoIP_TX");
+            }
         }
 
         mAndroidInDevices = new_devices;
 
-        if (pal_stream_handle_)
+        /*Halliday does not support Handset profile for VoIP call. Setting the speaker profile for VoIP call*/
+        if (pal_stream_handle_ && !skipDeviceSet)
             ret = pal_stream_set_device(pal_stream_handle_, noPalDevices, mPalInDevice);
     }
 
@@ -4503,6 +4556,11 @@ int StreamInPrimary::Open() {
 
     AHAL_DBG("(%x:ret)", ret);
 
+    /*Halliday does not support Handset profile for VoIP call so set the speaker profile for VoIP call*/
+    if (mPalInDevice->id == PAL_DEVICE_IN_HANDSET_MIC &&  streamAttributes_.type == PAL_STREAM_VOIP_TX) {
+        mPalInDevice->id = PAL_DEVICE_IN_SPEAKER_MIC;
+        AHAL_DBG("set PAL_DEVICE_IN_SPEAKER_MIC instead of Handset_mic for VoIP_TX");
+    }
     ret = pal_stream_open(&streamAttributes_,
                          mAndroidInDevices.size(),
                          mPalInDevice,
