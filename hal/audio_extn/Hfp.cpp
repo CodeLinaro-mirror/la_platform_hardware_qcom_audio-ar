@@ -27,7 +27,8 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted (subject to the limitations in the
@@ -292,7 +293,8 @@ static int32_t start_hfp(std::shared_ptr<AudioDevice> adev __unused,
     devices[0].config.aud_fmt_id = PAL_AUDIO_FMT_PCM_S16_LE;
 
     devices[1].id = PAL_DEVICE_OUT_SPEAKER;
-
+    strlcpy(devices[1].custom_config.custom_key, "hfp-usecase",
+        sizeof(devices[1].custom_config.custom_key));
     ret = pal_stream_open(&stream_attr,
             no_of_devices, devices,
             0,
