@@ -19,6 +19,7 @@ MM_AUDIO_AR += libar-pal
 MM_AUDIO_AR += libhfp_pal
 MM_AUDIO_AR += lib_default_plugin_controls
 MM_AUDIO_AR += lib_default_set_param_plugin_controls
+MM_AUDIO_AR += libqtigefar
 
 ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_au)
 MM_AUDIO_AR += workspaceFileXml.qwsp
@@ -40,6 +41,10 @@ PRODUCT_PACKAGES += $(MM_AUDIO_AR)
 TARGET_USES_AOSP := true
 TARGET_USES_AOSP_FOR_AUDIO := false
 
+#To enable audio_effects in msmnile_gvmq
+ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_gvmq)
+AUDIO_FRAMEWORK_AUDIOREACH := true
+endif
 # Audio configuration file
 -include $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/msmnile_au.mk
 endif
