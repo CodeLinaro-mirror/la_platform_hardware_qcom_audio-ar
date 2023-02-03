@@ -1404,7 +1404,7 @@ int AudioDevice::SetParameters(const char *kvpairs) {
         } else {
             is_play = false;
             AHAL_INFO("Setting device to mic");
-            hfp_effect_device = PAL_DEVICE_IN_SPEAKER_MIC;
+            hfp_effect_device = PAL_DEVICE_IN_HANDSET_MIC;
 		}
 
         payload = (uint8_t*) calloc (1, payload_size);
