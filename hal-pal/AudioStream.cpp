@@ -28,7 +28,7 @@
  */
 
 /* Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -1901,9 +1901,12 @@ exit:
 int StreamOutPrimary::RouteStream(const std::set<audio_devices_t>& new_devices) {
     int ret = 0, noPalDevices = 0;
     bool forceRouting = false;
+    bool is_ag_sco = false;
     pal_device_id_t * deviceId;
     struct pal_device* deviceIdConfigs;
     std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
+    static pal_device_id_t agDLCachedPalId = PAL_DEVICE_OUT_MIN;
+    static int agDLCachedIdx = 0;
 
     stream_mutex_.lock();
     if (!mInitialized) {
@@ -1920,10 +1923,18 @@ int StreamOutPrimary::RouteStream(const std::set<audio_devices_t>& new_devices) 
              mAndroidOutDevices.size());
 
     forceRouting = AudioExtn::audio_devices_cmp(new_devices, audio_is_a2dp_out_device);
+    is_ag_sco = AudioExtn::audio_extn_hfp_ag_is_active(adevice);
 
+    if (agDLCachedPalId != PAL_DEVICE_OUT_MIN && (AudioExtn::get_device_types(new_devices) == AUDIO_DEVICE_OUT_BUS &&
+         strncmp(address_,"BUS03_PHONE",strlen("BUS03_PHONE"))) == 0 ) {
+        AHAL_INFO("Reset previous mPalOutDevice from %d to %d after AG call", mPalOutDeviceIds[agDLCachedIdx], agDLCachedPalId);
+        mPalOutDeviceIds[agDLCachedIdx] = agDLCachedPalId;
+        mPalOutDevice[agDLCachedIdx].id = agDLCachedPalId;
+        agDLCachedPalId = PAL_DEVICE_OUT_MIN;
+    }
     /* Ignore routing to same device unless it's forced */
     if (((new_devices != mAndroidOutDevices) && (!AudioExtn::audio_devices_empty(new_devices))) ||
-        forceRouting) {
+        forceRouting || is_ag_sco) {
         // re-allocate mPalOutDevice and mPalOutDeviceIds
         if (new_devices.size() != mAndroidOutDevices.size()) {
             deviceId = (pal_device_id_t*) realloc(mPalOutDeviceIds,
@@ -1960,6 +1971,14 @@ int StreamOutPrimary::RouteStream(const std::set<audio_devices_t>& new_devices) 
                 (mPalOutDeviceIds[i] == PAL_DEVICE_OUT_USB_HEADSET)) {
                 mPalOutDevice[i].address.card_id = adevice->usb_card_id_;
                 mPalOutDevice[i].address.device_num = adevice->usb_dev_num_;
+            }
+            if (is_ag_sco && (AudioExtn::get_device_types(new_devices) == AUDIO_DEVICE_OUT_BUS &&
+                               strncmp(address_,"BUS03_PHONE",strlen("BUS03_PHONE")) == 0)) {
+                agDLCachedPalId = mPalOutDeviceIds[i];
+                agDLCachedIdx = i;
+                mPalOutDeviceIds[i] = PAL_DEVICE_OUT_BLUETOOTH_SCO2;
+                mPalOutDevice[i].id = mPalOutDeviceIds[i];
+                AHAL_INFO("BT AG call active, force route SCO device to SCO2 device, device=%d", mPalOutDeviceIds[i]);
             }
         }
 
@@ -3345,12 +3364,14 @@ done:
 }
 
 int StreamInPrimary::RouteStream(const std::set<audio_devices_t>& new_devices) {
-    bool is_empty, is_input;
+    bool is_empty, is_input, is_ag_sco;
     int ret = 0, noPalDevices = 0;
     pal_device_id_t * deviceId;
     struct pal_device* deviceIdConfigs;
     struct pal_channel_info ch_info = {0, {0}};
     std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
+    static pal_device_id_t agULCachedPalId = PAL_DEVICE_IN_MIN;
+    static int agULCachedIdx = 0;
 
     AHAL_DBG("enter ");
 
@@ -3375,9 +3396,17 @@ int StreamInPrimary::RouteStream(const std::set<audio_devices_t>& new_devices) {
 
     is_empty = AudioExtn::audio_devices_empty(new_devices);
     is_input = AudioExtn::audio_devices_cmp(new_devices, audio_is_input_device);
+    is_ag_sco = AudioExtn::audio_extn_hfp_ag_is_active(adevice);
 
+    if (agULCachedPalId != PAL_DEVICE_IN_MIN &&
+        StreamInPrimary::GetPalStreamType(flags_, config_.sample_rate) == PAL_STREAM_VOIP_TX) {
+        AHAL_INFO("Reset previous mPalInDevice from %d to %d after AG call", mPalInDeviceIds[agULCachedIdx], agULCachedPalId);
+        mPalInDeviceIds[agULCachedIdx] = agULCachedPalId;
+        mPalInDevice[agULCachedIdx].id = agULCachedPalId;
+        agULCachedPalId = PAL_DEVICE_IN_MIN;
+    }
     /* If its the same device as what was already routed to, dont bother */
-    if (!is_empty && is_input && mAndroidInDevices != new_devices) {
+    if ((!is_empty && is_input &&  mAndroidInDevices != new_devices) || is_ag_sco) {
         //re-allocate mPalOutDevice and mPalOutDeviceIds
         if (new_devices.size() != mAndroidInDevices.size()) {
             deviceId = (pal_device_id_t*) realloc(mPalInDeviceIds,
@@ -3399,7 +3428,6 @@ int StreamInPrimary::RouteStream(const std::set<audio_devices_t>& new_devices) {
             ret = -EINVAL;
             goto done;
         }
-
         for (int i = 0; i < noPalDevices; i++) {
             mPalInDevice[i].id = mPalInDeviceIds[i];
             mPalInDevice[i].config.sample_rate = mPalInDevice[0].config.sample_rate;
@@ -3410,6 +3438,13 @@ int StreamInPrimary::RouteStream(const std::set<audio_devices_t>& new_devices) {
                (mPalInDeviceIds[i] == PAL_DEVICE_IN_USB_HEADSET)) {
                 mPalInDevice[i].address.card_id = adevice->usb_card_id_;
                 mPalInDevice[i].address.device_num = adevice->usb_dev_num_;
+            }
+            if (is_ag_sco && mPalInDeviceIds[i] == PAL_DEVICE_IN_BLUETOOTH_SCO_HEADSET) {
+                agULCachedPalId = mPalInDeviceIds[i];
+                agULCachedIdx = i;
+                mPalInDeviceIds[i] = PAL_DEVICE_IN_BLUETOOTH_SCO2_HEADSET;
+                mPalInDevice[i].id = mPalInDeviceIds[i];
+                AHAL_INFO("BT AG call active, force route SCO device to SCO2 device, device=%d", mPalInDeviceIds[i]);
             }
             /* HDR use case check */
             if (is_hdr_mode_enabled())
