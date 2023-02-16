@@ -4,6 +4,7 @@ MM_AUDIO_AR := acdb_cal.acdb
 
 MM_AUDIO_AR += agmplay
 MM_AUDIO_AR += agmcap
+MM_AUDIO_AR += agmhostless
 MM_AUDIO_AR += libautohal_pal
 MM_AUDIO_AR += libagm
 MM_AUDIO_AR += libagm_compress_plugin
