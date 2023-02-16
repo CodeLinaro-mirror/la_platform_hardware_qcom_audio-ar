@@ -2079,11 +2079,11 @@ int64_t StreamOutPrimary::GetRenderLatency(audio_output_flags_t halStreamFlags, 
     streamAttributes_.type = StreamOutPrimary::GetPalStreamType(halStreamFlags, address);
     int ret = -EINVAL;
     long long latency = 0;
-    AHAL_DBG("%s:%d type %d", __func__, __LINE__, streamAttributes_.type);
+    AHAL_VERBOSE("%s:%d type %d", __func__, __LINE__, streamAttributes_.type);
 
     if(pal_stream_handle_) {
         ret = pal_stream_get_rendering_latency(pal_stream_handle_, &latency);
-        AHAL_DBG("ret(%x), latency %lld", ret, latency);
+        AHAL_VERBOSE("ret(%x), latency %lld", ret, latency);
         return latency;
     }
 
