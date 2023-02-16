@@ -34,6 +34,7 @@ MM_AUDIO_AR += capi_sumx
 MM_AUDIO_AR += capi_fnb
 MM_AUDIO_AR += capi_load
 MM_AUDIO_AR += capi_gpio
+MM_AUDIO_AR += capi_irq_comm.so
 endif
 endif
 
