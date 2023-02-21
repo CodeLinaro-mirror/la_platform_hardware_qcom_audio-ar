@@ -28,7 +28,39 @@
 <!-- IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE                                      -->
 
 <mcs_defs>
-        <device key_value="0xA2000001" snd_device_name="speaker" back_end_name="MI2S-LPAIF_RXTX-RX-PRIMARY" />
-        <device key_value="0xA3000001" snd_device_name="speaker-dmic-endfire" back_end_name="MI2S-LPAIF_VA-TX-PRIMARY" />
-        <device key_value="0xA3000009" snd_device_name="vi-feedback" back_end_name="MI2S-LPAIF_RXTX-TX-PRIMARY" />
+        <device>
+            <!-- SPEAKER  -->
+            <id>0xA2000001</id>
+            <snd_device_name>speaker</snd_device_name>
+            <back_end_name>MI2S-LPAIF_RXTX-RX-PRIMARY</back_end_name>
+            <usecase>
+            <!-- PCM_LL_PLAYBACK  -->
+                <type>0xA100000E</type>
+            </usecase>
+        </device>
+        <device>
+            <!-- SPEAKER MIC -->
+            <id>0xA3000001</id>
+            <snd_device_name>speaker-dmic-endfire</snd_device_name>
+            <back_end_name>MI2S-LPAIF_VA-TX-PRIMARY</back_end_name>
+            <usecase>
+            <!-- PCM_RECORD   -->
+                <type>0xB1000001</type>
+            </usecase>
+        </device>
+        <device>
+            <!-- VI TX -->
+            <id>0xA3000009</id>
+            <snd_device_name>vi-feedback</snd_device_name>
+            <back_end_name>MI2S-LPAIF_RXTX-TX-PRIMARY</back_end_name>
+            <usecase>
+            <!-- PCM_RECORD   -->
+                <type>0xB1000001</type>
+            <!-- Add support for spkr_prot_vi_map based on number of speaker -->
+            <!-- RIGHT_SPKR   = 0 -->
+            <!-- LEFT_SPKR    = 1 -->
+            <!-- STEREO_SPKR  = 2 -->
+                <ckv key="0xBF000000" value="0" />
+            </usecase>
+        </device>
 </mcs_defs>
