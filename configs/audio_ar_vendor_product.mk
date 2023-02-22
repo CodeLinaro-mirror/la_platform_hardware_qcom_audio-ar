@@ -25,6 +25,7 @@ MM_AUDIO_AR += libicc_pal
 
 ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_au)
 MM_AUDIO_AR += workspaceFileXml.qwsp
+MM_AUDIO_AR += acdb_cal.acdbdelta
 MM_AUDIO_AR += capi_avc
 MM_AUDIO_AR += capi_peq
 MM_AUDIO_AR += capi_bmt
