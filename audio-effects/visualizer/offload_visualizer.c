@@ -34,7 +34,7 @@
 
 #ifdef AUDIO_FEATURE_ENABLED_GCOV
 extern void  __gcov_flush();
-static void enable_gcov()
+static void enable_gcov(void)
 {
     __gcov_flush();
 }
@@ -218,7 +218,7 @@ static void init_once() {
     init_status = 0;
 }
 
-int lib_init() {
+int lib_init(void) {
     pthread_once(&once, init_once);
     enable_gcov();
     return init_status;

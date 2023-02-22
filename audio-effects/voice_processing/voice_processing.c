@@ -439,7 +439,7 @@ static struct session_s *get_session(int32_t id, int32_t  sessionId, int32_t  io
     return session;
 }
 
-static int init() {
+static int init(void) {
     void *lib_handle;
     const effect_descriptor_t *desc;
 
