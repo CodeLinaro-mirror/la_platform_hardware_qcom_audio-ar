@@ -303,6 +303,20 @@ PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.use.sw.ape.decoder=false
 endif
 
+# Disable A2DP offload
+ifeq ($(ENABLE_HYP), true)
+ifeq ($(TARGET_GVMGH_SPECIFIC), false)
+PRODUCT_PROPERTY_OVERRIDES += \
+persist.bluetooth.a2dp_offload.disabled=true
+else
+PRODUCT_PROPERTY_OVERRIDES += \
+persist.bluetooth.a2dp_offload.disabled=false
+endif
+else
+PRODUCT_PROPERTY_OVERRIDES += \
+persist.bluetooth.a2dp_offload.disabled=false
+endif
+
 #enable hw aac encoder by default
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.hw.aac.encoder=false
