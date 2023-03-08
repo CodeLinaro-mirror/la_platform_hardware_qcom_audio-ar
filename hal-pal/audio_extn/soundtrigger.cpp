@@ -1,4 +1,5 @@
 /* Copyright (c) 2013-2014, 2016-2021 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -203,14 +204,14 @@ static void get_library_path(char *lib_path)
 static void get_library_path(char *lib_path)
 {
     snprintf(lib_path, MAX_LIBRARY_PATH,
-             "/vendor/lib64/hw/sound_trigger.primary.%s.so",
+             "/vendor/lib64/hw/sound_trigger.primary.%s.ar.so",
              XSTR(SOUND_TRIGGER_PLATFORM_NAME));
 }
 #else
 static void get_library_path(char *lib_path)
 {
     snprintf(lib_path, MAX_LIBRARY_PATH,
-             "/vendor/lib/hw/sound_trigger.primary.%s.so",
+             "/vendor/lib/hw/sound_trigger.primary.%s.ar.so",
              XSTR(SOUND_TRIGGER_PLATFORM_NAME));
 }
 #endif
