@@ -276,6 +276,13 @@ static int astream_out_create_mmap_buffer(const struct audio_stream_out *stream,
         return -EINVAL;
     }
 
+    if (adevice->is_arpowerpolicy_enabled) {
+        if (POWER_POLICY_STATUS_OFFLINE == adevice->out_power_policy) {
+            AHAL_INFO("adevice->output_power offline, try again %s", __func__);
+            return -EINVAL;
+        }
+    }
+
     astream_out = adevice->OutGetStream((audio_stream_t*)stream);
     if (!astream_out) {
         AHAL_ERR("unable to get audio OutStream");
@@ -614,6 +621,12 @@ static int astream_out_get_presentation_position(
     std::shared_ptr<StreamOutPrimary> astream_out;
     int ret = 0;
     if (adevice) {
+        if (adevice->is_arpowerpolicy_enabled) {
+            if (POWER_POLICY_STATUS_OFFLINE == adevice->out_power_policy) {
+                AHAL_INFO("adevice->output_power offline, try again %s", __func__);
+                return -EINVAL;
+            }
+        }
         astream_out = adevice->OutGetStream((audio_stream_t*)stream);
     } else {
         AHAL_ERR("unable to get audio device");
@@ -656,6 +669,12 @@ static int out_get_render_position(const struct audio_stream_out *stream,
     uint64_t frames = 0;
 
     if (adevice) {
+        if (adevice->is_arpowerpolicy_enabled) {
+            if (POWER_POLICY_STATUS_OFFLINE == adevice->out_power_policy) {
+                AHAL_INFO("adevice->output_power offline, try again %s", __func__);
+                return -EINVAL;
+            }
+        }
         astream_out = adevice->OutGetStream((audio_stream_t*)stream);
     } else {
         AHAL_ERR("unable to get audio device");
@@ -888,6 +907,12 @@ static ssize_t out_write(struct audio_stream_out *stream, const void *buffer,
     std::shared_ptr<StreamOutPrimary> astream_out;
 
     if (adevice) {
+        if (adevice->is_arpowerpolicy_enabled) {
+            if (POWER_POLICY_STATUS_OFFLINE == adevice->out_power_policy) {
+                AHAL_INFO("adevice->output_power offline, try again %s", __func__);
+                return -EINVAL;
+            }
+        }
         astream_out = adevice->OutGetStream((audio_stream_t*)stream);
     } else {
         AHAL_ERR("unable to get audio device");
@@ -951,6 +976,13 @@ static int astream_in_create_mmap_buffer(const struct audio_stream_in *stream,
     if (!adevice) {
         AHAL_ERR("unable to get audio device");
         return -EINVAL;
+    }
+
+    if (adevice->is_arpowerpolicy_enabled) {
+        if (POWER_POLICY_STATUS_OFFLINE == adevice->in_power_policy) {
+            AHAL_INFO("adevice->input_power offline, try again %s", __func__);
+            return -EINVAL;
+        }
     }
 
     astream_in = adevice->InGetStream((audio_stream_t*)stream);
@@ -1718,8 +1750,15 @@ int StreamOutPrimary::Stop() {
 
 int StreamOutPrimary::Start() {
     int ret = -ENOSYS;
+    std::shared_ptr<AudioDevice> adev = AudioDevice::GetInstance();
 
     AHAL_DBG("Enter");
+    if (adev->is_arpowerpolicy_enabled) {
+        if (POWER_POLICY_STATUS_OFFLINE == adev->out_power_policy) {
+            AHAL_INFO("adev->output_power offline, try again %s", __func__);
+            return -EIO;
+        }
+    }
     stream_mutex_.lock();
     if (usecase_ == USECASE_AUDIO_PLAYBACK_MMAP &&
             pal_stream_handle_ && !stream_started_) {
@@ -2326,6 +2365,7 @@ int StreamOutPrimary::Open() {
     uint32_t outBufSize = 0;
     uint32_t outBufCount = NO_OF_BUF;
     struct pal_buffer_config outBufCfg = {0, 0, 0};
+    std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
 
     AHAL_DBG("Enter OutPrimary ");
     AudioExtn::audio_extn_place_marker("M - AHAL stream out open Enter", true);
@@ -2333,6 +2373,13 @@ int StreamOutPrimary::Open() {
     if (!mInitialized) {
         AHAL_ERR("Not initialized, returning error");
         goto error_open;
+    }
+
+    if (adevice->is_arpowerpolicy_enabled) {
+        if (POWER_POLICY_STATUS_OFFLINE == adevice->out_power_policy) {
+            AHAL_INFO("adevice->output_power offline, return error %s", __func__);
+            goto error_open;
+        }
     }
     AHAL_DBG("no_of_devices %zu", mAndroidOutDevices.size());
     //need to convert channel mask to pal channel mask
@@ -3123,8 +3170,15 @@ int StreamInPrimary::Stop() {
 
 int StreamInPrimary::Start() {
     int ret = -ENOSYS;
+    std::shared_ptr<AudioDevice> adev = AudioDevice::GetInstance();
 
     AHAL_DBG("Enter");
+    if (adev->is_arpowerpolicy_enabled) {
+        if (POWER_POLICY_STATUS_OFFLINE == adev->in_power_policy) {
+            AHAL_INFO("adev->input_power offline, try again %s", __func__);
+            return -EIO;
+        }
+    }
     stream_mutex_.lock();
     if (usecase_ == USECASE_AUDIO_RECORD_MMAP &&
             pal_stream_handle_ && !stream_started_) {
@@ -3496,6 +3550,7 @@ int StreamInPrimary::Open() {
     uint32_t inBufCount = NO_OF_BUF;
     struct pal_buffer_config inBufCfg = {0, 0, 0};
     void *handle = nullptr;
+    std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
 
     AHAL_DBG("Enter InPrimary");
     AudioExtn::audio_extn_place_marker("M - AHAL stream in open Enter", true);
@@ -3503,6 +3558,14 @@ int StreamInPrimary::Open() {
         AHAL_ERR("Not initialized, returning error");
         ret = -EINVAL;
         goto exit;
+    }
+
+    if (adevice->is_arpowerpolicy_enabled) {
+        if (POWER_POLICY_STATUS_OFFLINE == adevice->in_power_policy) {
+            AHAL_INFO("adevice->input_power offline, return error %s", __func__);
+            ret = -EINVAL;
+            goto exit;
+        }
     }
 
     handle = audio_extn_sound_trigger_check_and_get_session(this);

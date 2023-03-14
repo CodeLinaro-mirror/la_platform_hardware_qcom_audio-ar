@@ -35,6 +35,9 @@ MM_AUDIO_AR += capi_fnb
 MM_AUDIO_AR += capi_load
 MM_AUDIO_AR += capi_gpio
 MM_AUDIO_AR += capi_irq_comm
+ifneq ( ,$(filter T Tiramisu 13, $(PLATFORM_VERSION)))
+MM_AUDIO_AR += libarpowerpolicy
+endif
 endif
 MM_AUDIO_AR += libams
 MM_AUDIO_AR += libamscore

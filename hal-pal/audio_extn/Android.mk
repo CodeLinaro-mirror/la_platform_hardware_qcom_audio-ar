@@ -232,3 +232,39 @@ LOCAL_HEADER_LIBRARIES += libhardware_headers
 LOCAL_HEADER_LIBRARIES += libsystem_headers
 
 include $(BUILD_SHARED_LIBRARY)
+
+#-------------------------------------------
+#            Build Power_Policy_Client LIB
+#-------------------------------------------
+ifeq ($(strip $(AUDIO_FEATURE_ENABLED_POWER_POLICY)),true)
+
+include $(CLEAR_VARS)
+
+LOCAL_MODULE := libarpowerpolicy
+
+LOCAL_VENDOR_MODULE := true
+
+LOCAL_SRC_FILES:= \
+        PowerPolicyClient.cpp \
+        power_policy_launcher.cpp
+
+LOCAL_C_INCLUDES:= \
+        $(LOCAL_PATH)/.. \
+        system/media/audio/include
+
+LOCAL_SHARED_LIBRARIES:= \
+        libbase \
+        libbinder_ndk \
+        libcutils \
+        liblog \
+        libpowerpolicyclient
+
+# *-ndk_platform migrated to *-ndk from Android T onwards
+ifeq ($(call math_gt_or_eq, $(PLATFORM_SDK_VERSION), 33), true)
+    LOCAL_SHARED_LIBRARIES += android.frameworks.automotive.powerpolicy-V1-ndk
+else
+    LOCAL_SHARED_LIBRARIES += android.frameworks.automotive.powerpolicy-V1-ndk_platform
+endif
+
+include $(BUILD_SHARED_LIBRARY)
+endif
