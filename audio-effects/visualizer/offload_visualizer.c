@@ -14,7 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+/*
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ *
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
 #define LOG_TAG "offload_visualizer"
 /*#define LOG_NDEBUG 0*/
 #include <assert.h>
@@ -33,6 +38,7 @@
 #include <audio_effects/effect_visualizer.h>
 #include "PalApi.h"
 
+static void enable_gcov(void);
 #ifdef AUDIO_FEATURE_ENABLED_GCOV
 extern void  __gcov_flush();
 static void enable_gcov(void)
@@ -40,7 +46,7 @@ static void enable_gcov(void)
     __gcov_flush();
 }
 #else
-static void enable_gcov()
+static void enable_gcov(void)
 {
 }
 #endif
@@ -202,6 +208,7 @@ int thread_status;
 
 #define AUDIO_CAPTURE_BIT_WIDTH (16)
 
+int lib_init(void);
 /*
  *  Local functions
  */

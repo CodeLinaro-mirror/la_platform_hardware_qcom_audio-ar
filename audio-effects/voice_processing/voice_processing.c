@@ -14,7 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+/*
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ *
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
 #define LOG_TAG "voice_processing"
 /*#define LOG_NDEBUG 0*/
 #include <stdlib.h>
@@ -44,14 +49,17 @@ enum effect_id
     NUM_ID
 };
 
+static int init(void);
+static void enable_gcov(void);
+
 #ifdef AUDIO_FEATURE_ENABLED_GCOV
 extern void  __gcov_flush();
-static void enable_gcov()
+static void enable_gcov(void)
 {
     __gcov_flush();
 }
 #else
-static void enable_gcov()
+static void enable_gcov(void)
 {
 }
 #endif
