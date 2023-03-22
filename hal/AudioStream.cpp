@@ -94,6 +94,8 @@
 #define AFE_PROXY_RECORD_PERIOD_SIZE  768
 
 static bool karaoke = false;
+std::mutex StreamOutPrimary::sourceMetadata_mutex_;
+std::mutex StreamInPrimary::sinkMetadata_mutex_;
 
 static bool is_pcm_format(audio_format_t format)
 {
@@ -1051,11 +1053,14 @@ static void out_update_source_metadata_v7(
     }
 
     if (astream_out) {
+        astream_out->sourceMetadata_mutex_.lock();
+
         ssize_t track_count = source_metadata->track_count;
         struct playback_track_metadata_v7* track = source_metadata->tracks;
         astream_out->tracks.resize(track_count);
 
-        AHAL_ERR("track count is %d",track_count);
+        AHAL_DBG("track count is %d for usecase(%d: %s)",track_count,
+            astream_out->GetUseCase(), use_case_table[astream_out->GetUseCase()]);
 
         astream_out->btSourceMetadata.track_count = track_count;
         astream_out->btSourceMetadata.tracks = astream_out->tracks.data();
@@ -1102,6 +1107,8 @@ static void out_update_source_metadata_v7(
         if (ret != 0) {
             AHAL_ERR("Set PAL_PARAM_ID_SET_SOURCE_METADATA for %d failed", ret);
         }
+
+        astream_out->sourceMetadata_mutex_.unlock();
     }
 }
 
@@ -1463,6 +1470,7 @@ static void in_update_sink_metadata_v7(
     if (adevice) {
         astream_in = adevice->InGetStream((audio_stream_t*)stream);
 
+<<<<<<< HEAD
         if (astream_in) {
             ssize_t track_count = sink_metadata->track_count;
             struct record_track_metadata_v7* track = sink_metadata->tracks;
@@ -1480,6 +1488,39 @@ static void in_update_sink_metadata_v7(
                 AHAL_DBG("channel_mask %d", track->channel_mask);
                 if (track->channel_mask == 0) return;
             }
+=======
+    if (astream_in) {
+       ssize_t track_count = sink_metadata->track_count;
+       struct record_track_metadata_v7* track = sink_metadata->tracks;
+       AHAL_DBG("track count is %d for usecase (%d: %s)",track_count,
+           astream_in->GetUseCase(), use_case_table[astream_in->GetUseCase()]);
+       audio_mode_t mode;
+       bool voice_active = false;
+
+       /* When BLE gets connected, adev_input_stream opens from mixports capabilities. In this
+        * case channel mask is set to "0" by FWK whereas when actual usecase starts,
+        * audioflinger updates the channel mask in updateSinkMetadata as a part of capture
+        * track. Thus channel mask value is checked here to avoid sending unnecessary sink
+        * metadata BT HAL
+        */
+       if (track != NULL) {
+           AHAL_DBG("channel_mask %d", track->channel_mask);
+           if (track->channel_mask == 0) return;
+       }
+
+       astream_in->sinkMetadata_mutex_.lock();
+
+       astream_in->tracks.resize(track_count);
+
+       astream_in->btSinkMetadata.track_count = track_count;
+       astream_in->btSinkMetadata.tracks = astream_in->tracks.data();
+
+       if (adevice && adevice->voice_) {
+           voice_active = adevice->voice_->get_voice_call_state(&mode);
+       } else {
+           AHAL_ERR("adevice voice is null");
+       }
+>>>>>>> f0eff985... hal: protect setAggregateMetadata for source and sink by mutex
 
             astream_in->tracks.resize(track_count);
 
@@ -1493,6 +1534,7 @@ static void in_update_sink_metadata_v7(
                 AHAL_ERR("adevice voice is null");
             }
 
+<<<<<<< HEAD
             // copy all tracks info from sink_metadata_v7 to sink_metadata per stream basis
             while (track_count && track) {
                 astream_in->btSinkMetadata.tracks->source = track->base.source;
@@ -1511,6 +1553,13 @@ static void in_update_sink_metadata_v7(
                 AHAL_ERR("Set PAL_PARAM_ID_SET_SINK_METADATA for %d failed", ret);
             }
         }
+=======
+       if (ret != 0) {
+           AHAL_ERR("Set PAL_PARAM_ID_SET_SINK_METADATA for %d failed", ret);
+       }
+
+       astream_in->sinkMetadata_mutex_.unlock();
+>>>>>>> f0eff985... hal: protect setAggregateMetadata for source and sink by mutex
     }
 }
 
