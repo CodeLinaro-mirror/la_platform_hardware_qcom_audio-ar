@@ -147,7 +147,10 @@ static int hfp_set_mic_volume(float value)
         ALOGW("Volume brought within range (%f)\n", value);
     }
 
-    value = value / CAPTURE_VOLUME_DEFAULT;
+    //comment this line to gurantee volume of HFP sent to pal is 0 ~ 15
+    //TODO: volume range of streams in pal should be 0.0 ~ 1.0, will perfect the
+    //logic later
+    //value = value / CAPTURE_VOLUME_DEFAULT;
 
     volume = (int)(value * PLAYBACK_VOLUME_MAX);
 
