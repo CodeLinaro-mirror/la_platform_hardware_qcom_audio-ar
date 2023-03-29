@@ -197,6 +197,10 @@ persist.vendor.audio.fluence.voicerec=false\
 persist.vendor.audio.fluence.speaker=true\
 persist.vendor.audio.fluence.tmic.enabled=false
 
+#audiod can be config for certain tdms
+PRODUCT_PROPERTY_OVERRIDES += \
+persist.vendor.audio.audiod.disable=none
+
 #
 #snapdragon value add features
 #
