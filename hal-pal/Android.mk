@@ -86,28 +86,18 @@ endif
     LOCAL_SRC_FILES += audio_extn/Gef.cpp
 endif
 
-# Automotive LAGVM will need to have both AR and Elite
+# Automotive will need to have both AR and Elite
 # audio hals available on target for conditional loading
 # depending on the ro.boot.audio prop.
-# Only msmnile_gvmgh/msmnile_au must have AR HAL linked to the
+# Only msmnile_gvmgh must have AR HAL linked to the
 # audio.primary.msmnile.so name
-ifneq (,$(filter $(PRODUCT_NAME), msmnile_gvmq msmnile_au))
-LOCAL_MODULE := audio.primary.$(TARGET_BOARD_PLATFORM).ar
-LOCAL_MODULE_RELATIVE_PATH := hw
-LOCAL_MODULE_TAGS := optional
-LOCAL_MODULE_OWNER := qti
-LOCAL_VENDOR_MODULE := true
-include $(BUILD_SHARED_LIBRARY)
-endif
-
-ifeq ($(filter true, $(DUAL_AUDIO_FRAMEWORK_AR) $(TARGET_USES_QSSI)), true)
 ifeq ($(DUAL_AUDIO_FRAMEWORK_AR), true)
 LOCAL_MODULE := audio.primary.$(TARGET_BOARD_PLATFORM).casa
 LOCAL_POST_INSTALL_CMD := \
 ln -sf /vendor/lib/hw/audio.primary.msmnile.casa.so $(TARGET_OUT_VENDOR)/lib/hw/audio.primary.msmnile.so; \
 ln -sf /vendor/lib64/hw/audio.primary.msmnile.casa.so $(TARGET_OUT_VENDOR)/lib64/hw/audio.primary.msmnile.so
 else
-LOCAL_MODULE := audio.primary.$(TARGET_BOARD_PLATFORM)
+LOCAL_MODULE := audio.primary.$(TARGET_BOARD_PLATFORM).ar
 LOCAL_POST_INSTALL_CMD := \
 ln -sf /vendor/bin/audioadsprpcd-ar $(TARGET_OUT_VENDOR)/bin/audioadsprpcd
 endif
@@ -117,4 +107,3 @@ LOCAL_MODULE_OWNER := qti
 LOCAL_VENDOR_MODULE := true
 LOCAL_ARM_MODE := arm
 include $(BUILD_SHARED_LIBRARY)
-endif

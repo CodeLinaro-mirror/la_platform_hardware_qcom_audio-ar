@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2013 The Android Open Source Project
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+/*
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ *
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
 #define LOG_TAG "offload_visualizer"
 /*#define LOG_NDEBUG 0*/
 #include <assert.h>
@@ -32,14 +38,15 @@
 #include <audio_effects/effect_visualizer.h>
 #include "PalApi.h"
 
+static void enable_gcov(void);
 #ifdef AUDIO_FEATURE_ENABLED_GCOV
 extern void  __gcov_flush();
-static void enable_gcov()
+static void enable_gcov(void)
 {
     __gcov_flush();
 }
 #else
-static void enable_gcov()
+static void enable_gcov(void)
 {
 }
 #endif
@@ -201,6 +208,7 @@ int thread_status;
 
 #define AUDIO_CAPTURE_BIT_WIDTH (16)
 
+int lib_init(void);
 /*
  *  Local functions
  */
@@ -218,7 +226,7 @@ static void init_once() {
     init_status = 0;
 }
 
-int lib_init() {
+int lib_init(void) {
     pthread_once(&once, init_once);
     enable_gcov();
     return init_status;
@@ -1224,7 +1232,10 @@ int effect_command(effect_handle_t self, uint32_t cmdCode, uint32_t cmdSize,
         if (pCmdData == NULL ||
             cmdSize != (int)(sizeof(effect_param_t) + sizeof(uint32_t)) ||
             pReplyData == NULL ||
-            *replySize < (int)(sizeof(effect_param_t) + sizeof(uint32_t) + sizeof(uint32_t))) {
+            *replySize < (int)(sizeof(effect_param_t) + sizeof(uint32_t) + sizeof(uint32_t)) ||
+            // constrain memcpy below
+            ((effect_param_t *)pCmdData)->psize > *replySize - sizeof(effect_param_t) ||
+            ((effect_param_t *)pCmdData)->psize > cmdSize - sizeof(effect_param_t)) {
             status = -EINVAL;
             goto exit;
         }
