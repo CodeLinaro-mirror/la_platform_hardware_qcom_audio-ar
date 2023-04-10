@@ -53,4 +53,13 @@ AUDIO_FRAMEWORK_AUDIOREACH := true
 endif
 # Audio configuration file
 -include $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/msmnile_au.mk
+
+ifeq ($(ENABLE_HYP), false)
+ifeq ($(TARGET_BOARD_AUTO),true)
+ifeq ($(TARGET_USES_RRO), true)
+PRODUCT_PACKAGES += CarServiceOverlayVendor \
+                    CarFrameworksOverlayVendor
+endif
+endif
+endif
 endif
