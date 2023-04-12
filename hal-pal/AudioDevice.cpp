@@ -2191,7 +2191,8 @@ int AudioDevice::GetPalDeviceIds(const std::set<audio_devices_t> &hal_device_ids
             if ((strcmp(address, "BUS00_MEDIA") == 0) ||
                 (strcmp(address, "BUS01_SYS_NOTIFICATION") == 0) ||
                 (strcmp(address, "BUS02_NAV_GUIDANCE") == 0) ||
-                (strcmp(address, "BUS03_PHONE") == 0)) {
+                (strcmp(address, "BUS03_PHONE") == 0) ||
+                (strcmp(address, "BUS05_ALERTS") == 0)) {
                 pal_device_id[device_count] = PAL_DEVICE_OUT_SPEAKER;
             } else if (strcmp(address, "BUS08_FRONT_PASSENGER") == 0) {
                 pal_device_id[device_count] = PAL_DEVICE_OUT_A2B_SPKR;

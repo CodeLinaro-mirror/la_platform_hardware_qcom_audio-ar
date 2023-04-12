@@ -2115,7 +2115,8 @@ int64_t StreamOutPrimary::GetRenderLatency(audio_output_flags_t halStreamFlags, 
          case PAL_STREAM_DEEP_BUFFER:
          case PAL_STREAM_PLAYBACK_BUS:
               if (((strncmp(address,"BUS03_PHONE",strlen("BUS03_PHONE"))) == 0 ) ||
-                  ((strncmp(address,"BUS01_SYS",strlen("BUS01_SYS"))) == 0 )) {
+                  ((strncmp(address,"BUS01_SYS",strlen("BUS01_SYS"))) == 0 ) ||
+                  ((strncmp(address,"BUS05_ALERTS",strlen("BUS05_ALERTS"))) == 0)) {
                     return LOW_LATENCY_PLATFORM_DELAY;
                  }
               else {
@@ -2284,7 +2285,8 @@ uint32_t StreamOutPrimary::GetBufferSize() {
               || streamAttributes_.type == PAL_STREAM_PLAYBACK_BUS) {
         if(streamAttributes_.type == PAL_STREAM_PLAYBACK_BUS) {
             if( (strncmp(address_,"BUS03_PHONE",strlen("BUS03_PHONE"))) == 0 ||
-                (strncmp(address_,"BUS01_SYS",strlen("BUS01_SYS"))) == 0 ) {
+                (strncmp(address_,"BUS01_SYS",strlen("BUS01_SYS"))) == 0 ||
+                (strncmp(address_,"BUS05_ALERTS",strlen("BUS05_ALERTS"))) == 0) {
                 return  LOW_LATENCY_PLAYBACK_PERIOD_SIZE *
                     audio_bytes_per_frame(
                             audio_channel_count_from_out_mask(config_.channel_mask),
