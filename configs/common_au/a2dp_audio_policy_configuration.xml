@@ -20,7 +20,7 @@
         </mixPort>
         <mixPort name="bt_headset_1" role="source">
             <profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
-                samplingRates="44100" channelMasks="AUDIO_CHANNEL_OUT_STEREO"/>
+                samplingRates="48000" channelMasks="AUDIO_CHANNEL_OUT_STEREO"/>
         </mixPort>
         <mixPort name="bt_headset_2" role="source">
             <profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
