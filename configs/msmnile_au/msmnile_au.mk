@@ -177,6 +177,12 @@ PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/microphone_characteristics.xml
 endif # Configuration files for msmnile_gvmgh only
 
+# cma memory for MDF
+ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_au)
+PRODUCT_PROPERTY_OVERRIDES += \
+vendor.audio.feature.dmabuf.cma.memory.enable=true
+endif
+
 #Audio HAL version
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.hal.maj.version=3
@@ -196,6 +202,10 @@ persist.vendor.audio.fluence.voicecall=true\
 persist.vendor.audio.fluence.voicerec=false\
 persist.vendor.audio.fluence.speaker=true\
 persist.vendor.audio.fluence.tmic.enabled=false
+
+#audiod can be config for certain tdms
+PRODUCT_PROPERTY_OVERRIDES += \
+persist.vendor.audio.audiod.disable=none
 
 #
 #snapdragon value add features
