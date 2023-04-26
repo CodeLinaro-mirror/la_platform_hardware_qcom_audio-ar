@@ -26,9 +26,14 @@
 <!-- IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR                   -->
 <!-- OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN               -->
 <!-- IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE                                      -->
+<!--                                                                                   -->
+<!-- Changes from Qualcomm Innovation Center are provided under the following license: -->
+<!-- Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.          -->
+<!-- SPDX-License-Identifier: BSD-3-Clause-Clear                                       -->
 
 <mcs_defs>
-        <device key_value="0xA2000001" snd_device_name="speaker" back_end_name="TDM-LPAIF_RXTX-RX-PRIMARY" />
-        <device key_value="0xA3000004" snd_device_name="handset-mic" back_end_name="TDM-LPAIF_RXTX-TX-PRIMARY" />
+        <device key_value="0xA2000001" snd_device_name="speaker" back_end_name="CODEC_DMA-LPAIF_WSA-RX-0" />
+        <device key_value="0xA3000004" snd_device_name="handset-mic" back_end_name="CODEC_DMA-LPAIF_RXTX-TX-3" />
+        <device key_value="0xA3000009" snd_device_name="vi-feedback" back_end_name="CODEC_DMA-LPAIF_WSA-TX-0" />
 </mcs_defs>
 
