@@ -145,6 +145,7 @@ public:
     static int autohal_feature_init(bool is_feature_enabled);
     static pal_stream_type_t audio_extn_autohal_GetCarAudioPalStreamType(char* address);
     static void audio_extn_place_marker(char const *name, bool isEnter);
+    static int audio_extn_autohal_set_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *params);
     //Power Policy
     static int power_policy_feature_init(bool is_feature_enabled);
 };

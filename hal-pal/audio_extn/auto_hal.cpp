@@ -44,6 +44,79 @@
 
 #define MARKER_STRING_WIDTH 128
 
+#define AUDIO_PARAMETER_DEVICES_TO_MUTE "DevicesToMute"
+#define AUDIO_PARAMETER_DEVICES_TO_UNMUTE "DevicesToUnmute"
+#define AUDIO_PARAMETER_DEVICES_TO_DUCK "DevicesToDuck"
+#define AUDIO_PARAMETER_DEVICES_TO_UNDUCK "DevicesToUnduck"
+
+#define DUCKED_VOLUME 0.0035
+
+enum {
+    STATE_ON,
+    STATE_OFF
+};
+
+static void auto_hal_set_mute_state(char* mute_bus_addr, int mute_state) {
+    int ret = 0;
+    char *ptr = NULL;
+    char *saveptr = NULL;
+    pal_stream_bus_mute_t mute_param;
+
+    for (ptr = strtok_r(mute_bus_addr, ",", &saveptr);
+         ptr != NULL; ptr = strtok_r(NULL, ",", &saveptr)) {
+
+        switch(mute_state) {
+            case STATE_ON:
+                ALOGD("%s: Muting BUS device %s", __func__, ptr);
+                mute_param.mute = true;
+                strlcpy(mute_param.bus_addr, ptr, strlen(ptr) + 1);
+                ret = pal_set_param(PAL_PARAM_ID_STREAM_BUS_MUTE_CONFIG,
+                                    (void*)&mute_param,
+                                    sizeof(pal_stream_bus_mute_t));
+                break;
+            case STATE_OFF:
+                ALOGD("%s: Unmuting BUS device %s", __func__, ptr);
+                mute_param.mute = false;
+                strlcpy(mute_param.bus_addr, ptr, strlen(ptr) + 1);
+                ret = pal_set_param(PAL_PARAM_ID_STREAM_BUS_MUTE_CONFIG,
+                                    (void*)&mute_param,
+                                    sizeof(pal_stream_bus_mute_t));
+                break;
+        }
+    }
+}
+
+static void auto_hal_set_duck_state(char* duck_bus_addr, int duck_state) {
+    int ret = 0;
+    char *ptr = NULL;
+    char *saveptr = NULL;
+    pal_stream_bus_duck_t duck_param;
+
+    for (ptr = strtok_r(duck_bus_addr, ",", &saveptr);
+         ptr != NULL; ptr = strtok_r(NULL, ",", &saveptr)) {
+
+        switch(duck_state) {
+            case STATE_ON:
+                ALOGD("%s: ducking BUS device %s", __func__, ptr);
+                duck_param.duck = true;
+                duck_param.duck_volume = DUCKED_VOLUME;
+                strlcpy(duck_param.bus_addr, ptr, strlen(ptr) + 1);
+                ret = pal_set_param(PAL_PARAM_ID_STREAM_BUS_DUCK_CONFIG,
+                                    (void*)&duck_param,
+                                    sizeof(pal_stream_bus_duck_t));
+                break;
+            case STATE_OFF:
+                ALOGD("%s: Unducking BUS device %s", __func__, ptr);
+                duck_param.duck = false;
+                strlcpy(duck_param.bus_addr, ptr, strlen(ptr) + 1);
+                ret = pal_set_param(PAL_PARAM_ID_STREAM_BUS_DUCK_CONFIG,
+                                    (void*)&duck_param,
+                                    sizeof(pal_stream_bus_duck_t));
+                break;
+        }
+    }
+}
+
 void autohal_init()
 {
     return;
@@ -91,6 +164,40 @@ void place_marker(char const *name, bool isEnter)
     } else {
         ATRACE_END();
     }
+}
+
+int autohal_SetParameters(std::shared_ptr<AudioDevice> adev __unused, struct str_parms *parms) {
+    int ret = 0;
+    char duck_mute_value[128] = {0};
+
+    ret = str_parms_get_str(parms,
+                            AUDIO_PARAMETER_DEVICES_TO_MUTE,
+                            duck_mute_value,
+                            sizeof(duck_mute_value));
+    if (ret >= 0)
+        auto_hal_set_mute_state(duck_mute_value, STATE_ON);
+
+    ret = str_parms_get_str(parms,
+                            AUDIO_PARAMETER_DEVICES_TO_UNMUTE,
+                            duck_mute_value,
+                            sizeof(duck_mute_value));
+    if (ret >= 0)
+        auto_hal_set_mute_state(duck_mute_value, STATE_OFF);
+
+    ret = str_parms_get_str(parms,
+                            AUDIO_PARAMETER_DEVICES_TO_DUCK,
+                            duck_mute_value,
+                            sizeof(duck_mute_value));
+    if (ret >= 0)
+        auto_hal_set_duck_state(duck_mute_value, STATE_ON);
+
+    ret = str_parms_get_str(parms,
+                            AUDIO_PARAMETER_DEVICES_TO_UNDUCK,
+                            duck_mute_value,
+                            sizeof(duck_mute_value));
+    if (ret >= 0)
+        auto_hal_set_duck_state(duck_mute_value, STATE_OFF);
+    return 0;
 }
 
 #ifdef __cplusplus
