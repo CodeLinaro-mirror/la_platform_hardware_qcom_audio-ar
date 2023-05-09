@@ -2,19 +2,19 @@
 ifneq (,$(filter $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_gvmq msmnile_au))
 MM_AUDIO_AR := acdb_cal.acdb
 
-MM_AUDIO_AR += agmplay
-MM_AUDIO_AR += agmcap
-MM_AUDIO_AR += agmhostless
+#MM_AUDIO_AR += agmplay
+#MM_AUDIO_AR += agmcap
+#MM_AUDIO_AR += agmhostless
 MM_AUDIO_AR += libautohal_pal
-MM_AUDIO_AR += libagm
-MM_AUDIO_AR += libagm_compress_plugin
-MM_AUDIO_AR += libagm_mixer_plugin
-MM_AUDIO_AR += libagm_pcm_plugin
-MM_AUDIO_AR += libagmmixer
-MM_AUDIO_AR += vendor.qti.hardware.AGMIPC@1.0
-MM_AUDIO_AR += vendor.qti.hardware.AGMIPC@1.0-impl
-MM_AUDIO_AR += vendor.qti.hardware.AGMIPC@1.0-service
-MM_AUDIO_AR += init.qti.AGMIPC.sh
+#MM_AUDIO_AR += libagm
+#MM_AUDIO_AR += libagm_compress_plugin
+#MM_AUDIO_AR += libagm_mixer_plugin
+#MM_AUDIO_AR += libagm_pcm_plugin
+#MM_AUDIO_AR += libagmmixer
+#MM_AUDIO_AR += vendor.qti.hardware.AGMIPC@1.0
+#MM_AUDIO_AR += vendor.qti.hardware.AGMIPC@1.0-impl
+#MM_AUDIO_AR += vendor.qti.hardware.AGMIPC@1.0-service
+#MM_AUDIO_AR += init.qti.AGMIPC.sh
 MM_AUDIO_AR += libar-pal
 MM_AUDIO_AR += libhfp_pal
 MM_AUDIO_AR += lib_default_plugin_controls
