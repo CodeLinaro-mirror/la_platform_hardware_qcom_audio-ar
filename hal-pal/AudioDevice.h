@@ -25,6 +25,10 @@
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
 #ifndef ANDROID_HARDWARE_AHAL_ADEVICE_H_
@@ -110,6 +114,14 @@ typedef struct payload_pers_t {
     pal_param_payload *pal_payload;
     pal_device_id_t hfp_effect_device;
 } payload_pers_t;
+
+typedef enum power_policy_status_t {
+    POWER_POLICY_STATUS_OFFLINE,
+    POWER_POLICY_STATUS_ONLINE
+} power_policy_status_t;
+
+extern "C" void extn_out_set_power_policy(uint8_t enable);
+extern "C" void extn_in_set_power_policy(uint8_t enable);
 
 class AudioPatch{
     public:
@@ -207,6 +219,9 @@ public:
     std::vector<payload_pers_t> payloadpersv;
     bool hfp_params_sent;
     payload_pers_t payloadpers;
+    power_policy_status_t out_power_policy;
+    power_policy_status_t in_power_policy;
+    bool is_arpowerpolicy_enabled = false;
     static bool mic_characteristics_available;
     static microphone_characteristics_t microphones;
     static snd_device_to_mic_map_t microphone_maps[PAL_MAX_INPUT_DEVICES];
@@ -228,6 +243,8 @@ public:
     static void xml_end_tag(void *userdata, const XML_Char *tag_name);
     static void xml_char_data_handler(void *userdata, const XML_Char *s, int len);
     static int parse_xml();
+    void in_set_power_policy(uint8_t enable);
+    void out_set_power_policy(uint8_t enable);
 protected:
     AudioDevice() {}
     std::shared_ptr<AudioVoice> VoiceInit();

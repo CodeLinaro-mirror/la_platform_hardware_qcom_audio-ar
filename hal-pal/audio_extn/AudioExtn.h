@@ -70,6 +70,15 @@ typedef void (*place_marker_t)(char const *name, bool isEnter);
 typedef int (*set_parameters_t) (std::shared_ptr<AudioDevice>, struct str_parms*);
 typedef void (*get_parameters_t) (std::shared_ptr<AudioDevice>, struct str_parms*, struct str_parms*);
 
+// POWER_POLICY FEATURE
+typedef void (*fp_in_set_power_policy_t) (uint8_t);
+typedef void (*fp_out_set_power_policy_t) (uint8_t);
+
+typedef struct power_policy_init_config {
+    fp_in_set_power_policy_t     fp_in_set_power_policy;
+    fp_out_set_power_policy_t    fp_out_set_power_policy;
+} power_policy_init_config_t;
+
 class AudioExtn
 {
 private:
@@ -136,6 +145,8 @@ public:
     static int autohal_feature_init(bool is_feature_enabled);
     static pal_stream_type_t audio_extn_autohal_GetCarAudioPalStreamType(char* address);
     static void audio_extn_place_marker(char const *name, bool isEnter);
+    //Power Policy
+    static int power_policy_feature_init(bool is_feature_enabled);
 };
 
 #endif /* AUDIOEXTN_H */
