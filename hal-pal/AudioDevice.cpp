@@ -331,6 +331,7 @@ static void hdr_get_parameters(std::shared_ptr<AudioDevice> adev,
 AudioDevice::~AudioDevice() {
     audio_extn_gef_deinit(adev_);
     audio_extn_sound_trigger_deinit(adev_);
+    AudioExtn::icc_feature_deinit();
 
     for(int i = 0; i < payloadpersv.size(); i++) {
         if (payloadpersv[i].pal_payload) {
@@ -1083,11 +1084,16 @@ int AudioDevice::Init(hw_device_t **device, const hw_module_t *module) {
     }
     audio_extn_sound_trigger_init(adev_);
     AudioExtn::hfp_feature_init(property_get_bool("vendor.audio.feature.hfp.enable", false));
+    AudioExtn::hfp_ag_feature_init(true); //TODO set a new feature property
     AudioExtn::a2dp_source_feature_init(property_get_bool("vendor.audio.feature.a2dp_offload.enable", false));
     AudioExtn::autohal_feature_init(property_get_bool("vendor.audio.feature.auto_hal_pal.enable", false));
     AudioExtn::audio_extn_fm_init();
     AudioExtn::audio_extn_kpi_optimize_feature_init(
             property_get_bool("vendor.audio.feature.kpi_optimize.enable", false));
+    AudioExtn::icc_feature_init(property_get_bool("vendor.audio.feature.icc.enable", false));
+    AudioExtn::power_policy_feature_init(
+            property_get_bool("vendor.audio.feature.arpowerpolicy.enable", false));
+    adev_->is_arpowerpolicy_enabled = property_get_bool("vendor.audio.feature.arpowerpolicy.enable", false);
     /* no feature configurations yet */
     AudioExtn::battery_listener_feature_init(true);
     AudioExtn::battery_properties_listener_init(adev_on_battery_status_changed);
@@ -1210,6 +1216,8 @@ int AudioDevice::SetMicMute(bool state) {
     AHAL_DBG("%s: enter: %d", __func__, state);
     if (AudioExtn::audio_extn_hfp_is_active(adev_))
         ret = AudioExtn::audio_extn_hfp_set_mic_mute(state);
+    if (AudioExtn::audio_extn_hfp_ag_is_active(adev_))
+        ret = AudioExtn::audio_extn_hfp_ag_set_mic_mute(state);
     if (voice_)
         ret = voice_->SetMicMute(state);
     for (int i = 0; i < stream_in_list_.size(); i++) {
@@ -1284,6 +1292,13 @@ int AudioDevice::SetParameters(const char *kvpairs) {
     if (!parms) {
         AHAL_ERR("Error in str_parms_create_str");
         ret = 0;
+        goto exit;
+    }
+
+    ret = str_parms_get_str(parms, "pal_plugin_close", value, sizeof(value));
+    if (ret >= 0) {
+        ret = pal_set_param(PAL_PARAM_ID_PLUGIN_CLOSE, (void*)parms, sizeof(value));
+        str_parms_destroy(parms);
         goto exit;
     }
 
@@ -1404,7 +1419,7 @@ int AudioDevice::SetParameters(const char *kvpairs) {
         } else {
             is_play = false;
             AHAL_INFO("Setting device to mic");
-            hfp_effect_device = PAL_DEVICE_IN_SPEAKER_MIC;
+            hfp_effect_device = PAL_DEVICE_IN_HANDSET_MIC;
 		}
 
         payload = (uint8_t*) calloc (1, payload_size);
@@ -2179,7 +2194,8 @@ int AudioDevice::GetPalDeviceIds(const std::set<audio_devices_t> &hal_device_ids
             if ((strcmp(address, "BUS00_MEDIA") == 0) ||
                 (strcmp(address, "BUS01_SYS_NOTIFICATION") == 0) ||
                 (strcmp(address, "BUS02_NAV_GUIDANCE") == 0) ||
-                (strcmp(address, "BUS03_PHONE") == 0)) {
+                (strcmp(address, "BUS03_PHONE") == 0) ||
+                (strcmp(address, "BUS05_ALERTS") == 0)) {
                 pal_device_id[device_count] = PAL_DEVICE_OUT_SPEAKER;
             } else if (strcmp(address, "BUS08_FRONT_PASSENGER") == 0) {
                 pal_device_id[device_count] = PAL_DEVICE_OUT_A2B_SPKR;
@@ -2882,4 +2898,52 @@ closeFile:
     file = NULL;
 done:
     return ret;
+}
+
+void AudioDevice::in_set_power_policy(uint8_t enable)
+{
+    AHAL_DBG("%s: Enter, state %d", __func__, enable);
+
+    in_list_mutex.lock();
+    adev_->in_power_policy = enable ? POWER_POLICY_STATUS_ONLINE : POWER_POLICY_STATUS_OFFLINE;
+    in_list_mutex.unlock();
+
+    if (!enable) {
+        for (int i = 0; i < stream_in_list_.size(); i++) {
+            stream_in_list_[i]->Standby();
+        }
+    }
+
+    AHAL_DBG("%s: Exit", __func__);
+}
+
+void AudioDevice::out_set_power_policy(uint8_t enable)
+{
+    AHAL_DBG("%s: Enter, state %d", __func__, enable);
+
+    out_list_mutex.lock();
+    adev_->out_power_policy = enable ? POWER_POLICY_STATUS_ONLINE : POWER_POLICY_STATUS_OFFLINE;
+    out_list_mutex.unlock();
+
+    if (!enable) {
+        for (int i = 0; i < stream_out_list_.size(); i++) {
+            stream_out_list_[i]->Standby();
+        }
+    }
+
+    AHAL_DBG("%s: Exit", __func__);
+}
+
+void extn_out_set_power_policy(uint8_t enable)
+{
+    AHAL_INFO("extn_out_set_power_policy = %d\n", enable);
+    std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
+    return adevice->out_set_power_policy(enable);
+}
+
+void extn_in_set_power_policy(uint8_t enable)
+{
+    AHAL_INFO("extn_in_set_power_policy = %d\n", enable);
+    std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
+    return adevice->in_set_power_policy(enable);
 }

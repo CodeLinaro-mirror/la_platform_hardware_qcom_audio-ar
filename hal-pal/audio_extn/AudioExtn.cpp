@@ -27,12 +27,19 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/* Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
+
 #define LOG_TAG "AHAL: AudioExtn"
 #include <dlfcn.h>
 #include <unistd.h>
+#include <pthread.h>
 #include "AudioExtn.h"
 #include <cutils/properties.h>
 #include "AudioCommon.h"
+#include "AudioDevice.h"
 #define AUDIO_OUTPUT_BIT_WIDTH ((config_->offload_info.bit_width == 32) ? 24:config_->offload_info.bit_width)
 
 #ifdef PAL_HIDL_ENABLED
@@ -58,9 +65,12 @@ using android::OK;
 
 #define BATTERY_LISTENER_LIB_PATH LIBS"libbatterylistener.so"
 #define HFP_LIB_PATH LIBS"libhfp_pal.so"
+#define HFP_AG_LIB_PATH LIBS"libhfp_ag_pal.so"
 #define FM_LIB_PATH LIBS"libfmpal.so"
+#define ICC_LIB_PATH LIBS"libicc_pal.so"
 
 #define BT_IPC_SOURCE_LIB_NAME LIBS"btaudio_offload_if.so"
+#define POWER_POLICY_LIB_PATH LIBS"libarpowerpolicy.so"
 
 static batt_listener_init_t batt_listener_init;
 static batt_listener_deinit_t batt_listener_deinit;
@@ -308,6 +318,7 @@ void AudioExtn::audio_extn_get_parameters(std::shared_ptr<AudioDevice> adev,
 {
     char *kv_pairs = NULL;
 
+    audio_extn_icc_get_parameters(adev, query, reply);
     audio_extn_fm_get_parameters(adev, query, reply);
     GetProxyParameters(adev, query, reply);
     kv_pairs = str_parms_to_str(reply);
@@ -325,6 +336,13 @@ int AudioExtn::audio_extn_set_parameters(std::shared_ptr<AudioDevice> adev,
     if (ret == 0) {
         audio_extn_fm_set_parameters(adev, params);
     }
+
+    if (ret == 0) {
+        ret = audio_extn_icc_set_parameters(adev, params);
+    }
+
+    audio_extn_hfp_ag_set_parameters(adev, params);
+
     return ret;
 }
 
@@ -497,6 +515,188 @@ int AudioExtn::audio_extn_hfp_set_mic_mute2(std::shared_ptr<AudioDevice> adev, b
         hfp_set_mic_mute2(adev, state) : -1);
 }
 // END: HFP ========================================================================
+
+// START: HFP AG ======================================================================
+
+static void *hfp_ag_lib_handle = NULL;
+static hfp_ag_init_t hfp_ag_init;
+static hfp_ag_is_active_t hfp_ag_is_active;
+static hfp_ag_get_usecase_t hfp_ag_get_usecase;
+static hfp_ag_set_mic_mute_t hfp_ag_set_mic_mute;
+static set_parameters_t hfp_ag_set_parameters;
+
+int AudioExtn::hfp_ag_feature_init(bool is_feature_enabled)
+{
+    if (is_feature_enabled) {
+        // dlopen lib
+        hfp_ag_lib_handle = dlopen(HFP_AG_LIB_PATH, RTLD_NOW);
+
+        if (!hfp_ag_lib_handle) {
+            ALOGE("%s: dlopen failed with: %s", __func__, dlerror());
+            goto feature_disabled;
+        }
+
+        if (!(hfp_ag_init = (hfp_ag_init_t)dlsym(
+            hfp_ag_lib_handle, "hfp_ag_init")) ||
+            !(hfp_ag_is_active =
+            (hfp_ag_is_active_t)dlsym(
+                hfp_ag_lib_handle, "hfp_ag_is_active")) ||
+            !(hfp_ag_get_usecase =
+            (hfp_ag_get_usecase_t)dlsym(
+                hfp_ag_lib_handle, "hfp_ag_get_usecase")) ||
+            !(hfp_ag_set_mic_mute =
+            (hfp_ag_set_mic_mute_t)dlsym(
+                hfp_ag_lib_handle, "hfp_ag_set_mic_mute")) ||
+            !(hfp_ag_set_parameters =
+            (set_parameters_t)dlsym(
+                hfp_ag_lib_handle, "hfp_ag_set_parameters"))) {
+            AHAL_ERR("dlsym failed");
+            goto feature_disabled;
+        }
+
+        AHAL_DBG("---- Feature HFP AG is Enabled ----");
+
+        return 0;
+    }
+
+feature_disabled:
+    if (hfp_ag_lib_handle) {
+        dlclose(hfp_ag_lib_handle);
+        hfp_ag_lib_handle = NULL;
+    }
+
+    hfp_ag_init = NULL;
+    hfp_ag_is_active = NULL;
+    hfp_ag_get_usecase = NULL;
+    hfp_ag_set_mic_mute = NULL;
+    hfp_ag_set_parameters = NULL;
+
+    AHAL_INFO("---- Feature HFP AG is disabled ----");
+    return -ENOSYS;
+}
+
+bool AudioExtn::audio_extn_hfp_ag_is_active(std::shared_ptr<AudioDevice> adev)
+{
+    return ((hfp_ag_is_active) ?
+        hfp_ag_is_active(adev) : false);
+}
+
+audio_usecase_t AudioExtn::audio_extn_hfp_ag_get_usecase()
+{
+    return ((hfp_ag_get_usecase) ?
+        hfp_ag_get_usecase() : -1);
+}
+
+int AudioExtn::audio_extn_hfp_ag_set_mic_mute(bool state)
+{
+    return ((hfp_ag_set_mic_mute) ?
+        hfp_ag_set_mic_mute(state) : -1);
+}
+
+int AudioExtn::audio_extn_hfp_ag_set_parameters(std::shared_ptr<AudioDevice> adev,
+    struct str_parms *parms)
+{
+    int ret = 0;
+
+    if (hfp_ag_set_parameters)
+        ret = hfp_ag_set_parameters(adev, parms);
+
+    return ret;
+}
+// END: HFP AG ========================================================================
+
+
+// START: ICC ======================================================================
+// Provide ICC PAL extn to allow app layer trigger ICC loopback usecase
+// Following APIs are needed for ICC configuration in the backend
+static void *icc_lib_handle = NULL;
+static set_parameters_t icc_set_parameters;
+static get_parameters_t icc_get_params;
+
+int AudioExtn::icc_feature_init(bool is_feature_enabled)
+{
+    AHAL_DBG("Called with feature %s",
+        is_feature_enabled ? "Enabled" : "NOT Enabled");
+
+    if (is_feature_enabled) {
+        // dlopen lib
+        icc_lib_handle = dlopen(ICC_LIB_PATH, RTLD_NOW);
+
+        if (!icc_lib_handle) {
+            ALOGE("%s: dlopen failed with: %s", __func__, dlerror());
+            goto feature_disabled;
+        }
+
+        // Clear any existing error
+        dlerror();
+
+        if (!(icc_set_parameters =
+            (set_parameters_t)dlsym(
+                icc_lib_handle, "icc_set_parameters"))) {
+            ALOGE("%s: dlsym failed %s", __func__, dlerror());
+            goto feature_disabled;
+        }
+
+        if (!(icc_get_params =
+            (get_parameters_t)dlsym(
+                icc_lib_handle, "icc_get_params"))) {
+            ALOGE("%s: dlsym failed %s", __func__, dlerror());
+            goto feature_disabled;
+        }
+
+        AHAL_DBG("---- Feature ICC is Enabled ----");
+
+        return 0;
+    }
+
+feature_disabled:
+    if (icc_lib_handle) {
+        dlclose(icc_lib_handle);
+        icc_lib_handle = NULL;
+    }
+
+    icc_set_parameters = NULL;
+    icc_get_params = NULL;
+
+    AHAL_DBG("---- Feature ICC is disabled ----");
+
+    return -ENOSYS;
+}
+
+void AudioExtn::icc_feature_deinit()
+{
+    if (icc_lib_handle) {
+        dlclose(icc_lib_handle);
+        icc_lib_handle = NULL;
+    }
+
+    if (icc_set_parameters) {
+        icc_set_parameters = NULL;
+    }
+
+    if (icc_get_params) {
+        icc_get_params = NULL;
+    }
+}
+
+int AudioExtn::audio_extn_icc_set_parameters(std::shared_ptr<AudioDevice> adev,
+    struct str_parms *parms)
+{
+    int ret = 0;
+
+    AHAL_DBG("---- audio_extn_icc_set_parameters ----");
+
+    if (icc_set_parameters)
+        ret = icc_set_parameters(adev, parms);
+
+    return ret;
+}
+
+void AudioExtn::audio_extn_icc_get_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *query, struct str_parms *reply){
+   if(icc_get_params)
+        icc_get_params(adev, query, reply);
+}
+// END: ICC ========================================================================
 
 // START: A2DP ======================================================================
 // Need to call this init for BT HIDL registration. It is expected that Audio HAL
@@ -801,3 +1001,69 @@ void AudioExtn::audio_extn_place_marker(char const *name, bool isEnter)
 }
 
 // END: AUTO HAL ================================================================
+
+// START: Power Policy Client ======================================================================
+static void* power_policy_lib_handle = NULL;
+typedef int (*launch_power_policy_t) (power_policy_init_config_t);
+static launch_power_policy_t launch_power_policy;
+
+static void* power_policy_thread_func(void* arg __unused) {
+    if (launch_power_policy == NULL) {
+        AHAL_ERR("%s: Power Policy launcher is NULL", __func__);
+        goto exit;
+    }
+    AHAL_DBG("%s: Launching Power Policy Client", __func__);
+    power_policy_init_config_t init_config;
+    init_config.fp_in_set_power_policy = extn_in_set_power_policy;
+    init_config.fp_out_set_power_policy = extn_out_set_power_policy;
+    launch_power_policy(init_config);
+
+exit:
+    return NULL;
+}
+
+int AudioExtn::power_policy_feature_init(bool is_feature_enabled)
+{
+    pthread_t tid;
+    pthread_attr_t attr;
+
+    AHAL_DBG("%s: Called with feature %s", __func__,
+                  is_feature_enabled ? "Enabled" : "NOT Enabled");
+    if (is_feature_enabled) {
+        // dlopen lib
+        power_policy_lib_handle = dlopen(POWER_POLICY_LIB_PATH, RTLD_NOW);
+
+        if (!power_policy_lib_handle) {
+            AHAL_ERR("%s: dlopen failed", __func__);
+            goto feature_disabled;
+        }
+        if (!(launch_power_policy = (launch_power_policy_t)dlsym(
+                                    power_policy_lib_handle, "launchPowerPolicyClient")))
+        {
+            AHAL_ERR("%s: dlsym failed", __func__);
+            goto feature_disabled;
+        }
+
+        pthread_attr_init(&attr);
+        pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+        if (pthread_create(&tid, &attr, power_policy_thread_func, NULL))
+        {
+            AHAL_ERR("%s: Failed to create power policy thread", __func__);
+            goto feature_disabled;
+        }
+        AHAL_DBG("%s:: ---- Feature Power Policy Client is Enabled ----", __func__);
+        return 0;
+    }
+
+feature_disabled:
+    if (power_policy_lib_handle) {
+        dlclose(power_policy_lib_handle);
+        power_policy_lib_handle = NULL;
+    }
+
+    launch_power_policy = NULL;
+
+    AHAL_ERR(":: %s: ---- Feature Power Policy Client is disabled ----", __func__);
+    return -ENOSYS;
+}
+// END: Power Policy Client ======================================================================

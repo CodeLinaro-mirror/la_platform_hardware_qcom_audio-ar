@@ -28,7 +28,7 @@
  */
 
 /* Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -274,6 +274,13 @@ static int astream_out_create_mmap_buffer(const struct audio_stream_out *stream,
     if (!adevice) {
         AHAL_ERR("unable to get audio device");
         return -EINVAL;
+    }
+
+    if (adevice->is_arpowerpolicy_enabled) {
+        if (POWER_POLICY_STATUS_OFFLINE == adevice->out_power_policy) {
+            AHAL_INFO("adevice->output_power offline, try again %s", __func__);
+            return -EINVAL;
+        }
     }
 
     astream_out = adevice->OutGetStream((audio_stream_t*)stream);
@@ -614,6 +621,12 @@ static int astream_out_get_presentation_position(
     std::shared_ptr<StreamOutPrimary> astream_out;
     int ret = 0;
     if (adevice) {
+        if (adevice->is_arpowerpolicy_enabled) {
+            if (POWER_POLICY_STATUS_OFFLINE == adevice->out_power_policy) {
+                AHAL_INFO("adevice->output_power offline, try again %s", __func__);
+                return -EINVAL;
+            }
+        }
         astream_out = adevice->OutGetStream((audio_stream_t*)stream);
     } else {
         AHAL_ERR("unable to get audio device");
@@ -656,6 +669,12 @@ static int out_get_render_position(const struct audio_stream_out *stream,
     uint64_t frames = 0;
 
     if (adevice) {
+        if (adevice->is_arpowerpolicy_enabled) {
+            if (POWER_POLICY_STATUS_OFFLINE == adevice->out_power_policy) {
+                AHAL_INFO("adevice->output_power offline, try again %s", __func__);
+                return -EINVAL;
+            }
+        }
         astream_out = adevice->OutGetStream((audio_stream_t*)stream);
     } else {
         AHAL_ERR("unable to get audio device");
@@ -888,6 +907,12 @@ static ssize_t out_write(struct audio_stream_out *stream, const void *buffer,
     std::shared_ptr<StreamOutPrimary> astream_out;
 
     if (adevice) {
+        if (adevice->is_arpowerpolicy_enabled) {
+            if (POWER_POLICY_STATUS_OFFLINE == adevice->out_power_policy) {
+                AHAL_INFO("adevice->output_power offline, try again %s", __func__);
+                return -EINVAL;
+            }
+        }
         astream_out = adevice->OutGetStream((audio_stream_t*)stream);
     } else {
         AHAL_ERR("unable to get audio device");
@@ -951,6 +976,13 @@ static int astream_in_create_mmap_buffer(const struct audio_stream_in *stream,
     if (!adevice) {
         AHAL_ERR("unable to get audio device");
         return -EINVAL;
+    }
+
+    if (adevice->is_arpowerpolicy_enabled) {
+        if (POWER_POLICY_STATUS_OFFLINE == adevice->in_power_policy) {
+            AHAL_INFO("adevice->input_power offline, try again %s", __func__);
+            return -EINVAL;
+        }
     }
 
     astream_in = adevice->InGetStream((audio_stream_t*)stream);
@@ -1718,8 +1750,15 @@ int StreamOutPrimary::Stop() {
 
 int StreamOutPrimary::Start() {
     int ret = -ENOSYS;
+    std::shared_ptr<AudioDevice> adev = AudioDevice::GetInstance();
 
     AHAL_DBG("Enter");
+    if (adev->is_arpowerpolicy_enabled) {
+        if (POWER_POLICY_STATUS_OFFLINE == adev->out_power_policy) {
+            AHAL_INFO("adev->output_power offline, try again %s", __func__);
+            return -EIO;
+        }
+    }
     stream_mutex_.lock();
     if (usecase_ == USECASE_AUDIO_PLAYBACK_MMAP &&
             pal_stream_handle_ && !stream_started_) {
@@ -1901,9 +1940,12 @@ exit:
 int StreamOutPrimary::RouteStream(const std::set<audio_devices_t>& new_devices) {
     int ret = 0, noPalDevices = 0;
     bool forceRouting = false;
+    bool is_ag_sco = false;
     pal_device_id_t * deviceId;
     struct pal_device* deviceIdConfigs;
     std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
+    static pal_device_id_t agDLCachedPalId = PAL_DEVICE_OUT_MIN;
+    static int agDLCachedIdx = 0;
 
     stream_mutex_.lock();
     if (!mInitialized) {
@@ -1920,10 +1962,18 @@ int StreamOutPrimary::RouteStream(const std::set<audio_devices_t>& new_devices) 
              mAndroidOutDevices.size());
 
     forceRouting = AudioExtn::audio_devices_cmp(new_devices, audio_is_a2dp_out_device);
+    is_ag_sco = AudioExtn::audio_extn_hfp_ag_is_active(adevice);
 
+    if (agDLCachedPalId != PAL_DEVICE_OUT_MIN && (AudioExtn::get_device_types(new_devices) == AUDIO_DEVICE_OUT_BUS &&
+         strncmp(address_,"BUS03_PHONE",strlen("BUS03_PHONE"))) == 0 ) {
+        AHAL_INFO("Reset previous mPalOutDevice from %d to %d after AG call", mPalOutDeviceIds[agDLCachedIdx], agDLCachedPalId);
+        mPalOutDeviceIds[agDLCachedIdx] = agDLCachedPalId;
+        mPalOutDevice[agDLCachedIdx].id = agDLCachedPalId;
+        agDLCachedPalId = PAL_DEVICE_OUT_MIN;
+    }
     /* Ignore routing to same device unless it's forced */
     if (((new_devices != mAndroidOutDevices) && (!AudioExtn::audio_devices_empty(new_devices))) ||
-        forceRouting) {
+        forceRouting || is_ag_sco) {
         // re-allocate mPalOutDevice and mPalOutDeviceIds
         if (new_devices.size() != mAndroidOutDevices.size()) {
             deviceId = (pal_device_id_t*) realloc(mPalOutDeviceIds,
@@ -1960,6 +2010,14 @@ int StreamOutPrimary::RouteStream(const std::set<audio_devices_t>& new_devices) 
                 (mPalOutDeviceIds[i] == PAL_DEVICE_OUT_USB_HEADSET)) {
                 mPalOutDevice[i].address.card_id = adevice->usb_card_id_;
                 mPalOutDevice[i].address.device_num = adevice->usb_dev_num_;
+            }
+            if (is_ag_sco && (AudioExtn::get_device_types(new_devices) == AUDIO_DEVICE_OUT_BUS &&
+                               strncmp(address_,"BUS03_PHONE",strlen("BUS03_PHONE")) == 0)) {
+                agDLCachedPalId = mPalOutDeviceIds[i];
+                agDLCachedIdx = i;
+                mPalOutDeviceIds[i] = PAL_DEVICE_OUT_BLUETOOTH_SCO2;
+                mPalOutDevice[i].id = mPalOutDeviceIds[i];
+                AHAL_INFO("BT AG call active, force route SCO device to SCO2 device, device=%d", mPalOutDeviceIds[i]);
             }
         }
 
@@ -2096,7 +2154,8 @@ int64_t StreamOutPrimary::GetRenderLatency(audio_output_flags_t halStreamFlags, 
          case PAL_STREAM_DEEP_BUFFER:
          case PAL_STREAM_PLAYBACK_BUS:
               if (((strncmp(address,"BUS03_PHONE",strlen("BUS03_PHONE"))) == 0 ) ||
-                  ((strncmp(address,"BUS01_SYS",strlen("BUS01_SYS"))) == 0 )) {
+                  ((strncmp(address,"BUS01_SYS",strlen("BUS01_SYS"))) == 0 ) ||
+                  ((strncmp(address,"BUS05_ALERTS",strlen("BUS05_ALERTS"))) == 0)) {
                     return LOW_LATENCY_PLATFORM_DELAY;
                  }
               else {
@@ -2265,7 +2324,8 @@ uint32_t StreamOutPrimary::GetBufferSize() {
               || streamAttributes_.type == PAL_STREAM_PLAYBACK_BUS) {
         if(streamAttributes_.type == PAL_STREAM_PLAYBACK_BUS) {
             if( (strncmp(address_,"BUS03_PHONE",strlen("BUS03_PHONE"))) == 0 ||
-                (strncmp(address_,"BUS01_SYS",strlen("BUS01_SYS"))) == 0 ) {
+                (strncmp(address_,"BUS01_SYS",strlen("BUS01_SYS"))) == 0 ||
+                (strncmp(address_,"BUS05_ALERTS",strlen("BUS05_ALERTS"))) == 0) {
                 return  LOW_LATENCY_PLAYBACK_PERIOD_SIZE *
                     audio_bytes_per_frame(
                             audio_channel_count_from_out_mask(config_.channel_mask),
@@ -2305,6 +2365,7 @@ int StreamOutPrimary::Open() {
     uint32_t outBufSize = 0;
     uint32_t outBufCount = NO_OF_BUF;
     struct pal_buffer_config outBufCfg = {0, 0, 0};
+    std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
 
     AHAL_DBG("Enter OutPrimary ");
     AudioExtn::audio_extn_place_marker("M - AHAL stream out open Enter", true);
@@ -2312,6 +2373,13 @@ int StreamOutPrimary::Open() {
     if (!mInitialized) {
         AHAL_ERR("Not initialized, returning error");
         goto error_open;
+    }
+
+    if (adevice->is_arpowerpolicy_enabled) {
+        if (POWER_POLICY_STATUS_OFFLINE == adevice->out_power_policy) {
+            AHAL_INFO("adevice->output_power offline, return error %s", __func__);
+            goto error_open;
+        }
     }
     AHAL_DBG("no_of_devices %zu", mAndroidOutDevices.size());
     //need to convert channel mask to pal channel mask
@@ -3102,8 +3170,15 @@ int StreamInPrimary::Stop() {
 
 int StreamInPrimary::Start() {
     int ret = -ENOSYS;
+    std::shared_ptr<AudioDevice> adev = AudioDevice::GetInstance();
 
     AHAL_DBG("Enter");
+    if (adev->is_arpowerpolicy_enabled) {
+        if (POWER_POLICY_STATUS_OFFLINE == adev->in_power_policy) {
+            AHAL_INFO("adev->input_power offline, try again %s", __func__);
+            return -EIO;
+        }
+    }
     stream_mutex_.lock();
     if (usecase_ == USECASE_AUDIO_RECORD_MMAP &&
             pal_stream_handle_ && !stream_started_) {
@@ -3345,12 +3420,14 @@ done:
 }
 
 int StreamInPrimary::RouteStream(const std::set<audio_devices_t>& new_devices) {
-    bool is_empty, is_input;
+    bool is_empty, is_input, is_ag_sco;
     int ret = 0, noPalDevices = 0;
     pal_device_id_t * deviceId;
     struct pal_device* deviceIdConfigs;
     struct pal_channel_info ch_info = {0, {0}};
     std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
+    static pal_device_id_t agULCachedPalId = PAL_DEVICE_IN_MIN;
+    static int agULCachedIdx = 0;
 
     AHAL_DBG("enter ");
 
@@ -3375,9 +3452,17 @@ int StreamInPrimary::RouteStream(const std::set<audio_devices_t>& new_devices) {
 
     is_empty = AudioExtn::audio_devices_empty(new_devices);
     is_input = AudioExtn::audio_devices_cmp(new_devices, audio_is_input_device);
+    is_ag_sco = AudioExtn::audio_extn_hfp_ag_is_active(adevice);
 
+    if (agULCachedPalId != PAL_DEVICE_IN_MIN &&
+        StreamInPrimary::GetPalStreamType(flags_, config_.sample_rate) == PAL_STREAM_VOIP_TX) {
+        AHAL_INFO("Reset previous mPalInDevice from %d to %d after AG call", mPalInDeviceIds[agULCachedIdx], agULCachedPalId);
+        mPalInDeviceIds[agULCachedIdx] = agULCachedPalId;
+        mPalInDevice[agULCachedIdx].id = agULCachedPalId;
+        agULCachedPalId = PAL_DEVICE_IN_MIN;
+    }
     /* If its the same device as what was already routed to, dont bother */
-    if (!is_empty && is_input && mAndroidInDevices != new_devices) {
+    if ((!is_empty && is_input &&  mAndroidInDevices != new_devices) || is_ag_sco) {
         //re-allocate mPalOutDevice and mPalOutDeviceIds
         if (new_devices.size() != mAndroidInDevices.size()) {
             deviceId = (pal_device_id_t*) realloc(mPalInDeviceIds,
@@ -3399,7 +3484,6 @@ int StreamInPrimary::RouteStream(const std::set<audio_devices_t>& new_devices) {
             ret = -EINVAL;
             goto done;
         }
-
         for (int i = 0; i < noPalDevices; i++) {
             mPalInDevice[i].id = mPalInDeviceIds[i];
             mPalInDevice[i].config.sample_rate = mPalInDevice[0].config.sample_rate;
@@ -3410,6 +3494,13 @@ int StreamInPrimary::RouteStream(const std::set<audio_devices_t>& new_devices) {
                (mPalInDeviceIds[i] == PAL_DEVICE_IN_USB_HEADSET)) {
                 mPalInDevice[i].address.card_id = adevice->usb_card_id_;
                 mPalInDevice[i].address.device_num = adevice->usb_dev_num_;
+            }
+            if (is_ag_sco && mPalInDeviceIds[i] == PAL_DEVICE_IN_BLUETOOTH_SCO_HEADSET) {
+                agULCachedPalId = mPalInDeviceIds[i];
+                agULCachedIdx = i;
+                mPalInDeviceIds[i] = PAL_DEVICE_IN_BLUETOOTH_SCO2_HEADSET;
+                mPalInDevice[i].id = mPalInDeviceIds[i];
+                AHAL_INFO("BT AG call active, force route SCO device to SCO2 device, device=%d", mPalInDeviceIds[i]);
             }
             /* HDR use case check */
             if (is_hdr_mode_enabled())
@@ -3459,6 +3550,7 @@ int StreamInPrimary::Open() {
     uint32_t inBufCount = NO_OF_BUF;
     struct pal_buffer_config inBufCfg = {0, 0, 0};
     void *handle = nullptr;
+    std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
 
     AHAL_DBG("Enter InPrimary");
     AudioExtn::audio_extn_place_marker("M - AHAL stream in open Enter", true);
@@ -3466,6 +3558,14 @@ int StreamInPrimary::Open() {
         AHAL_ERR("Not initialized, returning error");
         ret = -EINVAL;
         goto exit;
+    }
+
+    if (adevice->is_arpowerpolicy_enabled) {
+        if (POWER_POLICY_STATUS_OFFLINE == adevice->in_power_policy) {
+            AHAL_INFO("adevice->input_power offline, return error %s", __func__);
+            ret = -EINVAL;
+            goto exit;
+        }
     }
 
     handle = audio_extn_sound_trigger_check_and_get_session(this);

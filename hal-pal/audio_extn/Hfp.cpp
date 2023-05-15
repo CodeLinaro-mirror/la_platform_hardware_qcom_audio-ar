@@ -147,7 +147,10 @@ static int hfp_set_mic_volume(float value)
         ALOGW("Volume brought within range (%f)\n", value);
     }
 
-    value = value / CAPTURE_VOLUME_DEFAULT;
+    //comment this line to gurantee volume of HFP sent to pal is 0 ~ 15
+    //TODO: volume range of streams in pal should be 0.0 ~ 1.0, will perfect the
+    //logic later
+    //value = value / CAPTURE_VOLUME_DEFAULT;
 
     volume = (int)(value * PLAYBACK_VOLUME_MAX);
 
@@ -295,7 +298,7 @@ static int32_t start_hfp(std::shared_ptr<AudioDevice> adev __unused,
     devices[0].config.ch_info = ch_info;
     devices[0].config.aud_fmt_id = PAL_AUDIO_FMT_PCM_S16_LE;
 
-    devices[1].id = PAL_DEVICE_IN_SPEAKER_MIC;
+    devices[1].id = PAL_DEVICE_IN_HANDSET_MIC;
 
     ret = pal_stream_open(&stream_tx_attr,
             no_of_devices, devices,
