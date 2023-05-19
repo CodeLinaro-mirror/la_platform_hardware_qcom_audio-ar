@@ -65,7 +65,11 @@ ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_gvmq)
 AUDIO_FRAMEWORK_AUDIOREACH := true
 endif
 # Audio configuration file
+ifeq ($(call is-board-platform-in-list, gen4), true)
+-include $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/gen4_au.mk
+else
 -include $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/msmnile_au.mk
+endif
 
 ifeq ($(ENABLE_HYP), false)
 ifeq ($(TARGET_BOARD_AUTO),true)
