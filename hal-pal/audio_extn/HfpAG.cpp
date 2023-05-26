@@ -28,7 +28,7 @@ extern "C" {
 #endif
 
 #define AUDIO_PARAMETER_HFP_AG_ENABLE      "BT_SCO"
-#define AUDIO_PARAMETER_HFP_SET_SAMPLING_RATE "hfp_set_sampling_rate"
+#define AUDIO_PARAMETER_HFP_AG_SET_SAMPLING_RATE "bt_wbs"
 #define AUDIO_PARAMETER_KEY_HFP_VOLUME "hfp_volume"
 #define AUDIO_PARAMETER_HFP_PCM_DEV_ID "hfp_pcm_dev_id"
 
@@ -50,7 +50,7 @@ struct hfp_ag_module {
 static struct hfp_ag_module agmod = {
     .is_hfp_running = 0,
     .hfp_volume = 0,
-    .ucid = USECASE_AUDIO_HFP_SCO,
+    .ucid = USECASE_AUDIO_HFP_SCO_WB,
     .mic_volume = CAPTURE_VOLUME_DEFAULT,
     .mic_mute = 0,
     .sample_rate = 16000,
@@ -126,6 +126,10 @@ static int hfp_ag_set_mic_volume(float value)
 
     pal_volume = (struct pal_volume_data *)malloc(sizeof(struct pal_volume_data)
             +sizeof(struct pal_channel_vol_kv));
+
+    if (!pal_volume)
+       return -ENOMEM;
+
     pal_volume->no_of_volpair = 1;
     pal_volume->volume_pair[0].channel_mask = 0x03;
     pal_volume->volume_pair[0].vol = value;
@@ -180,6 +184,11 @@ static int32_t start_ag(std::shared_ptr<AudioDevice> adev __unused,
     pal_param_btsco_t param_btsco;
 
     param_btsco.bt_sco_on = true;
+    if (agmod.sample_rate == 16000) {
+        param_btsco.bt_wb_speech_enabled = true;
+    } else {
+        param_btsco.bt_wb_speech_enabled = false;
+    }
     ret =  pal_set_param(PAL_PARAM_ID_BT_AG_SCO,
                         (void*)&param_btsco,
                         sizeof(pal_param_btsco_t));
@@ -275,7 +284,6 @@ int hfp_ag_set_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *p
     char value[32]={0};
     float vol;
     int val;
-    int rate;
 
     if (str_parms_get_str(parms, AUDIO_PARAMETER_HFP_AG_ENABLE, value,sizeof(value)) >= 0) {
         if (!strncmp(value, "on", sizeof(value))) {
@@ -296,16 +304,16 @@ int hfp_ag_set_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *p
     }
 
     memset(value, 0, sizeof(value));
-    if (str_parms_get_str(parms,AUDIO_PARAMETER_HFP_SET_SAMPLING_RATE, value,sizeof(value)) >= 0) {
-        rate = atoi(value);
-        if (rate == 8000){
+    if (str_parms_get_str(parms,AUDIO_PARAMETER_HFP_AG_SET_SAMPLING_RATE, value,sizeof(value)) >= 0) {
+        if (!strncmp(value, "off", sizeof(value))){
             agmod.ucid = USECASE_AUDIO_HFP_SCO;
-            agmod.sample_rate = (uint32_t) rate;
-        } else if (rate == 16000){
+            agmod.sample_rate = 8000;
+        } else if (!strncmp(value, "on", sizeof(value))){
             agmod.ucid = USECASE_AUDIO_HFP_SCO_WB;
-            agmod.sample_rate = (uint32_t) rate;
+            agmod.sample_rate = 16000;
         } else
-            AHAL_ERR("Unsupported rate.. %d", rate);
+            AHAL_ERR("bt_wbs=%s is unsupported", value);
+        AHAL_DBG("ag sample rate: %d", agmod.sample_rate);
     }
 
     memset(value, 0, sizeof(value));

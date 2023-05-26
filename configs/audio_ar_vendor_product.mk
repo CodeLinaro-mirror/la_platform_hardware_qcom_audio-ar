@@ -34,8 +34,21 @@ MM_AUDIO_AR += capi_sumx
 MM_AUDIO_AR += capi_fnb
 MM_AUDIO_AR += capi_load
 MM_AUDIO_AR += capi_gpio
-MM_AUDIO_AR += capi_irq_comm.so
+MM_AUDIO_AR += capi_irq_comm
+ifneq ( ,$(filter T Tiramisu 13, $(PLATFORM_VERSION)))
+MM_AUDIO_AR += libarpowerpolicy
 endif
+endif
+MM_AUDIO_AR += libams
+MM_AUDIO_AR += libamscore
+MM_AUDIO_AR += libamsclient
+MM_AUDIO_AR += libamsosal
+MM_AUDIO_AR += vendor.qti.hardware.AMSIPC@1.0
+MM_AUDIO_AR += vendor.qti.hardware.AMSIPC@1.0-impl
+MM_AUDIO_AR += vendor.qti.hardware.AMSIPC@1.0-service
+MM_AUDIO_AR += init.qti.AMSIPC.sh
+MM_AUDIO_AR += ams_test
+MM_AUDIO_AR += libar-gpr-ams
 endif
 
 MM_AUDIO_AR += sound_trigger.primary.$(TARGET_BOARD_PLATFORM).ar
