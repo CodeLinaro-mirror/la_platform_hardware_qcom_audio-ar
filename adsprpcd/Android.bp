@@ -8,6 +8,7 @@ cc_binary {
     shared_libs: [
         "liblog",
         "libdl",
+        "libcutils",
     ],
 
     init_rc: ["vendor.qti.audio-adsprpc-service.rc"],
