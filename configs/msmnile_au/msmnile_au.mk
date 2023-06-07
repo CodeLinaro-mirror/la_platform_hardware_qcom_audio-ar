@@ -186,6 +186,12 @@ PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.feature.dmabuf.cma.memory.enable=true
 endif
 
+ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_au)
+PRODUCT_PROPERTY_OVERRIDES += \
+vendor.audio.feature.agm.enable=none
+vendor.audio.feature.hostless.enable=none
+endif
+
 #Audio HAL version
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.hal.maj.version=3
