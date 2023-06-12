@@ -54,7 +54,7 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
     -->
     <modules>
         <!-- Primary Audio HAL -->
-        <module name="primary" halVersion="3.2">
+        <module name="primary" halVersion="2.0">
             <attachedDevices>
                 <item>Earpiece</item>
                 <item>Speaker</item>
@@ -167,6 +167,9 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
                              channelMasks="AUDIO_CHANNEL_OUT_STEREO AUDIO_CHANNEL_OUT_MONO"/>
                     <profile name="" format="AUDIO_FORMAT_AAC_ADTS_HE_V2"
                              samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000 64000 88200 96000"
+                             channelMasks="AUDIO_CHANNEL_OUT_STEREO AUDIO_CHANNEL_OUT_MONO"/>
+                    <profile name="" format="AUDIO_FORMAT_OPUS"
+                             samplingRates="8000 12000 16000 24000 48000"
                              channelMasks="AUDIO_CHANNEL_OUT_STEREO AUDIO_CHANNEL_OUT_MONO"/>
                 </mixPort>
                 <mixPort name="voice_tx" role="source">

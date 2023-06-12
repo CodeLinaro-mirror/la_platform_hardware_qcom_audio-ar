@@ -469,17 +469,10 @@ int AudioDevice::CreateAudioPatch(audio_patch_handle_t *handle,
                     //CRS Usecase
                     if (voice_)
                         voice_->get_voice_call_state(&mode);
-                    if(voice_ && voice_->voice_.crsVsid != 0 && mode != AUDIO_MODE_IN_CALL) {
-                        AHAL_DBG("Create Audio Patch CRS entry point");
-                        voice_->voice_.crsCall = true;
-                        device_types.clear();
-                        device_types.insert(sinks[0].ext.device.type);
-                        patch_type = AudioPatch::PATCH_DEVICE_CRS;
-                    } else {
-                        device_types.clear();
-                        device_types.insert(sinks[0].ext.device.type);
-                        patch_type = AudioPatch::PATCH_END_CRS;
-                    }
+                    AHAL_DBG("Create Audio Patch CRS entry point");
+                    device_types.clear();
+                    device_types.insert(sinks[0].ext.device.type);
+                    patch_type = AudioPatch::PATCH_DEVICE_LOOPBACK;
                     goto create_patch;
                 } else {
                     /*Device to device patch is not implemented.
@@ -538,7 +531,7 @@ create_patch:
         patch->sinks = sinks;
     }
 
-    if (voice_ && (patch_type == AudioPatch::PATCH_PLAYBACK || voice_->voice_.crsCall || patch_type == AudioPatch::PATCH_END_CRS))
+    if (voice_ && (patch_type == AudioPatch::PATCH_PLAYBACK || patch_type == AudioPatch::PATCH_DEVICE_LOOPBACK))
         ret = voice_->RouteStream(device_types);
     if (stream)
         ret |= stream->RouteStream(device_types);
@@ -590,7 +583,7 @@ int AudioDevice::ReleaseAudioPatch(audio_patch_handle_t handle) {
         case AUDIO_PORT_TYPE_DEVICE:
             if (patch->type == AudioPatch::PATCH_CAPTURE)
                 io_handle = patch->sinks[0].ext.mix.handle;
-            else if (patch->type == AudioPatch::PATCH_DEVICE_CRS) {
+            else if (patch->type == AudioPatch::PATCH_DEVICE_LOOPBACK) {
                 ret = voice_->UpdateCalls(voice_->voice_.session);
                 patch_map_mutex.unlock();
                 goto exit;
@@ -1107,16 +1100,20 @@ static int adev_dump(const audio_hw_device_t *device, int fd)
 {
     dprintf(fd, " \n");
     dprintf(fd, "PrimaryHal adev: \n");
-    int major =  (device->common.version >> 8) & 0xff;
-    int minor =   device->common.version & 0xff;
+    int major = (device->common.version >> 8) & 0xff;
+    int minor = device->common.version & 0xff;
     dprintf(fd, "Device API Version: %d.%d \n", major, minor);
-
 #ifdef PAL_HIDL_ENABLED
-    dprintf(fd, "PAL HIDL enabled");
+    dprintf(fd, "PAL HIDL enabled \n");
 #else
-    dprintf(fd, "PAL HIDL disabled");
+    dprintf(fd, "PAL HIDL disabled \n");
 #endif
 
+    audio_hw_device *dev = const_cast<audio_hw_device_t *>(device);
+    std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance(dev);
+    if (adevice) {
+        dprintf(fd, "Offload Variable PlaybackRate %d \n", adevice->isOffloadSpeedSupported());
+    }
     return 0;
 }
 
@@ -1241,7 +1238,7 @@ int AudioDevice::Init(hw_device_t **device, const hw_module_t *module) {
     voice_ = VoiceInit();
     mute_ = false;
     current_rotation = PAL_SPEAKER_ROTATION_LR;
-
+    mOffloadSpeedSupported = property_get_bool("vendor.audio.offload.playspeed", false);
     FillAndroidDeviceMap();
     audio_extn_gef_init(adev_);
     adev_init_ref_count += 1;
@@ -1446,6 +1443,21 @@ int AudioDevice::add_input_headset_if_usb_out_headset(int *device_count,
     return 0;
 }
 
+bool AudioDevice::getCrsConcurrentState() {
+     std::shared_ptr<StreamOutPrimary> astream_out = NULL;
+     audio_stream_out* stream_out = NULL;
+
+     for (int i = 0; i < stream_out_list_.size(); i++) {
+          stream_out_list_[i]->GetStreamHandle(&stream_out);
+          astream_out = adev_->OutGetStream((audio_stream_t*)stream_out);
+          if (astream_out->isStarted() &&
+              astream_out->GetUseCase() == USECASE_AUDIO_PLAYBACK_VOIP) {
+              return true;
+          }
+     }
+     return false;
+}
+
 int AudioDevice::SetParameters(const char *kvpairs) {
     int ret = 0, val = 0;
     struct str_parms *parms = NULL;
@@ -1461,6 +1473,7 @@ int AudioDevice::SetParameters(const char *kvpairs) {
     std::shared_ptr<StreamOutPrimary> astream_out = NULL;
     uint8_t channels = 0;
     std::set<audio_devices_t> new_devices;
+    std::set<audio_devices_t> crs_device;
 
     AHAL_DBG("enter: %s", kvpairs);
     ret = voice_->VoiceSetParameters(kvpairs);
@@ -1609,6 +1622,14 @@ int AudioDevice::SetParameters(const char *kvpairs) {
                 if (ret!=0) {
                     AHAL_ERR("pal set param failed for device connection, pal_device_ids:%d",
                              pal_device_ids[i]);
+                } else {
+                    if (pal_device_ids[i] == PAL_DEVICE_OUT_USB_HEADSET ||
+                        pal_device_ids[i] == PAL_DEVICE_OUT_WIRED_HEADSET ||
+                        pal_device_ids[i] == PAL_DEVICE_OUT_WIRED_HEADPHONE) {
+                        crs_device.clear();
+                        crs_device.insert(device);
+                        voice_->RouteStream(crs_device);
+                    }
                 }
             }
             AHAL_INFO("pal set param success  for device connection");
@@ -1806,6 +1827,17 @@ int AudioDevice::SetParameters(const char *kvpairs) {
                         sizeof(pal_param_device_connection_t));
                 if (ret!=0) {
                     AHAL_ERR("pal set param failed for device disconnect");
+                } else {
+                    if (pal_device_ids[i] == PAL_DEVICE_OUT_USB_HEADSET ||
+                        pal_device_ids[i] == PAL_DEVICE_OUT_WIRED_HEADSET ||
+                        pal_device_ids[i] == PAL_DEVICE_OUT_WIRED_HEADPHONE) {
+                        crs_device.clear();
+                        if (voice_->voice_.crsCall || voice_->voice_.crsVsid)
+                            crs_device.insert(AUDIO_DEVICE_OUT_SPEAKER);
+                        else
+                            crs_device.insert(AUDIO_DEVICE_OUT_EARPIECE);
+                        voice_->RouteStream(crs_device);
+                    }
                 }
                 AHAL_INFO("pal set param sucess for device disconnect");
             }
@@ -1886,6 +1918,12 @@ int AudioDevice::SetParameters(const char *kvpairs) {
         AHAL_INFO("BTSCO on = %d", param_bt_sco.bt_sco_on);
         ret = pal_set_param(PAL_PARAM_ID_BT_SCO, (void *)&param_bt_sco,
                             sizeof(pal_param_btsco_t));
+
+        if (param_bt_sco.bt_sco_on) {
+            crs_device.clear();
+            crs_device.insert(AUDIO_DEVICE_OUT_BLUETOOTH_SCO_HEADSET);
+            voice_->RouteStream(crs_device);
+        }
     }
 
     ret = str_parms_get_str(parms, AUDIO_PARAMETER_KEY_BT_SCO_WB, value, sizeof(value));
@@ -2110,6 +2148,7 @@ int AudioDevice::SetVoiceVolume(float volume) {
 
 char* AudioDevice::GetParameters(const char *keys) {
     int32_t ret;
+    int32_t val = 0;
     char *str;
     char value[256]={0};
     size_t size = 0;
@@ -2129,26 +2168,54 @@ char* AudioDevice::GetParameters(const char *keys) {
 
     AHAL_VERBOSE("enter");
 
+    ret = str_parms_get_str(query, "offloadVariableRateSupported",
+                            value, sizeof(value));
+    if (ret >= 0) {
+        str_parms_add_int(reply, "offloadVariableRateSupported", mOffloadSpeedSupported);
+        AHAL_INFO("offloadVariableRateSupported = %d", mOffloadSpeedSupported);
+    }
+
     ret = str_parms_get_str(query, AUDIO_PARAMETER_A2DP_RECONFIG_SUPPORTED,
                             value, sizeof(value));
     if (ret >= 0) {
-        pal_param_bta2dp_t *param_bt_a2dp;
-        int32_t val = 0;
+        pal_param_bta2dp_t *param_bt_a2dp_ptr, param_bt_a2dp;
+        param_bt_a2dp_ptr = &param_bt_a2dp;
 
+        param_bt_a2dp_ptr->dev_id = PAL_DEVICE_OUT_BLUETOOTH_A2DP;
         ret = pal_get_param(PAL_PARAM_ID_BT_A2DP_RECONFIG_SUPPORTED,
-                            (void **)&param_bt_a2dp, &size, nullptr);
+                            (void **)&param_bt_a2dp_ptr, &size, nullptr);
         if (!ret) {
             if (size < sizeof(pal_param_bta2dp_t)) {
                 AHAL_ERR("size returned is smaller for BT_A2DP_RECONFIG_SUPPORTED");
                 goto exit;
             }
-            val = param_bt_a2dp->reconfig_supported;
+            val = param_bt_a2dp_ptr->reconfig_supported;
             str_parms_add_int(reply, AUDIO_PARAMETER_A2DP_RECONFIG_SUPPORTED, val);
             AHAL_VERBOSE("isReconfigA2dpSupported = %d", val);
         }
     }
 
+    ret = str_parms_get_str(query, "A2dpSuspended", value, sizeof(value));
+    if (ret >= 0) {
+        pal_param_bta2dp_t *param_bt_a2dp_ptr, param_bt_a2dp;
+        param_bt_a2dp_ptr = &param_bt_a2dp;
+
+        param_bt_a2dp_ptr->dev_id = PAL_DEVICE_OUT_BLUETOOTH_A2DP;
+        ret = pal_get_param(PAL_PARAM_ID_BT_A2DP_SUSPENDED,
+                      (void **)&param_bt_a2dp_ptr, &size, nullptr);
+        if (!ret) {
+            if (size < sizeof(pal_param_bta2dp_t)) {
+                AHAL_ERR("size returned is smaller for BT_A2DP_SUSPENDED");
+                goto exit;
+            }
+            val = param_bt_a2dp_ptr->a2dp_suspended;
+            str_parms_add_int(reply, "A2dpSuspended", val);
+            AHAL_VERBOSE("A2dpSuspended = %d", val);
+        }
+    }
+
     ret = str_parms_get_str(query, "get_ftm_param", value, sizeof(value));
+
     if (ret >= 0) {
         char ftm_value[255];
         ret = pal_get_param(PAL_PARAM_ID_SP_MODE, (void **)&ftm_value, &size, nullptr);

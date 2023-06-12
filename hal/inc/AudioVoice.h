@@ -86,6 +86,7 @@ public:
             bool slow_talk;
             bool hd_voice;
             struct pal_volume_data *pal_vol_data;
+            struct pal_volume_data *pal_vol_crs_data;
             pal_device_mute_t device_mute;
             bool hac;
     };
@@ -95,11 +96,13 @@ public:
             bool crsCall;
             uint32_t crsVsid;
             float crsVol;
+            bool crsLoopback;
     };
     voice_t voice_;
     audio_mode_t mode_;
     std::shared_ptr<StreamOutPrimary> stream_out_primary_;
     struct pal_volume_data *pal_vol_;
+    struct pal_volume_data *pal_crs_vol_;
     int VoiceSetParameters(const char *kvpairs);
     void VoiceGetParameters(struct str_parms *query, struct str_parms *reply);
     int RouteStream(const std::set<audio_devices_t>&);

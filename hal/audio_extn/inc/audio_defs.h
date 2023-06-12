@@ -81,6 +81,8 @@
 
 #define AUDIO_OFFLOAD_CODEC_VORBIS_BITSTREAM_FMT "music_offload_vorbis_bitstream_fmt"
 
+#define AUDIO_OFFLOAD_CODEC_OPUS_BITSTREAM_FORMAT "music_offload_opus_bitstream_format"
+#define AUDIO_OFFLOAD_CODEC_OPUS_PAYLOAD_TYPE "music_offload_opus_payload_type"
 #define AUDIO_OFFLOAD_CODEC_OPUS_VERSION "music_offload_opus_version"
 #define AUDIO_OFFLOAD_CODEC_OPUS_NUM_CHANNELS "music_offload_opus_num_channels"
 #define AUDIO_OFFLOAD_CODEC_OPUS_PRE_SKIP "music_offload_opus_pre_skip"

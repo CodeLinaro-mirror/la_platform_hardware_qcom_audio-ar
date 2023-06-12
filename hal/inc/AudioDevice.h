@@ -116,9 +116,7 @@ class AudioPatch{
             PATCH_NONE = -1,
             PATCH_PLAYBACK,
             PATCH_CAPTURE,
-            PATCH_DEVICE_LOOPBACK,
-            PATCH_DEVICE_CRS,
-            PATCH_END_CRS
+            PATCH_DEVICE_LOOPBACK
         };
         AudioPatch() = default;
         AudioPatch(PatchType patch_type,
@@ -172,6 +170,7 @@ public:
     bool mute_;
     int GetMicMute(bool *state);
     int SetParameters(const char *kvpairs);
+    bool getCrsConcurrentState();
     char* GetParameters(const char *keys);
     int SetMode(const audio_mode_t mode);
     int SetVoiceVolume(float volume);
@@ -207,6 +206,7 @@ public:
     bool hac_voip = false;
     bool usb_input_dev_enabled = false;
     bool usb_out_headset = false;
+    bool mOffloadSpeedSupported = false;
     static bool mic_characteristics_available;
     bool icmd_playback = false;
     static microphone_characteristics_t microphones;
@@ -229,6 +229,7 @@ public:
     static void xml_end_tag(void *userdata, const XML_Char *tag_name);
     static void xml_char_data_handler(void *userdata, const XML_Char *s, int len);
     static int parse_xml();
+    bool isOffloadSpeedSupported() { return mOffloadSpeedSupported;}
 protected:
     AudioDevice() {}
     std::shared_ptr<AudioVoice> VoiceInit();

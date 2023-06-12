@@ -6,9 +6,9 @@
     <printtime name="print" enable = "false">
     </printtime>
     <queues>
-        <queue name="PAL_STATE_Q" enable = "true" outputFile="/data/vendor/audio/pal_state_queue.bin" size = '40000'>
+        <queue name="PAL_STATE_Q" enable = "true" outputFile="/data/vendor/audio/memlog/pal_state_queue.bin" size = '40000'>
         </queue>
-        <queue name="KPI_Q" enable = "true" outputFile="/data/vendor/audio/kpi_queue.bin" size = '10000'>
+        <queue name="KPI_Q" enable = "true" outputFile="/data/vendor/audio/memlog/kpi_queue.bin" size = '10000'>
         </queue>
     </queues>
 </mem_logger>

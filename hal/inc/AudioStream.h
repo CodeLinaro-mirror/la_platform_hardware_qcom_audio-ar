@@ -485,6 +485,7 @@ public:
     bool GetSupportedConfig(bool isOutStream,
                             struct str_parms *query, struct str_parms *reply);
     virtual int RouteStream(const std::set<audio_devices_t>&, bool force_device_switch = false) = 0;
+    bool isStarted() { return stream_started_; };
 protected:
     struct pal_stream_attributes streamAttributes_;
     pal_stream_handle_t*      pal_stream_handle_;
@@ -494,6 +495,7 @@ protected:
     char                      address_[AUDIO_DEVICE_MAX_ADDRESS_LEN];
     bool                      stream_started_ = false;
     bool                      stream_paused_ = false;
+    bool                      stream_flushed_ = false;
     int usecase_;
     struct pal_volume_data *volume_; /* used to cache volume */
     std::map <audio_devices_t, pal_device_id_t> mAndroidDeviceMap;
@@ -512,6 +514,18 @@ private:
     std::set<audio_devices_t> mAndroidOutDevices;
     bool mInitialized;
 
+    // [offload playspeed
+    bool isOffloadUsecase() { return GetUseCase() == USECASE_AUDIO_PLAYBACK_OFFLOAD; }
+    bool isOffloadSpeedSupported();
+
+    bool isValidPlaybackRate(const audio_playback_rate_t *playbackRate);
+    bool isValidStretchMode(audio_timestretch_stretch_mode_t stretchMode);
+    bool isValidFallbackMode(audio_timestretch_fallback_mode_t fallbackMode);
+
+    int setPlaybackRateToPal(const audio_playback_rate_t *playbackRate);
+
+    audio_playback_rate_t mPlaybackRate = AUDIO_PLAYBACK_RATE_INITIALIZER;
+    // offload Playspeed]
 public:
     StreamOutPrimary(audio_io_handle_t handle,
                      const std::set<audio_devices_t>& devices,
@@ -562,10 +576,16 @@ public:
     std::vector<playback_track_metadata_t> tracks;
     int SetAggregateSourceMetadata(bool voice_active);
     static std::mutex sourceMetadata_mutex_;
+
+    // [offload playback speed
+    int getPlaybackRateParameters(audio_playback_rate_t *playbackRate);
+    int setPlaybackRateParameters(const audio_playback_rate_t *playbackRate);
+    // offload playback speed]
 protected:
     struct timespec writeAt;
     int get_compressed_buffer_size();
     int get_pcm_buffer_size();
+    int is_direct();
     audio_format_t halInputFormat = AUDIO_FORMAT_DEFAULT;
     audio_format_t halOutputFormat = AUDIO_FORMAT_DEFAULT;
     uint32_t convertBufSize;
@@ -593,6 +613,7 @@ protected:
 
     int FillHalFnPtrs();
     friend class AudioDevice;
+    struct timespec ts_first_write = {0, 0};
 };
 
 class StreamInPrimary : public StreamPrimary{

@@ -484,8 +484,8 @@ vendor.audio.feature.wsa.enable=false \
 vendor.audio.feature.audiozoom.enable=false \
 vendor.audio.feature.snd_mon.enable=true \
 vendor.audio.feature.dmabuf.cma.memory.enable=false \
-vendor.audio.hdr.record.enable=false
-
+vendor.audio.hdr.record.enable=false \
+vendor.audio.offload.playspeed=true
 
 PRODUCT_PACKAGES_ENG += \
     VoicePrintTest \
