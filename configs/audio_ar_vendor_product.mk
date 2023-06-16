@@ -1,5 +1,5 @@
 # MM_AUDIO_AR
-ifneq (,$(filter $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_gvmq msmnile_au))
+ifeq ($(TARGET_GVMGH_SPECIFIC), false)
 MM_AUDIO_AR := acdb_cal.acdb
 
 MM_AUDIO_AR += agmplay
@@ -23,7 +23,8 @@ MM_AUDIO_AR += lib_default_set_param_plugin_controls
 MM_AUDIO_AR += libqtigefar
 MM_AUDIO_AR += libicc_pal
 
-ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_au)
+ifeq ($(ENABLE_HYP), false)
+ifeq ($(TARGET_GVMGH_SPECIFIC), false)
 MM_AUDIO_AR += workspaceFileXml.qwsp
 MM_AUDIO_AR += acdb_cal.acdbdelta
 MM_AUDIO_AR += capi_avc
@@ -33,6 +34,21 @@ MM_AUDIO_AR += capi_sumx
 MM_AUDIO_AR += capi_fnb
 MM_AUDIO_AR += capi_load
 MM_AUDIO_AR += capi_gpio
+MM_AUDIO_AR += capi_irq_comm
+ifneq ( ,$(filter T Tiramisu 13, $(PLATFORM_VERSION)))
+MM_AUDIO_AR += libarpowerpolicy
+endif
+endif
+MM_AUDIO_AR += libams
+MM_AUDIO_AR += libamscore
+MM_AUDIO_AR += libamsclient
+MM_AUDIO_AR += libamsosal
+MM_AUDIO_AR += vendor.qti.hardware.AMSIPC@1.0
+MM_AUDIO_AR += vendor.qti.hardware.AMSIPC@1.0-impl
+MM_AUDIO_AR += vendor.qti.hardware.AMSIPC@1.0-service
+MM_AUDIO_AR += init.qti.AMSIPC.sh
+MM_AUDIO_AR += ams_test
+MM_AUDIO_AR += libar-gpr-ams
 endif
 
 MM_AUDIO_AR += sound_trigger.primary.$(TARGET_BOARD_PLATFORM).ar
@@ -49,5 +65,18 @@ ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_gvmq)
 AUDIO_FRAMEWORK_AUDIOREACH := true
 endif
 # Audio configuration file
+ifeq ($(call is-board-platform-in-list, gen4), true)
+-include $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/gen4_au.mk
+else
 -include $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/msmnile_au.mk
+endif
+
+ifeq ($(ENABLE_HYP), false)
+ifeq ($(TARGET_BOARD_AUTO),true)
+ifeq ($(TARGET_USES_RRO), true)
+PRODUCT_PACKAGES += CarServiceOverlayVendor \
+                    CarFrameworksOverlayVendor
+endif
+endif
+endif
 endif

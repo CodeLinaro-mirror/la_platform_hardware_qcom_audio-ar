@@ -101,7 +101,7 @@ static int32_t icc_set_volume(uint32_t value)
 
     if(!iccmod.is_icc_running) {
         AHAL_DBG("%s: ICC not active, ignoring icc_set_volume call", __func__);
-        return -EIO;
+        goto exit;
     }
 
     switch(value)
@@ -189,6 +189,7 @@ static int32_t icc_set_volume(uint32_t value)
 
     free(pal_volume);
 
+exit:
     return ret;
 }
 
@@ -293,8 +294,7 @@ int icc_set_parameters(std::shared_ptr<AudioDevice> adev , struct str_parms *par
     char value[MAX_ICC_UI_BUFFER] = {0};
     uint32_t vol = 0;
 
-    ret = str_parms_get_str(parms, AUDIO_PARAMETER_ICC_ENABLE, value, sizeof(value));
-    if (ret >= 0) {
+    if (str_parms_get_str(parms, AUDIO_PARAMETER_ICC_ENABLE, value, sizeof(value)) >= 0) {
         if (!strncmp(value, "true", sizeof(value)) && !iccmod.is_icc_running) {
             ret = icc_start(adev, parms);
         }
@@ -313,8 +313,7 @@ int icc_set_parameters(std::shared_ptr<AudioDevice> adev , struct str_parms *par
 
     memset(value, 0, sizeof(value));
 
-    ret = str_parms_get_str(parms, AUDIO_PARAMETER_KEY_ICC_VOLUME, value, sizeof(value));
-    if (ret >= 0) {
+    if (str_parms_get_str(parms, AUDIO_PARAMETER_KEY_ICC_VOLUME, value, sizeof(value)) >= 0) {
 
         AHAL_DBG("%s: Param: set ICC volume", __func__);
 
