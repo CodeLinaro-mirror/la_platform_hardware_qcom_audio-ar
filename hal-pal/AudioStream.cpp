@@ -669,12 +669,6 @@ static int out_get_render_position(const struct audio_stream_out *stream,
     uint64_t frames = 0;
 
     if (adevice) {
-        if (adevice->is_arpowerpolicy_enabled) {
-            if (POWER_POLICY_STATUS_OFFLINE == adevice->out_power_policy) {
-                AHAL_INFO("adevice->output_power offline, try again %s", __func__);
-                return -EINVAL;
-            }
-        }
         astream_out = adevice->OutGetStream((audio_stream_t*)stream);
     } else {
         AHAL_ERR("unable to get audio device");
@@ -683,6 +677,12 @@ static int out_get_render_position(const struct audio_stream_out *stream,
     if (astream_out) {
         switch (astream_out->GetPalStreamType(astream_out->flags_, astream_out->address_)) {
         case PAL_STREAM_COMPRESSED:
+           if (adevice->is_arpowerpolicy_enabled) {
+               if (POWER_POLICY_STATUS_OFFLINE == adevice->out_power_policy) {
+                   AHAL_INFO("adevice->output_power offline, try again %s", __func__);
+                   return -EINVAL;
+               }
+           }
            ret = astream_out->GetFrames(&frames);
            if (ret != 0) {
               AHAL_ERR("Get DSP Frames failed %d", ret);
