@@ -126,6 +126,10 @@ static int hfp_ag_set_mic_volume(float value)
 
     pal_volume = (struct pal_volume_data *)malloc(sizeof(struct pal_volume_data)
             +sizeof(struct pal_channel_vol_kv));
+
+    if (!pal_volume)
+       return -ENOMEM;
+
     pal_volume->no_of_volpair = 1;
     pal_volume->volume_pair[0].channel_mask = 0x03;
     pal_volume->volume_pair[0].vol = value;
