@@ -156,6 +156,7 @@ endif
 ifneq (,$(filter $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_gvmq msmnile_au))
 PRODUCT_COPY_FILES += \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/modules.audio.ar.blocklist:$(TARGET_COPY_OUT_VENDOR_DLKM)/lib/modules/modules.audio.ar.blocklist \
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/modules.audio.ar_vio.blocklist:$(TARGET_COPY_OUT_VENDOR_DLKM)/lib/modules/modules.audio.ar_vio.blocklist \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/modules.audio.legacy.blocklist:$(TARGET_COPY_OUT_VENDOR_DLKM)/lib/modules/modules.audio.legacy.blocklist
 endif
 
