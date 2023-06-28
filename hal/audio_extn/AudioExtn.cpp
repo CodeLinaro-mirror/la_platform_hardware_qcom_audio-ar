@@ -1100,7 +1100,7 @@ void AudioExtn::audio_extn_perf_lock_acquire(int *handle, int duration,
          */
         *handle = perf_lock_acq(*handle, duration, perf_lock_opts, size);
         if (*handle <= 0)
-            AHAL_ERR("Failed to acquire perf lock, err: %d\n", *handle);
+            AHAL_INFO("Failed to acquire perf lock, err: %d\n", *handle);
     }
 }
 
@@ -1111,7 +1111,7 @@ void AudioExtn::audio_extn_perf_lock_release(int *handle)
             perf_lock_rel(*handle);
             *handle = 0;
         } else
-            AHAL_ERR("Perf lock release error");
+            AHAL_INFO("Perf lock release error");
     }
 }
 
