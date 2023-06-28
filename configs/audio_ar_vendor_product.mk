@@ -49,6 +49,7 @@ MM_AUDIO_AR += vendor.qti.hardware.AMSIPC@1.0-service
 MM_AUDIO_AR += init.qti.AMSIPC.sh
 MM_AUDIO_AR += ams_test
 MM_AUDIO_AR += libar-gpr-ams
+MM_AUDIO_AR += ams_core.cfg
 endif
 
 MM_AUDIO_AR += sound_trigger.primary.$(TARGET_BOARD_PLATFORM).ar
