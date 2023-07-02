@@ -10,9 +10,6 @@ endif
 ifeq ($(ENABLE_HYP), false)
 ifeq ($(TARGET_GVMGH_SPECIFIC), false)
     TARGET_USES_ION_CMA_MEMORY := true
-ifneq ( ,$(filter T Tiramisu 13, $(PLATFORM_VERSION)))
-AUDIO_FEATURE_ENABLED_POWER_POLICY := true
-endif
 endif
 endif
 
@@ -116,17 +113,17 @@ DEVICE_PACKAGE_OVERLAYS += vendor/qcom/opensource/audio-hal-ar/primary-hal/confi
 
 # Configuration files shared between msmnile_gvmgh and others
 PRODUCT_COPY_FILES += \
-    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/card-defs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/card-defs.xml \
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/card-defs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/card-defs.xml \
     vendor/qcom/opensource/agm/plugins/tinyalsa/test/backend_conf.xml:$(TARGET_COPY_OUT_VENDOR)/etc/backend_conf.xml
 
 # Configuration files for msmnile_gvmq only
 ifeq ($(ENABLE_HYP), true)
 ifeq ($(TARGET_GVMGH_SPECIFIC), false)
 PRODUCT_COPY_FILES += \
-    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/mixer_paths_gvmauto8295_adp_star.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_gvmauto8295_adp_star.xml \
-    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/mixer_paths_gvmauto8295_adp_star.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_gvmauto8255_adp_star.xml \
-    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/mixer_paths_gvmauto_8155.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_gvmauto_8155.xml \
-    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/mixer_paths_gvmauto_6155.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_gvmauto_6155.xml
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/mixer_paths_gvmauto8295_adp_star.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_gvmauto8295_adp_star.xml \
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/mixer_paths_gvmauto8295_adp_star.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_gvmauto8255_adp_star.xml \
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/mixer_paths_gvmauto_8155.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_gvmauto_8155.xml \
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/mixer_paths_gvmauto_6155.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_gvmauto_6155.xml
 
 # Configuration files for msmnile_gvmq AudioReach value added SI
 PRODUCT_COPY_FILES += \
@@ -143,32 +140,32 @@ endif
 ifeq ($(ENABLE_HYP), false)
 ifeq ($(TARGET_GVMGH_SPECIFIC), false)
 PRODUCT_COPY_FILES += \
-    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/mixer_paths_sa8155_adp_star.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_sa8155_adp_star.xml
-endif
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/mixer_paths_sa8255_adp_star.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_sa8255_adp_star.xml
 endif
 
-ifneq (,$(filter $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_gvmq msmnile_au))
+ifneq (,$(filter $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_gvmq msmnile_au gen4_au))
 PRODUCT_COPY_FILES += \
-    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/modules.audio.ar.blocklist:$(TARGET_COPY_OUT_VENDOR_DLKM)/lib/modules/modules.audio.ar.blocklist \
-    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/modules.audio.legacy.blocklist:$(TARGET_COPY_OUT_VENDOR_DLKM)/lib/modules/modules.audio.legacy.blocklist
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/modules.audio.ar.blocklist:$(TARGET_COPY_OUT_VENDOR_DLKM)/lib/modules/modules.audio.ar.blocklist \
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/modules.audio.legacy.blocklist:$(TARGET_COPY_OUT_VENDOR_DLKM)/lib/modules/modules.audio.legacy.blocklist
+endif
 endif
 
 # Configuration files for msmnile_gvmgh only
 ifeq ($(PRODUCT_NAME), msmnile_gvmgh)
 PRODUCT_COPY_FILES += \
-    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/audio_effects.conf:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects.conf \
-    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/audio_effects.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects.xml \
-    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/mixer_paths_gvmauto_8155.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_gvmauto_8155.xml \
-    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/mixer_paths_gvmauto_6155.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_gvmauto_6155.xml \
-    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/mixer_paths_custom.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_custom.xml \
-    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/sound_trigger_mixer_paths.xml:$(TARGET_COPY_OUT_VENDOR)/etc/sound_trigger_mixer_paths.xml \
-    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/audio_configs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_configs.xml \
-    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/audio_configs_stock.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_configs_stock.xml \
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_effects.conf:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects.conf \
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_effects.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects.xml \
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/mixer_paths_gvmauto_8155.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_gvmauto_8155.xml \
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/mixer_paths_gvmauto_6155.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_gvmauto_6155.xml \
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/mixer_paths_custom.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_custom.xml \
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/sound_trigger_mixer_paths.xml:$(TARGET_COPY_OUT_VENDOR)/etc/sound_trigger_mixer_paths.xml \
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_configs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_configs.xml \
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_configs_stock.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_configs_stock.xml \
     frameworks/native/data/etc/android.hardware.audio.low_latency.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.low_latency.xml
 
 PRODUCT_COPY_FILES += \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/audio_policy_configuration.xml \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/microphone_characteristics.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/audio_policy_configuration.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/microphone_characteristics.xml \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_configuration.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/a2dp_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/a2dp_audio_policy_configuration.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/audio_policy_volumes.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_volumes.xml \
@@ -181,15 +178,9 @@ PRODUCT_COPY_FILES += \
 endif # Configuration files for msmnile_gvmgh only
 
 # cma memory for MDF
-ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_au)
+ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_au gen4_au)
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.feature.dmabuf.cma.memory.enable=true
-endif
-
-ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_au)
-PRODUCT_PROPERTY_OVERRIDES += \
-vendor.audio.feature.agm.enable=none
-vendor.audio.feature.hostless.enable=none
 endif
 
 #Audio HAL version
@@ -470,12 +461,6 @@ PRODUCT_ODM_PROPERTIES += \
 vendor.audio.feature.snd_mon.enable=false
 endif
 endif
-ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_au)
-ifneq ( ,$(filter T Tiramisu 13, $(PLATFORM_VERSION)))
-PRODUCT_ODM_PROPERTIES += \
-vendor.audio.feature.arpowerpolicy.enable=true
-endif
-endif
 else
 # Non-Generic ODM varient related
 PRODUCT_ODM_PROPERTIES += \
@@ -531,12 +516,6 @@ PRODUCT_ODM_PROPERTIES += \
 vendor.audio.feature.snd_mon.enable=false
 endif
 endif
-ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_au)
-ifneq ( ,$(filter T Tiramisu 13, $(PLATFORM_VERSION)))
-PRODUCT_ODM_PROPERTIES += \
-vendor.audio.feature.arpowerpolicy.enable=true
-endif
-endif
 endif
 
 # for HIDL related packages
@@ -590,7 +569,7 @@ endif
 # for AudioReach HAL
 ifeq ($(TARGET_GVMGH_SPECIFIC), false)
 PRODUCT_PACKAGES += \
-    audio.primary.msmnile.ar
+    audio.primary.gen4.ar
 endif
 
 ifeq ($(ENABLE_HYP),true)
