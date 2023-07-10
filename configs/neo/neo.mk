@@ -173,6 +173,7 @@ PRODUCT_PACKAGES += fai__2.0.0_0.1__3.0.0_0.0__eai_1.36_enpu2.pmd
 PRODUCT_PACKAGES += fai__2.7.2_0.0__3.0.0_0.0__eai_1.36_enpu2.pmd
 PRODUCT_PACKAGES += fai__2.7.20_0.0__3.0.0_0.0__eai_1.36_enpu2.pmd
 PRODUCT_PACKAGES += fai__2.7.7_0.0__3.0.0_0.0__3.1.1_0.0__3.2.0_0.1__eai_2.21_enpuv3.pmd
+PRODUCT_PACKAGES += fai__4.6.1_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_2.10_enpuv3.pmd
 PRODUCT_PACKAGES += fai__3.0.0_0.0__eai_1.36_enpu2.pmd
 PRODUCT_PACKAGES += libfmpal
 PRODUCT_PACKAGES += libbtsinkpal
