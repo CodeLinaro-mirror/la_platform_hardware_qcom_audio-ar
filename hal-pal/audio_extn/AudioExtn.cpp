@@ -969,6 +969,10 @@ int AudioExtn::autohal_feature_init(bool is_feature_enabled)
             goto feature_disabled;
         }
 
+        auto_hal_init_config_t init_config;
+        init_config.fp_set_mute_config_for_address = extn_set_mute_config_for_address;
+        autohal_init(init_config);
+
         AHAL_DBG(":: ---- Feature AUTO HAL is Enabled ----");
 
         return 0;

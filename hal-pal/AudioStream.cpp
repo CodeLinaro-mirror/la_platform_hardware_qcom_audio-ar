@@ -2772,6 +2772,11 @@ ssize_t StreamOutPrimary::configurePalOutputStream() {
             ret = StartOffloadEffects(handle_, pal_stream_handle_);
             ret = StartOffloadVisualizer(handle_, pal_stream_handle_);
         }
+
+        if (muted_) {
+            AHAL_DBG("The stream is muted");
+            pal_stream_set_mute(pal_stream_handle_, true);
+        }
         ATRACE_END();
     }
     if ((streamAttributes_.type == PAL_STREAM_COMPRESSED) && sendGaplessMetadata) {
@@ -2795,6 +2800,7 @@ ssize_t StreamOutPrimary::configurePalOutputStream() {
         }
         sendGaplessMetadata = false;
     }
+
     return 0;
 }
 
@@ -2934,6 +2940,22 @@ int StreamOutPrimary::StopOffloadVisualizer(
     return ret;
 }
 
+void StreamOutPrimary::SetOutputMute(bool muted)
+{
+    int ret = 0;
+    AHAL_DBG("Enter mute %d for Output session", muted);
+    stream_mutex_.lock();
+    this->muted_ = muted;
+    if (pal_stream_handle_) {
+        AHAL_DBG("Enter if mute %d for input session", muted);
+        ret = pal_stream_set_mute(pal_stream_handle_, muted);
+        if (ret)
+            AHAL_ERR("Error applying mute %d for input session", muted);
+    }
+    stream_mutex_.unlock();
+    AHAL_DBG("Exit");
+}
+
 StreamOutPrimary::StreamOutPrimary(
                         audio_io_handle_t handle,
                         const std::set<audio_devices_t> &devices,
@@ -2946,7 +2968,8 @@ StreamOutPrimary::StreamOutPrimary(
                         visualizer_hal_stop_output visualizer_stop_output):
     StreamPrimary(handle, devices, config),
     mAndroidOutDevices(devices),
-    flags_(flags)
+    flags_(flags),
+    muted_(false)
 {
     stream_ = std::shared_ptr<audio_stream_out> (new audio_stream_out());
     std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
