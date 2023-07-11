@@ -122,6 +122,7 @@ typedef enum power_policy_status_t {
 
 extern "C" void extn_out_set_power_policy(uint8_t enable);
 extern "C" void extn_in_set_power_policy(uint8_t enable);
+extern "C" void extn_set_mute_config_for_address(bool muted, char* address);
 
 class AudioPatch{
     public:
@@ -245,6 +246,7 @@ public:
     static int parse_xml();
     void in_set_power_policy(uint8_t enable);
     void out_set_power_policy(uint8_t enable);
+    void set_mute_config_for_address(bool muted, char* address);
 protected:
     AudioDevice() {}
     std::shared_ptr<AudioVoice> VoiceInit();

@@ -555,6 +555,8 @@ protected:
     size_t hapticsBufSize;
 
     int FillHalFnPtrs();
+    void SetOutputMute(bool muted);
+    bool muted_;
     friend class AudioDevice;
 };
 

@@ -42,6 +42,8 @@
  extern "C" {
 #endif
 
+auto_hal_init_config_t auto_config_ = {0};
+
 #define MARKER_STRING_WIDTH 128
 
 #define AUDIO_PARAMETER_DEVICES_TO_MUTE "DevicesToMute"
@@ -60,27 +62,21 @@ static void auto_hal_set_mute_state(char* mute_bus_addr, int mute_state) {
     int ret = 0;
     char *ptr = NULL;
     char *saveptr = NULL;
-    pal_stream_bus_mute_t mute_param;
+    char address[AUDIO_DEVICE_MAX_ADDRESS_LEN] = {0};
 
     for (ptr = strtok_r(mute_bus_addr, ",", &saveptr);
          ptr != NULL; ptr = strtok_r(NULL, ",", &saveptr)) {
 
+        strlcpy(address, ptr, strlen(ptr) + 1);
+
         switch(mute_state) {
             case STATE_ON:
-                ALOGD("%s: Muting BUS device %s", __func__, ptr);
-                mute_param.mute = true;
-                strlcpy(mute_param.bus_addr, ptr, strlen(ptr) + 1);
-                ret = pal_set_param(PAL_PARAM_ID_STREAM_BUS_MUTE_CONFIG,
-                                    (void*)&mute_param,
-                                    sizeof(pal_stream_bus_mute_t));
+                ALOGD("%s: Muting BUS device %s", __func__, address);
+                auto_config_.fp_set_mute_config_for_address(true, address);
                 break;
             case STATE_OFF:
-                ALOGD("%s: Unmuting BUS device %s", __func__, ptr);
-                mute_param.mute = false;
-                strlcpy(mute_param.bus_addr, ptr, strlen(ptr) + 1);
-                ret = pal_set_param(PAL_PARAM_ID_STREAM_BUS_MUTE_CONFIG,
-                                    (void*)&mute_param,
-                                    sizeof(pal_stream_bus_mute_t));
+                ALOGD("%s: Unmuting BUS device %s", __func__, address);
+                auto_config_.fp_set_mute_config_for_address(false, address);
                 break;
         }
     }
@@ -117,8 +113,10 @@ static void auto_hal_set_duck_state(char* duck_bus_addr, int duck_state) {
     }
 }
 
-void autohal_init()
+void autohal_init(auto_hal_init_config_t init_config)
 {
+    auto_config_.fp_set_mute_config_for_address =
+                init_config.fp_set_mute_config_for_address;
     return;
 }
 
