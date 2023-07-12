@@ -2934,6 +2934,21 @@ void AudioDevice::out_set_power_policy(uint8_t enable)
     AHAL_DBG("%s: Exit", __func__);
 }
 
+void AudioDevice::set_mute_config_for_address(bool muted, char* address)
+{
+    AHAL_DBG("%s: Enter, muted %d address %s", __func__, muted, address);
+
+    out_list_mutex.lock();
+    for (int i = 0; i < stream_out_list_.size(); i++) {
+        if (!strcmp(address, stream_out_list_[i]->address_)) {
+            stream_out_list_[i]->SetOutputMute(muted);
+        }
+    }
+    out_list_mutex.unlock();
+
+    AHAL_DBG("%s: Exit", __func__);
+}
+
 void extn_out_set_power_policy(uint8_t enable)
 {
     AHAL_INFO("extn_out_set_power_policy = %d\n", enable);
@@ -2946,4 +2961,11 @@ void extn_in_set_power_policy(uint8_t enable)
     AHAL_INFO("extn_in_set_power_policy = %d\n", enable);
     std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
     return adevice->in_set_power_policy(enable);
+}
+
+void extn_set_mute_config_for_address(bool muted, char* address)
+{
+    AHAL_INFO("%s mute %d address %s\n", __func__, muted, address);
+    std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
+    return adevice->set_mute_config_for_address(muted, address);
 }
