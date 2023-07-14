@@ -59,12 +59,14 @@ extern "C" {
 
 #define AUDIO_PARAMETER_KEY_HFP_MIC_VOLUME "hfp_mic_volume"
 #define AUDIO_PARAMETER_HFP_ZONE        "hfp_zone"
+#define HFP_VOLUME_DB_LINEAR_STEP       (-3.0f)    //each volume level has a 3dB difference
+#define MAX_HFP_VOLUME_STEP             15
 
 struct hfp_module {
     bool is_hfp_running;
-    float hfp_volume;
+    uint32_t hfp_volume;
     int ucid;
-    float mic_volume;
+    uint32_t mic_volume;
     bool mic_mute;
     uint32_t sample_rate;
     pal_stream_handle_t *rx_stream_handle;
@@ -72,37 +74,34 @@ struct hfp_module {
 };
 
 #define PLAYBACK_VOLUME_MAX 0x2000
-#define CAPTURE_VOLUME_DEFAULT                (15.0)
 static struct hfp_module hfpmod = {
     .is_hfp_running = 0,
-    .hfp_volume = 0,
+    .hfp_volume = MAX_HFP_VOLUME_STEP,
     .ucid = USECASE_AUDIO_HFP_SCO,
-    .mic_volume = CAPTURE_VOLUME_DEFAULT,
+    .mic_volume = MAX_HFP_VOLUME_STEP,
     .mic_mute = 0,
     .sample_rate = 16000,
 };
 
-static int32_t hfp_set_volume(float value)
+static int32_t hfp_set_volume(uint32_t volume_step)
 {
     int32_t ret = 0;
+    float volume_db = 1.0;
     struct pal_volume_data *pal_volume = NULL;
 
-    AHAL_VERBOSE("entry");
-    AHAL_DBG("(%f)\n", value);
-
-    hfpmod.hfp_volume = value;
-
-    if (value < 0.0) {
-        ALOGW("(%f) Under 0.0, assuming 0.0\n", value);
-        value = 0.0;
+    if (volume_step > MAX_HFP_VOLUME_STEP) {
+        AHAL_ERR("(%d) Over 15, assuming 1.0", volume_step);
+        volume_db = 1.0;
+    } else {
+        volume_db = (float)pow(10.0, (float)((MAX_HFP_VOLUME_STEP - volume_step) * HFP_VOLUME_DB_LINEAR_STEP) / 20);
     }
+
+    AHAL_DBG("hfp_set_volume volume_step: %d volume_db: %f", volume_step, volume_db);
 
     if (!hfpmod.is_hfp_running) {
         AHAL_ERR("HFP not active, ignoring set_hfp_volume call");
         goto exit;
     }
-
-    AHAL_DBG("Setting HFP volume to %f \n", value);
 
     pal_volume = (struct pal_volume_data *)malloc(sizeof(struct pal_volume_data)
             +sizeof(struct pal_channel_vol_kv));
@@ -112,10 +111,11 @@ static int32_t hfp_set_volume(float value)
 
     pal_volume->no_of_volpair = 1;
     pal_volume->volume_pair[0].channel_mask = 0x03;
-    pal_volume->volume_pair[0].vol = value;
+    pal_volume->volume_pair[0].vol = volume_db;
     ret = pal_stream_set_volume(hfpmod.rx_stream_handle, pal_volume);
-    if (ret)
-        AHAL_ERR("set volume failed: %d \n", ret);
+    if (ret) {
+        AHAL_ERR("set volume failed: %d", ret);
+    }
 
     free(pal_volume);
 exit:
@@ -127,43 +127,39 @@ exit:
  * *
  * * This interface is used for mic volume control, set mic volume as value(range 0 ~ 15).
  * */
-static int hfp_set_mic_volume(float value)
+static int hfp_set_mic_volume(uint32_t volume_step)
 {
-    int volume, ret = 0;
+    int ret = 0;
+    float volume_db = 1.0;
     struct pal_volume_data *pal_volume = NULL;
 
-    AHAL_DBG("enter, value=%f", value);
+    if (volume_step > MAX_HFP_VOLUME_STEP) {
+        AHAL_ERR("(%d) over 15, assuming 1.0", volume_step);
+        volume_db = 1.0;
+    } else {
+        volume_db = (float)pow(10.0, (float)((MAX_HFP_VOLUME_STEP - volume_step) * HFP_VOLUME_DB_LINEAR_STEP) / 20);
+    }
+
+    AHAL_DBG("hfp_set_mic_volume volume_step: %d volume_db: %f", volume_step, volume_db);
 
     if (!hfpmod.is_hfp_running) {
         AHAL_ERR("HFP not active, ignoring set_hfp_mic_volume call");
-        return -EIO;
+        goto exit;
     }
-
-    if (value < 0.0) {
-        ALOGW("(%f) Under 0.0, assuming 0.0\n", value);
-        value = 0.0;
-    } else if (value > CAPTURE_VOLUME_DEFAULT) {
-        value = CAPTURE_VOLUME_DEFAULT;
-        ALOGW("Volume brought within range (%f)\n", value);
-    }
-
-    //comment this line to gurantee volume of HFP sent to pal is 0 ~ 15
-    //TODO: volume range of streams in pal should be 0.0 ~ 1.0, will perfect the
-    //logic later
-    //value = value / CAPTURE_VOLUME_DEFAULT;
-
-    volume = (int)(value * PLAYBACK_VOLUME_MAX);
 
     pal_volume = (struct pal_volume_data *)malloc(sizeof(struct pal_volume_data)
             +sizeof(struct pal_channel_vol_kv));
     pal_volume->no_of_volpair = 1;
     pal_volume->volume_pair[0].channel_mask = 0x03;
-    pal_volume->volume_pair[0].vol = value;
-    if (pal_stream_set_volume(hfpmod.tx_stream_handle, pal_volume) < 0) {
-        AHAL_ERR("Couldn't set HFP Volume: [%d]", volume);
-        return -EINVAL;
+    pal_volume->volume_pair[0].vol = volume_db;
+    ret = pal_stream_set_volume(hfpmod.tx_stream_handle, pal_volume);
+    if (ret) {
+        AHAL_ERR("Couldn't set HFP Volume: [%f]", volume_db);
     }
 
+    free(pal_volume);
+exit:
+    AHAL_VERBOSE("exit");
     return ret;
 }
 
@@ -411,16 +407,16 @@ int hfp_set_mic_mute(bool state)
         return rc;
     }
 
-    rc = hfp_set_mic_volume((state == true) ? 0.0 : hfpmod.mic_volume);
+    rc = hfp_set_mic_volume((state == true) ? 0 : hfpmod.mic_volume);
     if (rc == 0)
         hfpmod.mic_mute = state;
-    AHAL_DBG("Setting mute state %d, rc %d\n", state, rc);
+    AHAL_DBG("Setting mute state %d, rc %d", state, rc);
     return rc;
 }
 
 int hfp_set_mic_mute2(std::shared_ptr<AudioDevice> adev __unused, bool state __unused)
 {
-    AHAL_DBG("Unsupported\n");
+    AHAL_DBG("Unsupported");
     return 0;
 }
 
@@ -428,7 +424,7 @@ int hfp_set_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *parm
 {
     int status = 0;
     char value[32]={0};
-    float vol;
+    uint32_t volume_step;
     int val;
     int rate;
     int zone_id;
@@ -459,30 +455,36 @@ int hfp_set_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *parm
 
     memset(value, 0, sizeof(value));
     if (str_parms_get_str(parms, AUDIO_PARAMETER_KEY_HFP_VOLUME,value, sizeof(value)) >= 0) {
-        if (sscanf(value, "%f", &vol) != 1){
+        if (sscanf(value, "%d", &volume_step) != 1){
             AHAL_ERR("error in retrieving hfp volume");
             status = -EIO;
             goto exit;
         }
-        AHAL_DBG("set_hfp_volume usecase, Vol: [%f]", vol);
-        status= hfp_set_volume(vol);
+        AHAL_DBG("set_hfp_volume usecase, volume_step: [%d]", volume_step);
+        status= hfp_set_volume(volume_step);
         if (status) {
-            AHAL_ERR("set volume failed: %d \n", status);
+            AHAL_ERR("set volume failed: %d", status);
             goto exit;
+        } else {
+            hfpmod.hfp_volume = volume_step;
         }
     }
 
     memset(value, 0, sizeof(value));
     if (str_parms_get_str(parms, AUDIO_PARAMETER_KEY_HFP_MIC_VOLUME,value, sizeof(value)) >= 0) {
-        if (sscanf(value, "%f", &vol) != 1){
+        if (sscanf(value, "%d", &volume_step) != 1){
             AHAL_ERR("error in retrieving hfp mic volume");
             status = -EIO;
             goto exit;
         }
-        AHAL_DBG("set_hfp_mic_volume usecase, Vol: [%f]", vol);
-        status = hfp_set_mic_volume(vol);
-        if (status == 0)
-            hfpmod.mic_volume = vol;
+        AHAL_DBG("set_hfp_mic_volume usecase, volume_step: [%d]", volume_step);
+        status = hfp_set_mic_volume(volume_step);
+        if (status) {
+            AHAL_ERR("set mic volume failed: %d", status);
+            goto exit;
+        } else {
+            hfpmod.mic_volume = volume_step;
+        }
     }
 
     memset(value, 0, sizeof(value));

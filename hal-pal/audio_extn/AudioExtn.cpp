@@ -35,9 +35,11 @@
 #define LOG_TAG "AHAL: AudioExtn"
 #include <dlfcn.h>
 #include <unistd.h>
+#include <pthread.h>
 #include "AudioExtn.h"
 #include <cutils/properties.h>
 #include "AudioCommon.h"
+#include "AudioDevice.h"
 #define AUDIO_OUTPUT_BIT_WIDTH ((config_->offload_info.bit_width == 32) ? 24:config_->offload_info.bit_width)
 
 #ifdef PAL_HIDL_ENABLED
@@ -68,6 +70,7 @@ using android::OK;
 #define ICC_LIB_PATH LIBS"libicc_pal.so"
 
 #define BT_IPC_SOURCE_LIB_NAME LIBS"btaudio_offload_if.so"
+#define POWER_POLICY_LIB_PATH LIBS"libarpowerpolicy.so"
 
 static batt_listener_init_t batt_listener_init;
 static batt_listener_deinit_t batt_listener_deinit;
@@ -998,3 +1001,69 @@ void AudioExtn::audio_extn_place_marker(char const *name, bool isEnter)
 }
 
 // END: AUTO HAL ================================================================
+
+// START: Power Policy Client ======================================================================
+static void* power_policy_lib_handle = NULL;
+typedef int (*launch_power_policy_t) (power_policy_init_config_t);
+static launch_power_policy_t launch_power_policy;
+
+static void* power_policy_thread_func(void* arg __unused) {
+    if (launch_power_policy == NULL) {
+        AHAL_ERR("%s: Power Policy launcher is NULL", __func__);
+        goto exit;
+    }
+    AHAL_DBG("%s: Launching Power Policy Client", __func__);
+    power_policy_init_config_t init_config;
+    init_config.fp_in_set_power_policy = extn_in_set_power_policy;
+    init_config.fp_out_set_power_policy = extn_out_set_power_policy;
+    launch_power_policy(init_config);
+
+exit:
+    return NULL;
+}
+
+int AudioExtn::power_policy_feature_init(bool is_feature_enabled)
+{
+    pthread_t tid;
+    pthread_attr_t attr;
+
+    AHAL_DBG("%s: Called with feature %s", __func__,
+                  is_feature_enabled ? "Enabled" : "NOT Enabled");
+    if (is_feature_enabled) {
+        // dlopen lib
+        power_policy_lib_handle = dlopen(POWER_POLICY_LIB_PATH, RTLD_NOW);
+
+        if (!power_policy_lib_handle) {
+            AHAL_ERR("%s: dlopen failed", __func__);
+            goto feature_disabled;
+        }
+        if (!(launch_power_policy = (launch_power_policy_t)dlsym(
+                                    power_policy_lib_handle, "launchPowerPolicyClient")))
+        {
+            AHAL_ERR("%s: dlsym failed", __func__);
+            goto feature_disabled;
+        }
+
+        pthread_attr_init(&attr);
+        pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+        if (pthread_create(&tid, &attr, power_policy_thread_func, NULL))
+        {
+            AHAL_ERR("%s: Failed to create power policy thread", __func__);
+            goto feature_disabled;
+        }
+        AHAL_DBG("%s:: ---- Feature Power Policy Client is Enabled ----", __func__);
+        return 0;
+    }
+
+feature_disabled:
+    if (power_policy_lib_handle) {
+        dlclose(power_policy_lib_handle);
+        power_policy_lib_handle = NULL;
+    }
+
+    launch_power_policy = NULL;
+
+    AHAL_ERR(":: %s: ---- Feature Power Policy Client is disabled ----", __func__);
+    return -ENOSYS;
+}
+// END: Power Policy Client ======================================================================
