@@ -1,3 +1,10 @@
+AUDIO_USE_STUB_HAL := false
+ifeq ($(TARGET_USES_QMAA),true)
+ifeq ($(TARGET_USES_QMAA_OVERRIDE_AUDIO), false)
+AUDIO_USE_STUB_HAL := true
+endif
+endif
+
 # MM_AUDIO_AR
 ifeq ($(TARGET_GVMGH_SPECIFIC), false)
 MM_AUDIO_AR := acdb_cal.acdb
@@ -43,6 +50,7 @@ ifneq ( ,$(filter T Tiramisu 13, $(PLATFORM_VERSION)))
 MM_AUDIO_AR += libarpowerpolicy
 endif #ends Tiramisu
 endif #ends TARGET_GVMGH_SPECIFIC
+ifeq ($(AUDIO_USE_STUB_HAL),false)
 MM_AUDIO_AR += libams
 MM_AUDIO_AR += libamscore
 MM_AUDIO_AR += libamsclient
@@ -54,6 +62,7 @@ MM_AUDIO_AR += init.qti.AMSIPC.sh
 MM_AUDIO_AR += ams_test
 MM_AUDIO_AR += libar-gpr-ams
 MM_AUDIO_AR += ams_core.cfg
+endif #ends AUDIO_USE_STUB_HAL
 endif #ends ENABLE_HYP
 
 MM_AUDIO_AR += sound_trigger.primary.$(TARGET_BOARD_PLATFORM).ar
@@ -70,11 +79,16 @@ ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_gvmq)
 AUDIO_FRAMEWORK_AUDIOREACH := true
 endif #ends msmnile_gvmq
 # Audio configuration file
+ifeq ($(AUDIO_USE_STUB_HAL), true)
+TARGET_USES_AOSP_FOR_AUDIO := true
+-include $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/default.mk
+else
 ifeq ($(call is-board-platform-in-list, gen4), true)
 -include $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/gen4_au.mk
 else
 -include $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/msmnile_au.mk
 endif #ends gen4
+endif # AUDIO_USE_STUB_HAL
 
 ifeq ($(ENABLE_HYP), false)
 ifeq ($(TARGET_BOARD_AUTO),true)
