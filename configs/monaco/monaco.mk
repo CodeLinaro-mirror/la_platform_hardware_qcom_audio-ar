@@ -295,7 +295,9 @@ PRODUCT_COPY_FILES += \
 
 ifeq ($(AUDIO_FEATURE_ENABLED_MCS),true)
 PRODUCT_COPY_FILES += \
-    $(CONFIG_HAL_SRC_DIR)/mcs_defs_monaco_idp_slate.xml:$(CONFIG_SKU_OUT_DIR)/mcs_defs_monaco_idp_slate.xml
+    $(CONFIG_HAL_SRC_DIR)/mcs_defs_monaco_idp_slate.xml:$(CONFIG_SKU_OUT_DIR)/mcs_defs_monaco_idp_slate.xml \
+    $(CONFIG_HAL_SRC_DIR)/mcs_defs_monaco_idp.xml:$(CONFIG_SKU_OUT_DIR)/mcs_defs_monaco_idp.xml \
+    $(CONFIG_HAL_SRC_DIR)/mcs_defs_monaco_idp_wsa.xml:$(CONFIG_SKU_OUT_DIR)/mcs_defs_monaco_idp_wsa.xml
 endif
 
 #XML Audio configuration files
