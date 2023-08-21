@@ -24,6 +24,7 @@ LOCAL_VENDOR_MODULE := true
 LOCAL_ARM_MODE := arm
 
 LOCAL_VINTF_FRAGMENTS := ../configs/common/manifest_non_qmaa.xml
+LOCAL_VINTF_FRAGMENTS += ../configs/anorak/android.hardware.audio@7.0.xml
 
 ifeq ($(strip $(AUDIO_FEATURE_ENABLED_LSM_HIDL)),true)
 LOCAL_VINTF_FRAGMENTS += ../configs/common/manifest_non_qmaa_extn.xml
