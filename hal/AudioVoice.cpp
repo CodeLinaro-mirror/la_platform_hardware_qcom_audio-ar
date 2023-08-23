@@ -28,7 +28,7 @@
  *
  * Changes from Qualcomm Innovation Center are provided under the following license:
  *
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -1573,7 +1573,7 @@ AudioVoice::AudioVoice() {
         voice_.session[i].tty_mode = PAL_TTY_OFF;
         voice_.session[i].volume_boost = false;
         voice_.session[i].slow_talk = false;
-        voice_.session[i].pal_voice_handle = NULL;
+        voice_.session[i].pal_voice_loopback_handle = NULL;
         voice_.session[i].hd_voice = false;
         voice_.session[i].pal_vol_data = pal_vol_;
         voice_.session[i].pal_vol_crs_data = pal_crs_vol_;
@@ -1606,6 +1606,7 @@ AudioVoice::~AudioVoice() {
         voice_.session[i].volume_boost = false;
         voice_.session[i].slow_talk = false;
         voice_.session[i].pal_voice_handle = NULL;
+        voice_.session[i].pal_voice_loopback_handle = NULL;
         voice_.session[i].hd_voice = false;
         voice_.session[i].pal_vol_data = NULL;
         voice_.session[i].pal_vol_crs_data = NULL;
