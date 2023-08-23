@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2015-2017, 2019, 2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,6 +27,12 @@
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+/*
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ *
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
 
 #define LOG_TAG "volume_listener"
 //#define LOG_NDEBUG 0
@@ -44,7 +49,11 @@
 #include <cutils/properties.h>
 #include "PalDefs.h"
 
+#ifdef __LP64__
+#define PRIMARY_HAL_PATH XSTR(LIB64_AUDIO_HAL)
+#else
 #define PRIMARY_HAL_PATH XSTR(LIB_AUDIO_HAL)
+#endif
 #define XSTR(x) STR(x)
 #define STR(x) #x
 #define MAX_LIBRARY_PATH 100
@@ -53,14 +62,14 @@
 static void get_library_path(char *lib_path)
 {
     snprintf(lib_path, MAX_LIBRARY_PATH,
-             "/vendor/lib64/hw/audio.primary.%s.so",
+             LIB64_AUDIO_HAL,
              XSTR(PLATFORM_NAME));
 }
 #else
 static void get_library_path(char *lib_path)
 {
     snprintf(lib_path, MAX_LIBRARY_PATH,
-             "/vendor/lib/hw/audio.primary.%s.so",
+             LIB_AUDIO_HAL,
              XSTR(PLATFORM_NAME));
 }
 #endif
