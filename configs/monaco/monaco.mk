@@ -254,7 +254,7 @@ endif
 
 PRODUCT_PACKAGES += $(AUDIO_DLKM)
 
-DEVICE_SKU := monaco
+DEVICE_SKU := $(TARGET_PRODUCT)
 
 CONFIG_PAL_SRC_DIR := $(TOPDIR)$(BOARD_OPENSOURCE_DIR)/pal/configs/monaco
 CONFIG_HAL_SRC_DIR := $(TOPDIR)$(BOARD_OPENSOURCE_DIR)/audio-hal/primary-hal/configs/monaco
