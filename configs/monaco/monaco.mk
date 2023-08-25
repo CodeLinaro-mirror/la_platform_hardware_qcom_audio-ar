@@ -301,7 +301,7 @@ endif
 #XML Audio configuration files
 ifeq ($(TARGET_SUPPORTS_WEAR_ANDROID), true)
 PRODUCT_COPY_FILES += \
-    $(CONFIG_HAL_SRC_DIR)/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/audio_policy_configuration.xml
+    $(CONFIG_HAL_SRC_DIR)/audio_policy_configuration.xml:$(CONFIG_SKU_OUT_DIR)/audio_policy_configuration.xml
 endif
 ifeq ($(TARGET_SUPPORTS_WEAR_OS), true)
 PRODUCT_COPY_FILES += \
