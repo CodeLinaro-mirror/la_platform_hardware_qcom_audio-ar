@@ -11,3 +11,4 @@ blocklist snd_event_dlkm_legacy
 blocklist stub_dlkm_legacy
 blocklist machine_dlkm_legacy
 blocklist platform_dlkm
+blocklist msm_virtio_snd

@@ -119,7 +119,7 @@ PRODUCT_COPY_FILES += \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/card-defs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/card-defs.xml \
     vendor/qcom/opensource/agm/plugins/tinyalsa/test/backend_conf.xml:$(TARGET_COPY_OUT_VENDOR)/etc/backend_conf.xml
 
-# Configuration files for msmnile_gvmq only
+# Configuration files for msmnile_gvmq and gen4_gvm_gy only
 ifeq ($(ENABLE_HYP), true)
 ifeq ($(TARGET_GVMGH_SPECIFIC), false)
 PRODUCT_COPY_FILES += \
@@ -127,6 +127,12 @@ PRODUCT_COPY_FILES += \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/mixer_paths_gvmauto8295_adp_star.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_gvmauto8255_adp_star.xml \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/mixer_paths_gvmauto_8155.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_gvmauto_8155.xml \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/mixer_paths_gvmauto_6155.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_gvmauto_6155.xml
+
+# Additional mixer paths for VIOSND only
+ifeq ($(TARGET_USES_GY), true)
+PRODUCT_COPY_FILES += \
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/mixer_paths_VIOSND.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_VIOSND.xml
+endif
 
 # Configuration files for msmnile_gvmq AudioReach value added SI
 PRODUCT_COPY_FILES += \
@@ -150,6 +156,7 @@ endif
 ifneq (,$(filter $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_gvmq msmnile_au))
 PRODUCT_COPY_FILES += \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/modules.audio.ar.blocklist:$(TARGET_COPY_OUT_VENDOR_DLKM)/lib/modules/modules.audio.ar.blocklist \
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/modules.audio.ar_vio.blocklist:$(TARGET_COPY_OUT_VENDOR_DLKM)/lib/modules/modules.audio.ar_vio.blocklist \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/modules.audio.legacy.blocklist:$(TARGET_COPY_OUT_VENDOR_DLKM)/lib/modules/modules.audio.legacy.blocklist
 endif
 
