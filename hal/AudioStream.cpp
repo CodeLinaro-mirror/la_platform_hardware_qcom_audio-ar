@@ -61,6 +61,11 @@
  *  IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
  *  OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  *  IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ *
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
 #define LOG_TAG "AHAL: AudioStream"
@@ -793,19 +798,26 @@ static uint32_t astream_get_latency(const struct audio_stream_out *stream) {
     }
 
     // accounts for A2DP encoding and sink latency
-    pal_param_bta2dp_t *param_bt_a2dp = NULL;
+    pal_param_bta2dp_t *param_bt_a2dp_ptr, param_bt_a2dp;
+    param_bt_a2dp_ptr = &param_bt_a2dp;
     size_t size = 0;
     int32_t ret;
-    //TODO : check on PAL_PARAM_ID_BT_A2DP_ENCODER_LATENCY for BLE
-    if ((astream_out->isDeviceAvailable(PAL_DEVICE_OUT_BLUETOOTH_A2DP)) ||
-            (astream_out->isDeviceAvailable(PAL_DEVICE_OUT_BLUETOOTH_BLE)) ||
-            (astream_out->isDeviceAvailable(PAL_DEVICE_OUT_BLUETOOTH_BLE_BROADCAST))) {
-        ret = pal_get_param(PAL_PARAM_ID_BT_A2DP_ENCODER_LATENCY,
-                            (void **)&param_bt_a2dp, &size, nullptr);
-        if (!ret && param_bt_a2dp)
-            latency += param_bt_a2dp->latency;
-    }
 
+    if (astream_out->isDeviceAvailable(PAL_DEVICE_OUT_BLUETOOTH_A2DP)) {
+        param_bt_a2dp_ptr->dev_id = PAL_DEVICE_OUT_BLUETOOTH_A2DP;
+    } else if (astream_out->isDeviceAvailable(PAL_DEVICE_OUT_BLUETOOTH_BLE)) {
+        param_bt_a2dp_ptr->dev_id = PAL_DEVICE_OUT_BLUETOOTH_BLE;
+    } else if (astream_out->isDeviceAvailable(PAL_DEVICE_OUT_BLUETOOTH_BLE_BROADCAST)) {
+        param_bt_a2dp_ptr->dev_id = PAL_DEVICE_OUT_BLUETOOTH_BLE_BROADCAST;
+    } else {
+        goto exit;
+    }
+    ret = pal_get_param(PAL_PARAM_ID_BT_A2DP_ENCODER_LATENCY,
+        (void**)&param_bt_a2dp_ptr, &size, nullptr);
+    if (!ret && size && param_bt_a2dp_ptr && param_bt_a2dp_ptr->latency) {
+        latency += param_bt_a2dp_ptr->latency;
+    }
+exit:
     AHAL_VERBOSE("Latency %d", latency);
     return latency;
 }
@@ -1387,18 +1399,25 @@ uint64_t StreamInPrimary::GetFramesRead(int64_t* time)
 
     // Adjustment accounts for A2dp decoder latency
     // Note: Decoder latency is returned in ms, while platform_source_latency in us.
-    pal_param_bta2dp_t* param_bt_a2dp = NULL;
+    pal_param_bta2dp_t* param_bt_a2dp_ptr, param_bt_a2dp;
+    param_bt_a2dp_ptr = &param_bt_a2dp;
     size_t size = 0;
     int32_t ret;
 
-    if (isDeviceAvailable(PAL_DEVICE_IN_BLUETOOTH_A2DP) ||
-        isDeviceAvailable(PAL_DEVICE_IN_BLUETOOTH_BLE)) {
-        ret = pal_get_param(PAL_PARAM_ID_BT_A2DP_DECODER_LATENCY,
-            (void**)&param_bt_a2dp, &size, nullptr);
-        if (!ret && param_bt_a2dp) {
-            *time -= param_bt_a2dp->latency * 1000000LL;
-        }
+    if (isDeviceAvailable(PAL_DEVICE_IN_BLUETOOTH_A2DP)) {
+        param_bt_a2dp_ptr->dev_id = PAL_DEVICE_IN_BLUETOOTH_A2DP;
+    } else if(isDeviceAvailable(PAL_DEVICE_IN_BLUETOOTH_BLE)) {
+        param_bt_a2dp_ptr->dev_id = PAL_DEVICE_IN_BLUETOOTH_BLE;
+    } else {
+        goto exit;
     }
+    ret = pal_get_param(PAL_PARAM_ID_BT_A2DP_DECODER_LATENCY,
+        (void**)&param_bt_a2dp_ptr, &size, nullptr);
+    if (!ret && size && param_bt_a2dp_ptr && param_bt_a2dp_ptr->latency) {
+        *time -= param_bt_a2dp_ptr->latency * 1000000LL;
+    }
+
+exit:
     stream_mutex_.unlock();
 
     AHAL_VERBOSE("signed frames %lld", (long long)signed_frames);
@@ -2634,7 +2653,6 @@ uint64_t StreamOutPrimary::GetFramesWritten(struct timespec *timestamp)
     uint64_t kernel_frames = 0;
     uint64_t dsp_frames = 0;
     uint64_t bt_extra_frames = 0;
-    pal_param_bta2dp_t *param_bt_a2dp = NULL;
     size_t size = 0, kernel_buffer_size = 0;
     int32_t ret;
 
@@ -2666,20 +2684,29 @@ uint64_t StreamOutPrimary::GetFramesWritten(struct timespec *timestamp)
 
     // Adjustment accounts for A2dp encoder latency with non offload usecases
     // Note: Encoder latency is returned in ms, while platform_render_latency in us.
-    if (isDeviceAvailable(PAL_DEVICE_OUT_BLUETOOTH_A2DP) ||
-           isDeviceAvailable(PAL_DEVICE_OUT_BLUETOOTH_BLE) ||
-           isDeviceAvailable(PAL_DEVICE_OUT_BLUETOOTH_BLE_BROADCAST)) {
-        ret = pal_get_param(PAL_PARAM_ID_BT_A2DP_ENCODER_LATENCY,
-                            (void **)&param_bt_a2dp, &size, nullptr);
-        if (!ret && param_bt_a2dp) {
-            bt_extra_frames = param_bt_a2dp->latency *
-                (streamAttributes_.out_media_config.sample_rate) / 1000;
-            if (signed_frames >= bt_extra_frames)
-                signed_frames -= bt_extra_frames;
+    pal_param_bta2dp_t *param_bt_a2dp_ptr, param_bt_a2dp;
+    param_bt_a2dp_ptr = &param_bt_a2dp;
 
-        }
+    if (isDeviceAvailable(PAL_DEVICE_OUT_BLUETOOTH_A2DP)) {
+        param_bt_a2dp_ptr->dev_id = PAL_DEVICE_OUT_BLUETOOTH_A2DP;
+    } else if (isDeviceAvailable(PAL_DEVICE_OUT_BLUETOOTH_BLE)) {
+        param_bt_a2dp_ptr->dev_id = PAL_DEVICE_OUT_BLUETOOTH_BLE;
+    } else if (isDeviceAvailable(PAL_DEVICE_OUT_BLUETOOTH_BLE_BROADCAST)) {
+        param_bt_a2dp_ptr->dev_id = PAL_DEVICE_OUT_BLUETOOTH_BLE_BROADCAST;
+    } else {
+        goto exit;
+    }
+    ret = pal_get_param(PAL_PARAM_ID_BT_A2DP_ENCODER_LATENCY,
+        (void**)&param_bt_a2dp_ptr, &size, nullptr);
+    if (!ret && size && param_bt_a2dp_ptr && param_bt_a2dp_ptr->latency) {
+        bt_extra_frames = param_bt_a2dp_ptr->latency *
+            (streamAttributes_.out_media_config.sample_rate) / 1000;
+        if (signed_frames >= bt_extra_frames)
+            signed_frames -= bt_extra_frames;
+
     }
 
+exit:
     struct audio_mmap_position position;
     if (this->GetUseCase() == USECASE_AUDIO_PLAYBACK_MMAP) {
         signed_frames = 0;
@@ -3171,7 +3198,6 @@ int StreamOutPrimary::GetFrames(uint64_t *frames)
     uint64_t dsp_frames = 0;
     uint64_t offset = 0;
     size_t size = 0;
-    pal_param_bta2dp_t *param_bt_a2dp = NULL;
 
     if (!pal_stream_handle_) {
         AHAL_VERBOSE("pal_stream_handle_ NULL");
@@ -3200,17 +3226,26 @@ int StreamOutPrimary::GetFrames(uint64_t *frames)
 
     // Adjustment accounts for A2dp encoder latency with offload usecases
     // Note: Encoder latency is returned in ms.
-    if (isDeviceAvailable(PAL_DEVICE_OUT_BLUETOOTH_A2DP) ||
-           isDeviceAvailable(PAL_DEVICE_OUT_BLUETOOTH_BLE_BROADCAST) ||
-           isDeviceAvailable(PAL_DEVICE_OUT_BLUETOOTH_BLE)) {
-        ret = pal_get_param(PAL_PARAM_ID_BT_A2DP_ENCODER_LATENCY,
-                            (void **)&param_bt_a2dp, &size, nullptr);
-        if (!ret && param_bt_a2dp) {
-            offset = param_bt_a2dp->latency *
-                (streamAttributes_.out_media_config.sample_rate) / 1000;
-            dsp_frames = (dsp_frames > offset) ? (dsp_frames - offset) : 0;
-        }
+    pal_param_bta2dp_t* param_bt_a2dp_ptr, param_bt_a2dp;
+    param_bt_a2dp_ptr = &param_bt_a2dp;
+
+    if (isDeviceAvailable(PAL_DEVICE_OUT_BLUETOOTH_A2DP)) {
+        param_bt_a2dp_ptr->dev_id = PAL_DEVICE_OUT_BLUETOOTH_A2DP;
+    } else if (isDeviceAvailable(PAL_DEVICE_OUT_BLUETOOTH_BLE)) {
+        param_bt_a2dp_ptr->dev_id = PAL_DEVICE_OUT_BLUETOOTH_BLE;
+    } else if (isDeviceAvailable(PAL_DEVICE_OUT_BLUETOOTH_BLE_BROADCAST)) {
+        param_bt_a2dp_ptr->dev_id = PAL_DEVICE_OUT_BLUETOOTH_BLE_BROADCAST;
+    } else {
+        goto done;
     }
+    ret = pal_get_param(PAL_PARAM_ID_BT_A2DP_ENCODER_LATENCY,
+        (void**)&param_bt_a2dp_ptr, &size, nullptr);
+    if (!ret && size && param_bt_a2dp_ptr && param_bt_a2dp_ptr->latency) {
+        offset = param_bt_a2dp_ptr->latency *
+            (streamAttributes_.out_media_config.sample_rate) / 1000;
+        dsp_frames = (dsp_frames > offset) ? (dsp_frames - offset) : 0;
+    }
+done:
     *frames = dsp_frames + mCachedPosition;
 exit:
     return ret;
