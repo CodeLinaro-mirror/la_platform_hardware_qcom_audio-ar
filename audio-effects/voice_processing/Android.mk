@@ -12,7 +12,7 @@ LOCAL_CFLAGS += \
     -Wno-unused-value \
     -Wno-unused-function
 
-LOCAL_MODULE:= libqcomvoiceprocessing
+LOCAL_MODULE:= libqcomvoiceprocessing.ar
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE_RELATIVE_PATH := soundfx
 LOCAL_VENDOR_MODULE := true
