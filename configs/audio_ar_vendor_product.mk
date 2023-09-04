@@ -33,6 +33,9 @@ MM_AUDIO_AR += lib_default_plugin_controls
 MM_AUDIO_AR += lib_default_set_param_plugin_controls
 MM_AUDIO_AR += libqtigefar
 MM_AUDIO_AR += libicc_pal
+MM_AUDIO_AR += libqcompostprocbundle.ar
+MM_AUDIO_AR += libqcomvisualizer.ar
+MM_AUDIO_AR += libqcomvoiceprocessing.ar
 
 ifeq ($(ENABLE_HYP), false)
 ifeq ($(TARGET_GVMGH_SPECIFIC), false)

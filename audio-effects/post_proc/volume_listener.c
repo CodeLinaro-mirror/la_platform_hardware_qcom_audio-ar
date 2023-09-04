@@ -58,21 +58,12 @@
 #define STR(x) #x
 #define MAX_LIBRARY_PATH 100
 
-#ifdef __LP64__
 static void get_library_path(char *lib_path)
 {
     snprintf(lib_path, MAX_LIBRARY_PATH,
-             LIB64_AUDIO_HAL,
+             PRIMARY_HAL_PATH,
              XSTR(PLATFORM_NAME));
 }
-#else
-static void get_library_path(char *lib_path)
-{
-    snprintf(lib_path, MAX_LIBRARY_PATH,
-             LIB_AUDIO_HAL,
-             XSTR(PLATFORM_NAME));
-}
-#endif
 
 #define VOL_FLAG ( EFFECT_FLAG_TYPE_INSERT | \
                    EFFECT_FLAG_VOLUME_IND | \
