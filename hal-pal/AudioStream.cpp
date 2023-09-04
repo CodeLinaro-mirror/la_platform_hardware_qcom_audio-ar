@@ -3591,7 +3591,7 @@ int StreamInPrimary::Open() {
       ch_info.ch_map[4] = PAL_CHMAP_CHANNEL_LB;
       ch_info.ch_map[5] = PAL_CHMAP_CHANNEL_RB;
       ch_info.ch_map[6] = PAL_CHMAP_CHANNEL_LS;
-      ch_info.ch_map[6] = PAL_CHMAP_CHANNEL_RS;
+      ch_info.ch_map[7] = PAL_CHMAP_CHANNEL_RS;
     } else if (channels == 7) {
       ch_info.channels = 7;
       ch_info.ch_map[0] = PAL_CHMAP_CHANNEL_FL;

@@ -63,7 +63,6 @@ static void get_library_path(char *lib_path)
              "/vendor/lib/hw/audio.primary.%s.so",
              XSTR(PLATFORM_NAME));
 }
-#endif
 
 #define VOL_FLAG ( EFFECT_FLAG_TYPE_INSERT | \
                    EFFECT_FLAG_VOLUME_IND | \
