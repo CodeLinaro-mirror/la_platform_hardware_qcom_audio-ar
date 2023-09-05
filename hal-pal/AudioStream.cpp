@@ -865,6 +865,12 @@ static int astream_out_set_volume(struct audio_stream_out *stream,
     }
 }
 
+static void out_update_source_metadata_v7(
+                                struct audio_stream_out *stream,
+                                const struct source_metadata_v7 *source_metadata) {
+    AHAL_DBG("stream %p, source_metadata %p.", (void*)stream, (void*)source_metadata);
+}
+
 static int astream_out_add_audio_effect(
                                 const struct audio_stream *stream __unused,
                                 effect_handle_t effect __unused) {
@@ -1235,6 +1241,12 @@ static void in_update_sink_metadata(
             AHAL_ERR("%s: voice handle does not exist", __func__);
         }
     }
+}
+
+static void in_update_sink_metadata_v7(
+                                struct audio_stream_in *stream,
+                                const struct sink_metadata_v7 *sink_metadata) {
+    AHAL_DBG("stream %p, sink_metadata %p.", (void*)stream, (void*)sink_metadata);
 }
 
 static int astream_in_get_active_microphones(
@@ -1644,6 +1656,7 @@ int StreamOutPrimary::FillHalFnPtrs() {
     stream_.get()->drain = astream_drain;
     stream_.get()->flush = astream_flush;
     stream_.get()->set_callback = astream_set_callback;
+    stream_.get()->update_source_metadata_v7 = out_update_source_metadata_v7;
     return ret;
 }
 
@@ -3978,6 +3991,7 @@ int StreamInPrimary::FillHalFnPtrs() {
     stream_.get()->set_microphone_field_dimension =
                                             in_set_microphone_field_dimension;
     stream_.get()->update_sink_metadata = in_update_sink_metadata;
+    stream_.get()->update_sink_metadata_v7 = in_update_sink_metadata_v7;
 
     return ret;
 }

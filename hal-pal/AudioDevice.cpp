@@ -936,6 +936,14 @@ int adev_create_audio_patch(struct audio_hw_device *dev,
     return adevice->CreateAudioPatch(handle, source_vec, sink_vec);
 }
 
+int adev_get_audio_port_v7(struct audio_hw_device *dev,
+                        struct audio_port_v7 *config) {
+    std::ignore = dev;
+    std::ignore = config;
+
+    return 0;
+}
+
 int adev_get_audio_port(struct audio_hw_device *dev,
                         struct audio_port *config) {
     std::ignore = dev;
@@ -1019,7 +1027,11 @@ int AudioDevice::Init(hw_device_t **device, const hw_module_t *module) {
 
     adev_->device_.get()->common.tag = HARDWARE_DEVICE_TAG;
     adev_->device_.get()->common.version =
+#ifdef ANDROID_U_HAL7
+                                HARDWARE_DEVICE_API_VERSION(maj_version, 2);
+#else
                                 HARDWARE_DEVICE_API_VERSION(maj_version, 0);
+#endif
     adev_->device_.get()->common.close = adev_close;
     adev_->device_.get()->init_check = adev_init_check;
     adev_->device_.get()->set_voice_volume = adev_set_voice_volume;
@@ -1039,6 +1051,7 @@ int AudioDevice::Init(hw_device_t **device, const hw_module_t *module) {
     adev_->device_.get()->close_input_stream = adev_close_input_stream;
     adev_->device_.get()->create_audio_patch = adev_create_audio_patch;
     adev_->device_.get()->release_audio_patch = adev_release_audio_patch;
+    adev_->device_.get()->get_audio_port_v7 = adev_get_audio_port_v7;
     adev_->device_.get()->get_audio_port = adev_get_audio_port;
     adev_->device_.get()->set_audio_port_config = adev_set_audio_port_config;
     adev_->device_.get()->dump = adev_dump;
