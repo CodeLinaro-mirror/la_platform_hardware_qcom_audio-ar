@@ -104,6 +104,11 @@
  *  IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
  *  OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  *  IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ *
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
 #define LOG_TAG "AHAL: AudioDevice"
@@ -2110,17 +2115,19 @@ char* AudioDevice::GetParameters(const char *keys) {
     ret = str_parms_get_str(query, AUDIO_PARAMETER_A2DP_RECONFIG_SUPPORTED,
                             value, sizeof(value));
     if (ret >= 0) {
-        pal_param_bta2dp_t *param_bt_a2dp;
+        pal_param_bta2dp_t *param_bt_a2dp_ptr, param_bt_a2dp;
+        param_bt_a2dp_ptr = &param_bt_a2dp;
+        param_bt_a2dp_ptr->dev_id = PAL_DEVICE_OUT_BLUETOOTH_A2DP;
         int32_t val = 0;
 
         ret = pal_get_param(PAL_PARAM_ID_BT_A2DP_RECONFIG_SUPPORTED,
-                            (void **)&param_bt_a2dp, &size, nullptr);
+                            (void **)&param_bt_a2dp_ptr, &size, nullptr);
         if (!ret) {
             if (size < sizeof(pal_param_bta2dp_t)) {
                 AHAL_ERR("size returned is smaller for BT_A2DP_RECONFIG_SUPPORTED");
                 goto exit;
             }
-            val = param_bt_a2dp->reconfig_supported;
+            val = param_bt_a2dp_ptr->reconfig_supported;
             str_parms_add_int(reply, AUDIO_PARAMETER_A2DP_RECONFIG_SUPPORTED, val);
             AHAL_VERBOSE("isReconfigA2dpSupported = %d", val);
         }
