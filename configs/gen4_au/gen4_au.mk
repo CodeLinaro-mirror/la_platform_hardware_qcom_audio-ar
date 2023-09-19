@@ -110,6 +110,13 @@ endif
 #Automotive audio specific device overlays
 DEVICE_PACKAGE_OVERLAYS += vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/overlay
 
+ifneq ( ,$(filter U UpsideDownCake 14, $(PLATFORM_VERSION)))
+PRODUCT_COPY_FILES += \
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_effects_64.conf:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects.conf
+else
+PRODUCT_COPY_FILES += \
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_effects.conf:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects.conf
+endif
 
 # Configuration files shared between msmnile_gvmgh and others
 PRODUCT_COPY_FILES += \
