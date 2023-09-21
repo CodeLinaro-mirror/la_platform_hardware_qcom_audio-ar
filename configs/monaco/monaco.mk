@@ -177,10 +177,13 @@ PRODUCT_PACKAGES += IDP_acdb_cal_monaco_wsa.acdb
 PRODUCT_PACKAGES += IDP_workspaceFileXml_monaco_wsa.qwsp
 
 PRODUCT_PACKAGES += mm-audio-ftm
+
+ifeq ($(PRODUCT_ENABLE_QESDK),true)
 PRODUCT_PACKAGES += libvui_dmgr
 PRODUCT_PACKAGES += libvui_dmgr_client
 PRODUCT_PACKAGES += qsap_voiceui
 PRODUCT_PACKAGES += qsap_voiceui.policy
+endif
 
 ifeq ($(strip $(AUDIO_FEATURE_ENABLED_MCS)), true)
  PRODUCT_PACKAGES += libmcs
