@@ -50,9 +50,7 @@
 #include <unistd.h>
 
 #include "bundle.h"
-#ifdef HW_ACCELERATED_EFFECTS
 #include "hw_accelerator.h"
-#endif
 #include "equalizer.h"
 #include "bass_boost.h"
 #include "virtualizer.h"

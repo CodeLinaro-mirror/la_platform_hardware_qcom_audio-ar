@@ -98,19 +98,19 @@
 
 #if LINUX_ENABLED
 #ifdef __LP64__
-#define OFFLOAD_EFFECTS_BUNDLE_LIBRARY_PATH "/usr/lib64/libqcompostprocbundle.ar.so"
-#define VISUALIZER_LIBRARY_PATH "/usr/lib64/libqcomvisualizer.ar.so"
+#define OFFLOAD_EFFECTS_BUNDLE_LIBRARY_PATH "/usr/lib64/libqcompostprocbundle.so"
+#define VISUALIZER_LIBRARY_PATH "/usr/lib64/libqcomvisualizer.so"
 #else
-#define OFFLOAD_EFFECTS_BUNDLE_LIBRARY_PATH "/usr/lib/libqcompostprocbundle.ar.so"
-#define VISUALIZER_LIBRARY_PATH "/usr/lib/libqcomvisualizer.ar.so"
+#define OFFLOAD_EFFECTS_BUNDLE_LIBRARY_PATH "/usr/lib/libqcompostprocbundle.so"
+#define VISUALIZER_LIBRARY_PATH "/usr/lib/libqcomvisualizer.so"
 #endif
 #else
 #ifdef __LP64__
-#define OFFLOAD_EFFECTS_BUNDLE_LIBRARY_PATH "/vendor/lib64/soundfx/libqcompostprocbundle.ar.so"
-#define VISUALIZER_LIBRARY_PATH "/vendor/lib64/soundfx/libqcomvisualizer.ar.so"
+#define OFFLOAD_EFFECTS_BUNDLE_LIBRARY_PATH "/vendor/lib64/soundfx/libqcompostprocbundle.so"
+#define VISUALIZER_LIBRARY_PATH "/vendor/lib64/soundfx/libqcomvisualizer.so"
 #else
-#define OFFLOAD_EFFECTS_BUNDLE_LIBRARY_PATH "/vendor/lib/soundfx/libqcompostprocbundle.ar.so"
-#define VISUALIZER_LIBRARY_PATH "/vendor/lib/soundfx/libqcomvisualizer.ar.so"
+#define OFFLOAD_EFFECTS_BUNDLE_LIBRARY_PATH "/vendor/lib/soundfx/libqcompostprocbundle.so"
+#define VISUALIZER_LIBRARY_PATH "/vendor/lib/soundfx/libqcomvisualizer.so"
 #endif
 #endif
 
