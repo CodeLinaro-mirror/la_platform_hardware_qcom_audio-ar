@@ -46,7 +46,7 @@ LOCAL_SHARED_LIBRARIES := \
     libar-pal
 
 LOCAL_MODULE_RELATIVE_PATH := soundfx
-LOCAL_MODULE:= libqcomvisualizer
+LOCAL_MODULE:= libqcomvisualizer.ar
 LOCAL_VENDOR_MODULE := true
 
 LOCAL_C_INCLUDES := \
