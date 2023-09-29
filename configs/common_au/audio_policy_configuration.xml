@@ -391,11 +391,11 @@
             </devicePorts>
             <routes>
                 <route type="mix" sink="Media Bus"
-                       sources="media,direct_pcm,compressed_offload"/>
+                       sources="media,direct_pcm,mmap_no_irq_out,compressed_offload"/>
                 <route type="mix" sink="Sys Notification Bus"
-                       sources="sys_notification,carplay_8k_sys,carplay_16k_sys,carplay_24k_sys,carplay_32k_sys,carplay_48k_sys"/>
+                       sources="sys_notification,mmap_no_irq_out,carplay_8k_sys,carplay_16k_sys,carplay_24k_sys,carplay_32k_sys,carplay_48k_sys"/>
                 <route type="mix" sink="Nav Guidance Bus"
-                       sources="nav_guidance"/>
+                       sources="nav_guidance,mmap_no_irq_out"/>
                 <route type="mix" sink="Phone Bus"
                        sources="phone"/>
                 <route type="mix" sink="Alerts Bus"
