@@ -10,6 +10,9 @@ endif
 ifeq ($(ENABLE_HYP), false)
 ifeq ($(TARGET_GVMGH_SPECIFIC), false)
     TARGET_USES_ION_CMA_MEMORY := true
+ifneq ( ,$(filter T Tiramisu 13, $(PLATFORM_VERSION)))
+    AUDIO_FEATURE_ENABLED_POWER_POLICY := true
+endif
 endif
 endif
 
@@ -469,6 +472,12 @@ PRODUCT_ODM_PROPERTIES += \
 vendor.audio.feature.snd_mon.enable=false
 endif
 endif
+ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), gen4_au)
+ifneq ( ,$(filter T Tiramisu 13, $(PLATFORM_VERSION)))
+PRODUCT_ODM_PROPERTIES += \
+vendor.audio.feature.arpowerpolicy.enable=true
+endif
+endif
 else
 # Non-Generic ODM varient related
 PRODUCT_ODM_PROPERTIES += \
@@ -522,6 +531,12 @@ vendor.audio.feature.snd_mon.enable=true
 else
 PRODUCT_ODM_PROPERTIES += \
 vendor.audio.feature.snd_mon.enable=false
+endif
+endif
+ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), gen4_au)
+ifneq ( ,$(filter T Tiramisu 13, $(PLATFORM_VERSION)))
+PRODUCT_ODM_PROPERTIES += \
+vendor.audio.feature.arpowerpolicy.enable=true
 endif
 endif
 endif
