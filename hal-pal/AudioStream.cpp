@@ -2269,12 +2269,19 @@ int StreamOutPrimary::get_pcm_buffer_size()
     uint32_t hal_op_bytes_per_sample = audio_bytes_per_sample(dst_format);
     uint32_t hal_ip_bytes_per_sample = audio_bytes_per_sample(src_format);
     uint32_t fragment_size = 0;
+    struct pal_stream_attributes streamAttributes_;
+    streamAttributes_.type = StreamOutPrimary::GetPalStreamType(flags_, address_);
 
     AHAL_DBG("config_ format:%x, SR %d ch_mask 0x%x, out format:%x",
             config_.format, config_.sample_rate,
             config_.channel_mask, dst_format);
-    fragment_size = PCM_OFFLOAD_OUTPUT_PERIOD_DURATION *
-        config_.sample_rate * bytes_per_sample * channels;
+    if (streamAttributes_.type == PAL_STREAM_PLAYBACK_BUS) {
+        fragment_size = DEEP_BUFFER_OUTPUT_PERIOD_DURATION *
+            config_.sample_rate * bytes_per_sample * channels;
+    } else {
+        fragment_size = PCM_OFFLOAD_OUTPUT_PERIOD_DURATION *
+            config_.sample_rate * bytes_per_sample * channels;
+    }
     fragment_size /= 1000;
 
     if (fragment_size < MIN_PCM_FRAGMENT_SIZE)
@@ -3614,7 +3621,7 @@ int StreamInPrimary::Open() {
       ch_info.ch_map[4] = PAL_CHMAP_CHANNEL_LB;
       ch_info.ch_map[5] = PAL_CHMAP_CHANNEL_RB;
       ch_info.ch_map[6] = PAL_CHMAP_CHANNEL_LS;
-      ch_info.ch_map[6] = PAL_CHMAP_CHANNEL_RS;
+      ch_info.ch_map[7] = PAL_CHMAP_CHANNEL_RS;
     } else if (channels == 7) {
       ch_info.channels = 7;
       ch_info.ch_map[0] = PAL_CHMAP_CHANNEL_FL;
