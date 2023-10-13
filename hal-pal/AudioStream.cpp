@@ -3816,7 +3816,11 @@ int StreamInPrimary::GetInputUseCase(audio_input_flags_t halStreamFlags, audio_s
 {
     // TODO: cover other usecases
     int usecase = USECASE_AUDIO_RECORD;
-    if (config_.sample_rate == LOW_LATENCY_CAPTURE_SAMPLE_RATE &&
+    if ((config_.sample_rate == LOW_LATENCY_CAPTURE_SAMPLE_RATE ||
+          config_.sample_rate == 32000 ||
+          config_.sample_rate == 24000 ||
+          config_.sample_rate == 16000 ||
+          config_.sample_rate == 8000) &&
         (halStreamFlags & AUDIO_INPUT_FLAG_TIMESTAMP) == 0 &&
         (halStreamFlags & AUDIO_INPUT_FLAG_COMPRESS) == 0 &&
         (halStreamFlags & AUDIO_INPUT_FLAG_FAST) != 0 &&
