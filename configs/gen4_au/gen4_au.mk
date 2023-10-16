@@ -109,6 +109,12 @@ ifeq ($(ENABLE_HYP),true)
 AUDIO_FEATURE_ENABLED_POWER_POLICY := true
 AUDIO_FEATURE_ENABLED_AUDIO_PARSERS := true
 AUDIO_FEATURE_ENABLED_AUDIO_CONTROL_HAL_AIDL := true
+PRODUCT_PACKAGES += vendor.qti.hardware.automotive.audiocontrol-service
+ifeq ($(TARGET_BOARD_AUTO), true)
+ifeq ($(TARGET_USES_RRO), true)
+PRODUCT_PACKAGES += CarServiceResAutoTarget_Vendor
+endif
+endif
 endif
 
 ifneq (,$(filter U UpsideDownCake 14, $(PLATFORM_VERSION)))
@@ -162,8 +168,6 @@ PRODUCT_COPY_FILES += \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/usb_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usb_audio_policy_configuration.xml \
     $(TOPDIR)frameworks/native/data/etc/android.hardware.audio.pro.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.pro.xml \
     $(TOPDIR)frameworks/native/data/etc/android.hardware.audio.low_latency.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.low_latency.xml
-
-PRODUCT_PACKAGES += vendor.qti.hardware.automotive.audiocontrol-service
 
 endif
 endif
