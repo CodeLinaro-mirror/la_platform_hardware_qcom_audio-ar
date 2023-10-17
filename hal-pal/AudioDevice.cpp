@@ -584,7 +584,7 @@ int AudioDevice::ReleaseAudioPatch(audio_patch_handle_t handle) {
     delete patch;
 
     AHAL_DBG("Successfully released patch %d", handle);
-    return ret;
+    return 0;
 }
 
 std::shared_ptr<StreamInPrimary> AudioDevice::CreateStreamIn(
@@ -699,6 +699,10 @@ static int adev_open_output_stream(struct audio_hw_device *dev,
             ret = -ENOMEM;
             goto exit;
         }
+    }
+    else {
+        /* get the previously created stream */
+        astream->GetStreamHandle(stream_out);
     }
 exit:
     AHAL_DBG("Exit ret: %d", ret);
