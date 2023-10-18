@@ -57,6 +57,10 @@ AUDIO_FEATURE_ENABLED_EXTENDED_COMPRESS_FORMAT := true
 DOLBY_ENABLE := false
 endif
 
+ifeq ($(TARGET_USES_AGM_HIDL), true)
+AUDIO_FEATURE_ENABLED_AGM_HIDL := true
+endif
+
 AUDIO_FEATURE_ENABLED_DLKM := true
 BOARD_SUPPORTS_SOUND_TRIGGER := true
 BOARD_SUPPORTS_GCS := false
@@ -100,8 +104,10 @@ TARGET_USES_QTI_TINYCOMPRESS := true
 AUDIO_AGM := libagmclient
 AUDIO_AGM += libagmservice
 AUDIO_AGM += vendor.qti.hardware.AGMIPC@1.0-impl
+ifneq ($(strip $(AUDIO_FEATURE_ENABLED_AGM_HIDL)), true)
 AUDIO_AGM += vendor.qti.hardware.AGMIPC@1.0-service
 AUDIO_AGM += vendor.qti.hardware.AGMIPC@1.0-service.rc
+endif
 AUDIO_AGM += libagm
 AUDIO_AGM += agmplay
 AUDIO_AGM += agmcap
@@ -177,10 +183,13 @@ PRODUCT_PACKAGES += IDP_acdb_cal_monaco_wsa.acdb
 PRODUCT_PACKAGES += IDP_workspaceFileXml_monaco_wsa.qwsp
 
 PRODUCT_PACKAGES += mm-audio-ftm
+
+ifeq ($(PRODUCT_ENABLE_QESDK),true)
 PRODUCT_PACKAGES += libvui_dmgr
 PRODUCT_PACKAGES += libvui_dmgr_client
 PRODUCT_PACKAGES += qsap_voiceui
 PRODUCT_PACKAGES += qsap_voiceui.policy
+endif
 
 ifeq ($(strip $(AUDIO_FEATURE_ENABLED_MCS)), true)
  PRODUCT_PACKAGES += libmcs
@@ -295,7 +304,9 @@ PRODUCT_COPY_FILES += \
 
 ifeq ($(AUDIO_FEATURE_ENABLED_MCS),true)
 PRODUCT_COPY_FILES += \
-    $(CONFIG_HAL_SRC_DIR)/mcs_defs_monaco_idp_slate.xml:$(CONFIG_SKU_OUT_DIR)/mcs_defs_monaco_idp_slate.xml
+    $(CONFIG_HAL_SRC_DIR)/mcs_defs_monaco_idp_slate.xml:$(CONFIG_SKU_OUT_DIR)/mcs_defs_monaco_idp_slate.xml \
+    $(CONFIG_HAL_SRC_DIR)/mcs_defs_monaco_idp.xml:$(CONFIG_SKU_OUT_DIR)/mcs_defs_monaco_idp.xml \
+    $(CONFIG_HAL_SRC_DIR)/mcs_defs_monaco_idp_wsa.xml:$(CONFIG_SKU_OUT_DIR)/mcs_defs_monaco_idp_wsa.xml
 endif
 
 #XML Audio configuration files

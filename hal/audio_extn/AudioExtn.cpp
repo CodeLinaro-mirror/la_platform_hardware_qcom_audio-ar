@@ -49,12 +49,22 @@
 #include <vendor/qti/hardware/pal/1.0/IPAL.h>
 using vendor::qti::hardware::pal::V1_0::IPAL;
 using vendor::qti::hardware::pal::V1_0::implementation::PAL;
+using android::hardware::defaultPassthroughServiceImplementation;
+using android::sp;
+using namespace android::hardware;
+using android::OK;
+#endif
+
 #ifdef AGM_HIDL_ENABLED
+#ifndef PAL_HIDL_ENABLED
+#include <hidl/HidlTransportSupport.h>
+#include <hidl/LegacySupport.h>
+#endif
+
 #include <agm_server_wrapper.h>
 #include <vendor/qti/hardware/AGMIPC/1.0/IAGM.h>
 using vendor::qti::hardware::AGMIPC::V1_0::IAGM;
 using vendor::qti::hardware::AGMIPC::V1_0::implementation::AGM;
-#endif
 using android::hardware::defaultPassthroughServiceImplementation;
 using android::sp;
 using namespace android::hardware;
