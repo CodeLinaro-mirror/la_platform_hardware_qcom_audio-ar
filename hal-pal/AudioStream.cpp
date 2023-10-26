@@ -669,12 +669,6 @@ static int out_get_render_position(const struct audio_stream_out *stream,
     uint64_t frames = 0;
 
     if (adevice) {
-        if (adevice->is_arpowerpolicy_enabled) {
-            if (POWER_POLICY_STATUS_OFFLINE == adevice->out_power_policy) {
-                AHAL_INFO("adevice->output_power offline, try again %s", __func__);
-                return -EINVAL;
-            }
-        }
         astream_out = adevice->OutGetStream((audio_stream_t*)stream);
     } else {
         AHAL_ERR("unable to get audio device");
@@ -683,6 +677,12 @@ static int out_get_render_position(const struct audio_stream_out *stream,
     if (astream_out) {
         switch (astream_out->GetPalStreamType(astream_out->flags_, astream_out->address_)) {
         case PAL_STREAM_COMPRESSED:
+           if (adevice->is_arpowerpolicy_enabled) {
+               if (POWER_POLICY_STATUS_OFFLINE == adevice->out_power_policy) {
+                   AHAL_INFO("adevice->output_power offline, try again %s", __func__);
+                   return -EINVAL;
+               }
+           }
            ret = astream_out->GetFrames(&frames);
            if (ret != 0) {
               AHAL_ERR("Get DSP Frames failed %d", ret);
@@ -863,6 +863,12 @@ static int astream_out_set_volume(struct audio_stream_out *stream,
         AHAL_ERR("unable to get audio stream");
         return -EINVAL;
     }
+}
+
+static void out_update_source_metadata_v7(
+                                struct audio_stream_out *stream,
+                                const struct source_metadata_v7 *source_metadata) {
+    AHAL_DBG("stream %p, source_metadata %p.", (void*)stream, (void*)source_metadata);
 }
 
 static int astream_out_add_audio_effect(
@@ -1235,6 +1241,12 @@ static void in_update_sink_metadata(
             AHAL_ERR("%s: voice handle does not exist", __func__);
         }
     }
+}
+
+static void in_update_sink_metadata_v7(
+                                struct audio_stream_in *stream,
+                                const struct sink_metadata_v7 *sink_metadata) {
+    AHAL_DBG("stream %p, sink_metadata %p.", (void*)stream, (void*)sink_metadata);
 }
 
 static int astream_in_get_active_microphones(
@@ -1644,6 +1656,7 @@ int StreamOutPrimary::FillHalFnPtrs() {
     stream_.get()->drain = astream_drain;
     stream_.get()->flush = astream_flush;
     stream_.get()->set_callback = astream_set_callback;
+    stream_.get()->update_source_metadata_v7 = out_update_source_metadata_v7;
     return ret;
 }
 
@@ -2269,12 +2282,19 @@ int StreamOutPrimary::get_pcm_buffer_size()
     uint32_t hal_op_bytes_per_sample = audio_bytes_per_sample(dst_format);
     uint32_t hal_ip_bytes_per_sample = audio_bytes_per_sample(src_format);
     uint32_t fragment_size = 0;
+    struct pal_stream_attributes streamAttributes_;
+    streamAttributes_.type = StreamOutPrimary::GetPalStreamType(flags_, address_);
 
     AHAL_DBG("config_ format:%x, SR %d ch_mask 0x%x, out format:%x",
             config_.format, config_.sample_rate,
             config_.channel_mask, dst_format);
-    fragment_size = PCM_OFFLOAD_OUTPUT_PERIOD_DURATION *
-        config_.sample_rate * bytes_per_sample * channels;
+    if (streamAttributes_.type == PAL_STREAM_PLAYBACK_BUS) {
+        fragment_size = DEEP_BUFFER_OUTPUT_PERIOD_DURATION *
+            config_.sample_rate * bytes_per_sample * channels;
+    } else {
+        fragment_size = PCM_OFFLOAD_OUTPUT_PERIOD_DURATION *
+            config_.sample_rate * bytes_per_sample * channels;
+    }
     fragment_size /= 1000;
 
     if (fragment_size < MIN_PCM_FRAGMENT_SIZE)
@@ -2772,6 +2792,11 @@ ssize_t StreamOutPrimary::configurePalOutputStream() {
             ret = StartOffloadEffects(handle_, pal_stream_handle_);
             ret = StartOffloadVisualizer(handle_, pal_stream_handle_);
         }
+
+        if (muted_) {
+            AHAL_DBG("The stream is muted");
+            pal_stream_set_mute(pal_stream_handle_, true);
+        }
         ATRACE_END();
     }
     if ((streamAttributes_.type == PAL_STREAM_COMPRESSED) && sendGaplessMetadata) {
@@ -2795,6 +2820,7 @@ ssize_t StreamOutPrimary::configurePalOutputStream() {
         }
         sendGaplessMetadata = false;
     }
+
     return 0;
 }
 
@@ -2934,6 +2960,22 @@ int StreamOutPrimary::StopOffloadVisualizer(
     return ret;
 }
 
+void StreamOutPrimary::SetOutputMute(bool muted)
+{
+    int ret = 0;
+    AHAL_DBG("Enter mute %d for Output session", muted);
+    stream_mutex_.lock();
+    this->muted_ = muted;
+    if (pal_stream_handle_) {
+        AHAL_DBG("Enter if mute %d for input session", muted);
+        ret = pal_stream_set_mute(pal_stream_handle_, muted);
+        if (ret)
+            AHAL_ERR("Error applying mute %d for input session", muted);
+    }
+    stream_mutex_.unlock();
+    AHAL_DBG("Exit");
+}
+
 StreamOutPrimary::StreamOutPrimary(
                         audio_io_handle_t handle,
                         const std::set<audio_devices_t> &devices,
@@ -2946,7 +2988,8 @@ StreamOutPrimary::StreamOutPrimary(
                         visualizer_hal_stop_output visualizer_stop_output):
     StreamPrimary(handle, devices, config),
     mAndroidOutDevices(devices),
-    flags_(flags)
+    flags_(flags),
+    muted_(false)
 {
     stream_ = std::shared_ptr<audio_stream_out> (new audio_stream_out());
     std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
@@ -3773,7 +3816,11 @@ int StreamInPrimary::GetInputUseCase(audio_input_flags_t halStreamFlags, audio_s
 {
     // TODO: cover other usecases
     int usecase = USECASE_AUDIO_RECORD;
-    if (config_.sample_rate == LOW_LATENCY_CAPTURE_SAMPLE_RATE &&
+    if ((config_.sample_rate == LOW_LATENCY_CAPTURE_SAMPLE_RATE ||
+          config_.sample_rate == 32000 ||
+          config_.sample_rate == 24000 ||
+          config_.sample_rate == 16000 ||
+          config_.sample_rate == 8000) &&
         (halStreamFlags & AUDIO_INPUT_FLAG_TIMESTAMP) == 0 &&
         (halStreamFlags & AUDIO_INPUT_FLAG_COMPRESS) == 0 &&
         (halStreamFlags & AUDIO_INPUT_FLAG_FAST) != 0 &&
@@ -3948,6 +3995,7 @@ int StreamInPrimary::FillHalFnPtrs() {
     stream_.get()->set_microphone_field_dimension =
                                             in_set_microphone_field_dimension;
     stream_.get()->update_sink_metadata = in_update_sink_metadata;
+    stream_.get()->update_sink_metadata_v7 = in_update_sink_metadata_v7;
 
     return ret;
 }

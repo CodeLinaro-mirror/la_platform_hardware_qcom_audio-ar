@@ -2,8 +2,6 @@
  * Copyright (c) 2013-2017, 2019-2020, The Linux Foundation. All rights reserved.
  * Not a Contribution.
  *
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
- *
  * Copyright (C) 2013 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,6 +33,19 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ */
+/*
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ *
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
+
+/*
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ *
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
 #define LOG_TAG "offload_effect_bundle"
@@ -707,7 +718,8 @@ int effect_command(effect_handle_t self, uint32_t cmdCode, uint32_t cmdSize,
         }
         if (pCmdData == NULL || cmdSize != 2 * sizeof(uint32_t) ||
                 replySize == NULL || *replySize < 2*sizeof(int32_t)) {
-            return -EINVAL;
+            status = -EINVAL;
+            goto exit;
         }
         memcpy(pReplyData, pCmdData, sizeof(int32_t)*2);
         } break;
@@ -751,7 +763,8 @@ int effect_command(effect_handle_t self, uint32_t cmdCode, uint32_t cmdSize,
               cmdSize, pCmdData, *replySize, pReplyData);
         if (cmdSize != sizeof(uint32_t) || pCmdData == NULL
                 || pReplyData == NULL || *replySize != sizeof(int)) {
-            return -EINVAL;
+            status = -EINVAL;
+            goto exit;
         }
         uint32_t value = *(uint32_t *)pCmdData;
         if (context->ops.set_hw_acc_mode)

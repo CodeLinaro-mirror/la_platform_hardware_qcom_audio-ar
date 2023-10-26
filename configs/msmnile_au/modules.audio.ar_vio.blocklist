@@ -1,6 +1,19 @@
 # Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause-Clear
 
+# Block legacy modules
+blocklist q6_notifier_dlkm_legacy
+blocklist apr_dlkm
+blocklist native_dlkm
+blocklist hdmi_dlkm
+blocklist q6_dlkm_legacy
+blocklist adsp_loader_dlkm_legacy
+blocklist snd_event_dlkm_legacy
+blocklist stub_dlkm_legacy
+blocklist machine_dlkm_legacy
+blocklist platform_dlkm
+
+# Block AR HQX modules
 blocklist q6_notifier_dlkm
 blocklist spf_core_dlkm
 blocklist audpkt_ion_dlkm
@@ -14,4 +27,3 @@ blocklist machine_dlkm
 blocklist q6_pdr_dlkm
 blocklist audio_prm_dlkm
 blocklist coupled_ssr_dlkm
-blocklist msm_virtio_snd

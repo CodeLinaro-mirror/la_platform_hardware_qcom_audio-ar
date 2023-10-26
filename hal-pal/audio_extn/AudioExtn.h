@@ -63,7 +63,11 @@ typedef bool(*hfp_ag_is_active_t)(std::shared_ptr<AudioDevice> adev);
 typedef audio_usecase_t(*hfp_ag_get_usecase_t)();
 typedef int(*hfp_ag_set_mic_mute_t)(bool state);
 //AUTO HAL
-typedef void(*autohal_init_t)();
+typedef void (*fp_set_mute_config_for_address_t) (bool, char*);
+typedef struct auto_hal_init_config {
+    fp_set_mute_config_for_address_t     fp_set_mute_config_for_address;
+} auto_hal_init_config_t;
+typedef void(*autohal_init_t)(auto_hal_init_config_t);
 typedef pal_stream_type_t (*autohal_GetCarAudioPalStreamType_t)(char * address);
 typedef void (*place_marker_t)(char const *name, bool isEnter);
 
@@ -145,6 +149,7 @@ public:
     static int autohal_feature_init(bool is_feature_enabled);
     static pal_stream_type_t audio_extn_autohal_GetCarAudioPalStreamType(char* address);
     static void audio_extn_place_marker(char const *name, bool isEnter);
+    static int audio_extn_autohal_set_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *params);
     //Power Policy
     static int power_policy_feature_init(bool is_feature_enabled);
 };

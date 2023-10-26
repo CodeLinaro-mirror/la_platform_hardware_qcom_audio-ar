@@ -584,7 +584,7 @@ int AudioDevice::ReleaseAudioPatch(audio_patch_handle_t handle) {
     delete patch;
 
     AHAL_DBG("Successfully released patch %d", handle);
-    return ret;
+    return 0;
 }
 
 std::shared_ptr<StreamInPrimary> AudioDevice::CreateStreamIn(
@@ -699,6 +699,10 @@ static int adev_open_output_stream(struct audio_hw_device *dev,
             ret = -ENOMEM;
             goto exit;
         }
+    }
+    else {
+        /* get the previously created stream */
+        astream->GetStreamHandle(stream_out);
     }
 exit:
     AHAL_DBG("Exit ret: %d", ret);
@@ -936,6 +940,14 @@ int adev_create_audio_patch(struct audio_hw_device *dev,
     return adevice->CreateAudioPatch(handle, source_vec, sink_vec);
 }
 
+int adev_get_audio_port_v7(struct audio_hw_device *dev,
+                        struct audio_port_v7 *config) {
+    std::ignore = dev;
+    std::ignore = config;
+
+    return 0;
+}
+
 int adev_get_audio_port(struct audio_hw_device *dev,
                         struct audio_port *config) {
     std::ignore = dev;
@@ -1019,7 +1031,11 @@ int AudioDevice::Init(hw_device_t **device, const hw_module_t *module) {
 
     adev_->device_.get()->common.tag = HARDWARE_DEVICE_TAG;
     adev_->device_.get()->common.version =
+#ifdef ANDROID_U_HAL7
+                                HARDWARE_DEVICE_API_VERSION(maj_version, 2);
+#else
                                 HARDWARE_DEVICE_API_VERSION(maj_version, 0);
+#endif
     adev_->device_.get()->common.close = adev_close;
     adev_->device_.get()->init_check = adev_init_check;
     adev_->device_.get()->set_voice_volume = adev_set_voice_volume;
@@ -1039,6 +1055,7 @@ int AudioDevice::Init(hw_device_t **device, const hw_module_t *module) {
     adev_->device_.get()->close_input_stream = adev_close_input_stream;
     adev_->device_.get()->create_audio_patch = adev_create_audio_patch;
     adev_->device_.get()->release_audio_patch = adev_release_audio_patch;
+    adev_->device_.get()->get_audio_port_v7 = adev_get_audio_port_v7;
     adev_->device_.get()->get_audio_port = adev_get_audio_port;
     adev_->device_.get()->set_audio_port_config = adev_set_audio_port_config;
     adev_->device_.get()->dump = adev_dump;
@@ -2122,7 +2139,7 @@ void AudioDevice::FillAndroidDeviceMap() {
     //android_device_map_.insert(std::make_pair(AUDIO_DEVICE_IN_DGTL_DOCK_HEADSET, PAL_DEVICE_IN_DGTL_DOCK_HEADSET);
     android_device_map_.insert(std::make_pair(AUDIO_DEVICE_IN_USB_ACCESSORY, PAL_DEVICE_IN_USB_ACCESSORY));
     android_device_map_.insert(std::make_pair(AUDIO_DEVICE_IN_USB_DEVICE, PAL_DEVICE_IN_USB_HEADSET));
-    android_device_map_.insert(std::make_pair(AUDIO_DEVICE_IN_FM_TUNER, PAL_DEVICE_IN_FM_TUNER));
+    android_device_map_.insert(std::make_pair(AUDIO_DEVICE_IN_FM_TUNER, PAL_DEVICE_IN_HANDSET_MIC));
     //android_device_map_.insert(std::make_pair(AUDIO_DEVICE_IN_TV_TUNER, PAL_DEVICE_IN_TV_TUNER);
     android_device_map_.insert(std::make_pair(AUDIO_DEVICE_IN_LINE, PAL_DEVICE_IN_LINE));
     android_device_map_.insert(std::make_pair(AUDIO_DEVICE_IN_SPDIF, PAL_DEVICE_IN_SPDIF));
@@ -2934,6 +2951,21 @@ void AudioDevice::out_set_power_policy(uint8_t enable)
     AHAL_DBG("%s: Exit", __func__);
 }
 
+void AudioDevice::set_mute_config_for_address(bool muted, char* address)
+{
+    AHAL_DBG("%s: Enter, muted %d address %s", __func__, muted, address);
+
+    out_list_mutex.lock();
+    for (int i = 0; i < stream_out_list_.size(); i++) {
+        if (!strcmp(address, stream_out_list_[i]->address_)) {
+            stream_out_list_[i]->SetOutputMute(muted);
+        }
+    }
+    out_list_mutex.unlock();
+
+    AHAL_DBG("%s: Exit", __func__);
+}
+
 void extn_out_set_power_policy(uint8_t enable)
 {
     AHAL_INFO("extn_out_set_power_policy = %d\n", enable);
@@ -2946,4 +2978,11 @@ void extn_in_set_power_policy(uint8_t enable)
     AHAL_INFO("extn_in_set_power_policy = %d\n", enable);
     std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
     return adevice->in_set_power_policy(enable);
+}
+
+void extn_set_mute_config_for_address(bool muted, char* address)
+{
+    AHAL_INFO("%s mute %d address %s\n", __func__, muted, address);
+    std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
+    return adevice->set_mute_config_for_address(muted, address);
 }

@@ -343,6 +343,8 @@ int AudioExtn::audio_extn_set_parameters(std::shared_ptr<AudioDevice> adev,
 
     audio_extn_hfp_ag_set_parameters(adev, params);
 
+    audio_extn_autohal_set_parameters(adev, params);
+
     return ret;
 }
 
@@ -940,6 +942,7 @@ static void *autohal_lib_handle = NULL;
 static autohal_init_t autohal_init;
 static autohal_GetCarAudioPalStreamType_t autohal_GetCarAudioPalStreamType;
 static place_marker_t place_marker;
+static set_parameters_t autohal_SetParameters;
 
 int AudioExtn::autohal_feature_init(bool is_feature_enabled)
 {
@@ -959,10 +962,16 @@ int AudioExtn::autohal_feature_init(bool is_feature_enabled)
             (autohal_GetCarAudioPalStreamType_t)dlsym(
                 autohal_lib_handle, "autohal_GetCarAudioPalStreamType")) ||
             !(place_marker = (place_marker_t)dlsym(
-                autohal_lib_handle, "place_marker"))) {
+                autohal_lib_handle, "place_marker")) ||
+            !(autohal_SetParameters = (set_parameters_t)dlsym(
+                autohal_lib_handle, "autohal_SetParameters"))) {
             AHAL_ERR("dlsym failed \n");
             goto feature_disabled;
         }
+
+        auto_hal_init_config_t init_config;
+        init_config.fp_set_mute_config_for_address = extn_set_mute_config_for_address;
+        autohal_init(init_config);
 
         AHAL_DBG(":: ---- Feature AUTO HAL is Enabled ----");
 
@@ -978,6 +987,7 @@ feature_disabled:
     autohal_init = NULL;
     autohal_GetCarAudioPalStreamType = NULL;
     place_marker = NULL;
+    autohal_SetParameters = NULL;
 
     AHAL_INFO(":: ---- Feature AUTO HAL is disabled ----");
     return -ENOSYS;
@@ -998,6 +1008,17 @@ void AudioExtn::audio_extn_place_marker(char const *name, bool isEnter)
     if (place_marker) {
         return place_marker(name, isEnter);
     }
+}
+
+int AudioExtn::audio_extn_autohal_set_parameters(std::shared_ptr<AudioDevice> adev,
+    struct str_parms *parms)
+{
+    int ret = 0;
+
+    if (autohal_SetParameters)
+        ret = autohal_SetParameters(adev, parms);
+
+    return ret;
 }
 
 // END: AUTO HAL ================================================================
