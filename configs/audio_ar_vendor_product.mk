@@ -42,6 +42,21 @@ MM_AUDIO_AR += libqcompostprocbundle.ar
 MM_AUDIO_AR += libqcomvisualizer.ar
 MM_AUDIO_AR += libqcomvoiceprocessing.ar
 
+#add codec2
+MM_AUDIO_AR += libqc2audio_hooks
+MM_AUDIO_AR += libqc2audio_platform
+MM_AUDIO_AR += libqc2audio_swaudiocodec
+MM_AUDIO_AR += libqc2audio_swaudiocodec_data_common
+MM_AUDIO_AR += libpal
+MM_AUDIO_AR += libqc2audio_hwaudiocodec
+MM_AUDIO_AR += libqc2audio_hwaudiocodec_data_common
+MM_AUDIO_AR += vendor.qti.media.c2audio@1.0-service
+MM_AUDIO_AR += libqc2audio_base
+MM_AUDIO_AR += libqc2audio_basecodec
+MM_AUDIO_AR += libqc2audio_core
+MM_AUDIO_AR += qc2audio_test
+MM_AUDIO_AR += libqc2audio_utils
+
 ifeq ($(ENABLE_HYP), false)
 ifeq ($(TARGET_GVMGH_SPECIFIC), false)
 MM_AUDIO_AR += workspaceFileXml.qwsp
