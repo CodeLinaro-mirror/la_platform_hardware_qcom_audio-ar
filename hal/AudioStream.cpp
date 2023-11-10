@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2019-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -26,6 +25,10 @@
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
 #define LOG_NDEBUG 0
@@ -2234,6 +2237,32 @@ int StreamOutPrimary::RouteStream(const std::set<audio_devices_t>& new_devices, 
                        "hifi-filter_custom_key",
                        sizeof(mPalOutDevice[i].custom_config.custom_key));
             }
+
+            if (((usecase_ == USECASE_AUDIO_PLAYBACK_VOIP) ||
+                  (usecase_ == USECASE_AUDIO_PLAYBACK_DEEP_BUFFER) ||
+                  (isOffloadUsecase())) &&
+                 ((mPalOutDevice[i].id == PAL_DEVICE_OUT_SPEAKER) ||
+                  (mPalOutDevice[i].id == PAL_DEVICE_OUT_HANDSET) ||
+                  (mPalOutDevice[i].id == PAL_DEVICE_OUT_WIRED_HEADPHONE) ||
+                  (mPalOutDevice[i].id == PAL_DEVICE_OUT_WIRED_HEADSET))) {
+                if (config_.sample_rate == 8000) {
+                    strlcpy(mPalOutDevice[i].custom_config.custom_key, "8K",
+                    sizeof(mPalOutDevice[i].custom_config.custom_key));
+                } else if (config_.sample_rate == 16000) {
+                     strlcpy(mPalOutDevice[i].custom_config.custom_key, "16K",
+                     sizeof(mPalOutDevice[i].custom_config.custom_key));
+                } else if (config_.sample_rate == 32000) {
+                    strlcpy(mPalOutDevice[i].custom_config.custom_key, "32K",
+                    sizeof(mPalOutDevice[i].custom_config.custom_key));
+                } else if (config_.sample_rate == 48000) {
+                    strlcpy(mPalOutDevice[i].custom_config.custom_key, "48K",
+                    sizeof(mPalOutDevice[i].custom_config.custom_key));
+                } else {
+                    AHAL_DBG("No custom config to set for usecase %d for sr %d",
+                             usecase_, config_.sample_rate);
+                }
+                AHAL_DBG("setting SR for usecase %d as %d", usecase_, config_.sample_rate);
+            }
         }
 
         mAndroidOutDevices = new_devices;
@@ -3545,6 +3574,31 @@ StreamOutPrimary::StreamOutPrimary(
             AHAL_INFO("Setting custom key as %s", mPalOutDevice[i].custom_config.custom_key);
         }
 
+        if (((usecase_ == USECASE_AUDIO_PLAYBACK_VOIP) ||
+              (usecase_ == USECASE_AUDIO_PLAYBACK_DEEP_BUFFER) ||
+              (isOffloadUsecase())) &&
+             ((mPalOutDevice[i].id == PAL_DEVICE_OUT_SPEAKER) ||
+              (mPalOutDevice[i].id == PAL_DEVICE_OUT_HANDSET) ||
+              (mPalOutDevice[i].id == PAL_DEVICE_OUT_WIRED_HEADPHONE) ||
+              (mPalOutDevice[i].id == PAL_DEVICE_OUT_WIRED_HEADSET))) {
+            if (config_.sample_rate == 8000) {
+                strlcpy(mPalOutDevice[i].custom_config.custom_key, "8K",
+                sizeof(mPalOutDevice[i].custom_config.custom_key));
+            } else if (config_.sample_rate == 16000) {
+                 strlcpy(mPalOutDevice[i].custom_config.custom_key, "16K",
+                 sizeof(mPalOutDevice[i].custom_config.custom_key));
+            } else if (config_.sample_rate == 32000) {
+                strlcpy(mPalOutDevice[i].custom_config.custom_key, "32K",
+                sizeof(mPalOutDevice[i].custom_config.custom_key));
+            } else if (config_.sample_rate == 48000) {
+                strlcpy(mPalOutDevice[i].custom_config.custom_key, "48K",
+                sizeof(mPalOutDevice[i].custom_config.custom_key));
+            } else {
+                AHAL_DBG("No custom config to set for usecase %d for sr %d",
+                         usecase_, config_.sample_rate);
+            }
+            AHAL_DBG("setting SR for usecase %d as %d", usecase_, config_.sample_rate);
+        }
     }
 
     if (flags & AUDIO_OUTPUT_FLAG_MMAP_NOIRQ) {
@@ -4028,6 +4082,30 @@ int StreamInPrimary::RouteStream(const std::set<audio_devices_t>& new_devices, b
                 strlcpy(mPalInDevice[i].custom_config.custom_key, "camcorder_landscape",
                         sizeof(mPalInDevice[i].custom_config.custom_key));
                 AHAL_INFO("Setting custom key as %s", mPalInDevice[i].custom_config.custom_key);
+            }
+
+            if (((usecase_ == USECASE_AUDIO_RECORD_VOIP) ||
+                 (usecase_ == USECASE_AUDIO_RECORD)) &&
+                ((mPalInDevice[i].id == PAL_DEVICE_IN_HANDSET_MIC) ||
+                 (mPalInDevice[i].id == PAL_DEVICE_IN_SPEAKER_MIC) ||
+                 (mPalInDevice[i].id == PAL_DEVICE_IN_WIRED_HEADSET))) {
+                if (config_.sample_rate == 8000) {
+                    strlcpy(mPalInDevice[i].custom_config.custom_key, "8K",
+                    sizeof(mPalInDevice[i].custom_config.custom_key));
+                } else if (config_.sample_rate == 16000) {
+                     strlcpy(mPalInDevice[i].custom_config.custom_key, "16K",
+                     sizeof(mPalInDevice[i].custom_config.custom_key));
+                } else if (config_.sample_rate == 32000) {
+                    strlcpy(mPalInDevice[i].custom_config.custom_key, "32K",
+                    sizeof(mPalInDevice[i].custom_config.custom_key));
+                } else if (config_.sample_rate == 48000) {
+                    strlcpy(mPalInDevice[i].custom_config.custom_key, "48K",
+                    sizeof(mPalInDevice[i].custom_config.custom_key));
+                } else {
+                    AHAL_DBG("No custom config to set for usecase %d for sr %d",
+                             usecase_, config_.sample_rate);
+                }
+                AHAL_DBG("setting SR for usecase %d as %d", usecase_, config_.sample_rate);
             }
         }
 
@@ -4801,6 +4879,7 @@ StreamInPrimary::StreamInPrimary(audio_io_handle_t handle,
         goto error;
     }
 
+    usecase_ = GetInputUseCase(flags, source);
     for (int i = 0; i < mAndroidInDevices.size(); i++) {
         memset(mPalInDevice[i].custom_config.custom_key, 0, sizeof(mPalInDevice[i].custom_config.custom_key));
         mPalInDevice[i].id = mPalInDeviceIds[i];
@@ -4835,9 +4914,32 @@ StreamInPrimary::StreamInPrimary(audio_io_handle_t handle,
                     sizeof(mPalInDevice[i].custom_config.custom_key));
             AHAL_INFO("Setting custom key as %s", mPalInDevice[i].custom_config.custom_key);
         }
+
+        if (((usecase_ == USECASE_AUDIO_RECORD_VOIP) ||
+             (usecase_ == USECASE_AUDIO_RECORD)) &&
+            ((mPalInDevice[i].id == PAL_DEVICE_IN_HANDSET_MIC) ||
+             (mPalInDevice[i].id == PAL_DEVICE_IN_SPEAKER_MIC) ||
+             (mPalInDevice[i].id == PAL_DEVICE_IN_WIRED_HEADSET))) {
+            if (config_.sample_rate == 8000) {
+                strlcpy(mPalInDevice[i].custom_config.custom_key, "8K",
+                sizeof(mPalInDevice[i].custom_config.custom_key));
+            } else if (config_.sample_rate == 16000) {
+                 strlcpy(mPalInDevice[i].custom_config.custom_key, "16K",
+                 sizeof(mPalInDevice[i].custom_config.custom_key));
+            } else if (config_.sample_rate == 32000) {
+                strlcpy(mPalInDevice[i].custom_config.custom_key, "32K",
+                sizeof(mPalInDevice[i].custom_config.custom_key));
+            } else if (config_.sample_rate == 48000) {
+                strlcpy(mPalInDevice[i].custom_config.custom_key, "48K",
+                sizeof(mPalInDevice[i].custom_config.custom_key));
+            } else {
+                AHAL_DBG("No custom config to set for usecase %d for sr %d",
+                         usecase_, config_.sample_rate);
+            }
+            AHAL_DBG("setting SR for usecase %d as %d", usecase_, config_.sample_rate);
+        }
     }
 
-    usecase_ = GetInputUseCase(flags, source);
     if (flags & AUDIO_INPUT_FLAG_MMAP_NOIRQ) {
         stream_.get()->start = astream_in_mmap_noirq_start;
         stream_.get()->stop = astream_in_mmap_noirq_stop;
