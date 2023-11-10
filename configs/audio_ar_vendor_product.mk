@@ -20,6 +20,8 @@ MM_AUDIO_AR += vendor.qti.hardware.AGMIPC@1.0
 MM_AUDIO_AR += vendor.qti.hardware.AGMIPC@1.0-impl
 MM_AUDIO_AR += vendor.qti.hardware.AGMIPC@1.0-service
 MM_AUDIO_AR += init.qti.AGMIPC.sh
+else
+MM_AUDIO_AR += libarpowerpolicy
 endif #ends TARGET_USES_GY
 
 # Will remove these two 32 bit version once update to new tinyalsa lib
