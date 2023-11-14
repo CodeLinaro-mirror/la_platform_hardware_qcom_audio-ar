@@ -25,19 +25,22 @@
 <!--- WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE      -->
 <!--- OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN    -->
 <!--- IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                             -->
+<!--- Changes from Qualcomm Innovation Center are provided under the following license: -->
+<!--- Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.  -->
+<!--- SPDX-License-Identifier: BSD-3-Clause-Clear                               -->
 
 <audio_effects_conf version="2.0" xmlns="http://schemas.android.com/audio/audio_effects_conf/v2_0">
     <libraries>
         <library name="bundle" path="libbundlewrapper.so"/>
         <library name="reverb" path="libreverbwrapper.so"/>
         <library name="visualizer_sw" path="libvisualizer.so"/>
-        <library name="visualizer_hw" path="libqcomvisualizer.so"/>
+        <library name="visualizer_hw" path="libqcomvisualizer.ar.so"/>
         <library name="downmix" path="libdownmix.so"/>
         <library name="loudness_enhancer" path="libldnhncr.so"/>
         <library name="dynamics_processing" path="libdynproc.so"/>
         <library name="proxy" path="libeffectproxy.so"/>
-        <library name="offload_bundle" path="libqcompostprocbundle.so"/>
-        <library name="audio_pre_processing" path="libqcomvoiceprocessing.so"/>
+        <library name="offload_bundle" path="libqcompostprocbundle.ar.so"/>
+        <library name="audio_pre_processing" path="libqcomvoiceprocessing.ar.so"/>
         <library name="audio_bmt" path="libqtiautobundle.so"/>
         <library name="audio_fnb" path="libqtiautobundle.so"/>
         <library name="audio_delay" path="libqtiautobundle.so"/>

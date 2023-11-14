@@ -3,8 +3,8 @@ LOCAL_PATH:= $(call my-dir)
 
 include $(CLEAR_VARS)
 
-LOCAL_CFLAGS := -DLIB64_AUDIO_HAL="/vendor/lib64/hw/audio.primary."$(TARGET_BOARD_PLATFORM)".so"
-LOCAL_CFLAGS += -DLIB_AUDIO_HAL="/vendor/lib/hw/audio.primary."$(TARGET_BOARD_PLATFORM)".so"
+LOCAL_CFLAGS := -DLIB64_AUDIO_HAL="/vendor/lib64/hw/audio.primary."$(TARGET_BOARD_PLATFORM)".ar.so"
+LOCAL_CFLAGS += -DLIB_AUDIO_HAL="/vendor/lib/hw/audio.primary."$(TARGET_BOARD_PLATFORM)".ar.so"
 LOCAL_CFLAGS += -DPLATFORM_NAME=$(TARGET_BOARD_PLATFORM)
 LOCAL_CFLAGS += -Wno-unused-variable
 LOCAL_CFLAGS += -Wno-sign-compare
@@ -78,20 +78,20 @@ LOCAL_SHARED_LIBRARIES := \
 LOCAL_MODULE_TAGS := optional
 
 LOCAL_MODULE_RELATIVE_PATH := soundfx
-LOCAL_MODULE:= libqcompostprocbundle
+LOCAL_MODULE:= libqcompostprocbundle.ar
 LOCAL_VENDOR_MODULE := true
 LOCAL_MODULE_OWNER := qti
 
 LOCAL_ADDITIONAL_DEPENDENCIES += $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr
 
 LOCAL_C_INCLUDES := \
-        vendor/qcom/opensource/audio-hal/primary-hal/hal-pal \
+        vendor/qcom/opensource/audio-hal-ar/primary-hal/hal-pal \
         $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr/include \
         vendor/qcom/opensource/pal \
         $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr/include/audio \
         $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr/techpack/audio/include \
         $(call include-path-for, audio-effects) \
-        vendor/qcom/opensource/audio-hal/primary-hal/hal-pal/audio_extn/
+        vendor/qcom/opensource/audio-hal-ar/primary-hal/hal-pal/audio_extn/
 
 ifeq ($(strip $(AUDIO_FEATURE_ENABLED_DLKM)),true)
   LOCAL_HEADER_LIBRARIES += audio_kernel_headers
@@ -110,8 +110,8 @@ include $(BUILD_SHARED_LIBRARY)
 
 include $(CLEAR_VARS)
 
-LOCAL_CFLAGS := -DLIB64_AUDIO_HAL="/vendor/lib64/hw/audio.primary."$(TARGET_BOARD_PLATFORM)".so"
-LOCAL_CFLAGS += -DLIB_AUDIO_HAL="/vendor/lib/hw/audio.primary."$(TARGET_BOARD_PLATFORM)".so"
+LOCAL_CFLAGS := -DLIB64_AUDIO_HAL="/vendor/lib64/hw/audio.primary."$(TARGET_BOARD_PLATFORM)".ar.so"
+LOCAL_CFLAGS += -DLIB_AUDIO_HAL="/vendor/lib/hw/audio.primary."$(TARGET_BOARD_PLATFORM)".ar.so"
 LOCAL_CFLAGS += -DPLATFORM_NAME=$(TARGET_BOARD_PLATFORM)
 LOCAL_CFLAGS += -Wno-unused-variable
 LOCAL_CFLAGS += -Wno-sign-compare
@@ -144,21 +144,21 @@ LOCAL_SHARED_LIBRARIES := \
         libaudioutils
 
 LOCAL_MODULE_RELATIVE_PATH := soundfx
-LOCAL_MODULE:= libvolumelistener
+LOCAL_MODULE:= libvolumelistener.ar
 LOCAL_VENDOR_MODULE := true
 LOCAL_MODULE_OWNER := qti
 
 LOCAL_ADDITIONAL_DEPENDENCIES += $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr
 
 LOCAL_C_INCLUDES := \
-        vendor/qcom/opensource/audio-hal/primary-hal/hal-pal \
+        vendor/qcom/opensource/audio-hal-ar/primary-hal/hal-pal \
         vendor/qcom/opensource/pal \
         $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr/include \
         $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr/include/audio \
         $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr/techpack/audio/include \
         $(call include-path-for, audio-effects) \
         $(call include-path-for, audio-route) \
-        vendor/qcom/opensource/audio-hal/primary-hal/hal-pal/audio_extn \
+        vendor/qcom/opensource/audio-hal-ar/primary-hal/hal-pal/audio_extn \
         system/media/audio_utils/include
 
 ifeq ($(strip $(AUDIO_FEATURE_ENABLED_DLKM)),true)
@@ -179,7 +179,7 @@ ifeq ($(strip $(AUDIO_FEATURE_ENABLED_MAXX_AUDIO)), true)
 
 include $(CLEAR_VARS)
 
-LOCAL_CFLAGS := -D HAL_LIB_NAME=\"audio.primary."$(TARGET_BOARD_PLATFORM)".so\"
+LOCAL_CFLAGS := -D HAL_LIB_NAME=\"audio.primary."$(TARGET_BOARD_PLATFORM)".ar.so\"
 
 LOCAL_SRC_FILES:= \
     ma_listener.c
@@ -192,7 +192,7 @@ LOCAL_SHARED_LIBRARIES := \
     libdl
 
 LOCAL_MODULE_RELATIVE_PATH := soundfx
-LOCAL_MODULE:= libmalistener
+LOCAL_MODULE:= libmalistener.ar
 LOCAL_MODULE_OWNER := google
 LOCAL_PROPRIETARY_MODULE := true
 
