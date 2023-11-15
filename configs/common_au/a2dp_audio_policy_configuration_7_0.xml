@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- This file is copied from https://git.codelinaro.org/clo/la/platform/frameworks/av/-/blob/aosp-new/master/services/audiopolicy/config/a2dp_audio_policy_configuration.xml
+     which is under Apache 2.0 license
+     Copyright (c) 2023 Qualcomm Innovation Center, Inc.
+     All rights reserved.SPDX-License-Identifier: BSD-3-Clause-Clear
+-->
+<!-- A2dp Audio HAL Audio Policy Configuration file -->
+<module name="a2dp" halVersion="2.0">
+    <attachedDevices>
+        <item>DUAL A2DP Headphones</item>
+        <item>DUAL A2DP Headphones1</item>
+    </attachedDevices>
+    <mixPorts>
+        <mixPort name="a2dp output" role="source"/>
+        <mixPort name="a2dp input" role="sink">
+            <profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
+                     samplingRates="44100 48000"
+                     channelMasks="AUDIO_CHANNEL_IN_MONO AUDIO_CHANNEL_IN_STEREO"/>
+        </mixPort>
+        <mixPort name="bt_headset_1" role="source">
+            <profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
+                samplingRates="48000" channelMasks="AUDIO_CHANNEL_OUT_STEREO"/>
+        </mixPort>
+        <mixPort name="bt_headset_2" role="source">
+            <profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
+                samplingRates="48000" channelMasks="AUDIO_CHANNEL_OUT_STEREO"/>
+        </mixPort>
+    </mixPorts>
+    <devicePorts>
+        <devicePort tagName="BT A2DP Headphones" type="AUDIO_DEVICE_OUT_BLUETOOTH_A2DP_HEADPHONES" role="sink">
+            <profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
+                     samplingRates="44100"
+                     channelMasks="AUDIO_CHANNEL_OUT_STEREO"/>
+        </devicePort>
+        <devicePort tagName="BT A2DP Speaker" type="AUDIO_DEVICE_OUT_BLUETOOTH_A2DP_SPEAKER" role="sink">
+            <profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
+                     samplingRates="44100"
+                     channelMasks="AUDIO_CHANNEL_OUT_STEREO"/>
+        </devicePort>
+        <devicePort tagName="BT A2DP In" type="AUDIO_DEVICE_IN_BLUETOOTH_A2DP" role="source">
+            <profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
+                     samplingRates="44100 48000"
+                     channelMasks="AUDIO_CHANNEL_IN_MONO AUDIO_CHANNEL_IN_STEREO"/>
+        </devicePort>
+        <devicePort tagName="DUAL A2DP Headphones" type="AUDIO_DEVICE_OUT_BUS" role="sink"
+            encodedFormats="AUDIO_FORMAT_SBC AUDIO_FORMAT_AAC AUDIO_FORMAT_APTX_HD AUDIO_FORMAT_APTX AUDIO_FORMAT_LDAC" address="BUS18_BT_HEADPHONE_1">
+            <profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
+                samplingRates="44100"
+                channelMasks="AUDIO_CHANNEL_OUT_STEREO"/>
+            <gains>
+                <gain name="" mode="AUDIO_GAIN_MODE_JOINT"
+                    minValueMB="-6000" maxValueMB="600" defaultValueMB="0" stepValueMB="100"/>
+            </gains>
+        </devicePort>
+        <devicePort tagName="DUAL A2DP Headphones1" type="AUDIO_DEVICE_OUT_BUS" role="sink"
+            encodedFormats="AUDIO_FORMAT_SBC AUDIO_FORMAT_AAC AUDIO_FORMAT_APTX_HD AUDIO_FORMAT_APTX AUDIO_FORMAT_LDAC" address="BUS20_BT_HEADPHONE_1">
+            <profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
+                samplingRates="44100"
+                channelMasks="AUDIO_CHANNEL_OUT_STEREO"/>
+            <gains>
+                <gain name="" mode="AUDIO_GAIN_MODE_JOINT"
+                    minValueMB="-6000" maxValueMB="600" defaultValueMB="0" stepValueMB="100"/>
+            </gains>
+        </devicePort>
+    </devicePorts>
+    <routes>
+        <route type="mix" sink="BT A2DP Headphones"
+               sources="a2dp output"/>
+        <route type="mix" sink="BT A2DP Speaker"
+               sources="a2dp output"/>
+        <route type="mix" sink="a2dp input"
+            sources="BT A2DP In"/>
+        <route type="mix" sink="DUAL A2DP Headphones"
+            sources="bt_headset_1"/>
+        <route type="mix" sink="DUAL A2DP Headphones1"
+            sources="bt_headset_2"/>
+    </routes>
+</module>
