@@ -82,10 +82,11 @@ PRODUCT_PACKAGES += $(MM_AUDIO_AR)
 TARGET_USES_AOSP := true
 TARGET_USES_AOSP_FOR_AUDIO := false
 
-#To enable audio_effects in msmnile_gvmq
-ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_gvmq)
+#enable audio_effects
+ifeq ($(ENABLE_HYP), true)
 AUDIO_FRAMEWORK_AUDIOREACH := true
-endif #ends msmnile_gvmq
+endif #ends ENABLE_HYP
+
 # Audio configuration file
 ifeq ($(AUDIO_USE_STUB_HAL), true)
 TARGET_USES_AOSP_FOR_AUDIO := true
