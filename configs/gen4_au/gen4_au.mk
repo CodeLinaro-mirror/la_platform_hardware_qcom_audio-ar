@@ -7,6 +7,10 @@ AUDIO_USE_STUB_HAL := true
 endif
 endif
 
+ifeq ($(TARGET_USES_AUDIOLITE),true)
+AUDIO_USE_STUB_HAL := true
+endif #ends TARGET_USES_AUDIOLITE
+
 ifeq ($(TARGET_USES_GY), true)
 AUDIO_FEATURE_ENABLED_POWER_POLICY := true
 endif
