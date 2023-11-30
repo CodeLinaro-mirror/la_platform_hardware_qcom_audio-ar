@@ -20,6 +20,8 @@ MM_AUDIO_AR += vendor.qti.hardware.AGMIPC@1.0
 MM_AUDIO_AR += vendor.qti.hardware.AGMIPC@1.0-impl
 MM_AUDIO_AR += vendor.qti.hardware.AGMIPC@1.0-service
 MM_AUDIO_AR += init.qti.AGMIPC.sh
+else
+MM_AUDIO_AR += libarpowerpolicy
 endif #ends TARGET_USES_GY
 
 # Will remove these two 32 bit version once update to new tinyalsa lib
@@ -82,10 +84,11 @@ PRODUCT_PACKAGES += $(MM_AUDIO_AR)
 TARGET_USES_AOSP := true
 TARGET_USES_AOSP_FOR_AUDIO := false
 
-#To enable audio_effects in msmnile_gvmq
-ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_gvmq)
+#enable audio_effects
+ifeq ($(ENABLE_HYP), true)
 AUDIO_FRAMEWORK_AUDIOREACH := true
-endif #ends msmnile_gvmq
+endif #ends ENABLE_HYP
+
 # Audio configuration file
 ifeq ($(AUDIO_USE_STUB_HAL), true)
 TARGET_USES_AOSP_FOR_AUDIO := true

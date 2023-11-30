@@ -2331,6 +2331,32 @@ static int voip_get_buffer_size(uint32_t sample_rate)
 
 }
 
+static int get_sampleRate_period_size(uint32_t sample_rate)
+{
+   int size = 0;
+   switch(sample_rate) {
+        case 48000:
+            size = 240;
+            break;
+        case 32000:
+            size = 160;
+            break;
+        case 24000:
+            size = 120;
+            break;
+        case 16000:
+            size = 80;
+            break;
+        case 8000:
+            size = 40;
+            break;
+        default:
+            size = 240;
+            break;
+   }
+   return size;
+}
+
 uint32_t StreamOutPrimary::GetBufferSize() {
     struct pal_stream_attributes streamAttributes_;
     streamAttributes_.type = StreamOutPrimary::GetPalStreamType(flags_, address_);
@@ -2345,8 +2371,9 @@ uint32_t StreamOutPrimary::GetBufferSize() {
         if(streamAttributes_.type == PAL_STREAM_PLAYBACK_BUS) {
             if( (strncmp(address_,"BUS03_PHONE",strlen("BUS03_PHONE"))) == 0 ||
                 (strncmp(address_,"BUS01_SYS",strlen("BUS01_SYS"))) == 0 ||
+                (strncmp(address_,"BUS02_NAV",strlen("BUS02_NAV"))) == 0 ||
                 (strncmp(address_,"BUS05_ALERTS",strlen("BUS05_ALERTS"))) == 0) {
-                return  LOW_LATENCY_PLAYBACK_PERIOD_SIZE *
+                return  get_sampleRate_period_size(config_.sample_rate) *
                     audio_bytes_per_frame(
                             audio_channel_count_from_out_mask(config_.channel_mask),
                             config_.format);

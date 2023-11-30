@@ -7,6 +7,10 @@ AUDIO_USE_STUB_HAL := true
 endif
 endif
 
+ifeq ($(TARGET_USES_GY), true)
+AUDIO_FEATURE_ENABLED_POWER_POLICY := true
+endif
+
 ifeq ($(ENABLE_HYP), false)
 ifeq ($(TARGET_GVMGH_SPECIFIC), false)
     TARGET_USES_ION_CMA_MEMORY := true
@@ -109,6 +113,12 @@ ifeq ($(ENABLE_HYP),true)
 AUDIO_FEATURE_ENABLED_POWER_POLICY := true
 AUDIO_FEATURE_ENABLED_AUDIO_PARSERS := true
 AUDIO_FEATURE_ENABLED_AUDIO_CONTROL_HAL_AIDL := true
+PRODUCT_PACKAGES += vendor.qti.hardware.automotive.audiocontrol-service
+ifeq ($(TARGET_BOARD_AUTO), true)
+ifeq ($(TARGET_USES_RRO), true)
+PRODUCT_PACKAGES += CarServiceResAutoTarget_Vendor
+endif
+endif
 endif
 
 ifneq (,$(filter U UpsideDownCake 14, $(PLATFORM_VERSION)))
@@ -163,9 +173,13 @@ PRODUCT_COPY_FILES += \
     $(TOPDIR)frameworks/native/data/etc/android.hardware.audio.pro.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.pro.xml \
     $(TOPDIR)frameworks/native/data/etc/android.hardware.audio.low_latency.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.low_latency.xml
 
-PRODUCT_PACKAGES += vendor.qti.hardware.automotive.audiocontrol-service
-
 endif
+endif
+
+# HGY specific configuration files
+ifeq ($(TARGET_USES_GY), true)
+PRODUCT_COPY_FILES += \
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/mixer_paths_VIOSND.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_VIOSND.xml
 endif
 
 ifeq ($(ENABLE_HYP), false)
@@ -509,6 +523,10 @@ ifneq ( ,$(filter T Tiramisu 13, $(PLATFORM_VERSION)))
 PRODUCT_ODM_PROPERTIES += \
 vendor.audio.feature.arpowerpolicy.enable=true
 endif
+ifeq ($(TARGET_USES_GY), true)
+PRODUCT_ODM_PROPERTIES += \
+vendor.audio.feature.arpowerpolicy.enable=true
+endif # ends TARGET_USES_GY
 endif
 else
 # Non-Generic ODM varient related
@@ -571,6 +589,10 @@ PRODUCT_ODM_PROPERTIES += \
 vendor.audio.feature.arpowerpolicy.enable=true
 endif
 endif
+ifeq ($(TARGET_USES_GY), true)
+PRODUCT_ODM_PROPERTIES += \
+vendor.audio.feature.arpowerpolicy.enable=true
+endif # ends TARGET_USES_GY
 endif
 
 # for HIDL related packages

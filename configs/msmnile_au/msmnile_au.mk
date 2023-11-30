@@ -7,6 +7,10 @@ AUDIO_USE_STUB_HAL := true
 endif
 endif
 
+ifeq ($(TARGET_USES_GY), true)
+AUDIO_FEATURE_ENABLED_POWER_POLICY := true
+endif
+
 ifeq ($(ENABLE_HYP), false)
 ifeq ($(TARGET_GVMGH_SPECIFIC), false)
     TARGET_USES_ION_CMA_MEMORY := true
@@ -146,12 +150,12 @@ PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/a2dp_audio_policy_configuration_7_0.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/a2dp_audio_policy_configuration.xml
 else
 PRODUCT_COPY_FILES += \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/a2dp_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/a2dp_audio_policy_configuration.xml \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_configuration.xml
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/a2dp_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/a2dp_audio_policy_configuration.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_configuration.xml
 endif
 
 PRODUCT_COPY_FILES += \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/car_audio_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/car_audio_configuration.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/car_audio_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/car_audio_configuration.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/r_submix_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/r_submix_audio_policy_configuration.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/usb_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/usb_audio_policy_configuration.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/audio_policy_volumes.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_volumes.xml \
@@ -514,6 +518,10 @@ PRODUCT_ODM_PROPERTIES += \
 vendor.audio.feature.arpowerpolicy.enable=true
 endif
 endif
+ifeq ($(TARGET_USES_GY), true)
+PRODUCT_ODM_PROPERTIES += \
+vendor.audio.feature.arpowerpolicy.enable=true
+endif # ends TARGET_USES_GY
 else
 # Non-Generic ODM varient related
 PRODUCT_ODM_PROPERTIES += \
@@ -575,6 +583,10 @@ PRODUCT_ODM_PROPERTIES += \
 vendor.audio.feature.arpowerpolicy.enable=true
 endif
 endif
+ifeq ($(TARGET_USES_GY), true)
+PRODUCT_ODM_PROPERTIES += \
+vendor.audio.feature.arpowerpolicy.enable=true
+endif # ends TARGET_USES_GY
 endif
 
 # for HIDL related packages
