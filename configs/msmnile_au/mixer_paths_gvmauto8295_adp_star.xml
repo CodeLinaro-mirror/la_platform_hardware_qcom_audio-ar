@@ -1973,6 +1973,9 @@
         <ctl name="SpkrRight SWR DAC_Port Switch" value="1" />
     </path>
 
+    <path name="a2bspeaker">
+    </path>
+
     <path name="speaker-and-haptics">
         <ctl name="WSA RX0 MUX" value="AIF1_PB" />
         <ctl name="WSA RX1 MUX" value="AIF1_PB" />

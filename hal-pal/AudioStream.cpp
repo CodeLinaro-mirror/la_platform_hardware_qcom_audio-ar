@@ -865,6 +865,12 @@ static int astream_out_set_volume(struct audio_stream_out *stream,
     }
 }
 
+static void out_update_source_metadata_v7(
+                                struct audio_stream_out *stream,
+                                const struct source_metadata_v7 *source_metadata) {
+    AHAL_DBG("stream %p, source_metadata %p.", (void*)stream, (void*)source_metadata);
+}
+
 static int astream_out_add_audio_effect(
                                 const struct audio_stream *stream __unused,
                                 effect_handle_t effect __unused) {
@@ -1235,6 +1241,12 @@ static void in_update_sink_metadata(
             AHAL_ERR("%s: voice handle does not exist", __func__);
         }
     }
+}
+
+static void in_update_sink_metadata_v7(
+                                struct audio_stream_in *stream,
+                                const struct sink_metadata_v7 *sink_metadata) {
+    AHAL_DBG("stream %p, sink_metadata %p.", (void*)stream, (void*)sink_metadata);
 }
 
 static int astream_in_get_active_microphones(
@@ -1644,6 +1656,7 @@ int StreamOutPrimary::FillHalFnPtrs() {
     stream_.get()->drain = astream_drain;
     stream_.get()->flush = astream_flush;
     stream_.get()->set_callback = astream_set_callback;
+    stream_.get()->update_source_metadata_v7 = out_update_source_metadata_v7;
     return ret;
 }
 
@@ -2269,12 +2282,19 @@ int StreamOutPrimary::get_pcm_buffer_size()
     uint32_t hal_op_bytes_per_sample = audio_bytes_per_sample(dst_format);
     uint32_t hal_ip_bytes_per_sample = audio_bytes_per_sample(src_format);
     uint32_t fragment_size = 0;
+    struct pal_stream_attributes streamAttributes_;
+    streamAttributes_.type = StreamOutPrimary::GetPalStreamType(flags_, address_);
 
     AHAL_DBG("config_ format:%x, SR %d ch_mask 0x%x, out format:%x",
             config_.format, config_.sample_rate,
             config_.channel_mask, dst_format);
-    fragment_size = PCM_OFFLOAD_OUTPUT_PERIOD_DURATION *
-        config_.sample_rate * bytes_per_sample * channels;
+    if (streamAttributes_.type == PAL_STREAM_PLAYBACK_BUS) {
+        fragment_size = DEEP_BUFFER_OUTPUT_PERIOD_DURATION *
+            config_.sample_rate * bytes_per_sample * channels;
+    } else {
+        fragment_size = PCM_OFFLOAD_OUTPUT_PERIOD_DURATION *
+            config_.sample_rate * bytes_per_sample * channels;
+    }
     fragment_size /= 1000;
 
     if (fragment_size < MIN_PCM_FRAGMENT_SIZE)
@@ -2311,6 +2331,32 @@ static int voip_get_buffer_size(uint32_t sample_rate)
 
 }
 
+static int get_sampleRate_period_size(uint32_t sample_rate)
+{
+   int size = 0;
+   switch(sample_rate) {
+        case 48000:
+            size = 240;
+            break;
+        case 32000:
+            size = 160;
+            break;
+        case 24000:
+            size = 120;
+            break;
+        case 16000:
+            size = 80;
+            break;
+        case 8000:
+            size = 40;
+            break;
+        default:
+            size = 240;
+            break;
+   }
+   return size;
+}
+
 uint32_t StreamOutPrimary::GetBufferSize() {
     struct pal_stream_attributes streamAttributes_;
     streamAttributes_.type = StreamOutPrimary::GetPalStreamType(flags_, address_);
@@ -2325,8 +2371,9 @@ uint32_t StreamOutPrimary::GetBufferSize() {
         if(streamAttributes_.type == PAL_STREAM_PLAYBACK_BUS) {
             if( (strncmp(address_,"BUS03_PHONE",strlen("BUS03_PHONE"))) == 0 ||
                 (strncmp(address_,"BUS01_SYS",strlen("BUS01_SYS"))) == 0 ||
+                (strncmp(address_,"BUS02_NAV",strlen("BUS02_NAV"))) == 0 ||
                 (strncmp(address_,"BUS05_ALERTS",strlen("BUS05_ALERTS"))) == 0) {
-                return  LOW_LATENCY_PLAYBACK_PERIOD_SIZE *
+                return  get_sampleRate_period_size(config_.sample_rate) *
                     audio_bytes_per_frame(
                             audio_channel_count_from_out_mask(config_.channel_mask),
                             config_.format);
@@ -3796,7 +3843,11 @@ int StreamInPrimary::GetInputUseCase(audio_input_flags_t halStreamFlags, audio_s
 {
     // TODO: cover other usecases
     int usecase = USECASE_AUDIO_RECORD;
-    if (config_.sample_rate == LOW_LATENCY_CAPTURE_SAMPLE_RATE &&
+    if ((config_.sample_rate == LOW_LATENCY_CAPTURE_SAMPLE_RATE ||
+          config_.sample_rate == 32000 ||
+          config_.sample_rate == 24000 ||
+          config_.sample_rate == 16000 ||
+          config_.sample_rate == 8000) &&
         (halStreamFlags & AUDIO_INPUT_FLAG_TIMESTAMP) == 0 &&
         (halStreamFlags & AUDIO_INPUT_FLAG_COMPRESS) == 0 &&
         (halStreamFlags & AUDIO_INPUT_FLAG_FAST) != 0 &&
@@ -3971,6 +4022,7 @@ int StreamInPrimary::FillHalFnPtrs() {
     stream_.get()->set_microphone_field_dimension =
                                             in_set_microphone_field_dimension;
     stream_.get()->update_sink_metadata = in_update_sink_metadata;
+    stream_.get()->update_sink_metadata_v7 = in_update_sink_metadata_v7;
 
     return ret;
 }
