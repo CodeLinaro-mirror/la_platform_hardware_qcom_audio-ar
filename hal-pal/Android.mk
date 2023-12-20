@@ -41,6 +41,12 @@ LOCAL_CFLAGS += -Wno-unused-function
 LOCAL_CFLAGS += -Wno-unused-local-typedef
 LOCAL_CPPFLAGS += -fexceptions
 
+#Enable Hardware timestamp for Android U onwards
+#sdk version for Android U is 34
+ifeq ($(call math_gt_or_eq, $(PRODUCT_SHIPPING_API_LEVEL), 34), true)
+LOCAL_CPPFLAGS += -DHARDWARE_TIMESTAMP
+endif
+
 LOCAL_C_INCLUDES += \
     system/media/audio_utils/include \
     external/expat/lib \
