@@ -1996,8 +1996,8 @@ int StreamOutPrimary::RouteStream(const std::set<audio_devices_t>& new_devices) 
         agDLCachedPalId = PAL_DEVICE_OUT_MIN;
     }
     /* Ignore routing to same device unless it's forced */
-    if (((new_devices != mAndroidOutDevices) && (!AudioExtn::audio_devices_empty(new_devices))) ||
-        forceRouting || is_ag_sco) {
+     if (((new_devices != mAndroidOutDevices) && (!AudioExtn::audio_devices_empty(new_devices)) &&
+        forceRouting) || is_ag_sco) {
         // re-allocate mPalOutDevice and mPalOutDeviceIds
         if (new_devices.size() != mAndroidOutDevices.size()) {
             deviceId = (pal_device_id_t*) realloc(mPalOutDeviceIds,
