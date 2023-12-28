@@ -148,6 +148,16 @@ PRODUCT_COPY_FILES += \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/card-defs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/card-defs.xml \
     vendor/qcom/opensource/agm/plugins/tinyalsa/test/backend_conf.xml:$(TARGET_COPY_OUT_VENDOR)/etc/backend_conf.xml
 
+ifeq ($(BOARD_SUPPORTS_RAMDISK_EARLY_INIT), true)
+ifneq ( ,$(filter T Tiramisu 13, $(PLATFORM_VERSION)))
+ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), gen4_au)
+PRODUCT_COPY_FILES += \
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/card-defs.xml:$(TARGET_COPY_OUT_VENDOR)/../vendor_ramdisk/vendor_early_services/vendor/etc/card-defs.xml \
+    vendor/qcom/opensource/agm/plugins/tinyalsa/test/backend_conf.xml:$(TARGET_COPY_OUT_VENDOR)/../vendor_ramdisk/vendor_early_services/vendor/etc/backend_conf.xml
+endif
+endif
+endif
+
 # Configuration files for devices inheriting from gen4_gvm
 ifeq ($(ENABLE_HYP), true)
 ifeq ($(TARGET_GVMGH_SPECIFIC), false)
