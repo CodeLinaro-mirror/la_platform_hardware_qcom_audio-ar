@@ -127,6 +127,9 @@ endif
 
 ifneq (,$(filter U UpsideDownCake 14, $(PLATFORM_VERSION)))
 AUDIO_FEATURE_ENABLED_HAL_V7 := true
+PRODUCT_PACKAGES += libarpowerpolicy
+PRODUCT_ODM_PROPERTIES += \
+vendor.audio.feature.arpowerpolicy.enable=true
 endif
 ##AUTOMOTIVE_AUDIO_FEATURE_FLAGS
 
