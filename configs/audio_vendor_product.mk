@@ -46,6 +46,12 @@ else
 -include $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/$(TARGET_BOARD_PLATFORM)/$(TARGET_BOARD_PLATFORM).mk
 endif
 
+ifeq ($(TARGET_USES_AUDIOLITE),true)
+AUDIO_USE_STUB_HAL := true
+TARGET_USES_AOSP_FOR_AUDIO := true
+-include $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/default.mk
+endif #ends TARGET_USES_AUDIOLITE
+
 ifeq ($(AUDIO_USE_STUB_HAL), true)
 PRODUCT_COPY_FILES += \
     frameworks/av/services/audiopolicy/config/audio_policy_configuration_generic.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/audio_policy_configuration.xml \

@@ -5,6 +5,10 @@ AUDIO_USE_STUB_HAL := true
 endif
 endif
 
+ifeq ($(TARGET_USES_AUDIOLITE),true)
+AUDIO_USE_STUB_HAL := true
+endif #ends TARGET_USES_AUDIOLITE
+
 # MM_AUDIO_AR
 ifeq ($(TARGET_GVMGH_SPECIFIC), false)
 MM_AUDIO_AR := acdb_cal.acdb
