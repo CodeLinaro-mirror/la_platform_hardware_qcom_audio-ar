@@ -7,6 +7,10 @@ AUDIO_USE_STUB_HAL := true
 endif
 endif
 
+ifeq ($(TARGET_USES_GY), true)
+AUDIO_FEATURE_ENABLED_POWER_POLICY := true
+endif
+
 ifeq ($(ENABLE_HYP), false)
 ifeq ($(TARGET_GVMGH_SPECIFIC), false)
     TARGET_USES_ION_CMA_MEMORY := true
@@ -170,6 +174,12 @@ PRODUCT_COPY_FILES += \
     $(TOPDIR)frameworks/native/data/etc/android.hardware.audio.low_latency.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.low_latency.xml
 
 endif
+endif
+
+# HGY specific configuration files
+ifeq ($(TARGET_USES_GY), true)
+PRODUCT_COPY_FILES += \
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/mixer_paths_VIOSND.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_VIOSND.xml
 endif
 
 ifeq ($(ENABLE_HYP), false)
@@ -513,6 +523,10 @@ ifneq ( ,$(filter T Tiramisu 13, $(PLATFORM_VERSION)))
 PRODUCT_ODM_PROPERTIES += \
 vendor.audio.feature.arpowerpolicy.enable=true
 endif
+ifeq ($(TARGET_USES_GY), true)
+PRODUCT_ODM_PROPERTIES += \
+vendor.audio.feature.arpowerpolicy.enable=true
+endif # ends TARGET_USES_GY
 endif
 else
 # Non-Generic ODM varient related
@@ -575,6 +589,10 @@ PRODUCT_ODM_PROPERTIES += \
 vendor.audio.feature.arpowerpolicy.enable=true
 endif
 endif
+ifeq ($(TARGET_USES_GY), true)
+PRODUCT_ODM_PROPERTIES += \
+vendor.audio.feature.arpowerpolicy.enable=true
+endif # ends TARGET_USES_GY
 endif
 
 # for HIDL related packages
