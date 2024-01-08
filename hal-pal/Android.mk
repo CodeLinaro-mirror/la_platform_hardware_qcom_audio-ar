@@ -86,6 +86,10 @@ endif
     LOCAL_SRC_FILES += audio_extn/Gef.cpp
 endif
 
+ifeq ($(AUDIO_FEATURE_ENABLED_HAL_V7), true)
+    LOCAL_CFLAGS += -DANDROID_U_HAL7
+endif
+
 # Automotive will need to have both AR and Elite
 # audio hals available on target for conditional loading
 # depending on the ro.boot.audio prop.
