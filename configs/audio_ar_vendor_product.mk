@@ -92,7 +92,7 @@ endif #ends ENABLE_HYP
 # Audio configuration file
 ifeq ($(AUDIO_USE_STUB_HAL), true)
 TARGET_USES_AOSP_FOR_AUDIO := true
--include $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/default.mk
+-include $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common/default.mk
 else
 ifeq ($(call is-board-platform-in-list, gen4), true)
 -include $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/gen4_au.mk
