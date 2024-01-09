@@ -1163,8 +1163,13 @@ uint64_t StreamInPrimary::GetFramesRead(int64_t* time)
 
     signed_frames = read_frames + kernel_frames;
 
+#ifndef HARDWARE_TIMESTAMP
     *time = (readAt.tv_sec * 1000000000LL) + readAt.tv_nsec - (dsp_latency * 1000LL);
+#else
+    *time = (readAt.tv_sec * 1000000000LL) + readAt.tv_nsec;
+#endif
 
+#ifndef HARDWARE_TIMESTAMP
     // Adjustment accounts for A2dp decoder latency
     // Note: Decoder latency is returned in ms, while platform_source_latency in us.
     pal_param_bta2dp_t* param_bt_a2dp = NULL;
@@ -1178,10 +1183,10 @@ uint64_t StreamInPrimary::GetFramesRead(int64_t* time)
             *time -= param_bt_a2dp->latency * 1000000LL;
         }
     }
-
-    AHAL_VERBOSE("signed frames %lld read frames %lld kernel frames %lld",
-        (long long)signed_frames, (long long)read_frames, (long long)kernel_frames);
-
+#endif
+    AHAL_VERBOSE("signed frames %lld read frames %lld kernel frames%lld\
+        pal_stream_handle_=%pK timestamp=%llu",(long long)signed_frames,
+        (long long)read_frames,(long long)kernel_frames,pal_stream_handle_,((long long)*time));
     return signed_frames;
 }
 
@@ -1204,6 +1209,12 @@ static int astream_in_get_capture_position(const struct audio_stream_in* stream,
         *frames = astream_in->GetFramesRead(time);
     else
         return -ENOSYS;
+#ifdef HARDWARE_TIMESTAMP
+    if((*time) == 0) {
+        AHAL_ERR("error: read failed or fetching hardware timestamp failed");
+        return -EINVAL;
+    }
+#endif
     AHAL_VERBOSE("frames %lld played at %lld ", ((long long)*frames), ((long long)*time));
 
     return 0;
@@ -1985,8 +1996,8 @@ int StreamOutPrimary::RouteStream(const std::set<audio_devices_t>& new_devices) 
         agDLCachedPalId = PAL_DEVICE_OUT_MIN;
     }
     /* Ignore routing to same device unless it's forced */
-    if (((new_devices != mAndroidOutDevices) && (!AudioExtn::audio_devices_empty(new_devices))) ||
-        forceRouting || is_ag_sco) {
+     if (((new_devices != mAndroidOutDevices) && (!AudioExtn::audio_devices_empty(new_devices)) &&
+        forceRouting) || is_ag_sco) {
         // re-allocate mPalOutDevice and mPalOutDeviceIds
         if (new_devices.size() != mAndroidOutDevices.size()) {
             deviceId = (pal_device_id_t*) realloc(mPalOutDeviceIds,
@@ -3906,6 +3917,13 @@ ssize_t StreamInPrimary::read(const void *buffer, size_t bytes) {
     palBuffer.size = bytes;
     palBuffer.offset = 0;
     std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
+    palBuffer.ts = NULL;
+#ifdef HARDWARE_TIMESTAMP
+    palBuffer.ts = (struct timespec *) calloc(1, sizeof(struct timespec));
+    if(!palBuffer.ts) {
+        AHAL_ERR("calloc fails for size %zu for palBuffer.ts", sizeof(struct timespec));
+    }
+#endif
 
     AHAL_VERBOSE("Bytes:(%zu)", bytes);
 
@@ -3985,14 +4003,28 @@ ssize_t StreamInPrimary::read(const void *buffer, size_t bytes) {
         memset(palBuffer.buffer, 0, palBuffer.size);
     }
 
-exit:
-    stream_mutex_.unlock();
+    // do not add bytes when read fails
+    if(ret < 0) {
+        AHAL_ERR("error: pal_stream_read, do not add bytes when read fails");
+        goto exit;
+    }
+
     if (mBytesRead <= UINT64_MAX - bytes) {
         mBytesRead += bytes;
     } else {
         mBytesRead = UINT64_MAX;
     }
+exit:
+    stream_mutex_.unlock();
+#ifndef HARDWARE_TIMESTAMP
     clock_gettime(CLOCK_MONOTONIC, &readAt);
+#else
+    if(palBuffer.ts) {
+        readAt.tv_sec = palBuffer.ts->tv_sec;
+        readAt.tv_nsec = palBuffer.ts->tv_nsec;
+        free(palBuffer.ts);
+    }
+#endif
 
     return (ret < 0 ? onReadError(bytes) : bytes);
 }

@@ -99,12 +99,10 @@ AUDIO_FEATURE_ENABLED_BATTERY_LISTENER := false
 
 AUDIO_FEATURE_ENABLED_AUTO_HAL := true
 AUDIO_FEATURE_ENABLED_EXT_HW_PLUGIN := true
-AUDIO_FEATURE_ENABLED_AUDIO_CONTROL_HAL := true
+AUDIO_FEATURE_ENABLED_AUDIO_CONTROL_HAL := false
 ifneq ($(ENABLE_HYP),true)
 AUDIO_FEATURE_ENABLED_AUTO_AUDIOD := true
 AUDIO_FEATURE_ENABLED_SND_MONITOR := false
-AUDIO_FEATURE_ENABLED_AUDIO_PARSERS := true
-AUDIO_FEATURE_ENABLED_AUDIO_CONTROL_HAL_AIDL := true
 else
 AUDIO_FEATURE_ENABLED_SND_MONITOR := true
 endif
@@ -112,6 +110,9 @@ AUDIO_FEATURE_ENABLED_FM_TUNER_EXT := false
 ##AUTOMOTIVE_AUDIO_FEATURE_FLAGS
 
 ifneq (,$(filter U UpsideDownCake 14, $(PLATFORM_VERSION)))
+AUDIO_FEATURE_ENABLED_AUDIO_CONTROL_HAL := true
+AUDIO_FEATURE_ENABLED_AUDIO_PARSERS := true
+AUDIO_FEATURE_ENABLED_AUDIO_CONTROL_HAL_AIDL := true
 AUDIO_FEATURE_ENABLED_HAL_V7 := true
 endif
 ifneq ($(strip $(TARGET_USES_RRO)), true)
@@ -146,8 +147,9 @@ endif
 # Configuration files for msmnile_gvmq AudioReach value added SI
 ifneq ( ,$(filter U UpsideDownCake 14, $(PLATFORM_VERSION)))
 PRODUCT_COPY_FILES += \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/audio_policy_configuration_7_0_va.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_configuration.xml \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/a2dp_audio_policy_configuration_7_0.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/a2dp_audio_policy_configuration.xml
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/audio_policy_configuration_7_0_pure.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_configuration.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/a2dp_audio_policy_configuration_7_0.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/a2dp_audio_policy_configuration.xml \
+    $(TOPDIR)frameworks/native/data/etc/android.hardware.audio.pro.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.pro.xml
 else
 PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/a2dp_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/a2dp_audio_policy_configuration.xml \
@@ -160,11 +162,6 @@ PRODUCT_COPY_FILES += \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/usb_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/usb_audio_policy_configuration.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/audio_policy_volumes.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_volumes.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/default_volume_tables.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/default_volume_tables.xml
-
-# Configuration files that were copied by Elite HAL before. Now copy them in AR HAL.
-PRODUCT_COPY_FILES += \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/audio_policy_configuration_7_0_pure.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_configuration.xml \
-    $(TOPDIR)frameworks/native/data/etc/android.hardware.audio.pro.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.pro.xml
 
 endif
 endif
