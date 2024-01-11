@@ -7,6 +7,10 @@ AUDIO_USE_STUB_HAL := true
 endif
 endif
 
+ifeq ($(TARGET_USES_AUDIOLITE),true)
+AUDIO_USE_STUB_HAL := true
+endif #ends TARGET_USES_AUDIOLITE
+
 ifeq ($(TARGET_USES_GY), true)
 AUDIO_FEATURE_ENABLED_POWER_POLICY := true
 endif
@@ -36,14 +40,14 @@ AUDIO_FEATURE_ENABLED_EXTN_FLAC_DECODER := false
 AUDIO_FEATURE_ENABLED_EXTN_RESAMPLER := false
 AUDIO_FEATURE_ENABLED_FM_POWER_OPT := false
 AUDIO_FEATURE_ENABLED_HDMI_SPK := false
-AUDIO_FEATURE_ENABLED_PCM_OFFLOAD := false
-AUDIO_FEATURE_ENABLED_PCM_OFFLOAD_24 := false
-AUDIO_FEATURE_ENABLED_FLAC_OFFLOAD := false
-AUDIO_FEATURE_ENABLED_VORBIS_OFFLOAD := false
-AUDIO_FEATURE_ENABLED_WMA_OFFLOAD := false
-AUDIO_FEATURE_ENABLED_ALAC_OFFLOAD := false
-AUDIO_FEATURE_ENABLED_APE_OFFLOAD := false
-AUDIO_FEATURE_ENABLED_AAC_ADTS_OFFLOAD := false
+AUDIO_FEATURE_ENABLED_PCM_OFFLOAD := true
+AUDIO_FEATURE_ENABLED_PCM_OFFLOAD_24 := true
+AUDIO_FEATURE_ENABLED_FLAC_OFFLOAD := true
+AUDIO_FEATURE_ENABLED_VORBIS_OFFLOAD := true
+AUDIO_FEATURE_ENABLED_WMA_OFFLOAD := true
+AUDIO_FEATURE_ENABLED_ALAC_OFFLOAD := true
+AUDIO_FEATURE_ENABLED_APE_OFFLOAD := true
+AUDIO_FEATURE_ENABLED_AAC_ADTS_OFFLOAD := true
 AUDIO_FEATURE_ENABLED_PROXY_DEVICE := true
 AUDIO_FEATURE_ENABLED_SSR := true
 AUDIO_FEATURE_ENABLED_DTS_EAGLE := false
@@ -57,7 +61,7 @@ AUDIO_FEATURE_ENABLED_A2DP_OFFLOAD := false
 AUDIO_FEATURE_ENABLED_3D_AUDIO := false
 AUDIO_FEATURE_ENABLED_AHAL_EXT := false
 DOLBY_ENABLE := false
-AUDIO_FEATURE_ENABLED_EXTENDED_COMPRESS_FORMAT := false
+AUDIO_FEATURE_ENABLED_EXTENDED_COMPRESS_FORMAT := true 
 endif
 
 USE_XML_AUDIO_POLICY_CONF := 1
@@ -123,6 +127,9 @@ endif
 
 ifneq (,$(filter U UpsideDownCake 14, $(PLATFORM_VERSION)))
 AUDIO_FEATURE_ENABLED_HAL_V7 := true
+PRODUCT_PACKAGES += libarpowerpolicy
+PRODUCT_ODM_PROPERTIES += \
+vendor.audio.feature.arpowerpolicy.enable=true
 endif
 ##AUTOMOTIVE_AUDIO_FEATURE_FLAGS
 
@@ -225,9 +232,9 @@ endif # Configuration files for msmnile_gvmgh only
 ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), gen4_au)
 # Configuration files for gen4_au AudioReach value added SI
 PRODUCT_COPY_FILES += \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/car_audio_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/car_audio_configuration.xml \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/a2dp_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/a2dp_audio_policy_configuration.xml \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_configuration.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/car_audio_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/car_audio_configuration.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/a2dp_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/a2dp_audio_policy_configuration.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_configuration.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/r_submix_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/r_submix_audio_policy_configuration.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/usb_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/usb_audio_policy_configuration.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/audio_policy_volumes.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_volumes.xml \
