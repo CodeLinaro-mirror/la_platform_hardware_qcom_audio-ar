@@ -242,9 +242,9 @@ get_sound_trigger_info(int capture_handle)
     return NULL;
 }
 
-extern "C" void check_init_audio_extension()
+extern "C" int check_init_audio_extension()
 {
-    AudioExtn::audio_extn_hidl_init();
+    return AudioExtn::audio_extn_hidl_init();
 }
 
 extern "C" void audio_hw_call_back(sound_trigger_event_type_t event,
@@ -446,6 +446,9 @@ void audio_extn_sound_trigger_get_parameters(std::shared_ptr<AudioDevice> adev _
             str_parms_add_str(reply, VUI_PARAMETER_GET_META_DATA, value);
         }
     }
+
+    if (query_str)
+        free(query_str);
 }
 
 int audio_extn_sound_trigger_init(std::shared_ptr<AudioDevice> adev)

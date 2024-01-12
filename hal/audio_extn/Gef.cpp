@@ -25,6 +25,9 @@
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
 #define LOG_TAG "AHAL: audio_hw_generic_effect"
@@ -268,7 +271,8 @@ int audio_extn_get_pal_info(void *hal_data,
     if (hal_data) {
         adev = (AudioDevice *)hal_data;
         device_count = adev->GetPalDeviceIds({hal_device_id}, pal_device_id);
-        *pal_stream_type = StreamOutPrimary::GetPalStreamType(hal_stream_flag);
+        *pal_stream_type = StreamOutPrimary::GetPalStreamType(hal_stream_flag,
+                                0, false);
         return device_count;
     }
 

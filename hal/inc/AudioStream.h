@@ -70,6 +70,7 @@
 #define DEFAULT_OUTPUT_SAMPLING_RATE    48000
 #define LOW_LATENCY_PLAYBACK_PERIOD_SIZE 240 /** 5ms; frames */
 #define LOW_LATENCY_PLAYBACK_PERIOD_COUNT 2
+#define LOW_LATENCY_ICMD_PLAYBACK_PERIOD_COUNT 4 /** In Call Music **/
 
 #define PCM_OFFLOAD_PLAYBACK_PERIOD_COUNT 2 /** Direct PCM */
 #define DEEP_BUFFER_PLAYBACK_PERIOD_COUNT 2 /** Deep Buffer*/
@@ -557,7 +558,9 @@ public:
     uint32_t GetBufferSize();
     uint32_t GetBufferSizeForLowLatency();
     int GetFrames(uint64_t *frames);
-    static pal_stream_type_t GetPalStreamType(audio_output_flags_t halStreamFlags);
+    static pal_stream_type_t GetPalStreamType(audio_output_flags_t halStreamFlags,
+                                    uint32_t sample_rate,
+                                    bool isDeviceAvail);
     static int64_t GetRenderLatency(audio_output_flags_t halStreamFlags);
     int GetOutputUseCase(audio_output_flags_t halStreamFlags);
     int StartOffloadEffects(audio_io_handle_t, pal_stream_handle_t*);

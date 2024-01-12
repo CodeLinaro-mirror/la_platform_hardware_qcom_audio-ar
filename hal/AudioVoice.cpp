@@ -64,9 +64,10 @@ int AudioVoice::SetMode(const audio_mode_t mode) {
         } else {
             mode_ = mode;
             if ((voice_.in_call && mode == AUDIO_MODE_NORMAL) ||
-                (mode_ == AUDIO_MODE_IN_CALL && voice_.crsCall))
+                (mode_ == AUDIO_MODE_IN_CALL && voice_.crsCall)) {
                 ret = StopCall();
-            else if (mode ==  AUDIO_MODE_CALL_SCREEN)
+                voice_.crsVsid = 0;
+            } else if (mode ==  AUDIO_MODE_CALL_SCREEN)
                 UpdateCalls(voice_.session);
             else if (mode == AUDIO_MODE_RINGTONE) {
                 if (voice_.crsVsid != 0) {
@@ -74,6 +75,7 @@ int AudioVoice::SetMode(const audio_mode_t mode) {
                     //check CRS concurrent case happen
                     if (adevice->getCrsConcurrentState())
                         voice_.crsLoopback = false;
+                    UpdateCalls(voice_.session);
                 }
             }
         }
@@ -126,9 +128,10 @@ int AudioVoice::VoiceSetParameters(const char *kvpairs) {
                 voice_.crsVsid = vsid;
             }
             else {
-                if (vsid == voice_.crsVsid && voice_.crsCall) {
+                if (vsid == voice_.crsVsid) {
                     AHAL_DBG("CRS call = false");
-                    ret = StopCall();
+                    if (voice_.crsCall)
+                        ret = StopCall();
                     voice_.crsVsid = 0;
                 }
             }
@@ -826,8 +829,9 @@ int AudioVoice::VoiceStart(voice_session_t *session) {
     out_ch_info.ch_map[1] = PAL_CHMAP_CHANNEL_FR;
 
     if (voice_.crsCall) {
-        if (voice_.crsLoopback && pal_voice_rx_device_id_ == PAL_DEVICE_OUT_HANDSET) {
-             AHAL_DBG("CRS force handset to speaker");
+        if (voice_.crsLoopback &&
+            (adevice->crs_device.size() == 0 || pal_voice_rx_device_id_ == PAL_DEVICE_OUT_HANDSET)) {
+             AHAL_DBG("No plugin device, use speaker by default in CRS call");
              pal_voice_rx_device_id_ = PAL_DEVICE_OUT_SPEAKER;
              pal_voice_tx_device_id_ = PAL_DEVICE_IN_SPEAKER_MIC;
         }
@@ -1602,6 +1606,7 @@ AudioVoice::AudioVoice() {
     voice_.session[MMODE2_SESS_IDX].vsid = VOICEMMODE2_VSID;
     voice_.crsVsid = 0;
     voice_.crsVol = 0.4;
+    voice_.crsCall = false;
     voice_.crsLoopback = true;
     stream_out_primary_ = NULL;
 }

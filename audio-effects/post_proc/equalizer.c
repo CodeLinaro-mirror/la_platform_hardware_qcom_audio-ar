@@ -15,6 +15,10 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2023, Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
 #define LOG_TAG "offload_effect_equalizer"
@@ -582,7 +586,7 @@ int equalizer_stop(effect_context_t *context, output_context_t *output __unused)
     ALOGV("%s: ctxt %p", __func__, eq_ctxt);
     if (offload_eq_get_enable_flag(&(eq_ctxt->offload_eq)) &&
         eq_ctxt->pal_stream_handle) {
-        struct eq_params eq;
+        struct eq_params eq = {0};
         eq.enable_flag = false;
         offload_eq_send_params_pal(eq_ctxt->pal_stream_handle, &eq, OFFLOAD_SEND_EQ_ENABLE_FLAG);
     }

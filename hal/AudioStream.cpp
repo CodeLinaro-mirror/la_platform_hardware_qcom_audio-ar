@@ -683,7 +683,7 @@ static int astream_dump(const struct audio_stream *stream, int fd) {
 #ifdef USEHIDL7_1
 static int astream_set_latency_mode(struct audio_stream_out *stream, audio_latency_mode_t mode) {
     std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
-    std::shared_ptr<StreamOutPrimary> astream_out;
+    std::shared_ptr<StreamOutPrimary> astream_out = NULL;
     pal_param_latency_mode_t *param_latency_mode_ptr = NULL;
     int ret = 0;
 
@@ -698,6 +698,12 @@ static int astream_set_latency_mode(struct audio_stream_out *stream, audio_laten
         astream_out = adevice->OutGetStream((audio_stream_t*)stream);
     } else {
         AHAL_ERR("unable to get audio device");
+        ret = -EINVAL;
+        goto exit;
+    }
+
+    if (astream_out == NULL){
+        AHAL_ERR("unable to get audio stream");
         ret = -EINVAL;
         goto exit;
     }
@@ -732,7 +738,7 @@ exit:
 static int astream_get_recommended_latency_modes(struct audio_stream_out *stream,
                                                 audio_latency_mode_t *modes, size_t *num_modes) {
     std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
-    std::shared_ptr<StreamOutPrimary> astream_out;
+    std::shared_ptr<StreamOutPrimary> astream_out = NULL;
     pal_param_latency_mode_t *param_latency_mode_ptr = NULL;
     int ret = 0;
     size_t size;
@@ -741,6 +747,12 @@ static int astream_get_recommended_latency_modes(struct audio_stream_out *stream
         astream_out = adevice->OutGetStream((audio_stream_t*)stream);
     } else {
         AHAL_ERR("unable to get audio device");
+        ret = -EINVAL;
+        goto exit;
+    }
+
+    if (astream_out == NULL){
+        AHAL_ERR("unable to get audio stream");
         ret = -EINVAL;
         goto exit;
     }
@@ -899,7 +911,8 @@ static int astream_out_get_presentation_position(
        return -EINVAL;
     }
     if (astream_out) {
-       switch (astream_out->GetPalStreamType(astream_out->flags_)) {
+       switch (StreamOutPrimary::GetPalStreamType(astream_out->flags_,
+                                0, false)) {
        case PAL_STREAM_PCM_OFFLOAD:
            if (PAL_CARD_STATUS_DOWN(AudioDevice::sndCardState)) {
                *frames = astream_out->GetFramesWritten(timestamp);
@@ -945,7 +958,8 @@ static int out_get_render_position(const struct audio_stream_out *stream,
         return -EINVAL;
     }
     if (astream_out) {
-        switch (astream_out->GetPalStreamType(astream_out->flags_)) {
+        switch (StreamOutPrimary::GetPalStreamType(astream_out->flags_, 0,
+                          false)) {
         case PAL_STREAM_PCM_OFFLOAD:
             if (PAL_CARD_STATUS_DOWN(AudioDevice::sndCardState)) {
                 frames =  astream_out->GetFramesWritten(NULL);
@@ -1518,7 +1532,7 @@ uint64_t StreamInPrimary::GetFramesRead(int64_t* time)
 
     if (isDeviceAvailable(PAL_DEVICE_IN_BLUETOOTH_A2DP)) {
         param_bt_a2dp_ptr->dev_id = PAL_DEVICE_IN_BLUETOOTH_A2DP;
-    } else if(isDeviceAvailable(PAL_DEVICE_IN_BLUETOOTH_BLE)) {
+    } else if (isDeviceAvailable(PAL_DEVICE_IN_BLUETOOTH_BLE)) {
         param_bt_a2dp_ptr->dev_id = PAL_DEVICE_IN_BLUETOOTH_BLE;
     } else {
         goto exit;
@@ -2035,12 +2049,20 @@ pal_stream_type_t StreamInPrimary::GetPalStreamType(
 }
 
 pal_stream_type_t StreamOutPrimary::GetPalStreamType(
-                                    audio_output_flags_t halStreamFlags) {
+                                    audio_output_flags_t halStreamFlags,
+                                    uint32_t sample_rate,
+                                    bool isDeviceAvail) {
     pal_stream_type_t palStreamType = PAL_STREAM_LOW_LATENCY;
     if ((halStreamFlags & AUDIO_OUTPUT_FLAG_VOIP_RX)!=0) {
         palStreamType = PAL_STREAM_VOIP_RX;
         return palStreamType;
     }
+    if ((halStreamFlags & AUDIO_OUTPUT_FLAG_FAST) != 0 &&
+        isDeviceAvail) {
+            palStreamType = PAL_STREAM_PROXY;
+            return palStreamType;
+    }
+
     if ((halStreamFlags & AUDIO_OUTPUT_FLAG_RAW) != 0) {
         palStreamType = PAL_STREAM_ULTRA_LOW_LATENCY;
     } else if ((halStreamFlags & AUDIO_OUTPUT_FLAG_SPATIALIZER) != 0) {
@@ -2775,7 +2797,8 @@ done:
 int64_t StreamOutPrimary::GetRenderLatency(audio_output_flags_t halStreamFlags)
 {
     struct pal_stream_attributes streamAttributes_;
-    streamAttributes_.type = StreamOutPrimary::GetPalStreamType(halStreamFlags);
+    streamAttributes_.type = StreamOutPrimary::GetPalStreamType(halStreamFlags,
+                                0, false);
     AHAL_VERBOSE(" type %d",streamAttributes_.type);
     switch (streamAttributes_.type) {
          case PAL_STREAM_DEEP_BUFFER:
@@ -2809,7 +2832,7 @@ uint64_t StreamOutPrimary::GetFramesWritten(struct timespec *timestamp)
     /* This adjustment accounts for buffering after app processor
      * It is based on estimated DSP latency per use case, rather than exact.
      */
-    dsp_frames = StreamOutPrimary::GetRenderLatency(flags_) *
+    dsp_frames = GetRenderLatency(flags_) *
         (streamAttributes_.out_media_config.sample_rate) / 1000000LL;
 
     written_frames = mBytesWritten / audio_bytes_per_frame(
@@ -2995,7 +3018,8 @@ uint32_t StreamOutPrimary::GetBufferSizeForLowLatency() {
 uint32_t StreamOutPrimary::GetBufferSize() {
     struct pal_stream_attributes streamAttributes_;
 
-    streamAttributes_.type = StreamOutPrimary::GetPalStreamType(flags_);
+    streamAttributes_.type = StreamOutPrimary::GetPalStreamType(flags_,
+                                              config_.sample_rate, false);
     AHAL_DBG("type %d", streamAttributes_.type);
     if (streamAttributes_.type == PAL_STREAM_VOIP_RX) {
         return (DEFAULT_VOIP_BUF_DURATION_MS * config_.sample_rate / 1000) *
@@ -3047,8 +3071,8 @@ int StreamOutPrimary::Open() {
 
     pal_param_bta2dp_t *param_bt_a2dp_ptr = nullptr;
     size_t bt_param_size = 0;
-    ssize_t track_count_total = 0;
     std::vector<std::shared_ptr<StreamOutPrimary>> astream_out_list;
+    ssize_t total_pal_stream_handle = 0;
 
     AHAL_INFO("Enter: OutPrimary usecase(%d: %s)", GetUseCase(), use_case_table[GetUseCase()]);
 
@@ -3069,7 +3093,9 @@ int StreamOutPrimary::Open() {
     if (ch_info.channels > 1)
         ch_info.ch_map[1] = PAL_CHMAP_CHANNEL_FR;
 
-    streamAttributes_.type = StreamOutPrimary::GetPalStreamType(flags_);
+    streamAttributes_.type = StreamOutPrimary::GetPalStreamType(flags_,
+                                    config_.sample_rate,
+                    isDeviceAvailable(PAL_DEVICE_OUT_PROXY));
     streamAttributes_.flags = (pal_stream_flags_t)0;
     streamAttributes_.direction = PAL_AUDIO_OUTPUT;
     streamAttributes_.out_media_config.sample_rate = config_.sample_rate;
@@ -3135,6 +3161,13 @@ int StreamOutPrimary::Open() {
         case PAL_STREAM_VOICE_CALL_MUSIC:
             streamAttributes_.info.incall_music_info.local_playback = adevice->icmd_playback;
             break;
+        case PAL_STREAM_PROXY:
+            if (isDeviceAvailable(PAL_DEVICE_OUT_PROXY)) {
+                streamAttributes_.info.opt_stream_info.rx_proxy_type = PAL_STREAM_PROXY_RX_WFD;
+                mPalOutDevice->id = PAL_DEVICE_OUT_RECORD_PROXY;
+            }
+            break;
+
         default:
             break;
     }
@@ -3216,12 +3249,15 @@ int StreamOutPrimary::Open() {
      * inconsistency with MMAP track metadata.
      */
 
-     astream_out_list = adevice->OutGetBLEStreamOutputs();
-     for (int i = 0; i < astream_out_list.size(); i++) {
-         //total tracks on stream o/ps
-         track_count_total += astream_out_list[i]->btSourceMetadata.track_count;
-     }
-    if (usecase_ == USECASE_AUDIO_PLAYBACK_MMAP && track_count_total == 0) {
+    astream_out_list = adevice->OutGetBLEStreamOutputs();
+    for (int i = 0; i < astream_out_list.size(); i++) {
+        //total valid pal_stream_handle on stream o/ps
+        if (astream_out_list[i] != NULL && astream_out_list[i]->pal_stream_handle_ != NULL) {
+            total_pal_stream_handle++;
+        }
+    }
+
+    if (usecase_ == USECASE_AUDIO_PLAYBACK_MMAP && total_pal_stream_handle == 0) {
         audio_stream_out* stream_out;
         GetStreamHandle(&stream_out);
         ssize_t track_count = 1;
@@ -3351,8 +3387,15 @@ int StreamOutPrimary::Open() {
     } else
         outBufSize = StreamOutPrimary::GetBufferSize();
 
-    if (usecase_ == USECASE_AUDIO_PLAYBACK_LOW_LATENCY)
-        outBufCount = LOW_LATENCY_PLAYBACK_PERIOD_COUNT;
+    if (usecase_ == USECASE_AUDIO_PLAYBACK_LOW_LATENCY) {
+        if (streamAttributes_.type == PAL_STREAM_VOICE_CALL_MUSIC) {
+            outBufCount = LOW_LATENCY_ICMD_PLAYBACK_PERIOD_COUNT;
+            AHAL_DBG("LOW_LATENCY_ICMD - Buffer Count : %d", outBufCount);
+        }
+        else {
+            outBufCount = LOW_LATENCY_PLAYBACK_PERIOD_COUNT;
+        }
+    }
     else if (usecase_ == USECASE_AUDIO_PLAYBACK_OFFLOAD2)
         outBufCount = PCM_OFFLOAD_PLAYBACK_PERIOD_COUNT;
     else if (usecase_ == USECASE_AUDIO_PLAYBACK_DEEP_BUFFER)
