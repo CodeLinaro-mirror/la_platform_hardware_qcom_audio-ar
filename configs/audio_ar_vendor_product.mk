@@ -5,6 +5,10 @@ AUDIO_USE_STUB_HAL := true
 endif
 endif
 
+ifeq ($(TARGET_USES_AUDIOLITE),true)
+AUDIO_USE_STUB_HAL := true
+endif #ends TARGET_USES_AUDIOLITE
+
 # MM_AUDIO_AR
 ifeq ($(TARGET_GVMGH_SPECIFIC), false)
 MM_AUDIO_AR := acdb_cal.acdb
@@ -20,6 +24,8 @@ MM_AUDIO_AR += vendor.qti.hardware.AGMIPC@1.0
 MM_AUDIO_AR += vendor.qti.hardware.AGMIPC@1.0-impl
 MM_AUDIO_AR += vendor.qti.hardware.AGMIPC@1.0-service
 MM_AUDIO_AR += init.qti.AGMIPC.sh
+else
+MM_AUDIO_AR += libarpowerpolicy
 endif #ends TARGET_USES_GY
 
 # Will remove these two 32 bit version once update to new tinyalsa lib
@@ -54,6 +60,8 @@ MM_AUDIO_AR += capi_fnb
 MM_AUDIO_AR += capi_load
 MM_AUDIO_AR += capi_gpio
 MM_AUDIO_AR += capi_irq_comm
+MM_AUDIO_AR += capi_synth
+MM_AUDIO_AR += capi_loud
 ifneq ( ,$(filter T Tiramisu 13, $(PLATFORM_VERSION)))
 MM_AUDIO_AR += libarpowerpolicy
 endif #ends Tiramisu
@@ -86,6 +94,11 @@ TARGET_USES_AOSP_FOR_AUDIO := false
 ifeq ($(ENABLE_HYP), true)
 AUDIO_FRAMEWORK_AUDIOREACH := true
 endif #ends ENABLE_HYP
+
+#To enable audio_effects in gen4_au
+ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), gen4_au)
+AUDIO_FRAMEWORK_AUDIOREACH := true
+endif #ends gen4_au
 
 # Audio configuration file
 ifeq ($(AUDIO_USE_STUB_HAL), true)
