@@ -60,6 +60,7 @@
 #define MAX_ACTIVE_MICROPHONES_TO_SUPPORT 10
 
 #define AFE_PROXY_RECORD_PERIOD_SIZE  768
+static bool hw_ts_enable= false;
 
 static bool is_pcm_format(audio_format_t format)
 {
@@ -1184,9 +1185,16 @@ uint64_t StreamInPrimary::GetFramesRead(int64_t* time)
         }
     }
 #endif
-    AHAL_VERBOSE("signed frames %lld read frames %lld kernel frames%lld\
-        pal_stream_handle_=%pK timestamp=%llu",(long long)signed_frames,
-        (long long)read_frames,(long long)kernel_frames,pal_stream_handle_,((long long)*time));
+    if (hw_ts_enable) {
+        AHAL_INFO("signed frames %lld read frames %lld kernel frames%lld\
+            pal_stream_handle_=%pK timestamp=%llu",(long long)signed_frames,
+            (long long)read_frames,(long long)kernel_frames,pal_stream_handle_,((long long)*time));
+    }
+    else {
+        AHAL_VERBOSE("signed frames %lld read frames %lld kernel frames%lld\
+            pal_stream_handle_=%pK timestamp=%llu",(long long)signed_frames,
+            (long long)read_frames,(long long)kernel_frames,pal_stream_handle_,((long long)*time));
+    }
     return signed_frames;
 }
 
@@ -4195,6 +4203,10 @@ StreamInPrimary::StreamInPrimary(audio_io_handle_t handle,
      }
     (void)FillHalFnPtrs();
     mInitialized = true;
+    if (property_get_bool("persist.vendor.audio.hw_ts_enable",false)) {
+        hw_ts_enable=true;
+    }
+
 error:
     AHAL_DBG("Exit");
     return;
