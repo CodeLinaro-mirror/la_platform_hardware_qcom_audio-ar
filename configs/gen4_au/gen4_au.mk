@@ -7,6 +7,14 @@ AUDIO_USE_STUB_HAL := true
 endif
 endif
 
+ifeq ($(TARGET_USES_AUDIOLITE),true)
+AUDIO_USE_STUB_HAL := true
+endif #ends TARGET_USES_AUDIOLITE
+
+ifeq ($(TARGET_USES_GY), true)
+AUDIO_FEATURE_ENABLED_POWER_POLICY := true
+endif
+
 ifeq ($(ENABLE_HYP), false)
 ifeq ($(TARGET_GVMGH_SPECIFIC), false)
     TARGET_USES_ION_CMA_MEMORY := true
@@ -32,14 +40,14 @@ AUDIO_FEATURE_ENABLED_EXTN_FLAC_DECODER := false
 AUDIO_FEATURE_ENABLED_EXTN_RESAMPLER := false
 AUDIO_FEATURE_ENABLED_FM_POWER_OPT := false
 AUDIO_FEATURE_ENABLED_HDMI_SPK := false
-AUDIO_FEATURE_ENABLED_PCM_OFFLOAD := false
-AUDIO_FEATURE_ENABLED_PCM_OFFLOAD_24 := false
-AUDIO_FEATURE_ENABLED_FLAC_OFFLOAD := false
-AUDIO_FEATURE_ENABLED_VORBIS_OFFLOAD := false
-AUDIO_FEATURE_ENABLED_WMA_OFFLOAD := false
-AUDIO_FEATURE_ENABLED_ALAC_OFFLOAD := false
-AUDIO_FEATURE_ENABLED_APE_OFFLOAD := false
-AUDIO_FEATURE_ENABLED_AAC_ADTS_OFFLOAD := false
+AUDIO_FEATURE_ENABLED_PCM_OFFLOAD := true
+AUDIO_FEATURE_ENABLED_PCM_OFFLOAD_24 := true
+AUDIO_FEATURE_ENABLED_FLAC_OFFLOAD := true
+AUDIO_FEATURE_ENABLED_VORBIS_OFFLOAD := true
+AUDIO_FEATURE_ENABLED_WMA_OFFLOAD := true
+AUDIO_FEATURE_ENABLED_ALAC_OFFLOAD := true
+AUDIO_FEATURE_ENABLED_APE_OFFLOAD := true
+AUDIO_FEATURE_ENABLED_AAC_ADTS_OFFLOAD := true
 AUDIO_FEATURE_ENABLED_PROXY_DEVICE := true
 AUDIO_FEATURE_ENABLED_SSR := true
 AUDIO_FEATURE_ENABLED_DTS_EAGLE := false
@@ -53,7 +61,7 @@ AUDIO_FEATURE_ENABLED_A2DP_OFFLOAD := false
 AUDIO_FEATURE_ENABLED_3D_AUDIO := false
 AUDIO_FEATURE_ENABLED_AHAL_EXT := false
 DOLBY_ENABLE := false
-AUDIO_FEATURE_ENABLED_EXTENDED_COMPRESS_FORMAT := false
+AUDIO_FEATURE_ENABLED_EXTENDED_COMPRESS_FORMAT := true 
 endif
 
 USE_XML_AUDIO_POLICY_CONF := 1
@@ -119,6 +127,9 @@ endif
 
 ifneq (,$(filter U UpsideDownCake 14, $(PLATFORM_VERSION)))
 AUDIO_FEATURE_ENABLED_HAL_V7 := true
+PRODUCT_PACKAGES += libarpowerpolicy
+PRODUCT_ODM_PROPERTIES += \
+vendor.audio.feature.arpowerpolicy.enable=true
 endif
 ##AUTOMOTIVE_AUDIO_FEATURE_FLAGS
 
@@ -170,6 +181,12 @@ PRODUCT_COPY_FILES += \
     $(TOPDIR)frameworks/native/data/etc/android.hardware.audio.low_latency.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.low_latency.xml
 
 endif
+endif
+
+# HGY specific configuration files
+ifeq ($(TARGET_USES_GY), true)
+PRODUCT_COPY_FILES += \
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/mixer_paths_VIOSND.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_VIOSND.xml
 endif
 
 ifeq ($(ENABLE_HYP), false)
@@ -513,6 +530,10 @@ ifneq ( ,$(filter T Tiramisu 13, $(PLATFORM_VERSION)))
 PRODUCT_ODM_PROPERTIES += \
 vendor.audio.feature.arpowerpolicy.enable=true
 endif
+ifeq ($(TARGET_USES_GY), true)
+PRODUCT_ODM_PROPERTIES += \
+vendor.audio.feature.arpowerpolicy.enable=true
+endif # ends TARGET_USES_GY
 endif
 else
 # Non-Generic ODM varient related
@@ -575,6 +596,10 @@ PRODUCT_ODM_PROPERTIES += \
 vendor.audio.feature.arpowerpolicy.enable=true
 endif
 endif
+ifeq ($(TARGET_USES_GY), true)
+PRODUCT_ODM_PROPERTIES += \
+vendor.audio.feature.arpowerpolicy.enable=true
+endif # ends TARGET_USES_GY
 endif
 
 # for HIDL related packages
