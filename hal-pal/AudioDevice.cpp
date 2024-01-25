@@ -1509,6 +1509,99 @@ int AudioDevice::SetParameters(const char *kvpairs) {
         }
     }
 
+    ret = str_parms_get_str(parms, "effect_control", value, sizeof(value));
+    if (ret >= 0 && (strncmp(value, "volume", 6) == 0)) {
+
+//e.g., effect_control=volume;effect_tag=0xC000000D;effect_tag_key=0xa4000000;effect_tkv="0x0
+
+#define NUM_OF_KEY_VALUE_PAIR 1
+        uint32_t effect_tag = 0;
+        uint32_t effect_tag_key = 0;
+        uint32_t effect_tkv = 0;
+        pal_device_id_t softvol_effect_device = PAL_DEVICE_OUT_SPEAKER;
+        pal_key_value_pair_t pal_key_vector_pair;
+        pal_param_payload *pal_payload = NULL;
+        effect_pal_payload_t *effect_payload = NULL;
+        uint8_t *payload = NULL;
+        pal_key_vector_t *pal_key_vector = NULL;
+        uint32_t no_of_kvps = NUM_OF_KEY_VALUE_PAIR;
+        uint32_t payload_size = (sizeof(pal_param_payload) + sizeof(effect_pal_payload_t) +
+                                sizeof(pal_key_vector_t) + (no_of_kvps * sizeof(pal_key_value_pair_t)));
+
+        AHAL_INFO("Inside setparam based effect control, payload is %s", value);
+        str_parms_del(parms, "effect_control");
+        AHAL_DBG("Inside setparam based effect control %d, params: value is %s:%s", __LINE__, str_parms_to_str(parms), value);
+
+        ret = str_parms_get_str(parms, "effect_tag", value, sizeof(value));
+        if (ret >= 0) {
+            str_parms_del(parms, "effect_tag");
+            effect_tag = strtoul(value, NULL, 0);
+            AHAL_DBG("Inside setparam based effect control %d, params: value is %s:0x%x", __LINE__, str_parms_to_str(parms), effect_tag);
+        } //effect_tag
+
+        ret = str_parms_get_str(parms, "effect_tag_key", value, sizeof(value));
+        if (ret >= 0) {
+            str_parms_del(parms, "effect_tag_key");
+            effect_tag_key = strtoul(value, NULL, 0);
+            AHAL_DBG("Inside setparam based effect control %d, params: value is %s:0x%x", __LINE__, str_parms_to_str(parms), effect_tag_key);
+        } //effect_tag_key
+
+        ret = str_parms_get_str(parms, "effect_tkv", value, sizeof(value));
+        if (ret >= 0) {
+            str_parms_del(parms, "effect_tkv");
+            effect_tkv = strtoul(value, NULL, 0);
+            AHAL_DBG("Inside setparam based effect control %d, params: value is %s:0x%x", __LINE__, str_parms_to_str(parms), effect_tkv);
+        } //effect_tkv
+
+        AHAL_INFO("Parsed payload is tag: 0x%x, tag_key: 0x%x, tkv value: 0x%x ", effect_tag, effect_tag_key, effect_tkv);
+
+        payload = (uint8_t*) calloc (1, payload_size);
+
+        if (!payload) {
+            AHAL_ERR("%s:%d Failed to alloc payload buffer for size %d", __func__, __LINE__, payload_size);
+            ret = -ENOMEM;
+            goto exit;
+        }
+
+        //create payload to be sent to GEF
+
+        pal_payload = (pal_param_payload *) payload;
+        pal_payload->payload_size = sizeof(effect_pal_payload_t) +
+                                sizeof(pal_key_vector_t) + (no_of_kvps * sizeof(pal_key_value_pair_t));
+        effect_payload = (effect_pal_payload_t *)(payload + sizeof(pal_param_payload));
+        effect_payload->isTKV = PARAM_TKV;
+        effect_payload->tag = effect_tag;
+        effect_payload->payloadSize = sizeof(pal_key_vector_t) +
+                                      no_of_kvps * sizeof(pal_key_value_pair_t);
+
+        pal_key_vector = (pal_key_vector_t *)(payload + sizeof(pal_param_payload) +
+                                             sizeof(effect_pal_payload_t));
+        pal_key_vector->num_tkvs = no_of_kvps;
+
+        //there is only one tkv
+        pal_key_vector_pair.key = effect_tag_key;
+        pal_key_vector_pair.value = effect_tkv;
+
+        memcpy(pal_key_vector->kvp, &pal_key_vector_pair, (no_of_kvps * sizeof(pal_key_value_pair_t)));
+
+        ret = pal_gef_rw_param(PAL_PARAM_ID_VOLUME_SOFT_PARAMS, (void*) pal_payload, payload_size,  softvol_effect_device, PAL_STREAM_PLAYBACK_BUS, GEF_PARAM_WRITE, NULL);
+
+        free(payload);
+        payload = NULL;
+        pal_payload = NULL;
+        effect_payload = NULL;
+        pal_key_vector = NULL;
+
+        if (ret != 0) {
+            AHAL_ERR("Error setting param with error %d", ret);
+            goto exit;
+        } else {
+            AHAL_INFO("Set parameter succesfully");
+            goto exit;
+        }
+    }
+
+
     ret = AudioExtn::audio_extn_set_parameters(adev_, parms);
     if (ret) {
         AHAL_ERR(" audio_extn_set_parameters failed %d",ret);
