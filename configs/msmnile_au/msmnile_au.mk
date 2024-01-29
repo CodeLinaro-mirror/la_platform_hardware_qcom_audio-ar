@@ -18,6 +18,13 @@ ifneq ( ,$(filter T Tiramisu 13 U UpsideDownCake 14, $(PLATFORM_VERSION)))
 AUDIO_FEATURE_ENABLED_POWER_POLICY := true
 endif
 endif
+else
+ifeq ($(call math_gt_or_eq, $(PLATFORM_VERSION), 13), true)
+AUDIO_FEATURE_ENABLED_POWER_POLICY := true
+PRODUCT_PACKAGES += libarpowerpolicy
+PRODUCT_ODM_PROPERTIES += \
+vendor.audio.feature.arpowerpolicy.enable=true
+endif
 endif
 
 ifneq ($(AUDIO_USE_STUB_HAL), true)
@@ -109,7 +116,7 @@ endif
 AUDIO_FEATURE_ENABLED_FM_TUNER_EXT := false
 ##AUTOMOTIVE_AUDIO_FEATURE_FLAGS
 
-ifneq (,$(filter U UpsideDownCake 14, $(PLATFORM_VERSION)))
+ifneq ( ,$(filter U UpsideDownCake 14, $(PLATFORM_VERSION)))
 AUDIO_FEATURE_ENABLED_AUDIO_CONTROL_HAL := true
 AUDIO_FEATURE_ENABLED_AUDIO_PARSERS := true
 AUDIO_FEATURE_ENABLED_AUDIO_CONTROL_HAL_AIDL := true
