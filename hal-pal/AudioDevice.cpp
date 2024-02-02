@@ -36,7 +36,7 @@
  */
 
 /* Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -120,6 +120,7 @@ static const struct audio_string_to_enum device_in_types[] = {
     AUDIO_MAKE_STRING_FROM_ENUM(AUDIO_DEVICE_IN_LOOPBACK),
     AUDIO_MAKE_STRING_FROM_ENUM(AUDIO_DEVICE_IN_IP),
     AUDIO_MAKE_STRING_FROM_ENUM(AUDIO_DEVICE_IN_BUS),
+    AUDIO_MAKE_STRING_FROM_ENUM(AUDIO_DEVICE_IN_ECHO_REFERENCE),
     AUDIO_MAKE_STRING_FROM_ENUM(AUDIO_DEVICE_IN_PROXY),
     AUDIO_MAKE_STRING_FROM_ENUM(AUDIO_DEVICE_IN_USB_HEADSET),
     AUDIO_MAKE_STRING_FROM_ENUM(AUDIO_DEVICE_IN_BLUETOOTH_BLE),
@@ -2246,6 +2247,7 @@ void AudioDevice::FillAndroidDeviceMap() {
     //android_device_map_.insert(std::make_pair(AUDIO_DEVICE_IN_BLUETOOTH_BLE, PAL_DEVICE_IN_BLUETOOTH_BLE);
     //android_device_map_.insert(std::make_pair(AUDIO_DEVICE_IN_DEFAULT, PAL_DEVICE_IN_DEFAULT));
     android_device_map_.insert(std::make_pair(AUDIO_DEVICE_IN_BUS, PAL_DEVICE_IN_HANDSET_MIC));
+    android_device_map_.insert(std::make_pair(AUDIO_DEVICE_IN_ECHO_REFERENCE, PAL_DEVICE_IN_ECHO_REF));
 }
 
 int AudioDevice::GetPalDeviceIds(const std::set<audio_devices_t>& hal_device_ids,
