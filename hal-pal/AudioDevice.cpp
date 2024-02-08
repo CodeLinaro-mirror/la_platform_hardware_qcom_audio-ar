@@ -2396,6 +2396,8 @@ static int adev_open(const hw_module_t *module, const char *name __unused,
     if (ret || (*device == NULL)) {
         AHAL_ERR("error, audio device init failed, ret(%d),*device(%p)",
                  ret, *device);
+        adevice->adev_init_mutex.unlock();
+        return ret;
     }
     adevice->adev_init_mutex.unlock();
 exit:
