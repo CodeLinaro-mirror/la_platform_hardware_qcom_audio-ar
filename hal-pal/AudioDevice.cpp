@@ -3067,6 +3067,11 @@ void extn_out_set_power_policy(uint8_t enable)
 {
     AHAL_INFO("extn_out_set_power_policy = %d\n", enable);
     std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
+    if(AudioDevice::sndCardState == CARD_STATUS_OFFLINE) {
+        enable = 0;
+        AHAL_INFO("%s disabling powerpolicy as sound card is offline, cardState: %d, enable: %d\n",
+                        __func__, AudioDevice::sndCardState, enable);
+    }
     return adevice->out_set_power_policy(enable);
 }
 
@@ -3074,6 +3079,11 @@ void extn_in_set_power_policy(uint8_t enable)
 {
     AHAL_INFO("extn_in_set_power_policy = %d\n", enable);
     std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
+    if(AudioDevice::sndCardState == CARD_STATUS_OFFLINE) {
+        enable = 0;
+        AHAL_INFO("%s disabling powerpolicy as sound card is offline, cardState: %d, enable: %d\n",
+                        __func__, AudioDevice::sndCardState, enable);
+    }
     return adevice->in_set_power_policy(enable);
 }
 
