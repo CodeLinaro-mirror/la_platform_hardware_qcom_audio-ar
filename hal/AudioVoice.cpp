@@ -549,12 +549,6 @@ int AudioVoice::RouteStream(const std::set<audio_devices_t>& rx_devices) {
     } else {
         // do device switch here
         for (int i = 0; i < MAX_VOICE_SESSIONS; i++) {
-            /* already in call, and now if BLE is connected send metadata
-             * so that BLE can be configured for call and then switch to
-             * BLE device
-             */
-            updateVoiceMetadataForBT(true);
-
             /*In case of active LEA profile, if voice call accepted by an inactive legacy headset
             * over SCO profile. APM is not aware about SCO active profile until BT_SCO=ON
             * event triggers from BT. In meantime before BT_SCO=ON, when LEA is suspended via
@@ -566,6 +560,7 @@ int AudioVoice::RouteStream(const std::set<audio_devices_t>& rx_devices) {
             */
             if ((pal_voice_rx_device_id_ == PAL_DEVICE_OUT_BLUETOOTH_BLE) &&
                 (pal_voice_tx_device_id_ == PAL_DEVICE_IN_BLUETOOTH_BLE)) {
+                updateVoiceMetadataForBT(true);
                 pal_param_bta2dp_t param_bt_a2dp;
                 do {
                     std::unique_lock<std::mutex> guard(reconfig_wait_mutex_);
@@ -688,10 +683,9 @@ int AudioVoice::UpdateCalls(voice_session_t *pSession) {
             case CALL_INACTIVE:
                 AHAL_DBG("INACTIVE -> ACTIVE vsid:%x", session->vsid);
                 {
-                    updateVoiceMetadataForBT(true);
-
                     if ((pal_voice_rx_device_id_ == PAL_DEVICE_OUT_BLUETOOTH_BLE) &&
                         (pal_voice_tx_device_id_ == PAL_DEVICE_IN_BLUETOOTH_BLE)) {
+                        updateVoiceMetadataForBT(true);
                         pal_param_bta2dp_t param_bt_a2dp;
                         do {
                             std::unique_lock<std::mutex> guard(reconfig_wait_mutex_);
@@ -758,9 +752,11 @@ int AudioVoice::UpdateCalls(voice_session_t *pSession) {
                 } else {
                     session->state.current_ = session->state.new_;
                 }
-
-                AHAL_DBG("ACTIVE -> INACTIVE update cached meta data");
-                updateVoiceMetadataForBT(false);
+                if ((pal_voice_rx_device_id_ == PAL_DEVICE_OUT_BLUETOOTH_BLE) &&
+                    (pal_voice_tx_device_id_ == PAL_DEVICE_IN_BLUETOOTH_BLE)) {
+                        AHAL_DBG("ACTIVE -> INACTIVE update cached meta data");
+                        updateVoiceMetadataForBT(false);
+                    }
                 break;
 
             default:

@@ -3095,7 +3095,7 @@ int StreamOutPrimary::Open() {
 
     streamAttributes_.type = StreamOutPrimary::GetPalStreamType(flags_,
                                     config_.sample_rate,
-                    isDeviceAvailable(PAL_DEVICE_OUT_PROXY));
+                    isDeviceAvailable(PAL_DEVICE_OUT_RECORD_PROXY));
     streamAttributes_.flags = (pal_stream_flags_t)0;
     streamAttributes_.direction = PAL_AUDIO_OUTPUT;
     streamAttributes_.out_media_config.sample_rate = config_.sample_rate;
@@ -3162,9 +3162,8 @@ int StreamOutPrimary::Open() {
             streamAttributes_.info.incall_music_info.local_playback = adevice->icmd_playback;
             break;
         case PAL_STREAM_PROXY:
-            if (isDeviceAvailable(PAL_DEVICE_OUT_PROXY)) {
+            if (isDeviceAvailable(PAL_DEVICE_OUT_RECORD_PROXY)) {
                 streamAttributes_.info.opt_stream_info.rx_proxy_type = PAL_STREAM_PROXY_RX_WFD;
-                mPalOutDevice->id = PAL_DEVICE_OUT_RECORD_PROXY;
             }
             break;
 

@@ -11,7 +11,7 @@ ifneq ($(TARGET_IS_HEADLESS),true)
 #AGM
 AUDIO_AGM := libagmclient
 AUDIO_AGM += vendor.qti.hardware.AGMIPC@1.0-impl
-#not needed for pineapple products
+#not needed for pitti products
 #AUDIO_AGM += vendor.qti.hardware.AGMIPC@1.0-service
 AUDIO_AGM += libagm
 AUDIO_AGM += agmplay
@@ -66,35 +66,17 @@ AUDIO_TEST += ar_util_in_test_example
 #AUDIO_MODULES := audio.a2dp.default
 AUDIO_MODULES := audio.usb.default
 AUDIO_MODULES += audio.r_submix.default
-AUDIO_MODULES += audio.primary.pineapple
+AUDIO_MODULES += audio.primary.pitti
 AUDIO_MODULES += ftm_test_config
-AUDIO_MODULES += ftm_test_config_pineapple-qrd-snd-card
-AUDIO_MODULES += ftm_test_config_pineapple-qrd-sku2-snd-card
-AUDIO_MODULES += ftm_test_config_cliffs-mtp-wsa883x-snd-card
-AUDIO_MODULES += ftm_test_config_cliffs-mtp-wcd9395-snd-card
-AUDIO_MODULES += ftm_test_config_cliffs-qrd-snd-card
+AUDIO_MODULES += ftm_test_config_pitti-qrd-snd-card
 AUDIO_MODULES += audioadsprpcd
 AUDIO_MODULES += android.hardware.audio.service_64
-AUDIO_MODULES += MTP_acdb_cal.acdb
-AUDIO_MODULES += MTP_workspaceFileXml.qwsp
-AUDIO_MODULES += CDP_acdb_cal.acdb
-AUDIO_MODULES += CDP_workspaceFileXml.qwsp
+AUDIO_MODULES += IDP_acdb_cal.acdb
+AUDIO_MODULES += IDP_workspaceFileXml.qwsp
 AUDIO_MODULES += QRD_acdb_cal.acdb
 AUDIO_MODULES += QRD_workspaceFileXml.qwsp
 AUDIO_MODULES += IDP_UPD_acdb_cal.acdb
 AUDIO_MODULES += IDP_UPD_workspaceFileXml.qwsp
-AUDIO_MODULES += QRD_pineapple_sku2_acdb_cal.acdb
-AUDIO_MODULES += QRD_pineapple_sku2_workspaceFileXml.qwsp
-AUDIO_MODULES += MTP_cliffs_acdb_cal.acdb
-AUDIO_MODULES += MTP_cliffs_workspaceFileXml.qwsp
-AUDIO_MODULES += CDP_cliffs_acdb_cal.acdb
-AUDIO_MODULES += CDP_cliffs_workspaceFileXml.qwsp
-AUDIO_MODULES += QRD_cliffs_acdb_cal.acdb
-AUDIO_MODULES += QRD_cliffs_workspaceFileXml.qwsp
-AUDIO_MODULES += MTP_cliffs_wcd9395_acdb_cal.acdb
-AUDIO_MODULES += MTP_cliffs_wcd9395_workspaceFileXml.qwsp
-AUDIO_MODULES += QRD_cliffs7_acdb_cal.acdb
-AUDIO_MODULES += QRD_cliffs7_workspaceFileXml.qwsp
 AUDIO_MODULES += fai__2.3.0_0.1__3.0.0_0.0__eai_1.10.pmd
 AUDIO_MODULES += fai__2.3.0_0.1__3.0.0_0.0__eai_1.36_enpu2_comp.pmd
 AUDIO_MODULES += fai__2.0.0_0.1__3.0.0_0.0__eai_1.36_enpu2.pmd
@@ -141,8 +123,6 @@ AUDIO_MODULES += libcustomva_intf
 AUDIO_MODULES += libvui_intf
 AUDIO_MODULES += libVoiceSdk
 AUDIO_MODULES += libtensorflowlite_c
-AUDIO_MODULES += sm8_gr1UsPdk6XsMfcn220819Enpu4FloateAIv34.uim
-AUDIO_MODULES += sm8_gr3UsMFCN230612eAIv34ENPUv4Float.uim
 
 AUDIO_MODULES += $(AUDIO_AGM)
 AUDIO_MODULES += $(AUDIO_PAL)
