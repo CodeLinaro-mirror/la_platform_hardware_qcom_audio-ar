@@ -527,7 +527,6 @@ private:
     pal_device_id_t* mPalOutDeviceIds;
     std::set<audio_devices_t> mAndroidOutDevices;
     bool mInitialized;
-    bool mBypassHaptic;
     bool isOffloadUsecase() {
         int usecase = GetUseCase();
         switch (usecase) {
@@ -591,7 +590,6 @@ public:
     bool isDeviceAvailable(pal_device_id_t deviceId);
     int RouteStream(const std::set<audio_devices_t>&, bool force_device_switch = false);
     ssize_t splitAndWriteAudioHapticsStream(const void *buffer, size_t bytes);
-    ssize_t BypassHapticAndWriteAudioStream(const void *buffer, size_t bytes);
     bool period_size_is_plausible_for_low_latency(int period_size);
 protected:
     struct timespec writeAt;
