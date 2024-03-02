@@ -188,11 +188,11 @@ PRODUCT_COPY_FILES += \
     $(CONFIG_HAL_SRC_DIR)/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/microphone_characteristics.xml \
     $(CONFIG_PAL_SRC_DIR)/card-defs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/card-defs.xml \
     $(CONFIG_PAL_SRC_DIR)/mixer_paths_cliffs_qrd.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_cliffs_qrd.xml \
-    $(CONFIG_PAL_SRC_DIR)/mixer_paths_cliffs_mtp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_cliffs_mtp.xml \
+    $(CONFIG_PAL_SRC_DIR)/mixer_paths_cliffs_mtp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_cliffs_mtp_wsa883x.xml \
     $(CONFIG_PAL_SRC_DIR)/mixer_paths_cliffs_mtp_wcd9395.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_cliffs_mtp_wcd9395.xml \
     $(CONFIG_PAL_SRC_DIR)/mixer_paths_cliffs_cdp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_cliffs_cdp.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_cliffs_qrd.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_cliffs_qrd.xml \
-    $(CONFIG_PAL_SRC_DIR)/resourcemanager_cliffs_mtp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_cliffs_mtp.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_cliffs_mtp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_cliffs_mtp_wsa883x.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_cliffs_mtp_wcd9395.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_cliffs_mtp_wcd9395.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_cliffs_cdp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_cliffs_cdp.xml \
     $(CONFIG_PAL_SRC_DIR)/usecaseKvManager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usecaseKvManager.xml \

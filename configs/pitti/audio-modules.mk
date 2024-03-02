@@ -70,7 +70,12 @@ AUDIO_MODULES += audio.primary.pitti
 AUDIO_MODULES += ftm_test_config
 AUDIO_MODULES += ftm_test_config_pitti-qrd-snd-card
 AUDIO_MODULES += audioadsprpcd
+
+ifeq ($(TARGET_BOARD_SUFFIX), _32go)
+AUDIO_MODULES += android.hardware.audio.service
+else
 AUDIO_MODULES += android.hardware.audio.service_64
+endif
 AUDIO_MODULES += IDP_acdb_cal.acdb
 AUDIO_MODULES += IDP_workspaceFileXml.qwsp
 AUDIO_MODULES += QRD_acdb_cal.acdb
@@ -129,9 +134,15 @@ AUDIO_MODULES += $(AUDIO_PAL)
 AUDIO_MODULES += $(AUDIO_C2)
 AUDIO_MODULES += $(AUDIO_TEST)
 
+ifeq ($(TARGET_BOARD_SUFFIX), _32go)
+AUDIO_MODULES += \
+    android.hardware.audio@2.0-service
+else
+AUDIO_MODULES += \
+    android.hardware.audio@2.0-service_64
+endif
 # for HIDL related packages
 AUDIO_MODULES += \
-    android.hardware.audio@2.0-service_64 \
     android.hardware.audio@2.0-impl \
     android.hardware.audio.effect@2.0-impl \
     android.hardware.soundtrigger@2.3-impl \

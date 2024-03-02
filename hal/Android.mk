@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-LOCAL_AUDIO_SERVICE_64 := taro kalama anorak pineapple pitti pitti_32go
+LOCAL_AUDIO_SERVICE_64 := taro kalama anorak pineapple pitti
 
 include $(CLEAR_VARS)
 
@@ -14,10 +14,13 @@ include $(BUILD_HEADER_LIBRARY)
 include $(CLEAR_VARS)
 
 ifeq ($(call is-board-platform-in-list,$(LOCAL_AUDIO_SERVICE_64)), true)
+ifneq ($(TARGET_BOARD_SUFFIX), _32go)
 LOCAL_MODULE       := android.hardware.audio.service_64.rc
 else
 LOCAL_MODULE       := android.hardware.audio.service.rc
 endif
+endif
+
 LOCAL_SRC_FILES    := $(LOCAL_MODULE)
 LOCAL_MODULE_TAGS  := optional
 LOCAL_MODULE_CLASS := ETC
