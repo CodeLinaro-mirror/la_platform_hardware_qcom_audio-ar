@@ -13,6 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/*
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ *
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
 
 #define LOG_TAG "ma_listener"
 /*#define LOG_NDEBUG 0*/
@@ -44,7 +50,11 @@
 
 
 #define MA_SET_STATE "audio_hw_send_qdsp_parameter"
+#ifdef __LP64__
+#define HAL_VENDOR_PATH "/vendor/lib64/hw"
+#else
 #define HAL_VENDOR_PATH "/vendor/lib/hw"
+#endif
 
 enum {
     MA_LISTENER_STATE_UNINITIALIZED,

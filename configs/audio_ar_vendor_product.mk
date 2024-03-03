@@ -10,22 +10,29 @@ ifeq ($(TARGET_GVMGH_SPECIFIC), false)
 MM_AUDIO_AR := acdb_cal.acdb
 MM_AUDIO_AR += libautohal_pal
 
-# AGM is not used for GY
+# AGM service is not used for GY
 ifneq ($(TARGET_USES_GY), true)
-MM_AUDIO_AR += agmplay
-MM_AUDIO_AR += agmcap
-MM_AUDIO_AR += agmhostless
 MM_AUDIO_AR += libagm
 MM_AUDIO_AR += libagm_compress_plugin
 MM_AUDIO_AR += libagm_mixer_plugin
 MM_AUDIO_AR += libagm_pcm_plugin
-MM_AUDIO_AR += libagmmixer
 MM_AUDIO_AR += vendor.qti.hardware.AGMIPC@1.0
 MM_AUDIO_AR += vendor.qti.hardware.AGMIPC@1.0-impl
 MM_AUDIO_AR += vendor.qti.hardware.AGMIPC@1.0-service
 MM_AUDIO_AR += init.qti.AGMIPC.sh
+else
+MM_AUDIO_AR += libarpowerpolicy
 endif #ends TARGET_USES_GY
 
+# Will remove these two 32 bit version once update to new tinyalsa lib
+MM_AUDIO_AR += agmplay_32
+MM_AUDIO_AR += agmcap_32
+# ends 32-bit agmplay and agmcap
+
+MM_AUDIO_AR += agmplay
+MM_AUDIO_AR += agmcap
+MM_AUDIO_AR += agmhostless
+MM_AUDIO_AR += libagmmixer
 MM_AUDIO_AR += libar-pal
 MM_AUDIO_AR += libhfp_pal
 MM_AUDIO_AR += libhfp_ag_pal
@@ -33,6 +40,9 @@ MM_AUDIO_AR += lib_default_plugin_controls
 MM_AUDIO_AR += lib_default_set_param_plugin_controls
 MM_AUDIO_AR += libqtigefar
 MM_AUDIO_AR += libicc_pal
+MM_AUDIO_AR += libqcompostprocbundle.ar
+MM_AUDIO_AR += libqcomvisualizer.ar
+MM_AUDIO_AR += libqcomvoiceprocessing.ar
 
 ifeq ($(ENABLE_HYP), false)
 ifeq ($(TARGET_GVMGH_SPECIFIC), false)
@@ -74,10 +84,11 @@ PRODUCT_PACKAGES += $(MM_AUDIO_AR)
 TARGET_USES_AOSP := true
 TARGET_USES_AOSP_FOR_AUDIO := false
 
-#To enable audio_effects in msmnile_gvmq
-ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_gvmq)
+#enable audio_effects
+ifeq ($(ENABLE_HYP), true)
 AUDIO_FRAMEWORK_AUDIOREACH := true
-endif #ends msmnile_gvmq
+endif #ends ENABLE_HYP
+
 # Audio configuration file
 ifeq ($(AUDIO_USE_STUB_HAL), true)
 TARGET_USES_AOSP_FOR_AUDIO := true
