@@ -1112,7 +1112,7 @@ int64_t StreamInPrimary::GetSourceLatency(audio_input_flags_t halStreamFlags)
 {
     struct pal_stream_attributes streamAttributes_;
     streamAttributes_.type = StreamInPrimary::GetPalStreamType(halStreamFlags,
-        config_.sample_rate);
+        config_.sample_rate, address_);
     AHAL_VERBOSE(" type %d", streamAttributes_.type);
     switch (streamAttributes_.type) {
     case PAL_STREAM_DEEP_BUFFER:
@@ -1330,7 +1330,7 @@ done:
 static uint32_t astream_in_get_sample_rate(const struct audio_stream *stream) {
     std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
     std::shared_ptr<StreamInPrimary> astream_in;
-    AHAL_ERR("Inside");
+    AHAL_DBG("Inside");
 
     if (adevice) {
         astream_in = adevice->InGetStream((audio_stream_t*)stream);
@@ -1518,7 +1518,7 @@ int StreamPrimary::GetLookupTableIndex(const struct string_to_enum *table,
 
 pal_stream_type_t StreamInPrimary::GetPalStreamType(
                                         audio_input_flags_t halStreamFlags,
-                                        uint32_t sample_rate) {
+                                        uint32_t sample_rate, char *address) {
     pal_stream_type_t palStreamType = PAL_STREAM_LOW_LATENCY;
     if ((halStreamFlags & AUDIO_INPUT_FLAG_VOIP_TX)!=0) {
          palStreamType = PAL_STREAM_VOIP_TX;
@@ -1583,6 +1583,16 @@ pal_stream_type_t StreamInPrimary::GetPalStreamType(
             AHAL_ERR("flag %#x is not supported from PAL." ,
                       halStreamFlags);
             break;
+    }
+
+    if (address && strstr(address, "BUS")) {
+        if (halStreamFlags != AUDIO_INPUT_FLAG_NONE) {
+            palStreamType = PAL_STREAM_INVALID;
+            AHAL_ERR("unsupported combination flag:%#x address:%s", halStreamFlags, address);
+        } else {
+            /*Identify BUS number and retrieve PAL stream type for BUS usecase*/
+            palStreamType = AudioExtn::audio_extn_autohal_GetCarAudioPalStreamType(address);
+        }
     }
 
     return palStreamType;
@@ -3529,7 +3539,7 @@ int StreamInPrimary::RouteStream(const std::set<audio_devices_t>& new_devices) {
         goto done;
     }
 
-    AHAL_DBG("mAndroidInDevices %d, mNoOfInDevices %zu, new_devices %d, num new_devices: %zu",
+    AHAL_DBG("mAndroidInDevices %#x, mNoOfInDevices %zu, new_devices %d, num new_devices: %zu",
              AudioExtn::get_device_types(mAndroidInDevices),
              mAndroidInDevices.size(), AudioExtn::get_device_types(new_devices), new_devices.size());
 
@@ -3546,7 +3556,7 @@ int StreamInPrimary::RouteStream(const std::set<audio_devices_t>& new_devices) {
     is_ag_sco = AudioExtn::audio_extn_hfp_ag_is_active(adevice);
 
     if (agULCachedPalId != PAL_DEVICE_IN_MIN &&
-        StreamInPrimary::GetPalStreamType(flags_, config_.sample_rate) == PAL_STREAM_VOIP_TX) {
+        StreamInPrimary::GetPalStreamType(flags_, config_.sample_rate, address_) == PAL_STREAM_VOIP_TX) {
         AHAL_INFO("Reset previous mPalInDevice from %d to %d after AG call", mPalInDeviceIds[agULCachedIdx], agULCachedPalId);
         mPalInDeviceIds[agULCachedIdx] = agULCachedPalId;
         mPalInDevice[agULCachedIdx].id = agULCachedPalId;
@@ -3728,7 +3738,7 @@ int StreamInPrimary::Open() {
     }
 
     streamAttributes_.type = StreamInPrimary::GetPalStreamType(flags_,
-            config_.sample_rate);
+            config_.sample_rate, address_);
     if (source_ == AUDIO_SOURCE_VOICE_UPLINK) {
         streamAttributes_.type = PAL_STREAM_VOICE_CALL_RECORD;
         streamAttributes_.info.voice_rec_info.record_direction = INCALL_RECORD_VOICE_UPLINK;
@@ -3826,7 +3836,7 @@ uint32_t StreamInPrimary::GetBufferSize() {
     struct pal_stream_attributes streamAttributes_;
 
     streamAttributes_.type = StreamInPrimary::GetPalStreamType(flags_,
-            config_.sample_rate);
+            config_.sample_rate, address_);
     if (streamAttributes_.type == PAL_STREAM_VOIP_TX) {
         return voip_get_buffer_size(config_.sample_rate);
     } else if (streamAttributes_.type == PAL_STREAM_LOW_LATENCY) {
@@ -4088,9 +4098,9 @@ StreamInPrimary::StreamInPrimary(audio_io_handle_t handle,
     readAt.tv_sec = 0;
     readAt.tv_nsec = 0;
 
-    AHAL_DBG("enter: handle (%x) format(%#x) sample_rate(%d) channel_mask(%#x) devices(%zu) flags(%#x)"\
-          , handle, config->format, config->sample_rate, config->channel_mask,
-          mAndroidInDevices.size(), flags);
+    AHAL_DBG("enter: handle (%x) format(%#x) sample_rate(%d) channel_mask(%#x) devices(%zu) flags(%#x)\
+          address(%s)", handle, config->format, config->sample_rate, config->channel_mask,
+          mAndroidInDevices.size(), flags, address);
     if (!(stream_.get())) {
         AHAL_ERR("stream_ new allocation failed");
         goto error;
@@ -4146,7 +4156,12 @@ StreamInPrimary::StreamInPrimary(audio_io_handle_t handle,
         goto error;
     }
 
-    noPalDevices = getPalDeviceIds(devices, mPalInDeviceIds);
+    if (address != NULL) {
+        noPalDevices = getPalDeviceIds(devices, mPalInDeviceIds, address);
+    } else {
+        noPalDevices = getPalDeviceIds(devices, mPalInDeviceIds);
+    }
+
     if (noPalDevices != mAndroidInDevices.size()) {
         AHAL_ERR("mismatched pal %d and hal devices %zu", noPalDevices, mAndroidInDevices.size());
         goto error;
