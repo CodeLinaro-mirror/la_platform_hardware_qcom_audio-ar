@@ -4234,7 +4234,7 @@ StreamPrimary::StreamPrimary(audio_io_handle_t handle,
 {
     memset(&streamAttributes_, 0, sizeof(streamAttributes_));
     memset(&address_, 0, sizeof(address_));
-    AHAL_ERR("handle: %d channel_mask: %d ", handle_, config_.channel_mask);
+    AHAL_INFO("handle: %d channel_mask: %d ", handle_, config_.channel_mask);
 }
 
 StreamPrimary::~StreamPrimary(void)

@@ -387,7 +387,7 @@ std::shared_ptr<StreamOutPrimary> AudioDevice::CreateStreamOut(
     }
     out_list_mutex.lock();
     stream_out_list_.push_back(astream);
-    AHAL_ERR("output stream %d %p",(int)stream_out_list_.size(), stream_out);
+    AHAL_INFO("output stream %d %p",(int)stream_out_list_.size(), stream_out);
     if (flags & AUDIO_OUTPUT_FLAG_PRIMARY) {
         if (voice_)
             voice_->stream_out_primary_ = astream;
