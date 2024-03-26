@@ -331,7 +331,7 @@
                 <route type="mix" sink="Phone Bus"
                        sources="phone,mmap_no_irq_out"/>
                 <route type="mix" sink="Alerts Bus"
-                       sources="alerts"/>
+                       sources="alerts,mmap_no_irq_out"/>
                 <route type="mix" sink="Front Passenger Bus"
                        sources="front_passenger,mmap_no_irq_out"/>
                 <route type="mix" sink="Rear Seat Bus"
