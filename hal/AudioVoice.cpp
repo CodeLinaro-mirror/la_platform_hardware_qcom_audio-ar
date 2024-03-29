@@ -1586,6 +1586,7 @@ AudioVoice::AudioVoice() {
     voice_.session[MMODE2_SESS_IDX].vsid = VOICEMMODE2_VSID;
     voice_.crsVsid = 0;
     voice_.crsVol = 0.4;
+    voice_.crsCall = false;
     voice_.crsLoopback = true;
     stream_out_primary_ = NULL;
 }
