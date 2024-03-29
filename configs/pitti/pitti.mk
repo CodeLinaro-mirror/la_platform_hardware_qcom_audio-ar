@@ -131,11 +131,7 @@ PRODUCT_PACKAGES += fai__3.0.0_0.0__eai_3.4_enpuv4.pmd
 # Audio configuration xml's related to Pitti
 QCV_FAMILY_SKUS := pitti
 DEVICE_SKU := pitti
-ifeq ($(TARGET_BOARD_SUFFIX), _32go)
-UV_WRAPPER2 := false
-else
 UV_WRAPPER2 := true
-endif
 
 CONFIG_PAL_SRC_DIR := vendor/qcom/opensource/pal/configs/pitti
 CONFIG_HAL_SRC_DIR := vendor/qcom/opensource/audio-hal/primary-hal/configs/pitti
