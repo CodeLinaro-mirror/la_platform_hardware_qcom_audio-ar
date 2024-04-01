@@ -1,6 +1,7 @@
 #BOARD_USES_GENERIC_AUDIO := true
 #
 #AUDIO_FEATURE_FLAGS
+ifeq ($(AUDIO_FRAMEWORK_AUDIOREACH),true)
 ifeq ($(TARGET_USES_QMAA_OVERRIDE_AUDIO), false)
 ifeq ($(TARGET_USES_QMAA),true)
 AUDIO_USE_STUB_HAL := true
@@ -37,7 +38,7 @@ AUDIO_FEATURE_ENABLED_COMPRESS_CAPTURE := false
 AUDIO_FEATURE_ENABLED_COMPRESS_INPUT := false
 AUDIO_FEATURE_ENABLED_CONCURRENT_CAPTURE := true
 AUDIO_FEATURE_ENABLED_COMPRESS_VOIP := false
-AUDIO_FEATURE_ENABLED_DYNAMIC_ECNS := true
+AUDIO_FEATURE_ENABLED_DYNAMIC_ECNS := false
 AUDIO_FEATURE_ENABLED_EXTN_FORMATS := false
 AUDIO_FEATURE_ENABLED_EXTN_FLAC_DECODER := false
 AUDIO_FEATURE_ENABLED_EXTN_RESAMPLER := false
@@ -51,12 +52,12 @@ AUDIO_FEATURE_ENABLED_WMA_OFFLOAD := false
 AUDIO_FEATURE_ENABLED_ALAC_OFFLOAD := false
 AUDIO_FEATURE_ENABLED_APE_OFFLOAD := false
 AUDIO_FEATURE_ENABLED_AAC_ADTS_OFFLOAD := false
-AUDIO_FEATURE_ENABLED_PROXY_DEVICE := true
+AUDIO_FEATURE_ENABLED_PROXY_DEVICE := false
 AUDIO_FEATURE_ENABLED_SSR := true
 AUDIO_FEATURE_ENABLED_DTS_EAGLE := false
 BOARD_USES_SRS_TRUEMEDIA := false
 DTS_CODEC_M_ := false
-MM_AUDIO_ENABLED_SAFX := true
+MM_AUDIO_ENABLED_SAFX := false
 AUDIO_FEATURE_ENABLED_HW_ACCELERATED_EFFECTS := false
 AUDIO_FEATURE_ENABLED_AUDIOSPHERE := false
 AUDIO_FEATURE_ENABLED_USB_TUNNEL := false
@@ -74,39 +75,42 @@ ifeq ($(TARGET_HAS_GENERIC_KERNEL_HEADERS), true)
 AUDIO_FEATURE_ENABLED_GKI := true
 endif
 AUDIO_USE_DEEP_AS_PRIMARY_OUTPUT := false
-AUDIO_FEATURE_ENABLED_VBAT_MONITOR := false
+# Non_Automotive Flags
 AUDIO_FEATURE_ENABLED_NT_PAUSE_TIMEOUT := false
+AUDIO_FEATURE_ENABLED_VBAT_MONITOR := false
 AUDIO_FEATURE_ENABLED_ANC_HEADSET := false
 AUDIO_FEATURE_ENABLED_CUSTOMSTEREO := false
-AUDIO_FEATURE_ENABLED_FLUENCE := true
+AUDIO_FEATURE_ENABLED_INCALL_MUSIC := false
 AUDIO_FEATURE_ENABLED_HDMI_EDID := false
 AUDIO_FEATURE_ENABLED_HDMI_PASSTHROUGH := false
 #AUDIO_FEATURE_ENABLED_KEEP_ALIVE := true
 AUDIO_FEATURE_ENABLED_DISPLAY_PORT := false
-AUDIO_FEATURE_ENABLED_DS2_DOLBY_DAP := false
-AUDIO_FEATURE_ENABLED_HFP := true
-AUDIO_FEATURE_ENABLED_INCALL_MUSIC := false
 AUDIO_FEATURE_ENABLED_MULTI_VOICE_SESSIONS := false
 AUDIO_FEATURE_ENABLED_KPI_OPTIMIZE := false
 AUDIO_FEATURE_ENABLED_SPKR_PROTECTION := false
+AUDIO_FEATURE_ENABLED_BATTERY_LISTENER := false
+AUDIO_FEATURE_ENABLED_USB_BURST_MODE := false
+AUDIO_FEATURE_ENABLED_RAS := false
+AUDIO_FEATURE_ENABLED_SOURCE_TRACKING := false
+
+AUDIO_FEATURE_ENABLED_FLUENCE := true
+AUDIO_FEATURE_ENABLED_DS2_DOLBY_DAP := false
+AUDIO_FEATURE_ENABLED_HFP := true
 AUDIO_FEATURE_ENABLED_ACDB_LICENSE := false
 AUDIO_FEATURE_ENABLED_DEV_ARBI := false
 AUDIO_FEATURE_ENABLED_DYNAMIC_LOG := true
-MM_AUDIO_ENABLED_FTM := true
+MM_AUDIO_ENABLED_FTM := false
 TARGET_USES_QCOM_MM_AUDIO := true
-AUDIO_FEATURE_ENABLED_SOURCE_TRACKING := false
 AUDIO_FEATURE_ENABLED_GEF_SUPPORT := true
 BOARD_SUPPORTS_QAHW := false
-AUDIO_FEATURE_ENABLED_RAS := false
 AUDIO_FEATURE_ENABLED_DLKM := true
-AUDIO_FEATURE_ENABLED_USB_BURST_MODE := false
-AUDIO_FEATURE_ENABLED_SVA_MULTI_STAGE := true
-AUDIO_FEATURE_ENABLED_BATTERY_LISTENER := false
+AUDIO_FEATURE_ENABLED_SVA_MULTI_STAGE := false
 ##AUDIO_FEATURE_FLAGS
 
 AUDIO_FEATURE_ENABLED_AUTO_HAL := true
-AUDIO_FEATURE_ENABLED_EXT_HW_PLUGIN := true
+AUDIO_FEATURE_ENABLED_EXT_HW_PLUGIN := false
 AUDIO_FEATURE_ENABLED_AUDIO_CONTROL_HAL := false
+BOARD_SUPPORTS_OPENSOURCE_STHAL := false
 ifneq ($(ENABLE_HYP),true)
 AUDIO_FEATURE_ENABLED_AUTO_AUDIOD := true
 AUDIO_FEATURE_ENABLED_SND_MONITOR := false
@@ -134,7 +138,8 @@ DEVICE_PACKAGE_OVERLAYS += vendor/qcom/opensource/audio-hal-ar/primary-hal/confi
 # Configuration files shared between msmnile_gvmgh and others
 PRODUCT_COPY_FILES += \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/card-defs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/card-defs.xml \
-    vendor/qcom/opensource/agm/plugins/tinyalsa/test/backend_conf.xml:$(TARGET_COPY_OUT_VENDOR)/etc/backend_conf.xml
+    vendor/qcom/opensource/agm/plugins/tinyalsa/test/backend_conf.xml:$(TARGET_COPY_OUT_VENDOR)/etc/backend_conf.xml \
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/audio_effects.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects.xml
 
 # Configuration files for msmnile_gvmq and gen4_gvm_gy only
 ifeq ($(ENABLE_HYP), true)
@@ -154,21 +159,30 @@ endif
 # Configuration files for msmnile_gvmq AudioReach value added SI
 ifneq ( ,$(filter U UpsideDownCake 14, $(PLATFORM_VERSION)))
 PRODUCT_COPY_FILES += \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/audio_policy_configuration_7_0_pure.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_configuration.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/audio_policy_configuration_7_0_pure.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_configuration.xml \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/a2dp_audio_policy_configuration_7_0.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/a2dp_audio_policy_configuration.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/audio_policy_configuration_7_0_pure.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_configuration.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/a2dp_audio_policy_configuration_7_0.xml:$(TARGET_COPY_OUT_VENDOR)/etc/a2dp_audio_policy_configuration.xml \
     $(TOPDIR)frameworks/native/data/etc/android.hardware.audio.pro.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.pro.xml
 else
 PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/a2dp_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/a2dp_audio_policy_configuration.xml \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_configuration.xml
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_configuration.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/a2dp_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/a2dp_audio_policy_configuration.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_configuration.xml
 endif
 
 PRODUCT_COPY_FILES += \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/car_audio_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/car_audio_configuration.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/car_audio_configuration_pure.xml:$(TARGET_COPY_OUT_VENDOR)/etc/car_audio_configuration.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/r_submix_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/r_submix_audio_policy_configuration.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/usb_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/usb_audio_policy_configuration.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/audio_policy_volumes.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_volumes.xml \
-    $(TOPDIR)frameworks/av/services/audiopolicy/config/default_volume_tables.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/default_volume_tables.xml
+    $(TOPDIR)frameworks/av/services/audiopolicy/config/default_volume_tables.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/default_volume_tables.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common/bluetooth_qti_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/bluetooth_qti_audio_policy_configuration.xml \
+    $(TOPDIR)frameworks/av/services/audiopolicy/config/r_submix_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/r_submix_audio_policy_configuration.xml \
+    $(TOPDIR)frameworks/av/services/audiopolicy/config/usb_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usb_audio_policy_configuration.xml \
+    $(TOPDIR)frameworks/av/services/audiopolicy/config/audio_policy_volumes.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_volumes.xml \
+    $(TOPDIR)frameworks/av/services/audiopolicy/config/default_volume_tables.xml:$(TARGET_COPY_OUT_VENDOR)/etc/default_volume_tables.xml
 
 endif
 endif
@@ -529,45 +543,46 @@ endif # ends TARGET_USES_GY
 else
 # Non-Generic ODM varient related
 PRODUCT_ODM_PROPERTIES += \
-vendor.audio.feature.afe_proxy.enable=true \
-vendor.audio.feature.anc_headset.enable=true \
-vendor.audio.feature.battery_listener.enable=true \
-vendor.audio.feature.compr_cap.enable=false \
 vendor.audio.feature.compress_in.enable=true \
 vendor.audio.feature.compress_meta_data.enable=true \
-vendor.audio.feature.compr_voip.enable=false \
 vendor.audio.feature.concurrent_capture.enable=true \
-vendor.audio.feature.custom_stereo.enable=true \
-vendor.audio.feature.display_port.enable=true \
-vendor.audio.feature.dsm_feedback.enable=false \
-vendor.audio.feature.dynamic_ecns.enable=true \
-vendor.audio.feature.ext_hw_plugin.enable=true \
 vendor.audio.feature.external_dsp.enable=false \
 vendor.audio.feature.external_speaker.enable=false \
 vendor.audio.feature.external_speaker_tfa.enable=false \
 vendor.audio.feature.fluence.enable=true \
 vendor.audio.feature.fm.enable=true \
-vendor.audio.feature.hdmi_edid.enable=true \
-vendor.audio.feature.hdmi_passthrough.enable=true \
 vendor.audio.feature.hfp.enable=true \
-vendor.audio.feature.hifi_audio.enable=false \
-vendor.audio.feature.hwdep_cal.enable=false \
-vendor.audio.feature.keep_alive.enable=true \
-vendor.audio.feature.kpi_optimize.enable=true \
-vendor.audio.feature.maxx_audio.enable=false \
-vendor.audio.feature.ras.enable=true \
 vendor.audio.feature.record_play_concurency.enable=false \
-vendor.audio.feature.src_trkn.enable=true \
-vendor.audio.feature.spkr_prot.enable=false \
-vendor.audio.feature.ssrec.enable=true \
-vendor.audio.feature.usb_offload_burst_mode.enable=true \
 vendor.audio.feature.usb_offload_sidetone_volume.enable=false \
 vendor.audio.feature.deepbuffer_as_primary.enable=false \
-vendor.audio.feature.vbat.enable=true \
-vendor.audio.feature.wsa.enable=false \
-vendor.audio.feature.audiozoom.enable=false \
 vendor.audio.feature.auto_hal.enable=true \
 vendor.audio.feature.auto_hal_pal.enable=true
+
+#Non_Automotive Features
+vendor.audio.feature.dynamic_ecns.enable=false \
+vendor.audio.feature.compr_voip.enable=false \
+vendor.audio.feature.afe_proxy.enable=false \
+vendor.audio.feature.anc_headset.enable=false \
+vendor.audio.feature.battery_listener.enable=false \
+vendor.audio.feature.compr_cap.enable=false \
+vendor.audio.feature.display_port.enable=false \
+vendor.audio.feature.dsm_feedback.enable=false \
+vendor.audio.feature.hifi_audio.enable=false \
+vendor.audio.feature.hwdep_cal.enable=false \
+vendor.audio.feature.maxx_audio.enable=false \
+vendor.audio.feature.hdmi_edid.enable=false \
+vendor.audio.feature.hdmi_passthrough.enable=false \
+vendor.audio.feature.keep_alive.enable=false \
+vendor.audio.feature.kpi_optimize.enable=false \
+vendor.audio.feature.ras.enable=false \
+vendor.audio.feature.src_trkn.enable=false \
+vendor.audio.feature.spkr_prot.enable=false \
+vendor.audio.feature.ssrec.enable=false \
+vendor.audio.feature.audiozoom.enable=false \
+vendor.audio.feature.usb_offload_burst_mode.enable=false \
+vendor.audio.feature.vbat.enable=false \
+vendor.audio.feature.wsa.enable=false \
+
 ifeq ($(PRODUCT_NAME), msmnile_gvmgh)
 PRODUCT_ODM_PROPERTIES += \
 vendor.audio.feature.a2dp_offload.enable=false \
@@ -670,3 +685,4 @@ persist.vendor.audio.calfile6=/vendor/etc/acdbdata/ADP/Hdmi_cal.acdb\
 persist.vendor.audio.calfile7=/vendor/etc/acdbdata/ADP/Headset_cal.acdb\
 persist.vendor.audio.calfile8=/vendor/etc/acdbdata/ADP/Speaker_cal.acdb
 endif
+endif # AUDIO_FRAMEWORK_AUDIOREACH
