@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, 2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -2238,7 +2239,6 @@ int StreamOutPrimary::RouteStream(const std::set<audio_devices_t>& new_devices, 
                        sizeof(mPalOutDevice[i].custom_config.custom_key));
             }
 
-#ifdef DYNAMIC_SR_ENABLED
             if (((usecase_ == USECASE_AUDIO_PLAYBACK_VOIP) ||
                   (usecase_ == USECASE_AUDIO_PLAYBACK_DEEP_BUFFER) ||
                   (isOffloadUsecase())) &&
@@ -2299,7 +2299,6 @@ int StreamOutPrimary::RouteStream(const std::set<audio_devices_t>& new_devices, 
                 }
                 AHAL_DBG("setting SR for usecase %d as %d", usecase_, config_.sample_rate);
             }
-#endif
         }
 
         mAndroidOutDevices = new_devices;
@@ -3572,7 +3571,6 @@ StreamOutPrimary::StreamOutPrimary(
             AHAL_INFO("Setting custom key as %s", mPalOutDevice[i].custom_config.custom_key);
         }
 
-#ifdef DYNAMIC_SR_ENABLED
         if (((usecase_ == USECASE_AUDIO_PLAYBACK_VOIP) ||
               (usecase_ == USECASE_AUDIO_PLAYBACK_DEEP_BUFFER) ||
               (isOffloadUsecase())) &&
@@ -3633,7 +3631,6 @@ StreamOutPrimary::StreamOutPrimary(
             }
             AHAL_DBG("setting SR for usecase %d as %d", usecase_, config_.sample_rate);
         }
-#endif
     }
 
     if (flags & AUDIO_OUTPUT_FLAG_MMAP_NOIRQ) {
@@ -4119,7 +4116,6 @@ int StreamInPrimary::RouteStream(const std::set<audio_devices_t>& new_devices, b
                 AHAL_INFO("Setting custom key as %s", mPalInDevice[i].custom_config.custom_key);
             }
 
-#ifdef DYNAMIC_SR_ENABLED
             if (((usecase_ == USECASE_AUDIO_RECORD_VOIP) ||
                  (usecase_ == USECASE_AUDIO_RECORD)) &&
                 ((mPalInDevice[i].id == PAL_DEVICE_IN_HANDSET_MIC) ||
@@ -4143,7 +4139,6 @@ int StreamInPrimary::RouteStream(const std::set<audio_devices_t>& new_devices, b
                 }
                 AHAL_DBG("setting SR for usecase %d as %d", usecase_, config_.sample_rate);
             }
-#endif
         }
 
         mAndroidInDevices = new_devices;
@@ -4918,7 +4913,6 @@ StreamInPrimary::StreamInPrimary(audio_io_handle_t handle,
 
     usecase_ = GetInputUseCase(flags, source);
     for (int i = 0; i < mAndroidInDevices.size(); i++) {
-        memset(mPalInDevice[i].custom_config.custom_key, 0, sizeof(mPalInDevice[i].custom_config.custom_key));
         mPalInDevice[i].id = mPalInDeviceIds[i];
         mPalInDevice[i].config.sample_rate = config->sample_rate;
         mPalInDevice[i].config.bit_width = CODEC_BACKEND_DEFAULT_BIT_WIDTH;
@@ -4930,8 +4924,6 @@ StreamInPrimary::StreamInPrimary(audio_io_handle_t handle,
             mPalInDevice[i].address.card_id = adevice->usb_card_id_;
             mPalInDevice[i].address.device_num = adevice->usb_dev_num_;
         }
-        strlcpy(mPalInDevice[i].custom_config.custom_key, "",
-                sizeof(mPalInDevice[i].custom_config.custom_key));
 
         /* HDR use case check */
         if ((source_ == AUDIO_SOURCE_UNPROCESSED) &&
@@ -4945,6 +4937,15 @@ StreamInPrimary::StreamInPrimary(audio_io_handle_t handle,
                 }
             }
         }
+    }
+
+    usecase_ = GetInputUseCase(flags, source);
+    for (int i = 0; i < mAndroidInDevices.size(); i++) {
+        memset(mPalInDevice[i].custom_config.custom_key, 0,
+               sizeof(mPalInDevice[i].custom_config.custom_key));
+
+        strlcpy(mPalInDevice[i].custom_config.custom_key, "",
+                sizeof(mPalInDevice[i].custom_config.custom_key));
 
         if (source_ == AUDIO_SOURCE_CAMCORDER && adevice->cameraOrientation == CAMERA_DEFAULT) {
             strlcat(mPalInDevice[i].custom_config.custom_key, "camcorder_landscape;",
@@ -4952,7 +4953,6 @@ StreamInPrimary::StreamInPrimary(audio_io_handle_t handle,
             AHAL_INFO("Setting custom key as %s", mPalInDevice[i].custom_config.custom_key);
         }
 
-#ifdef DYNAMIC_SR_ENABLED
         if (((usecase_ == USECASE_AUDIO_RECORD_VOIP) ||
              (usecase_ == USECASE_AUDIO_RECORD)) &&
             ((mPalInDevice[i].id == PAL_DEVICE_IN_HANDSET_MIC) ||
@@ -4976,7 +4976,6 @@ StreamInPrimary::StreamInPrimary(audio_io_handle_t handle,
             }
             AHAL_DBG("setting SR for usecase %d as %d", usecase_, config_.sample_rate);
         }
-#endif
     }
 
     if (flags & AUDIO_INPUT_FLAG_MMAP_NOIRQ) {
