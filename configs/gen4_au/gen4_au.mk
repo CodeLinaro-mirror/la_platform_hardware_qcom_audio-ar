@@ -188,8 +188,6 @@ endif
 ifeq ($(TARGET_USES_GY), true)
 PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/mixer_paths_VIOSND.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_VIOSND.xml \
-#use this line to overwrite vendor/etc/audio_ar/audio_policy_configuration.xml 
-#currently use HAL7.0 pure xml file, after bringup for HGY Android U being done, they should modify this line to select proper xml file 
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/audio_policy_configuration_7_0_pure.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_configuration.xml
 endif
 
