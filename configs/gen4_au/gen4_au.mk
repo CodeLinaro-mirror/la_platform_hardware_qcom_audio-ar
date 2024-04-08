@@ -118,6 +118,7 @@ AUDIO_FEATURE_ENABLED_POWER_POLICY := true
 AUDIO_FEATURE_ENABLED_AUDIO_PARSERS := true
 AUDIO_FEATURE_ENABLED_AUDIO_CONTROL_HAL_AIDL := true
 PRODUCT_PACKAGES += vendor.qti.hardware.automotive.audiocontrol-service
+PRODUCT_PACKAGES += libqtiautobundle
 ifeq ($(TARGET_BOARD_AUTO), true)
 ifeq ($(TARGET_USES_RRO), true)
 PRODUCT_PACKAGES += CarServiceResAutoTarget_Vendor
@@ -158,7 +159,7 @@ PRODUCT_COPY_FILES += \
 PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/car_audio_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/car_audio_configuration.xml \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/a2dp_audio_policy_configuration_7_0.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/a2dp_audio_policy_configuration.xml \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/audio_policy_configuration_7_0_va.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_configuration.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_policy_configuration_7_0.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_configuration.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/r_submix_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/r_submix_audio_policy_configuration.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/usb_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/usb_audio_policy_configuration.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/audio_policy_volumes.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_volumes.xml \
@@ -186,7 +187,8 @@ endif
 # HGY specific configuration files
 ifeq ($(TARGET_USES_GY), true)
 PRODUCT_COPY_FILES += \
-    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/mixer_paths_VIOSND.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_VIOSND.xml
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/mixer_paths_VIOSND.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_VIOSND.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/audio_policy_configuration_7_0_pure.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_configuration.xml
 endif
 
 ifeq ($(ENABLE_HYP), false)
