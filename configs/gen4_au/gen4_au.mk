@@ -119,13 +119,21 @@ ifeq ($(ENABLE_HYP),true)
 AUDIO_FEATURE_ENABLED_POWER_POLICY := true
 AUDIO_FEATURE_ENABLED_AUDIO_PARSERS := true
 AUDIO_FEATURE_ENABLED_AUDIO_CONTROL_HAL_AIDL := true
-PRODUCT_PACKAGES += vendor.qti.hardware.automotive.audiocontrol-service
-PRODUCT_PACKAGES += libqtiautobundle
+endif
+
+# Integrate libraries to gen4_gvm which was done by Elite HAL before
+ifeq ($(ENABLE_HYP),true)
+AUDIO_HARDWARE := vendor.qti.hardware.automotive.audiocontrol-service
+AUDIO_HARDWARE += libqtiautobundle
+AUDIO_HARDWARE += audio.r_submix.default
+AUDIO_HARDWARE += audio.usb.default
+AUDIO_HARDWARE += audio.a2dp.default
 ifeq ($(TARGET_BOARD_AUTO), true)
 ifeq ($(TARGET_USES_RRO), true)
-PRODUCT_PACKAGES += CarServiceResAutoTarget_Vendor
+AUDIO_HARDWARE += CarServiceResAutoTarget_Vendor
 endif
 endif
+PRODUCT_PACKAGES += $(AUDIO_HARDWARE)
 endif
 
 ifneq (,$(filter U UpsideDownCake 14 V VanillaIceCream 15, $(PLATFORM_VERSION)))
