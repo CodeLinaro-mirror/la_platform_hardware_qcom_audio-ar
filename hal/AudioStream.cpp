@@ -2239,6 +2239,7 @@ int StreamOutPrimary::RouteStream(const std::set<audio_devices_t>& new_devices, 
                        sizeof(mPalOutDevice[i].custom_config.custom_key));
             }
 
+#ifdef DYNAMIC_SR_ENABLED
             if (((usecase_ == USECASE_AUDIO_PLAYBACK_VOIP) ||
                   (usecase_ == USECASE_AUDIO_PLAYBACK_DEEP_BUFFER) ||
                   (isOffloadUsecase())) &&
@@ -2299,6 +2300,7 @@ int StreamOutPrimary::RouteStream(const std::set<audio_devices_t>& new_devices, 
                 }
                 AHAL_DBG("setting SR for usecase %d as %d", usecase_, config_.sample_rate);
             }
+#endif
         }
 
         mAndroidOutDevices = new_devices;
@@ -3571,6 +3573,7 @@ StreamOutPrimary::StreamOutPrimary(
             AHAL_INFO("Setting custom key as %s", mPalOutDevice[i].custom_config.custom_key);
         }
 
+#ifdef DYNAMIC_SR_ENABLED
         if (((usecase_ == USECASE_AUDIO_PLAYBACK_VOIP) ||
               (usecase_ == USECASE_AUDIO_PLAYBACK_DEEP_BUFFER) ||
               (isOffloadUsecase())) &&
@@ -3631,6 +3634,7 @@ StreamOutPrimary::StreamOutPrimary(
             }
             AHAL_DBG("setting SR for usecase %d as %d", usecase_, config_.sample_rate);
         }
+#endif
     }
 
     if (flags & AUDIO_OUTPUT_FLAG_MMAP_NOIRQ) {
@@ -4116,6 +4120,7 @@ int StreamInPrimary::RouteStream(const std::set<audio_devices_t>& new_devices, b
                 AHAL_INFO("Setting custom key as %s", mPalInDevice[i].custom_config.custom_key);
             }
 
+#ifdef DYNAMIC_SR_ENABLED
             if (((usecase_ == USECASE_AUDIO_RECORD_VOIP) ||
                  (usecase_ == USECASE_AUDIO_RECORD)) &&
                 ((mPalInDevice[i].id == PAL_DEVICE_IN_HANDSET_MIC) ||
@@ -4139,6 +4144,7 @@ int StreamInPrimary::RouteStream(const std::set<audio_devices_t>& new_devices, b
                 }
                 AHAL_DBG("setting SR for usecase %d as %d", usecase_, config_.sample_rate);
             }
+#endif
         }
 
         mAndroidInDevices = new_devices;
@@ -4953,6 +4959,7 @@ StreamInPrimary::StreamInPrimary(audio_io_handle_t handle,
             AHAL_INFO("Setting custom key as %s", mPalInDevice[i].custom_config.custom_key);
         }
 
+#ifdef DYNAMIC_SR_ENABLED
         if (((usecase_ == USECASE_AUDIO_RECORD_VOIP) ||
              (usecase_ == USECASE_AUDIO_RECORD)) &&
             ((mPalInDevice[i].id == PAL_DEVICE_IN_HANDSET_MIC) ||
@@ -4976,6 +4983,7 @@ StreamInPrimary::StreamInPrimary(audio_io_handle_t handle,
             }
             AHAL_DBG("setting SR for usecase %d as %d", usecase_, config_.sample_rate);
         }
+#endif
     }
 
     if (flags & AUDIO_INPUT_FLAG_MMAP_NOIRQ) {
