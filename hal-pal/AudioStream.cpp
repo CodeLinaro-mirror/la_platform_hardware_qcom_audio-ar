@@ -28,7 +28,7 @@
  */
 
 /* Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -1562,7 +1562,9 @@ pal_stream_type_t StreamInPrimary::GetPalStreamType(
             break;
         case AUDIO_INPUT_FLAG_HW_HOTWORD:
         case AUDIO_INPUT_FLAG_NONE:
-            if (isDeviceAvailable(PAL_DEVICE_IN_TELEPHONY_RX)) {
+            if (source_ == AUDIO_SOURCE_ECHO_REFERENCE) {
+                palStreamType = PAL_STREAM_RAW;
+            } else if (isDeviceAvailable(PAL_DEVICE_IN_TELEPHONY_RX)) {
                 if (source_ == AUDIO_SOURCE_VOICE_UPLINK ||
                     source_ == AUDIO_SOURCE_VOICE_DOWNLINK ||
                     source_ == AUDIO_SOURCE_VOICE_CALL) {
@@ -1989,7 +1991,7 @@ int StreamOutPrimary::RouteStream(const std::set<audio_devices_t>& new_devices) 
     AHAL_INFO("enter: usecase(%d: %s) devices 0x%x, num devices %zu",
             this->GetUseCase(), use_case_table[this->GetUseCase()],
             AudioExtn::get_device_types(new_devices), new_devices.size());
-    AHAL_DBG("mAndroidOutDevices %d, mNoOfOutDevices %zu",
+    AHAL_DBG("mAndroidOutDevices %#x, mNoOfOutDevices %zu",
              AudioExtn::get_device_types(mAndroidOutDevices),
              mAndroidOutDevices.size());
 
@@ -4232,7 +4234,7 @@ StreamPrimary::StreamPrimary(audio_io_handle_t handle,
 {
     memset(&streamAttributes_, 0, sizeof(streamAttributes_));
     memset(&address_, 0, sizeof(address_));
-    AHAL_ERR("handle: %d channel_mask: %d ", handle_, config_.channel_mask);
+    AHAL_INFO("handle: %d channel_mask: %d ", handle_, config_.channel_mask);
 }
 
 StreamPrimary::~StreamPrimary(void)
