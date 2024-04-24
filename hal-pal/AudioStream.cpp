@@ -2393,7 +2393,8 @@ uint32_t StreamOutPrimary::GetBufferSize() {
             if( (strncmp(address_,"BUS03_PHONE",strlen("BUS03_PHONE"))) == 0 ||
                 (strncmp(address_,"BUS01_SYS",strlen("BUS01_SYS"))) == 0 ||
                 (strncmp(address_,"BUS02_NAV",strlen("BUS02_NAV"))) == 0 ||
-                (strncmp(address_,"BUS05_ALERTS",strlen("BUS05_ALERTS"))) == 0) {
+                (strncmp(address_,"BUS05_ALERTS",strlen("BUS05_ALERTS"))) == 0 ||
+                (strncmp(address_,"BUS00_MEDIA",strlen("BUS00_MEDIA"))) == 0) {
                 return  get_sampleRate_period_size(config_.sample_rate) *
                     audio_bytes_per_frame(
                             audio_channel_count_from_out_mask(config_.channel_mask),
