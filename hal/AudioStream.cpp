@@ -26,9 +26,9 @@
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
  *
- * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -2740,6 +2740,25 @@ int StreamOutPrimary::SetVolume(float left , float right) {
     AHAL_DBG("Enter: left %f, right %f for usecase(%d: %s)", left, right, GetUseCase(), use_case_table[GetUseCase()]);
 
     stream_mutex_.lock();
+    refactorVolumeData(left, right);
+
+    /* if stream is not opened already cache the volume and set on open */
+    if (pal_stream_handle_) {
+        ret = pal_stream_set_volume(pal_stream_handle_, volume_);
+        if (ret) {
+            AHAL_ERR("Pal Stream volume Error (%x)", ret);
+        }
+    }
+
+done:
+    stream_mutex_.unlock();
+    AHAL_DBG("Exit ret: %d", ret);
+    return ret;
+}
+
+int StreamOutPrimary::refactorVolumeData(float left, float right) {
+    int ret = 0;
+
     /* free previously cached volume if any */
     if (volume_) {
         free(volume_);
@@ -2764,31 +2783,38 @@ int StreamOutPrimary::SetVolume(float left , float right) {
         else
             volume_->volume_pair[0].vol = (left + right)/2.0;
     } else {
+        int chs = streamAttributes_.out_media_config.ch_info.channels;
+        if (chs > MAX_SUPPORT_OUT_CHANNELS) {
+            chs = MAX_SUPPORT_OUT_CHANNELS;
+        } else if (chs <= 0) {
+            chs = 2;
+        }
         volume_ = (struct pal_volume_data *)calloc(1, sizeof(struct pal_volume_data)
-                    +sizeof(struct pal_channel_vol_kv) * 2);
+                +sizeof(struct pal_channel_vol_kv) * chs);
         if (!volume_) {
             AHAL_ERR("Failed to allocate mem for volume_");
             ret = -ENOMEM;
             goto done;
         }
-        volume_->no_of_volpair = 2;
-        volume_->volume_pair[0].channel_mask = 0x01;
+        volume_->no_of_volpair = chs;
+        bool isBalanceGain = abs(left - right) < VOLUME_TOLERANCE ? false : true;
         volume_->volume_pair[0].vol = left;
-        volume_->volume_pair[1].channel_mask = 0x02;
         volume_->volume_pair[1].vol = right;
-    }
-
-    /* if stream is not opened already cache the volume and set on open */
-    if (pal_stream_handle_) {
-        ret = pal_stream_set_volume(pal_stream_handle_, volume_);
-        if (ret) {
-            AHAL_ERR("Pal Stream volume Error (%x)", ret);
+        for (int i = 0; i < volume_->no_of_volpair; i++) {
+            volume_->volume_pair[i].channel_mask = out_channel_mask_table[chs-1][i];
+            /*set volume for other channels, mute rest of channels other than L&R if gain is balanced*/
+            if (i > 1) {
+                if (isBalanceGain)
+                    volume_->volume_pair[i].vol = 0.0f;
+                else
+                    volume_->volume_pair[i].vol = left;
+            }
+            AHAL_DBG("set volume %d, channel_mask:%x, volume:%f.", i,
+                volume_->volume_pair[i].channel_mask, volume_->volume_pair[i].vol);
         }
     }
 
 done:
-    stream_mutex_.unlock();
-    AHAL_DBG("Exit ret: %d", ret);
     return ret;
 }
 
@@ -3058,6 +3084,7 @@ int StreamOutPrimary::Open() {
     struct pal_channel_info ch_info = {0, {0}};
     uint32_t outBufSize = 0;
     uint32_t outBufCount = NO_OF_BUF;
+    uint32_t channel_count = 2;
     struct pal_buffer_config outBufCfg = {0, 0, 0};
 
     pal_param_device_capability_t *device_cap_query = NULL;
@@ -3088,10 +3115,12 @@ int StreamOutPrimary::Open() {
     if (usecase_ == USECASE_AUDIO_PLAYBACK_WITH_HAPTICS) {
         channels = audio_channel_count_from_out_mask(config_.channel_mask & ~AUDIO_CHANNEL_HAPTIC_ALL);
     }
+
     ch_info.channels = channels;
-    ch_info.ch_map[0] = PAL_CHMAP_CHANNEL_FL;
-    if (ch_info.channels > 1)
-        ch_info.ch_map[1] = PAL_CHMAP_CHANNEL_FR;
+    channel_count = (channels > MAX_SUPPORT_OUT_CHANNELS ? MAX_SUPPORT_OUT_CHANNELS : channels);
+    for (int i =0; i < channel_count; i++) {
+        ch_info.ch_map[i] = out_channel_mask_table[channel_count-1][i];
+    }
 
     streamAttributes_.type = StreamOutPrimary::GetPalStreamType(flags_,
                                     config_.sample_rate,
@@ -3289,6 +3318,9 @@ int StreamOutPrimary::Open() {
 
     /* set cached volume if any, dont return failure back up */
     if (volume_) {
+        if (volume_->no_of_volpair != streamAttributes_.out_media_config.ch_info.channels)
+            refactorVolumeData(volume_->volume_pair[0].vol, volume_->no_of_volpair == 1 ?
+                                volume_->volume_pair[0].vol : volume_->volume_pair[1].vol);
         AHAL_DBG("set cached volume (%f)", volume_->volume_pair[0].vol);
         ret = pal_stream_set_volume(pal_stream_handle_, volume_);
         if (ret) {
@@ -4950,60 +4982,10 @@ int StreamInPrimary::Open() {
        goto exit;
     }
     //need to convert channel mask to pal channel mask
-    if (channels == 8) {
-      ch_info.channels = 8;
-      ch_info.ch_map[0] = PAL_CHMAP_CHANNEL_FL;
-      ch_info.ch_map[1] = PAL_CHMAP_CHANNEL_FR;
-      ch_info.ch_map[2] = PAL_CHMAP_CHANNEL_C;
-      ch_info.ch_map[3] = PAL_CHMAP_CHANNEL_LFE;
-      ch_info.ch_map[4] = PAL_CHMAP_CHANNEL_LB;
-      ch_info.ch_map[5] = PAL_CHMAP_CHANNEL_RB;
-      ch_info.ch_map[6] = PAL_CHMAP_CHANNEL_LS;
-      ch_info.ch_map[6] = PAL_CHMAP_CHANNEL_RS;
-    } else if (channels == 7) {
-      ch_info.channels = 7;
-      ch_info.ch_map[0] = PAL_CHMAP_CHANNEL_FL;
-      ch_info.ch_map[1] = PAL_CHMAP_CHANNEL_FR;
-      ch_info.ch_map[2] = PAL_CHMAP_CHANNEL_C;
-      ch_info.ch_map[3] = PAL_CHMAP_CHANNEL_LFE;
-      ch_info.ch_map[4] = PAL_CHMAP_CHANNEL_LB;
-      ch_info.ch_map[5] = PAL_CHMAP_CHANNEL_RB;
-      ch_info.ch_map[6] = PAL_CHMAP_CHANNEL_LS;
-    } else if (channels == 6) {
-      ch_info.channels = 6;
-      ch_info.ch_map[0] = PAL_CHMAP_CHANNEL_FL;
-      ch_info.ch_map[1] = PAL_CHMAP_CHANNEL_FR;
-      ch_info.ch_map[2] = PAL_CHMAP_CHANNEL_C;
-      ch_info.ch_map[3] = PAL_CHMAP_CHANNEL_LFE;
-      ch_info.ch_map[4] = PAL_CHMAP_CHANNEL_LB;
-      ch_info.ch_map[5] = PAL_CHMAP_CHANNEL_RB;
-    } else if (channels == 5) {
-      ch_info.channels = 5;
-      ch_info.ch_map[0] = PAL_CHMAP_CHANNEL_FL;
-      ch_info.ch_map[1] = PAL_CHMAP_CHANNEL_FR;
-      ch_info.ch_map[2] = PAL_CHMAP_CHANNEL_C;
-      ch_info.ch_map[3] = PAL_CHMAP_CHANNEL_LFE;
-      ch_info.ch_map[4] = PAL_CHMAP_CHANNEL_RC;
-    } else if (channels == 4) {
-      ch_info.channels = 4;
-      ch_info.ch_map[0] = PAL_CHMAP_CHANNEL_FL;
-      ch_info.ch_map[1] = PAL_CHMAP_CHANNEL_FR;
-      ch_info.ch_map[2] = PAL_CHMAP_CHANNEL_C;
-      ch_info.ch_map[3] = PAL_CHMAP_CHANNEL_LFE;
-    } else if (channels == 3) {
-      ch_info.channels = 3;
-      ch_info.ch_map[0] = PAL_CHMAP_CHANNEL_FL;
-      ch_info.ch_map[1] = PAL_CHMAP_CHANNEL_FR;
-      ch_info.ch_map[2] = PAL_CHMAP_CHANNEL_C;
-    } else if (channels == 2) {
-      ch_info.channels = 2;
-      ch_info.ch_map[0] = PAL_CHMAP_CHANNEL_FL;
-      ch_info.ch_map[1] = PAL_CHMAP_CHANNEL_FR;
-    } else {
-      ch_info.channels = 1;
-      ch_info.ch_map[0] = PAL_CHMAP_CHANNEL_FL;
+    ch_info.channels = channels > MAX_SUPPORT_IN_CHANNELS ? 1 : channels;
+    for (int i = 0; i < ch_info.channels; i++) {
+        ch_info.ch_map[i] = in_channel_mask_table[ch_info.channels-1][i];
     }
-
     streamAttributes_.type = StreamInPrimary::GetPalStreamType(flags_,
             config_.sample_rate);
     if (source_ == AUDIO_SOURCE_VOICE_UPLINK) {
