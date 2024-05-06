@@ -767,8 +767,8 @@ static int adev_open_input_stream(struct audio_hw_device *dev,
     bool ret_error = false;
     std::shared_ptr<StreamInPrimary> astream = nullptr;
     AHAL_DBG("enter: sample_rate(%d) channel_mask(%#x) devices(%#x)\
-        io_handle(%d) source(%d) format %x", config->sample_rate,
-        config->channel_mask, devices, handle, source, config->format);
+        io_handle(%d) source(%d) format(%#x) flags(%#x) address(%s)", config->sample_rate,
+        config->channel_mask, devices, handle, source, config->format, flags, address);
 
     std::shared_ptr<AudioDevice>adevice = AudioDevice::GetInstance(dev);
     if (!adevice) {
@@ -2298,7 +2298,7 @@ int AudioDevice::GetPalDeviceIds(const std::set<audio_devices_t> &hal_device_ids
     }
 
     // pal device ids is supposed to have to space for the new ids
-    AHAL_DBG("haldeviceIds: %zu", hal_device_ids.size());
+    AHAL_DBG("haldeviceIds: %zu address: %s", hal_device_ids.size(), address);
 
     for (auto hal_device_id : hal_device_ids) {
         // Assign PAL devices based on BUS Address for AUDIO_DEVICE_OUT_BUS
@@ -2315,6 +2315,23 @@ int AudioDevice::GetPalDeviceIds(const std::set<audio_devices_t> &hal_device_ids
                 pal_device_id[device_count] = PAL_DEVICE_OUT_A2B2_SPKR;
             } else {
                 pal_device_id[device_count] = PAL_DEVICE_OUT_SPEAKER;
+            }
+            AHAL_DBG("Found haldeviceId: %x and PAL Device ID %d",
+                     AUDIO_DEVICE_OUT_BUS, pal_device_id[device_count]);
+            ++device_count;
+            continue;
+        }
+
+        // Assign PAL devices based on BUS Address for AUDIO_DEVICE_IN_BUS
+        if (AUDIO_DEVICE_IN_BUS == hal_device_id) {
+            if ((strcmp(address, "BUS04_INPUT") == 0)) {
+                pal_device_id[device_count] = PAL_DEVICE_IN_HANDSET_MIC;
+            } else if (strcmp(address, "BUS09_INPUT_FRONT_PASSENGER") == 0) {
+                pal_device_id[device_count] = PAL_DEVICE_IN_A2B_MIC;
+            } else if (strcmp(address, "BUS17_INPUT_REAR_SEAT") == 0) {
+                pal_device_id[device_count] = PAL_DEVICE_IN_A2B2_MIC;
+            } else {
+                pal_device_id[device_count] = PAL_DEVICE_IN_HANDSET_MIC;
             }
             AHAL_DBG("Found haldeviceId: %x and PAL Device ID %d",
                      AUDIO_DEVICE_OUT_BUS, pal_device_id[device_count]);
