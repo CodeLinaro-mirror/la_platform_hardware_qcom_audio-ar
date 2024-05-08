@@ -1525,15 +1525,15 @@ pal_stream_type_t StreamInPrimary::GetPalStreamType(
          return palStreamType;
     }
 
-    if (sample_rate == LOW_LATENCY_CAPTURE_SAMPLE_RATE &&
-            (halStreamFlags & AUDIO_INPUT_FLAG_TIMESTAMP) == 0 &&
+    if ((halStreamFlags & AUDIO_INPUT_FLAG_TIMESTAMP) == 0 &&
             (halStreamFlags & AUDIO_INPUT_FLAG_COMPRESS) == 0 &&
             (halStreamFlags == (AUDIO_INPUT_FLAG_FAST|AUDIO_INPUT_FLAG_RAW))) {
-        if (isDeviceAvailable(PAL_DEVICE_IN_PROXY))
+        if ((config_.sample_rate == LOW_LATENCY_CAPTURE_SAMPLE_RATE) && (isDeviceAvailable(PAL_DEVICE_IN_PROXY))) {
             palStreamType = PAL_STREAM_PROXY;
-        else
-            palStreamType = PAL_STREAM_ULTRA_LOW_LATENCY;
-
+        }
+        else {
+            palStreamType = PAL_STREAM_LOW_LATENCY;
+        }
         return palStreamType;
     }
 
@@ -2393,7 +2393,8 @@ uint32_t StreamOutPrimary::GetBufferSize() {
             if( (strncmp(address_,"BUS03_PHONE",strlen("BUS03_PHONE"))) == 0 ||
                 (strncmp(address_,"BUS01_SYS",strlen("BUS01_SYS"))) == 0 ||
                 (strncmp(address_,"BUS02_NAV",strlen("BUS02_NAV"))) == 0 ||
-                (strncmp(address_,"BUS05_ALERTS",strlen("BUS05_ALERTS"))) == 0) {
+                (strncmp(address_,"BUS05_ALERTS",strlen("BUS05_ALERTS"))) == 0 ||
+                (strncmp(address_,"BUS00_MEDIA",strlen("BUS00_MEDIA"))) == 0) {
                 return  get_sampleRate_period_size(config_.sample_rate) *
                     audio_bytes_per_frame(
                             audio_channel_count_from_out_mask(config_.channel_mask),
