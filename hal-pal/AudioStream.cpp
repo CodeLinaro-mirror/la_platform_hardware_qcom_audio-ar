@@ -1525,15 +1525,15 @@ pal_stream_type_t StreamInPrimary::GetPalStreamType(
          return palStreamType;
     }
 
-    if (sample_rate == LOW_LATENCY_CAPTURE_SAMPLE_RATE &&
-            (halStreamFlags & AUDIO_INPUT_FLAG_TIMESTAMP) == 0 &&
+    if ((halStreamFlags & AUDIO_INPUT_FLAG_TIMESTAMP) == 0 &&
             (halStreamFlags & AUDIO_INPUT_FLAG_COMPRESS) == 0 &&
             (halStreamFlags == (AUDIO_INPUT_FLAG_FAST|AUDIO_INPUT_FLAG_RAW))) {
-        if (isDeviceAvailable(PAL_DEVICE_IN_PROXY))
+        if ((config_.sample_rate == LOW_LATENCY_CAPTURE_SAMPLE_RATE) && (isDeviceAvailable(PAL_DEVICE_IN_PROXY))) {
             palStreamType = PAL_STREAM_PROXY;
-        else
-            palStreamType = PAL_STREAM_ULTRA_LOW_LATENCY;
-
+        }
+        else {
+            palStreamType = PAL_STREAM_LOW_LATENCY;
+        }
         return palStreamType;
     }
 
