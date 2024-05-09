@@ -594,7 +594,7 @@ public:
     ssize_t read(const void *buffer, size_t bytes);
     uint32_t GetBufferSize();
     pal_stream_type_t GetPalStreamType(audio_input_flags_t halStreamFlags,
-            uint32_t sample_rate);
+            uint32_t sample_rate, char *address);
     int GetInputUseCase(audio_input_flags_t halStreamFlags, audio_source_t source);
     int addRemoveAudioEffect(const struct audio_stream *stream, effect_handle_t effect,bool enable);
     int SetParameters(const char *kvpairs);
