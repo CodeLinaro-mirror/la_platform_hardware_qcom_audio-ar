@@ -1,5 +1,5 @@
 # Audio product definitions
-include vendor/qcom/opensource/audio-hal/primary-hal/configs/pitti_32go/audio-modules.mk
+include vendor/qcom/opensource/audio-hal/primary-hal/configs/volcano/audio-modules.mk
 PRODUCT_PACKAGES += $(AUDIO_MODULES)
 
 #BOARD_USES_GENERIC_AUDIO := true
@@ -127,18 +127,14 @@ PRODUCT_PACKAGES += fai__4.8.4_0.0__3.0.0_0.0__3.1.1_0.0__3.2.0_0.1__eai_3.4_enp
 PRODUCT_PACKAGES += fai__8.0.2_0.0__3.0.0_0.0__3.1.1_0.0__3.2.0_0.1__eai_3.4_enpuv4.pmd
 PRODUCT_PACKAGES += fai__2.9.2_1.0__3.0.0_0.0__3.1.1_0.0__3.2.0_0.0__eai_3.4_enpuv4.pmd
 PRODUCT_PACKAGES += fai__3.0.0_0.0__eai_3.4_enpuv4.pmd
-PRODUCT_PACKAGES += fai__2.0.0_0.1__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_3.4_adsp.pmd
-PRODUCT_PACKAGES += fai__2.0.0_1.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_3.4_adsp.pmd
-PRODUCT_PACKAGES += fai__4.6.2_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_3.4_adsp.pmd
-PRODUCT_PACKAGES += fai__4.6.2_1.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_3.4_adsp.pmd
 
-# Audio configuration xml's related to Lanai
-QCV_FAMILY_SKUS := pitti
-DEVICE_SKU := pitti
+# Audio configuration xml's related to Volcano
+QCV_FAMILY_SKUS := volcano
+DEVICE_SKU := volcano
 UV_WRAPPER2 := true
 
-CONFIG_PAL_SRC_DIR := vendor/qcom/opensource/pal/configs/pitti
-CONFIG_HAL_SRC_DIR := vendor/qcom/opensource/audio-hal/primary-hal/configs/pitti_32go
+CONFIG_PAL_SRC_DIR := vendor/qcom/opensource/pal/configs/volcano
+CONFIG_HAL_SRC_DIR := vendor/qcom/opensource/audio-hal/primary-hal/configs/volcano
 CONFIG_SKU_OUT_DIR := $(TARGET_COPY_OUT_VENDOR)/etc/audio/sku_$(DEVICE_SKU)
 
 PRODUCT_COPY_FILES += \
@@ -146,11 +142,23 @@ PRODUCT_COPY_FILES += \
     $(CONFIG_HAL_SRC_DIR)/audio_effects.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects.xml \
     $(CONFIG_HAL_SRC_DIR)/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/microphone_characteristics.xml \
     $(CONFIG_PAL_SRC_DIR)/card-defs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/card-defs.xml \
-    $(CONFIG_PAL_SRC_DIR)/mixer_paths_pitti_qrd.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_pitti_qrd.xml \
-    $(CONFIG_PAL_SRC_DIR)/mixer_paths_pitti_idp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_pitti_idp.xml \
-    $(CONFIG_PAL_SRC_DIR)/resourcemanager_pitti_qrd.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_pitti_qrd.xml \
-    $(CONFIG_PAL_SRC_DIR)/resourcemanager_pitti_idp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_pitti_idp.xml \
-    $(CONFIG_PAL_SRC_DIR)/usecaseKvManager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usecaseKvManager.xml \
+    $(CONFIG_PAL_SRC_DIR)/mixer_paths_volcano_mtp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_volcano_mtp.xml \
+    $(CONFIG_PAL_SRC_DIR)/mixer_paths_volcano_mtp_wsa883x_wcd939x.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_volcano_mtp_wsa883x_wcd939x.xml \
+    $(CONFIG_PAL_SRC_DIR)/mixer_paths_volcano_cdp_wsa883x_wcd939x.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_volcano_cdp_wsa883x_wcd939x.xml \
+    $(CONFIG_PAL_SRC_DIR)/mixer_paths_volcano_qrd.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_volcano_qrd.xml \
+    $(CONFIG_PAL_SRC_DIR)/mixer_paths_volcano_mtp_sku1.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_volcano_mtp_sku1.xml \
+    $(CONFIG_PAL_SRC_DIR)/mixer_paths_volcano_mtp_wsa883x_wcd939x_sku1.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_volcano_mtp_wsa883x_wcd939x_sku1.xml \
+    $(CONFIG_PAL_SRC_DIR)/mixer_paths_volcano_cdp_wsa883x_wcd939x_sku1.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_volcano_cdp_wsa883x_wcd939x_sku1.xml \
+    $(CONFIG_PAL_SRC_DIR)/mixer_paths_volcano_qrd_sku1.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_volcano_qrd_sku1.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_volcano_mtp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_volcano_mtp.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_volcano_mtp_wsa883x_wcd939x.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_volcano_mtp_wsa883x_wcd939x.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_volcano_cdp_wsa883x_wcd939x.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_volcano_cdp_wsa883x_wcd939x.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_volcano_qrd.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_volcano_qrd.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_volcano_mtp_sku1.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_volcano_mtp_sku1.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_volcano_mtp_wsa883x_wcd939x_sku1.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_volcano_mtp_wsa883x_wcd939x_sku1.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_volcano_cdp_wsa883x_wcd939x_sku1.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_volcano_cdp_wsa883x_wcd939x_sku1.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_volcano_qrd_sku1.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_volcano_qrd_sku1.xml \
+	$(CONFIG_PAL_SRC_DIR)/usecaseKvManager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usecaseKvManager.xml \
     vendor/qcom/opensource/audio-hal/primary-hal/configs/common/media_codecs_vendor_audio.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_vendor_audio.xml \
     frameworks/native/data/etc/android.hardware.audio.pro.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.pro.xml \
     frameworks/native/data/etc/android.hardware.audio.low_latency.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.low_latency.xml \
@@ -161,7 +169,7 @@ ifneq ($(TARGET_USES_AOSP_FOR_AUDIO), true)
 PRODUCT_COPY_FILES += \
     $(CONFIG_HAL_SRC_DIR)/audio_policy_configuration.xml:$(CONFIG_SKU_OUT_DIR)/audio_policy_configuration.xml
 
-#Audio configuration xml's common to Pitti family
+#Audio configuration xml's common to Volcano family
 PRODUCT_COPY_FILES += \
 $(foreach DEVICE_SKU, $(QCV_FAMILY_SKUS), \
     $(CONFIG_HAL_SRC_DIR)/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/sku_$(DEVICE_SKU)_qssi/audio_policy_configuration.xml)
