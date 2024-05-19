@@ -35,7 +35,7 @@
  *
  * Changes from Qualcomm Innovation Center are provided under the following license:
  *
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022, 2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -142,6 +142,11 @@ enum {
     AUDIO_MICROPHONE_CHARACTERISTIC_GEOMETRIC_LOCATION = 16u, // 0x10
     AUDIO_MICROPHONE_CHARACTERISTIC_ALL = 31u, /* ((((SENSITIVITY | MAX_SPL) | MIN_SPL)
                                                   | ORIENTATION) | GEOMETRIC_LOCATION) */
+};
+
+enum {
+    DISPLAYPORT_CONTROLLER = 0,
+    HDMI_CONTROLLER = 1,
 };
 
 static bool hdr_set_parameters(std::shared_ptr<AudioDevice> adev,
@@ -1752,6 +1757,7 @@ int AudioDevice::SetParameters(const char *kvpairs) {
             AudioExtn::get_controller_stream_from_params(parms, &controller, &stream);
             param_device_connection.device_config.dp_config.controller = controller;
             param_device_connection.device_config.dp_config.stream = stream;
+            dp_controller = controller;
             dp_stream = stream;
             AHAL_INFO("plugin device cont %d stream %d", controller, stream);
         }
@@ -1798,6 +1804,7 @@ int AudioDevice::SetParameters(const char *kvpairs) {
 
     ret = str_parms_get_str(parms, "A2dpSuspended" , value, sizeof(value));
     if (ret >= 0) {
+        audio_mode_t mode = AUDIO_MODE_NORMAL;
         pal_param_bta2dp_t param_bt_a2dp;
 
         if (strncmp(value, "true", 4) == 0)
@@ -1806,6 +1813,10 @@ int AudioDevice::SetParameters(const char *kvpairs) {
             param_bt_a2dp.a2dp_suspended = false;
 
         param_bt_a2dp.dev_id = PAL_DEVICE_OUT_BLUETOOTH_A2DP;
+
+        if (voice_)
+            voice_->get_voice_call_state(&mode);
+        param_bt_a2dp.is_in_call = (mode != AUDIO_MODE_NORMAL);
 
         AHAL_INFO("BT A2DP Suspended = %s, command received", value);
         ret = pal_set_param(PAL_PARAM_ID_BT_A2DP_SUSPENDED, (void *)&param_bt_a2dp,
@@ -2007,6 +2018,7 @@ int AudioDevice::SetParameters(const char *kvpairs) {
 
     ret = str_parms_get_str(parms, "A2dpCaptureSuspend", value, sizeof(value));
     if (ret >= 0) {
+        audio_mode_t mode = AUDIO_MODE_NORMAL;
         pal_param_bta2dp_t param_bt_a2dp;
 
         if (strncmp(value, "true", 4) == 0)
@@ -2015,6 +2027,10 @@ int AudioDevice::SetParameters(const char *kvpairs) {
             param_bt_a2dp.a2dp_capture_suspended = false;
 
         param_bt_a2dp.dev_id = PAL_DEVICE_IN_BLUETOOTH_A2DP;
+
+        if (voice_)
+            voice_->get_voice_call_state(&mode);
+        param_bt_a2dp.is_in_call = (mode != AUDIO_MODE_NORMAL);
 
         AHAL_INFO("BT A2DP Capture Suspended = %s, command received", value);
         ret = pal_set_param(PAL_PARAM_ID_BT_A2DP_CAPTURE_SUSPENDED, (void*)&param_bt_a2dp,
@@ -2231,20 +2247,28 @@ int AudioDevice::GetPalDeviceIds(const std::set<audio_devices_t>& hal_device_ids
         auto it = android_device_map_.find(hal_device_id);
         if (it != android_device_map_.end() &&
                 audio_is_input_device(it->first) == audio_is_input_device(hal_device_id)) {
-            AHAL_DBG("Found haldeviceId: %x and PAL Device ID %d",
-                    it->first, it->second);
             if (it->second == PAL_DEVICE_OUT_AUX_DIGITAL ||
                     it->second == PAL_DEVICE_OUT_HDMI) {
                AHAL_DBG("dp_controller: %d dp_stream: %d",
                        dp_controller, dp_stream);
-               if (dp_controller * MAX_STREAMS_PER_CONTROLLER + dp_stream) {
-                  pal_device_id[device_count] = PAL_DEVICE_OUT_AUX_DIGITAL_1;
-               } else {
-                  pal_device_id[device_count] = it->second;
+
+               switch (dp_controller) {
+                   case DISPLAYPORT_CONTROLLER :
+                       if (dp_stream == 0)
+                           pal_device_id[device_count] = it->second;
+                       else
+                           pal_device_id[device_count] = PAL_DEVICE_OUT_AUX_DIGITAL_1;
+                       break;
+                   case HDMI_CONTROLLER :
+                       pal_device_id[device_count] = PAL_DEVICE_OUT_HDMI;
+                       break;
                }
             } else {
                pal_device_id[device_count] = it->second;
             }
+
+            AHAL_DBG("Found haldeviceId: %x and PAL Device ID %d",
+                    it->first, pal_device_id[device_count]);
         }
         ++device_count;
     }
