@@ -378,6 +378,9 @@ ro.bluetooth.a2dp_offload.supported=false
 PRODUCT_PROPERTY_OVERRIDES += \
 persist.bluetooth.a2dp_offload.disabled=true
 
+#enable qcom parsers for WMA/APE/FLAC/ALAC
+PRODUCT_PROPERTY_OVERRIDES += \
+vendor.mm.target.enable.qcom_parser=655632
 
 #enable software decoders for ALAC and APE
 PRODUCT_PROPERTY_OVERRIDES += \
