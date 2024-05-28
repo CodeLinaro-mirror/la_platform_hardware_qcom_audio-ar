@@ -108,8 +108,6 @@ ln -sf /vendor/lib/hw/audio.primary.msmnile.casa.so $(TARGET_OUT_VENDOR)/lib/hw/
 ln -sf /vendor/lib64/hw/audio.primary.msmnile.casa.so $(TARGET_OUT_VENDOR)/lib64/hw/audio.primary.msmnile.so
 else
 LOCAL_MODULE := audio.primary.$(TARGET_BOARD_PLATFORM).ar
-LOCAL_POST_INSTALL_CMD := \
-ln -sf /vendor/bin/audioadsprpcd-ar $(TARGET_OUT_VENDOR)/bin/audioadsprpcd
 endif
 LOCAL_MODULE_RELATIVE_PATH := hw
 LOCAL_MODULE_TAGS := optional
