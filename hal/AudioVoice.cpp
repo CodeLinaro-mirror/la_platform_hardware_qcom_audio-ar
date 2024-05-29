@@ -488,7 +488,6 @@ int AudioVoice::RouteStream(const std::set<audio_devices_t>& rx_devices) {
     size_t bt_param_size = 0;
     bool a2dp_suspended = false;
     bool a2dp_capture_suspended = false;
-    int retry_cnt = 20;
     const int retry_period_ms = 100;
     bool is_suspend_setparam = false;
 
@@ -558,6 +557,7 @@ int AudioVoice::RouteStream(const std::set<audio_devices_t>& rx_devices) {
             * is_suspend_setparam flag to know whether BLE suspended due to the actual setparam
             * or reconfig_cb(suspend->resume).
             */
+            int retry_cnt = 20;
             if ((pal_voice_rx_device_id_ == PAL_DEVICE_OUT_BLUETOOTH_BLE) &&
                 (pal_voice_tx_device_id_ == PAL_DEVICE_IN_BLUETOOTH_BLE)) {
                 updateVoiceMetadataForBT(true);
@@ -587,7 +587,7 @@ int AudioVoice::RouteStream(const std::set<audio_devices_t>& rx_devices) {
                     param_bt_a2dp_ptr = nullptr;
                     bt_param_size = 0;
                 } while (!is_suspend_setparam && (a2dp_suspended || a2dp_capture_suspended) &&
-                    retry_cnt-- && !usleep(retry_period_ms * 1000));
+                    --retry_cnt && !usleep(retry_period_ms * 1000));
                 AHAL_INFO("a2dp_suspended status %d and a2dp_capture_suspended status %d",
                        a2dp_suspended, a2dp_capture_suspended);
             }
@@ -658,11 +658,11 @@ int AudioVoice::UpdateCalls(voice_session_t *pSession) {
     size_t bt_param_size = 0;
     bool a2dp_suspended = false;
     bool a2dp_capture_suspended = false;
-    int retry_cnt = 20;
     const int retry_period_ms = 100;
     bool is_suspend_setparam = false;
 
     for (i = 0; i < MAX_VOICE_SESSIONS; i++) {
+        int retry_cnt = 20;
         session = &pSession[i];
         AHAL_DBG("cur_state=%d new_state=%d vsid=%x",
                  session->state.current_, session->state.new_, session->vsid);
@@ -713,7 +713,7 @@ int AudioVoice::UpdateCalls(voice_session_t *pSession) {
                             param_bt_a2dp_ptr = nullptr;
                             bt_param_size = 0;
                         } while (!is_suspend_setparam && (a2dp_suspended || a2dp_capture_suspended)
-                            && retry_cnt-- && !usleep(retry_period_ms * 1000));
+                            && --retry_cnt && !usleep(retry_period_ms * 1000));
                         AHAL_INFO("a2dp_suspended status %d and a2dp_capture_suspended status %d",
                                   a2dp_suspended, a2dp_capture_suspended);
                     }
