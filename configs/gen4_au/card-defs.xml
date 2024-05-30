@@ -347,7 +347,7 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <id>124</id>
         <name>PCM124</name>
         <pcm_plugin>
-            <so-name>qavb_pcm_plugin.so</so-name>
+            <so-name>libqavb_pcm_plugin.so</so-name>
         </pcm_plugin>
         <props>
             <playback>1</playback>
