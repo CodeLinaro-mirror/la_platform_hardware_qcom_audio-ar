@@ -25,7 +25,6 @@
 #include <qti-audio-core/Bluetooth.h>
 #include <qti-audio-core/Module.h>
 #include <qti-audio-core/Platform.h>
-#include <qti-audio-core/Telephony.h>
 
 namespace qti::audio::core {
 
@@ -213,7 +212,6 @@ class ModulePrimary final : public Module {
     // end of module parameters handling
 
   protected:
-    ChildInterface<Telephony> mTelephony;
     const SetParameterToFeatureMap mSetParameterToFeatureMap{fillSetParameterToFeatureMap()};
     const FeatureToSetHandlerMap mFeatureToSetHandlerMap{fillFeatureToSetHandlerMap()};
     const GetParameterToFeatureMap mGetParameterToFeatureMap{fillGetParameterToFeatureMap()};

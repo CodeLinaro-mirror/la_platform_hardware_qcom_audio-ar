@@ -6,6 +6,8 @@
 #include <vector>
 #include <fuzzer/FuzzedDataProvider.h>
 
+#include <aidl/android/media/audio/common/Boolean.h>
+#include <aidl/android/media/audio/common/Float.h>
 #include <aidl/android/media/audio/common/Int.h>
 
 class DataProviderBase {
@@ -20,8 +22,15 @@ public:
     FuzzedDataProvider &inner() { return p; }
 
     template <typename T>
-    T pick(const T *begin, const T *end) {
-        return *(begin + p.ConsumeIntegralInRange<size_t>(0, end - begin - 1));
+    T pick(const std::vector<T> &v) {
+        assert(!v.empty());
+        return v[p.ConsumeIntegralInRange<size_t>(0, v.size() - 1)];
+    }
+
+    template <typename T, std::size_t N>
+    T pick(T (&array)[N]) {
+        assert(N > 0);
+        return array[p.ConsumeIntegralInRange<size_t>(0, N - 1)];
     }
 
     // primitive types
@@ -75,6 +84,13 @@ public:
             f(val);
             out = std::optional<T>(val);
         }
+    }
+
+    // generate a random number in the range [0, 255]
+    unsigned int uint() {
+        uint8_t v;
+        gen(v);
+        return v;
     }
 
 private:

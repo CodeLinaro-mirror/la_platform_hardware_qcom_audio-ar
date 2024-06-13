@@ -51,12 +51,43 @@ const static std::string kWfdProxyRecordActive{"proxyRecordActive"};
  * it while making device unavailable.
  **/
 const static std::string kWfdIPAsProxyDevConnected{"USE_IP_IN_DEVICE_FOR_PROXY_RECORD"};
+/**
+ * clients have need to hardcode
+ * frame count requirement per read.
+ * Ideally, client should be able read
+ * as AHAL provided. Still, AHAL supports
+ * this way to set module vendor parameter
+ * to request a custom FMQ size from client
+ * FMQ size.
+ * example:
+ * As the session starts, client sets
+ * proxy_record_fmq_size = 480
+
+ * As session ends, client unsets
+ * proxy_record_fmq_size = 0
+
+ * After the session of proxy record finishes,
+ * client is resposible to unset the module
+ * vendor parameter.
+
+ * For upcoming requirements, this way is
+ * depreciated.
+ **/
+const static std::string kProxyRecordFMQSize{"proxy_record_fmq_size"};
 
 // Generic
 const static std::string kInCallMusic{"icmd_playback"};
 const static std::string kUHQA{"UHQA"};
 const static std::string kOffloadPlaySpeedSupported{"offloadVariableRateSupported"};
 const static std::string kSupportsHwSuspend{"supports_hw_suspend"};
+const static std::string kIsDirectPCMTrack{"is_direct_pcm_track"};
+const static std::string kTranslateRecord{"translate_record"};
+/**
+ * translate_record : AUDIO_FLUENCE_FFECNS PCM_RECORD
+ * Use this parameter to for the Voice Translation usecase.
+ * Set param support for APK to select FFECNS record and populate
+ * custom key for FFECNS record based on the setparam.
+ **/
 
 // FTM
 const static std::string kFbspCfgWaitTime{"fbsp_cfg_wait_time"};

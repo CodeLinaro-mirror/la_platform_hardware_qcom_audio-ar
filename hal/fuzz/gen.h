@@ -178,7 +178,7 @@ struct DataProvider : public DataProviderBase {
       IBluetooth::ScoConfig::Mode::SCO_WB,
       IBluetooth::ScoConfig::Mode::SCO_SWB,
     };
-    out = pick(std::begin(values), std::end(values));
+    out = pick(values);
   }
 
   virtual void genOpenInputStreamArguments(IModule::OpenInputStreamArguments &out) {
@@ -203,7 +203,7 @@ struct DataProvider : public DataProviderBase {
       IModule::ScreenRotation::DEG_180,
       IModule::ScreenRotation::DEG_270,
     };
-    out = pick(std::begin(values), std::end(values));
+    out = pick(values);
   }
 
 
@@ -214,7 +214,7 @@ struct DataProvider : public DataProviderBase {
       IStreamIn::MicrophoneDirection::BACK,
       IStreamIn::MicrophoneDirection::EXTERNAL,
     };
-    out = pick(std::begin(values), std::end(values));
+    out = pick(values);
   }
 
 
@@ -232,7 +232,7 @@ struct DataProvider : public DataProviderBase {
       ITelephony::TelecomConfig::TtyMode::HCO,
       ITelephony::TelecomConfig::TtyMode::VCO,
     };
-    out = pick(std::begin(values), std::end(values));
+    out = pick(values);
   }
 
   virtual void genModuleDebug(ModuleDebug &out) {
@@ -297,7 +297,7 @@ struct DataProvider : public DataProviderBase {
       AudioContentType::SONIFICATION,
       AudioContentType::ULTRASOUND,
     };
-    out = pick(std::begin(values), std::end(values));
+    out = pick(values);
   }
 
   virtual void genAudioDevice(AudioDevice &out) {
@@ -363,6 +363,7 @@ struct DataProvider : public DataProviderBase {
       AudioDeviceType::IN_TELEPHONY_RX,
       AudioDeviceType::IN_TV_TUNER,
       AudioDeviceType::IN_DOCK,
+      AudioDeviceType::IN_BUS,
       AudioDeviceType::OUT_DEFAULT,
       AudioDeviceType::OUT_ACCESSORY,
       AudioDeviceType::OUT_AFE_PROXY,
@@ -381,8 +382,9 @@ struct DataProvider : public DataProviderBase {
       AudioDeviceType::OUT_TELEPHONY_TX,
       AudioDeviceType::OUT_DOCK,
       AudioDeviceType::OUT_BROADCAST,
+      AudioDeviceType::OUT_BUS,
     };
-    out = pick(std::begin(values), std::end(values));
+    out = pick(values);
   }
 
   virtual void genAudioDualMonoMode(AudioDualMonoMode &out) {
@@ -392,7 +394,7 @@ struct DataProvider : public DataProviderBase {
       AudioDualMonoMode::LL,
       AudioDualMonoMode::RR,
     };
-    out = pick(std::begin(values), std::end(values));
+    out = pick(values);
   }
 
   virtual void genAudioEncapsulationMode(AudioEncapsulationMode &out) {
@@ -402,7 +404,7 @@ struct DataProvider : public DataProviderBase {
       AudioEncapsulationMode::ELEMENTARY_STREAM,
       AudioEncapsulationMode::HANDLE,
     };
-    out = pick(std::begin(values), std::end(values));
+    out = pick(values);
   }
 
   virtual void genAudioEncapsulationType(AudioEncapsulationType &out) {
@@ -411,7 +413,7 @@ struct DataProvider : public DataProviderBase {
       AudioEncapsulationType::IEC61937,
       AudioEncapsulationType::PCM,
     };
-    out = pick(std::begin(values), std::end(values));
+    out = pick(values);
   }
 
   virtual void genAudioFormatDescription(AudioFormatDescription &out) {
@@ -427,7 +429,7 @@ struct DataProvider : public DataProviderBase {
       AudioFormatType::PCM,
       AudioFormatType::SYS_RESERVED_INVALID,
     };
-    out = pick(std::begin(values), std::end(values));
+    out = pick(values);
   }
 
   virtual void genAudioGain(AudioGain &out) {
@@ -475,7 +477,7 @@ struct DataProvider : public DataProviderBase {
       AudioLatencyMode::DYNAMIC_SPATIAL_AUDIO_SOFTWARE,
       AudioLatencyMode::DYNAMIC_SPATIAL_AUDIO_HARDWARE,
     };
-    out = pick(std::begin(values), std::end(values));
+    out = pick(values);
   }
 
   virtual void genAudioMMapPolicyType(AudioMMapPolicyType &out) {
@@ -483,7 +485,7 @@ struct DataProvider : public DataProviderBase {
       AudioMMapPolicyType::DEFAULT,
       AudioMMapPolicyType::EXCLUSIVE,
     };
-    out = pick(std::begin(values), std::end(values));
+    out = pick(values);
   }
 
   virtual void genAudioMode(AudioMode &out) {
@@ -498,7 +500,7 @@ struct DataProvider : public DataProviderBase {
       AudioMode::SYS_RESERVED_CALL_REDIRECT,
       AudioMode::SYS_RESERVED_COMMUNICATION_REDIRECT,
     };
-    out = pick(std::begin(values), std::end(values));
+    out = pick(values);
   }
 
   virtual void genAudioOffloadInfo(AudioOffloadInfo &out) {
@@ -530,7 +532,7 @@ struct DataProvider : public DataProviderBase {
       AudioPlaybackRate::TimestretchFallbackMode::MUTE,
       AudioPlaybackRate::TimestretchFallbackMode::FAIL,
     };
-    out = pick(std::begin(values), std::end(values));
+    out = pick(values);
   }
 
   virtual void genTimestretchMode(AudioPlaybackRate::TimestretchMode &out) {
@@ -538,7 +540,7 @@ struct DataProvider : public DataProviderBase {
       AudioPlaybackRate::TimestretchMode::DEFAULT,
       AudioPlaybackRate::TimestretchMode::VOICE,
     };
-    out = pick(std::begin(values), std::end(values));
+    out = pick(values);
   }
 
   virtual void genAudioPort(AudioPort &out) {
@@ -659,7 +661,7 @@ struct DataProvider : public DataProviderBase {
       AudioSource::HOTWORD,
       AudioSource::ULTRASOUND,
     };
-    out = pick(std::begin(values), std::end(values));
+    out = pick(values);
   }
 
   virtual void genAudioStandard(AudioStandard &out) {
@@ -669,7 +671,7 @@ struct DataProvider : public DataProviderBase {
       AudioStandard::SADB,
       AudioStandard::VSADB,
     };
-    out = pick(std::begin(values), std::end(values));
+    out = pick(values);
   }
 
   virtual void genAudioStreamType(AudioStreamType &out) {
@@ -692,7 +694,7 @@ struct DataProvider : public DataProviderBase {
       AudioStreamType::SYS_RESERVED_PATCH,
       AudioStreamType::CALL_ASSISTANT,
     };
-    out = pick(std::begin(values), std::end(values));
+    out = pick(values);
   }
 
   virtual void genAudioUsage(AudioUsage &out) {
@@ -721,7 +723,7 @@ struct DataProvider : public DataProviderBase {
       AudioUsage::VEHICLE_STATUS,
       AudioUsage::ANNOUNCEMENT,
     };
-    out = pick(std::begin(values), std::end(values));
+    out = pick(values);
   }
 
   virtual void genExtraAudioDescriptor(ExtraAudioDescriptor &out) {
@@ -740,7 +742,7 @@ struct DataProvider : public DataProviderBase {
       PcmType::FLOAT_32_BIT,
       PcmType::INT_24_BIT,
     };
-    out = pick(std::begin(values), std::end(values));
+    out = pick(values);
   }
 
 };
@@ -750,24 +752,28 @@ struct IBluetoothFuzzer: public FuzzerBase<P, T> {
   IBluetoothFuzzer(P *provider, T *target): FuzzerBase<P, T>(provider, target) {}
   virtual ~IBluetoothFuzzer() {}
 
-  virtual ::aidl::android::hardware::audio::core::IBluetooth::ScoConfig fuzz_setScoConfig() {
+  virtual std::optional<::aidl::android::hardware::audio::core::IBluetooth::ScoConfig> fuzz_setScoConfig() {
     ::aidl::android::hardware::audio::core::IBluetooth::ScoConfig in_config;
     this->provider->genScoConfig(in_config);
     ::aidl::android::hardware::audio::core::IBluetooth::ScoConfig _aidl_return;
 
-    this->target->setScoConfig(in_config, &_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->setScoConfig(in_config, &_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
-  virtual ::aidl::android::hardware::audio::core::IBluetooth::HfpConfig fuzz_setHfpConfig() {
+  virtual std::optional<::aidl::android::hardware::audio::core::IBluetooth::HfpConfig> fuzz_setHfpConfig() {
     ::aidl::android::hardware::audio::core::IBluetooth::HfpConfig in_config;
     this->provider->genHfpConfig(in_config);
     ::aidl::android::hardware::audio::core::IBluetooth::HfpConfig _aidl_return;
 
-    this->target->setHfpConfig(in_config, &_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->setHfpConfig(in_config, &_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
   virtual void fuzz() {
@@ -791,12 +797,14 @@ struct IBluetoothA2dpFuzzer: public FuzzerBase<P, T> {
   IBluetoothA2dpFuzzer(P *provider, T *target): FuzzerBase<P, T>(provider, target) {}
   virtual ~IBluetoothA2dpFuzzer() {}
 
-  virtual bool fuzz_isEnabled() {
+  virtual std::optional<bool> fuzz_isEnabled() {
     bool _aidl_return;
 
-    this->target->isEnabled(&_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->isEnabled(&_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
   virtual void fuzz_setEnabled() {
@@ -806,12 +814,14 @@ struct IBluetoothA2dpFuzzer: public FuzzerBase<P, T> {
     this->target->setEnabled(in_enabled);
   }
 
-  virtual bool fuzz_supportsOffloadReconfiguration() {
+  virtual std::optional<bool> fuzz_supportsOffloadReconfiguration() {
     bool _aidl_return;
 
-    this->target->supportsOffloadReconfiguration(&_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->supportsOffloadReconfiguration(&_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
   virtual void fuzz_reconfigureOffload() {
@@ -850,12 +860,14 @@ struct IBluetoothLeFuzzer: public FuzzerBase<P, T> {
   IBluetoothLeFuzzer(P *provider, T *target): FuzzerBase<P, T>(provider, target) {}
   virtual ~IBluetoothLeFuzzer() {}
 
-  virtual bool fuzz_isEnabled() {
+  virtual std::optional<bool> fuzz_isEnabled() {
     bool _aidl_return;
 
-    this->target->isEnabled(&_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->isEnabled(&_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
   virtual void fuzz_setEnabled() {
@@ -865,12 +877,14 @@ struct IBluetoothLeFuzzer: public FuzzerBase<P, T> {
     this->target->setEnabled(in_enabled);
   }
 
-  virtual bool fuzz_supportsOffloadReconfiguration() {
+  virtual std::optional<bool> fuzz_supportsOffloadReconfiguration() {
     bool _aidl_return;
 
-    this->target->supportsOffloadReconfiguration(&_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->supportsOffloadReconfiguration(&_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
   virtual void fuzz_reconfigureOffload() {
@@ -909,20 +923,24 @@ struct IConfigFuzzer: public FuzzerBase<P, T> {
   IConfigFuzzer(P *provider, T *target): FuzzerBase<P, T>(provider, target) {}
   virtual ~IConfigFuzzer() {}
 
-  virtual ::aidl::android::hardware::audio::core::SurroundSoundConfig fuzz_getSurroundSoundConfig() {
+  virtual std::optional<::aidl::android::hardware::audio::core::SurroundSoundConfig> fuzz_getSurroundSoundConfig() {
     ::aidl::android::hardware::audio::core::SurroundSoundConfig _aidl_return;
 
-    this->target->getSurroundSoundConfig(&_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->getSurroundSoundConfig(&_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
-  virtual ::aidl::android::media::audio::common::AudioHalEngineConfig fuzz_getEngineConfig() {
+  virtual std::optional<::aidl::android::media::audio::common::AudioHalEngineConfig> fuzz_getEngineConfig() {
     ::aidl::android::media::audio::common::AudioHalEngineConfig _aidl_return;
 
-    this->target->getEngineConfig(&_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->getEngineConfig(&_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
   virtual void fuzz() {
@@ -953,46 +971,56 @@ struct IModuleFuzzer: public FuzzerBase<P, T> {
     this->target->setModuleDebug(in_debug);
   }
 
-  virtual std::shared_ptr<::aidl::android::hardware::audio::core::ITelephony> fuzz_getTelephony() {
+  virtual std::optional<std::shared_ptr<::aidl::android::hardware::audio::core::ITelephony>> fuzz_getTelephony() {
     std::shared_ptr<::aidl::android::hardware::audio::core::ITelephony> _aidl_return;
 
-    this->target->getTelephony(&_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->getTelephony(&_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
-  virtual std::shared_ptr<::aidl::android::hardware::audio::core::IBluetooth> fuzz_getBluetooth() {
+  virtual std::optional<std::shared_ptr<::aidl::android::hardware::audio::core::IBluetooth>> fuzz_getBluetooth() {
     std::shared_ptr<::aidl::android::hardware::audio::core::IBluetooth> _aidl_return;
 
-    this->target->getBluetooth(&_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->getBluetooth(&_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
-  virtual std::shared_ptr<::aidl::android::hardware::audio::core::IBluetoothA2dp> fuzz_getBluetoothA2dp() {
+  virtual std::optional<std::shared_ptr<::aidl::android::hardware::audio::core::IBluetoothA2dp>> fuzz_getBluetoothA2dp() {
     std::shared_ptr<::aidl::android::hardware::audio::core::IBluetoothA2dp> _aidl_return;
 
-    this->target->getBluetoothA2dp(&_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->getBluetoothA2dp(&_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
-  virtual std::shared_ptr<::aidl::android::hardware::audio::core::IBluetoothLe> fuzz_getBluetoothLe() {
+  virtual std::optional<std::shared_ptr<::aidl::android::hardware::audio::core::IBluetoothLe>> fuzz_getBluetoothLe() {
     std::shared_ptr<::aidl::android::hardware::audio::core::IBluetoothLe> _aidl_return;
 
-    this->target->getBluetoothLe(&_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->getBluetoothLe(&_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
-  virtual ::aidl::android::media::audio::common::AudioPort fuzz_connectExternalDevice() {
+  virtual std::optional<::aidl::android::media::audio::common::AudioPort> fuzz_connectExternalDevice() {
     ::aidl::android::media::audio::common::AudioPort in_templateIdAndAdditionalData;
     this->provider->genAudioPort(in_templateIdAndAdditionalData);
     ::aidl::android::media::audio::common::AudioPort _aidl_return;
 
-    this->target->connectExternalDevice(in_templateIdAndAdditionalData, &_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->connectExternalDevice(in_templateIdAndAdditionalData, &_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
   virtual void fuzz_disconnectExternalDevice() {
@@ -1002,105 +1030,127 @@ struct IModuleFuzzer: public FuzzerBase<P, T> {
     this->target->disconnectExternalDevice(in_portId);
   }
 
-  virtual std::vector<::aidl::android::hardware::audio::core::AudioPatch> fuzz_getAudioPatches() {
+  virtual std::optional<std::vector<::aidl::android::hardware::audio::core::AudioPatch>> fuzz_getAudioPatches() {
     std::vector<::aidl::android::hardware::audio::core::AudioPatch> _aidl_return;
 
-    this->target->getAudioPatches(&_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->getAudioPatches(&_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
-  virtual ::aidl::android::media::audio::common::AudioPort fuzz_getAudioPort() {
+  virtual std::optional<::aidl::android::media::audio::common::AudioPort> fuzz_getAudioPort() {
     int32_t in_portId;
     this->provider->gen(in_portId);
     ::aidl::android::media::audio::common::AudioPort _aidl_return;
 
-    this->target->getAudioPort(in_portId, &_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->getAudioPort(in_portId, &_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
-  virtual std::vector<::aidl::android::media::audio::common::AudioPortConfig> fuzz_getAudioPortConfigs() {
+  virtual std::optional<std::vector<::aidl::android::media::audio::common::AudioPortConfig>> fuzz_getAudioPortConfigs() {
     std::vector<::aidl::android::media::audio::common::AudioPortConfig> _aidl_return;
 
-    this->target->getAudioPortConfigs(&_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->getAudioPortConfigs(&_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
-  virtual std::vector<::aidl::android::media::audio::common::AudioPort> fuzz_getAudioPorts() {
+  virtual std::optional<std::vector<::aidl::android::media::audio::common::AudioPort>> fuzz_getAudioPorts() {
     std::vector<::aidl::android::media::audio::common::AudioPort> _aidl_return;
 
-    this->target->getAudioPorts(&_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->getAudioPorts(&_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
-  virtual std::vector<::aidl::android::hardware::audio::core::AudioRoute> fuzz_getAudioRoutes() {
+  virtual std::optional<std::vector<::aidl::android::hardware::audio::core::AudioRoute>> fuzz_getAudioRoutes() {
     std::vector<::aidl::android::hardware::audio::core::AudioRoute> _aidl_return;
 
-    this->target->getAudioRoutes(&_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->getAudioRoutes(&_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
-  virtual std::vector<::aidl::android::hardware::audio::core::AudioRoute> fuzz_getAudioRoutesForAudioPort() {
+  virtual std::optional<std::vector<::aidl::android::hardware::audio::core::AudioRoute>> fuzz_getAudioRoutesForAudioPort() {
     int32_t in_portId;
     this->provider->gen(in_portId);
     std::vector<::aidl::android::hardware::audio::core::AudioRoute> _aidl_return;
 
-    this->target->getAudioRoutesForAudioPort(in_portId, &_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->getAudioRoutesForAudioPort(in_portId, &_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
-  virtual ::aidl::android::hardware::audio::core::IModule::OpenInputStreamReturn fuzz_openInputStream() {
+  virtual std::optional<::aidl::android::hardware::audio::core::IModule::OpenInputStreamReturn> fuzz_openInputStream() {
     ::aidl::android::hardware::audio::core::IModule::OpenInputStreamArguments in_args;
     this->provider->genOpenInputStreamArguments(in_args);
     ::aidl::android::hardware::audio::core::IModule::OpenInputStreamReturn _aidl_return;
 
-    this->target->openInputStream(in_args, &_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->openInputStream(in_args, &_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
-  virtual ::aidl::android::hardware::audio::core::IModule::OpenOutputStreamReturn fuzz_openOutputStream() {
+  virtual std::optional<::aidl::android::hardware::audio::core::IModule::OpenOutputStreamReturn> fuzz_openOutputStream() {
     ::aidl::android::hardware::audio::core::IModule::OpenOutputStreamArguments in_args;
     this->provider->genOpenOutputStreamArguments(in_args);
     ::aidl::android::hardware::audio::core::IModule::OpenOutputStreamReturn _aidl_return;
 
-    this->target->openOutputStream(in_args, &_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->openOutputStream(in_args, &_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
-  virtual ::aidl::android::hardware::audio::core::IModule::SupportedPlaybackRateFactors fuzz_getSupportedPlaybackRateFactors() {
+  virtual std::optional<::aidl::android::hardware::audio::core::IModule::SupportedPlaybackRateFactors> fuzz_getSupportedPlaybackRateFactors() {
     ::aidl::android::hardware::audio::core::IModule::SupportedPlaybackRateFactors _aidl_return;
 
-    this->target->getSupportedPlaybackRateFactors(&_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->getSupportedPlaybackRateFactors(&_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
-  virtual ::aidl::android::hardware::audio::core::AudioPatch fuzz_setAudioPatch() {
+  virtual std::optional<::aidl::android::hardware::audio::core::AudioPatch> fuzz_setAudioPatch() {
     ::aidl::android::hardware::audio::core::AudioPatch in_requested;
     this->provider->genAudioPatch(in_requested);
     ::aidl::android::hardware::audio::core::AudioPatch _aidl_return;
 
-    this->target->setAudioPatch(in_requested, &_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->setAudioPatch(in_requested, &_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
-  virtual bool fuzz_setAudioPortConfig() {
+  virtual std::optional<bool> fuzz_setAudioPortConfig() {
     ::aidl::android::media::audio::common::AudioPortConfig in_requested;
     this->provider->genAudioPortConfig(in_requested);
     ::aidl::android::media::audio::common::AudioPortConfig out_suggested;
     bool _aidl_return;
 
-    this->target->setAudioPortConfig(in_requested, &out_suggested, &_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->setAudioPortConfig(in_requested, &out_suggested, &_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
   virtual void fuzz_resetAudioPatch() {
@@ -1117,12 +1167,14 @@ struct IModuleFuzzer: public FuzzerBase<P, T> {
     this->target->resetAudioPortConfig(in_portConfigId);
   }
 
-  virtual bool fuzz_getMasterMute() {
+  virtual std::optional<bool> fuzz_getMasterMute() {
     bool _aidl_return;
 
-    this->target->getMasterMute(&_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->getMasterMute(&_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
   virtual void fuzz_setMasterMute() {
@@ -1132,12 +1184,14 @@ struct IModuleFuzzer: public FuzzerBase<P, T> {
     this->target->setMasterMute(in_mute);
   }
 
-  virtual float fuzz_getMasterVolume() {
+  virtual std::optional<float> fuzz_getMasterVolume() {
     float _aidl_return;
 
-    this->target->getMasterVolume(&_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->getMasterVolume(&_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
   virtual void fuzz_setMasterVolume() {
@@ -1147,12 +1201,14 @@ struct IModuleFuzzer: public FuzzerBase<P, T> {
     this->target->setMasterVolume(in_volume);
   }
 
-  virtual bool fuzz_getMicMute() {
+  virtual std::optional<bool> fuzz_getMicMute() {
     bool _aidl_return;
 
-    this->target->getMicMute(&_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->getMicMute(&_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
   virtual void fuzz_setMicMute() {
@@ -1162,12 +1218,14 @@ struct IModuleFuzzer: public FuzzerBase<P, T> {
     this->target->setMicMute(in_mute);
   }
 
-  virtual std::vector<::aidl::android::media::audio::common::MicrophoneInfo> fuzz_getMicrophones() {
+  virtual std::optional<std::vector<::aidl::android::media::audio::common::MicrophoneInfo>> fuzz_getMicrophones() {
     std::vector<::aidl::android::media::audio::common::MicrophoneInfo> _aidl_return;
 
-    this->target->getMicrophones(&_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->getMicrophones(&_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
   virtual void fuzz_updateAudioMode() {
@@ -1191,30 +1249,36 @@ struct IModuleFuzzer: public FuzzerBase<P, T> {
     this->target->updateScreenState(in_isTurnedOn);
   }
 
-  virtual std::shared_ptr<::aidl::android::hardware::audio::core::sounddose::ISoundDose> fuzz_getSoundDose() {
+  virtual std::optional<std::shared_ptr<::aidl::android::hardware::audio::core::sounddose::ISoundDose>> fuzz_getSoundDose() {
     std::shared_ptr<::aidl::android::hardware::audio::core::sounddose::ISoundDose> _aidl_return;
 
-    this->target->getSoundDose(&_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->getSoundDose(&_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
-  virtual int32_t fuzz_generateHwAvSyncId() {
+  virtual std::optional<int32_t> fuzz_generateHwAvSyncId() {
     int32_t _aidl_return;
 
-    this->target->generateHwAvSyncId(&_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->generateHwAvSyncId(&_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
-  virtual std::vector<::aidl::android::hardware::audio::core::VendorParameter> fuzz_getVendorParameters() {
+  virtual std::optional<std::vector<::aidl::android::hardware::audio::core::VendorParameter>> fuzz_getVendorParameters() {
     std::vector<std::string> in_ids;
     this->provider->gen(in_ids, [this](auto &v) { this->provider->gen(v); });
     std::vector<::aidl::android::hardware::audio::core::VendorParameter> _aidl_return;
 
-    this->target->getVendorParameters(in_ids, &_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->getVendorParameters(in_ids, &_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
   virtual void fuzz_setVendorParameters() {
@@ -1244,38 +1308,53 @@ struct IModuleFuzzer: public FuzzerBase<P, T> {
     this->target->removeDeviceEffect(in_portConfigId, in_effect);
   }
 
-  virtual std::vector<::aidl::android::media::audio::common::AudioMMapPolicyInfo> fuzz_getMmapPolicyInfos() {
+  virtual std::optional<std::vector<::aidl::android::media::audio::common::AudioMMapPolicyInfo>> fuzz_getMmapPolicyInfos() {
     ::aidl::android::media::audio::common::AudioMMapPolicyType in_mmapPolicyType;
     this->provider->genAudioMMapPolicyType(in_mmapPolicyType);
     std::vector<::aidl::android::media::audio::common::AudioMMapPolicyInfo> _aidl_return;
 
-    this->target->getMmapPolicyInfos(in_mmapPolicyType, &_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->getMmapPolicyInfos(in_mmapPolicyType, &_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
-  virtual bool fuzz_supportsVariableLatency() {
+  virtual std::optional<bool> fuzz_supportsVariableLatency() {
     bool _aidl_return;
 
-    this->target->supportsVariableLatency(&_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->supportsVariableLatency(&_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
-  virtual int32_t fuzz_getAAudioMixerBurstCount() {
+  virtual std::optional<int32_t> fuzz_getAAudioMixerBurstCount() {
     int32_t _aidl_return;
 
-    this->target->getAAudioMixerBurstCount(&_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->getAAudioMixerBurstCount(&_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
-  virtual int32_t fuzz_getAAudioHardwareBurstMinUsec() {
+  virtual std::optional<int32_t> fuzz_getAAudioHardwareBurstMinUsec() {
     int32_t _aidl_return;
 
-    this->target->getAAudioHardwareBurstMinUsec(&_aidl_return);
+    if (this->target->getAAudioHardwareBurstMinUsec(&_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
+  }
 
-    return std::move(_aidl_return);
+  virtual void fuzz_prepareToDisconnectExternalDevice() {
+    int32_t in_portId;
+    this->provider->gen(in_portId);
+
+    this->target->prepareToDisconnectExternalDevice(in_portId);
   }
 
   virtual void fuzz() {
@@ -1441,6 +1520,10 @@ struct IModuleFuzzer: public FuzzerBase<P, T> {
         fuzz_getAAudioHardwareBurstMinUsec();
         break;
       }
+      case 40: {
+        fuzz_prepareToDisconnectExternalDevice();
+        break;
+      }
     }
   }
 };
@@ -1508,14 +1591,16 @@ struct IStreamCommonFuzzer: public FuzzerBase<P, T> {
     this->target->updateHwAvSyncId(in_hwAvSyncId);
   }
 
-  virtual std::vector<::aidl::android::hardware::audio::core::VendorParameter> fuzz_getVendorParameters() {
+  virtual std::optional<std::vector<::aidl::android::hardware::audio::core::VendorParameter>> fuzz_getVendorParameters() {
     std::vector<std::string> in_ids;
     this->provider->gen(in_ids, [this](auto &v) { this->provider->gen(v); });
     std::vector<::aidl::android::hardware::audio::core::VendorParameter> _aidl_return;
 
-    this->target->getVendorParameters(in_ids, &_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->getVendorParameters(in_ids, &_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
   virtual void fuzz_setVendorParameters() {
@@ -1582,28 +1667,34 @@ struct IStreamInFuzzer: public FuzzerBase<P, T> {
   IStreamInFuzzer(P *provider, T *target): FuzzerBase<P, T>(provider, target) {}
   virtual ~IStreamInFuzzer() {}
 
-  virtual std::shared_ptr<::aidl::android::hardware::audio::core::IStreamCommon> fuzz_getStreamCommon() {
+  virtual std::optional<std::shared_ptr<::aidl::android::hardware::audio::core::IStreamCommon>> fuzz_getStreamCommon() {
     std::shared_ptr<::aidl::android::hardware::audio::core::IStreamCommon> _aidl_return;
 
-    this->target->getStreamCommon(&_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->getStreamCommon(&_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
-  virtual std::vector<::aidl::android::media::audio::common::MicrophoneDynamicInfo> fuzz_getActiveMicrophones() {
+  virtual std::optional<std::vector<::aidl::android::media::audio::common::MicrophoneDynamicInfo>> fuzz_getActiveMicrophones() {
     std::vector<::aidl::android::media::audio::common::MicrophoneDynamicInfo> _aidl_return;
 
-    this->target->getActiveMicrophones(&_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->getActiveMicrophones(&_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
-  virtual ::aidl::android::hardware::audio::core::IStreamIn::MicrophoneDirection fuzz_getMicrophoneDirection() {
+  virtual std::optional<::aidl::android::hardware::audio::core::IStreamIn::MicrophoneDirection> fuzz_getMicrophoneDirection() {
     ::aidl::android::hardware::audio::core::IStreamIn::MicrophoneDirection _aidl_return;
 
-    this->target->getMicrophoneDirection(&_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->getMicrophoneDirection(&_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
   virtual void fuzz_setMicrophoneDirection() {
@@ -1613,12 +1704,14 @@ struct IStreamInFuzzer: public FuzzerBase<P, T> {
     this->target->setMicrophoneDirection(in_direction);
   }
 
-  virtual float fuzz_getMicrophoneFieldDimension() {
+  virtual std::optional<float> fuzz_getMicrophoneFieldDimension() {
     float _aidl_return;
 
-    this->target->getMicrophoneFieldDimension(&_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->getMicrophoneFieldDimension(&_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
   virtual void fuzz_setMicrophoneFieldDimension() {
@@ -1635,12 +1728,14 @@ struct IStreamInFuzzer: public FuzzerBase<P, T> {
     this->target->updateMetadata(in_sinkMetadata);
   }
 
-  virtual std::vector<float> fuzz_getHwGain() {
+  virtual std::optional<std::vector<float>> fuzz_getHwGain() {
     std::vector<float> _aidl_return;
 
-    this->target->getHwGain(&_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->getHwGain(&_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
   virtual void fuzz_setHwGain() {
@@ -1699,12 +1794,14 @@ struct IStreamOutFuzzer: public FuzzerBase<P, T> {
   IStreamOutFuzzer(P *provider, T *target): FuzzerBase<P, T>(provider, target) {}
   virtual ~IStreamOutFuzzer() {}
 
-  virtual std::shared_ptr<::aidl::android::hardware::audio::core::IStreamCommon> fuzz_getStreamCommon() {
+  virtual std::optional<std::shared_ptr<::aidl::android::hardware::audio::core::IStreamCommon>> fuzz_getStreamCommon() {
     std::shared_ptr<::aidl::android::hardware::audio::core::IStreamCommon> _aidl_return;
 
-    this->target->getStreamCommon(&_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->getStreamCommon(&_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
   virtual void fuzz_updateMetadata() {
@@ -1721,12 +1818,14 @@ struct IStreamOutFuzzer: public FuzzerBase<P, T> {
     this->target->updateOffloadMetadata(in_offloadMetadata);
   }
 
-  virtual std::vector<float> fuzz_getHwVolume() {
+  virtual std::optional<std::vector<float>> fuzz_getHwVolume() {
     std::vector<float> _aidl_return;
 
-    this->target->getHwVolume(&_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->getHwVolume(&_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
   virtual void fuzz_setHwVolume() {
@@ -1736,12 +1835,14 @@ struct IStreamOutFuzzer: public FuzzerBase<P, T> {
     this->target->setHwVolume(in_channelVolumes);
   }
 
-  virtual float fuzz_getAudioDescriptionMixLevel() {
+  virtual std::optional<float> fuzz_getAudioDescriptionMixLevel() {
     float _aidl_return;
 
-    this->target->getAudioDescriptionMixLevel(&_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->getAudioDescriptionMixLevel(&_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
   virtual void fuzz_setAudioDescriptionMixLevel() {
@@ -1751,12 +1852,14 @@ struct IStreamOutFuzzer: public FuzzerBase<P, T> {
     this->target->setAudioDescriptionMixLevel(in_leveldB);
   }
 
-  virtual ::aidl::android::media::audio::common::AudioDualMonoMode fuzz_getDualMonoMode() {
+  virtual std::optional<::aidl::android::media::audio::common::AudioDualMonoMode> fuzz_getDualMonoMode() {
     ::aidl::android::media::audio::common::AudioDualMonoMode _aidl_return;
 
-    this->target->getDualMonoMode(&_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->getDualMonoMode(&_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
   virtual void fuzz_setDualMonoMode() {
@@ -1766,12 +1869,14 @@ struct IStreamOutFuzzer: public FuzzerBase<P, T> {
     this->target->setDualMonoMode(in_mode);
   }
 
-  virtual std::vector<::aidl::android::media::audio::common::AudioLatencyMode> fuzz_getRecommendedLatencyModes() {
+  virtual std::optional<std::vector<::aidl::android::media::audio::common::AudioLatencyMode>> fuzz_getRecommendedLatencyModes() {
     std::vector<::aidl::android::media::audio::common::AudioLatencyMode> _aidl_return;
 
-    this->target->getRecommendedLatencyModes(&_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->getRecommendedLatencyModes(&_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
   virtual void fuzz_setLatencyMode() {
@@ -1781,12 +1886,14 @@ struct IStreamOutFuzzer: public FuzzerBase<P, T> {
     this->target->setLatencyMode(in_mode);
   }
 
-  virtual ::aidl::android::media::audio::common::AudioPlaybackRate fuzz_getPlaybackRateParameters() {
+  virtual std::optional<::aidl::android::media::audio::common::AudioPlaybackRate> fuzz_getPlaybackRateParameters() {
     ::aidl::android::media::audio::common::AudioPlaybackRate _aidl_return;
 
-    this->target->getPlaybackRateParameters(&_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->getPlaybackRateParameters(&_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
   virtual void fuzz_setPlaybackRateParameters() {
@@ -1909,12 +2016,14 @@ struct ITelephonyFuzzer: public FuzzerBase<P, T> {
   ITelephonyFuzzer(P *provider, T *target): FuzzerBase<P, T>(provider, target) {}
   virtual ~ITelephonyFuzzer() {}
 
-  virtual std::vector<::aidl::android::media::audio::common::AudioMode> fuzz_getSupportedAudioModes() {
+  virtual std::optional<std::vector<::aidl::android::media::audio::common::AudioMode>> fuzz_getSupportedAudioModes() {
     std::vector<::aidl::android::media::audio::common::AudioMode> _aidl_return;
 
-    this->target->getSupportedAudioModes(&_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->getSupportedAudioModes(&_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
   virtual void fuzz_switchAudioMode() {
@@ -1924,14 +2033,16 @@ struct ITelephonyFuzzer: public FuzzerBase<P, T> {
     this->target->switchAudioMode(in_mode);
   }
 
-  virtual ::aidl::android::hardware::audio::core::ITelephony::TelecomConfig fuzz_setTelecomConfig() {
+  virtual std::optional<::aidl::android::hardware::audio::core::ITelephony::TelecomConfig> fuzz_setTelecomConfig() {
     ::aidl::android::hardware::audio::core::ITelephony::TelecomConfig in_config;
     this->provider->genTelecomConfig(in_config);
     ::aidl::android::hardware::audio::core::ITelephony::TelecomConfig _aidl_return;
 
-    this->target->setTelecomConfig(in_config, &_aidl_return);
-
-    return std::move(_aidl_return);
+    if (this->target->setTelecomConfig(in_config, &_aidl_return).isOk()) {
+      return std::move(_aidl_return);
+    } else {
+      return std::nullopt;
+    }
   }
 
   virtual void fuzz() {

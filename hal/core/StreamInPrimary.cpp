@@ -16,7 +16,6 @@
 #include <qti-audio-core/ModulePrimary.h>
 #include <qti-audio-core/StreamInPrimary.h>
 #include <system/audio.h>
-#include <extensions/PerfLock.h>
 
 using aidl::android::hardware::audio::common::AudioOffloadMetadata;
 using aidl::android::hardware::audio::common::getChannelCount;
@@ -40,6 +39,8 @@ using ::aidl::android::hardware::audio::core::StreamDescriptor;
 using ::aidl::android::hardware::audio::core::VendorParameter;
 using ::aidl::android::hardware::audio::effect::getEffectTypeUuidAcousticEchoCanceler;
 using ::aidl::android::hardware::audio::effect::getEffectTypeUuidNoiseSuppression;
+using ::aidl::android::media::audio::common::AudioDeviceType;
+using ::aidl::android::media::audio::common::AudioDeviceDescription;
 
 // uncomment this to enable logging of very verbose logs like burst commands.
 // #define VERY_VERBOSE_LOGGING 1
@@ -78,6 +79,12 @@ StreamInPrimary::StreamInPrimary(StreamContext&& context, const SinkMetadata& si
         mExt.emplace<HotwordRecord>();
     }
 
+    /**
+     * In HIDL after open input stream there is subsequent call to
+     *  update metadata, in AIDL its not present , so doing here.
+     */
+    updateMetadata(sinkMetadata);
+
     std::ostringstream os;
     os << " : usecase: " << mTagName;
     os << " IoHandle:" << mMixPortConfig.ext.get<AudioPortExt::Tag::mix>().handle;
@@ -107,6 +114,10 @@ ndk::ScopedAStatus StreamInPrimary::setConnectedDevices(
             mPlatform.configureAndFetchPalDevices(mMixPortConfig, mTag, mConnectedDevices);
     if (mTag == Usecase::PCM_RECORD || mTag == Usecase::COMPRESS_CAPTURE) {
         mPlatform.configurePalDevices(mMixPortConfig, connectedPalDevices);
+        if (mPlatform.getTranslationRecordState()) {
+            mPlatform.configurePalDevicesCustomKey(connectedPalDevices, "translate_record");
+            LOG(INFO) << __func__ << "setting custom key as translate_record";
+        }
     } else if (mTag == Usecase::ULTRA_FAST_RECORD) {
         auto countProxyDevices = std::count_if(mConnectedDevices.cbegin(), mConnectedDevices.cend(),
                                                isInputAFEProxyDevice);
@@ -159,7 +170,6 @@ struct BufferConfig StreamInPrimary::getBufferConfig() {
 
 ndk::ScopedAStatus StreamInPrimary::configureMMapStream(int32_t* fd, int64_t* burstSizeFrames,
                                                         int32_t* flags, int32_t* bufferSizeFrames) {
-    PerfLock perfLock;
     if (mTag != Usecase::MMAP_RECORD) {
         LOG(ERROR) << __func__ << mLogPrefix << " cannot call on non-MMAP stream types";
         return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
@@ -296,7 +306,6 @@ void StreamInPrimary::resume() {
 ::android::status_t StreamInPrimary::transfer(void* buffer, size_t frameCount,
                                               size_t* actualFrameCount, int32_t* latencyMs) {
     if (!mPalHandle) {
-        PerfLock perfLock;
         configure();
         if (!mPalHandle) {
             LOG(ERROR) << __func__ << mLogPrefix << ": failed to configure";
@@ -395,6 +404,35 @@ void StreamInPrimary::shutdown() {
 
 // start of StreamCommonInterface methods
 
+void StreamInPrimary::checkHearingAidRoutingForVoice(const Metadata& metadata, bool voiceActive) {
+
+    if (!voiceActive) {
+        return;
+    }
+
+    std::vector<AudioDevice> devices;
+    AudioDevice device;
+
+    device.type.type = AudioDeviceType::OUT_HEARING_AID;
+    device.type.connection = AudioDeviceDescription::CONNECTION_WIRELESS;
+    devices.push_back(device);
+
+    ::aidl::android::hardware::audio::common::SinkMetadata sinkMetadata =
+            std::get<::aidl::android::hardware::audio::common::SinkMetadata>(metadata);
+
+    for (auto& item : sinkMetadata.tracks) {
+         if (item.destinationDevice.has_value()) {
+             if (item.destinationDevice.value().type.type == AudioDeviceType::OUT_HEARING_AID) {
+                 if (auto telephony = mContext.getTelephony().lock()) {
+                     LOG(DEBUG) << __func__ << " Hearing aid device , calling voice routing";
+                     telephony->setDevices(devices, true);
+                 }
+                 break;
+             }
+         }
+    }
+}
+
 ndk::ScopedAStatus StreamInPrimary::updateMetadataCommon(const Metadata& metadata) {
     if (!isClosed()) {
         if (metadata.index() != mMetadata.index()) {
@@ -405,6 +443,13 @@ ndk::ScopedAStatus StreamInPrimary::updateMetadataCommon(const Metadata& metadat
     int callState = mPlatform.getCallState();
     int callMode = mPlatform.getCallMode();
     bool voiceActive = ((callState == 2) || (callMode == 2));
+
+    /**
+      * Based on sink metadata of recording session, we might need
+      * to update the voice routing if dest device in metadata is
+      * hearing aid.
+      */
+    checkHearingAidRoutingForVoice(metadata, voiceActive);
 
     StreamInPrimary::sinkMetadata_mutex_.lock();
     setAggregateSinkMetadata(voiceActive);
@@ -557,11 +602,14 @@ size_t StreamInPrimary::getPlatformDelay() const noexcept {
 void StreamInPrimary::configure() {
     const auto startTime = std::chrono::steady_clock::now();
     auto attr = mPlatform.getPalStreamAttributes(mMixPortConfig, true);
+    LOG(INFO) << __func__ << " : configure : Enter";
+    auto palDevices = mPlatform.configureAndFetchPalDevices(mMixPortConfig, mTag, mConnectedDevices);
     if (!attr) {
         LOG(ERROR) << __func__ << mLogPrefix << " no pal attributes";
         return;
     }
     if (mTag == Usecase::PCM_RECORD) {
+        LOG(DEBUG) << __func__ << " : PCM_RECORD usecase";
         attr->type = PAL_STREAM_DEEP_BUFFER;
         const auto& source = getAudioSource(mMixPortConfig);
         if (source) {
@@ -571,7 +619,23 @@ void StreamInPrimary::configure() {
             } else if (source.value() == AudioSource::UNPROCESSED) {
                 attr->type = PAL_STREAM_RAW;
                 LOG(INFO) << __func__ << mLogPrefix << ": unprocessed capture";
-            }
+            } else if (source.value() == AudioSource::VOICE_RECOGNITION) {
+                attr->type = PAL_STREAM_VOICE_RECOGNITION;
+                LOG(INFO) << __func__ << mLogPrefix << ": voice recognition capture";
+            } else {
+                auto countTelephonyRxDevices =
+                     std::count_if(mConnectedDevices.cbegin(), mConnectedDevices.cend(),
+                                   isTelephonyRXDevice);
+                if (countTelephonyRxDevices > 0) {
+                    attr->type = PAL_STREAM_PROXY;
+                    attr->info.opt_stream_info.tx_proxy_type = PAL_STREAM_PROXY_TX_TELEPHONY_RX;
+                    LOG(DEBUG) << __func__ << mLogPrefix << ": proxy capture for telephony rx";
+                }
+           }
+        }
+        if (mPlatform.getTranslationRecordState()) {
+            mPlatform.configurePalDevicesCustomKey(palDevices, "translate_record");
+            LOG(INFO) << __func__ << ": setting custom key as translate_record";
         }
     } else if (mTag == Usecase::COMPRESS_CAPTURE) {
         attr->type = PAL_STREAM_COMPRESSED;
@@ -601,8 +665,6 @@ void StreamInPrimary::configure() {
 
     LOG(VERBOSE) << __func__ << mLogPrefix << " assigned pal stream type:" << attr->type;
 
-    auto palDevices =
-            mPlatform.configureAndFetchPalDevices(mMixPortConfig, mTag, mConnectedDevices);
     if (!palDevices.size()) {
         LOG(ERROR) << __func__ << mLogPrefix << " no connected devices on stream!!";
         return;

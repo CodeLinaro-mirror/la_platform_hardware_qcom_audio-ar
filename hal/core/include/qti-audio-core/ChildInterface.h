@@ -50,9 +50,9 @@ struct ChildInterface : private std::pair<std::shared_ptr<C>, ndk::SpAIBinder> {
     // Use 'getInstance' when returning the interface instance.
     std::shared_ptr<C> getInstance() {
         if (this->second.get() == nullptr) {
-            this->second = this->first->asBinder();
-            AIBinder_setMinSchedulerPolicy(this->second.get(), SCHED_NORMAL,
-                                           ANDROID_PRIORITY_AUDIO);
+            const auto binder = this->second = this->first->asBinder();
+            AIBinder_setMinSchedulerPolicy(binder.get(), SCHED_NORMAL, ANDROID_PRIORITY_AUDIO);
+            AIBinder_setInheritRt(binder.get(), true);
         }
         return this->first;
     }

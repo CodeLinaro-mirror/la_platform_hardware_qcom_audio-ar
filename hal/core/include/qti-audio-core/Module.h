@@ -32,6 +32,7 @@
 #include <qti-audio-core/ChildInterface.h>
 #include <qti-audio-core/ModuleConfig.h>
 #include <qti-audio-core/Stream.h>
+#include <qti-audio-core/Telephony.h>
 
 namespace qti::audio::core {
 
@@ -266,6 +267,8 @@ class Module : public ::aidl::android::hardware::audio::core::BnModule,
     ndk::ScopedAStatus updateStreamsConnectedState(
             const ::aidl::android::hardware::audio::core::AudioPatch& oldPatch,
             const ::aidl::android::hardware::audio::core::AudioPatch& newPatch);
+
+    ChildInterface<Telephony> mTelephony;
 };
 
 std::ostream& operator<<(std::ostream& os, Module::Type t);

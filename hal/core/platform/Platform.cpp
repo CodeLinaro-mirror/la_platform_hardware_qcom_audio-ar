@@ -16,6 +16,7 @@
 #include <qti-audio-core/Platform.h>
 #include <qti-audio-core/PlatformUtils.h>
 #include <qti-audio/PlatformConverter.h>
+#include <qti-audio-core/Utils.h>
 
 #include <aidl/qti/audio/core/VString.h>
 #include <cutils/properties.h>
@@ -413,11 +414,16 @@ std::vector<::aidl::android::media::audio::common::AudioProfile> Platform::getUs
     }
 
     size_t payloadSize = 0;
-    deviceCapability->id = palDeviceId;
     deviceCapability->addr.card_id = cardId;
     deviceCapability->addr.device_num = deviceId;
     deviceCapability->config = dynamicMediaConfig.get();
-    deviceCapability->is_playback = isOutputDevice(devicePortExt.device);
+    if (isOutputDevice(devicePortExt.device)) {
+        deviceCapability->id = palDeviceId;
+        deviceCapability->is_playback = true;
+    } else {
+        deviceCapability->id = PAL_DEVICE_IN_USB_HEADSET;
+        deviceCapability->is_playback = false;
+    }
 
     void* deviceCapabilityPtr = deviceCapability.get();
     if (int32_t ret = pal_get_param(PAL_PARAM_ID_DEVICE_CAPABILITY, &deviceCapabilityPtr,
@@ -429,6 +435,14 @@ std::vector<::aidl::android::media::audio::common::AudioProfile> Platform::getUs
     if (!dynamicMediaConfig->jack_status) {
         LOG(ERROR) << __func__ << " false usb jack status ";
         return {};
+    }
+    if (!deviceCapability->is_playback) {
+        if ((dynamicMediaConfig.get()->sample_rate[0] == 0 && dynamicMediaConfig.get()->format[0] == 0 &&
+             dynamicMediaConfig.get()->mask[0] == 0) || (dynamicMediaConfig->jack_status == false)) {
+            mUSBCapEnable = false;
+        } else {
+            mUSBCapEnable = true;
+        }
     }
 
     return getSupportedAudioProfiles(deviceCapability.get(), "usb");
@@ -531,8 +545,10 @@ int Platform::handleDeviceConnectionChange(const AudioPort& deviceAudioPort,
         } else {
             return -EINVAL;
         }
-    }  else if (isIPInDevice(devicePortExt.device)) {
-           return isIPAsProxyDeviceConnected();
+    }  else if (isIPDevice(devicePortExt.device)) {
+           if (!isIPAsProxyDeviceConnected()) {
+                return -EINVAL;
+           }
     }
 
     v = deviceConnection.get();
@@ -559,6 +575,14 @@ void Platform::setWFDProxyChannels(const uint32_t numProxyChannels) noexcept {
         LOG(ERROR) << __func__ << ": PAL_PARAM_ID_PROXY_CHANNEL_CONFIG failed: " << ret;
         return;
     }
+}
+
+void Platform::setProxyRecordFMQSize(const size_t& FMQSize) noexcept {
+    mProxyRecordFMQSize = FMQSize;
+}
+
+size_t Platform::getProxyRecordFMQSize() const noexcept {
+    return mProxyRecordFMQSize;
 }
 
 uint32_t Platform::getWFDProxyChannels() const noexcept {
@@ -654,6 +678,11 @@ void Platform::updateScreenRotation(const IModule::ScreenRotation in_rotation) n
             ret) {
             LOG(ERROR) << ": PAL_PARAM_ID_DEVICE_ROTATION failed";
         }
+        LOG(INFO) << ": updated screen rotation from "
+                  << ::aidl::android::hardware::audio::core::toString(mCurrentScreenRotation)
+                  << " to "
+                  << ::aidl::android::hardware::audio::core::toString(
+                             in_rotation); // validation log
     };
 
     if (in_rotation == IModule::ScreenRotation::DEG_270 &&
@@ -1020,57 +1049,6 @@ std::string Platform::getParameter(const std::string& key) const {
     return "";
 }
 
-bool Platform::isFormatTypePCM(const AudioFormatDescription& f) const noexcept {
-    if (f.type == AudioFormatType::PCM) {
-        return true;
-    }
-    return false;
-}
-
-bool Platform::isOutputDevice(const AudioDevice& d) const noexcept {
-    if (d.type.type >= AudioDeviceType::OUT_DEFAULT) {
-        return true;
-    }
-    return false;
-}
-
-bool Platform::isInputDevice(const AudioDevice& d) const noexcept {
-    if (d.type.type < AudioDeviceType::OUT_DEFAULT) {
-        return true;
-    }
-    return false;
-}
-
-bool Platform::isUsbDevice(const AudioDevice& d) const noexcept {
-    if (d.type.connection == AudioDeviceDescription::CONNECTION_USB) {
-        return true;
-    }
-    return false;
-}
-
-bool Platform::isIPInDevice(const AudioDevice& d) const noexcept {
-    if(d.type.type == AudioDeviceType::IN_DEVICE &&
-       d.type.connection == AudioDeviceDescription::CONNECTION_IP_V4) {
-        return true;
-    }
-    return false;
-}
-
-bool Platform::isHdmiDevice(const AudioDevice& d) const noexcept {
-    if (d.type.connection == AudioDeviceDescription::CONNECTION_HDMI) {
-        return true;
-    }
-    return false;
-}
-
-bool Platform::isBluetoothDevice(const AudioDevice& d) const noexcept {
-    if (d.type.connection == AudioDeviceDescription::CONNECTION_BT_A2DP ||
-        d.type.connection == AudioDeviceDescription::CONNECTION_BT_LE) {
-        return true;
-    }
-    return false;
-}
-
 bool Platform::isSoundCardUp() const noexcept {
     if (mSndCardStatus == CARD_STATUS_ONLINE) {
         return true;
@@ -1085,15 +1063,6 @@ bool Platform::isSoundCardDown() const noexcept {
     return false;
 }
 
-bool Platform::isValidAlsaAddr(const std::vector<int>& alsaAddress) const noexcept {
-    if (alsaAddress.size() != 2 || alsaAddress[0] < 0 || alsaAddress[1] < 0) {
-        LOG(ERROR) << __func__
-                   << ": malformed alsa address: "
-                   << ::android::internal::ToString(alsaAddress);
-        return false;
-    }
-    return true;
-}
 uint32_t Platform::getBluetoothLatencyMs(const std::vector<AudioDevice>& bluetoothDevices) {
     pal_param_bta2dp_t btConfig{};
     pal_param_bta2dp_t *param_bt_a2dp_ptr = &btConfig;
@@ -1113,7 +1082,7 @@ uint32_t Platform::getBluetoothLatencyMs(const std::vector<AudioDevice>& bluetoo
             }
             if (payloadSize == 0) {
                 LOG(ERROR) << __func__ << " empty payload size!!!";
-                continue;;
+                continue;
             }
         }
     }

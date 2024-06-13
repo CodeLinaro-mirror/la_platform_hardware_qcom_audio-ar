@@ -56,6 +56,8 @@
 
 namespace qti::audio::core {
 
+class Telephony;
+
 // This class is similar to StreamDescriptor, but unlike
 // the descriptor, it actually owns the objects implementing
 // data exchange: FMQs etc, whereas StreamDescriptor only
@@ -98,7 +100,8 @@ class StreamContext {
             std::shared_ptr<::aidl::android::hardware::audio::core::IStreamOutEventCallback>
                     outEventCallback,
             ::aidl::android::media::audio::common::AudioPortConfig mixPortConfig,
-            DebugParameters debugParameters, const int nominalLatency)
+            DebugParameters debugParameters, const int nominalLatency,
+            std::weak_ptr<Telephony> telephony)
         : mCommandMQ(std::move(commandMQ)),
           mInternalCommandCookie(std::rand()),
           mReplyMQ(std::move(replyMQ)),
@@ -110,7 +113,8 @@ class StreamContext {
           mOutEventCallback(outEventCallback),
           mMixPortConfig(mixPortConfig),
           mNominalLatency(nominalLatency),
-          mDebugParameters(debugParameters) {}
+          mDebugParameters(debugParameters),
+          mTelephony(telephony) {}
     StreamContext(StreamContext&& other)
         : mCommandMQ(std::move(other.mCommandMQ)),
           mInternalCommandCookie(other.mInternalCommandCookie),
@@ -124,7 +128,8 @@ class StreamContext {
           mMixPortConfig(std::move(other.mMixPortConfig)),
           mDebugParameters(std::move(other.mDebugParameters)),
           mFrameCount(other.mFrameCount),
-          mNominalLatency(other.mNominalLatency) {}
+          mNominalLatency(other.mNominalLatency),
+          mTelephony(other.mTelephony) {}
     StreamContext& operator=(StreamContext&& other) {
         mCommandMQ = std::move(other.mCommandMQ);
         mInternalCommandCookie = other.mInternalCommandCookie;
@@ -139,6 +144,7 @@ class StreamContext {
         mDebugParameters = std::move(other.mDebugParameters);
         mFrameCount = other.mFrameCount;
         mNominalLatency =  other.mNominalLatency;
+        mTelephony = other.mTelephony;
         return *this;
     }
 
@@ -186,6 +192,7 @@ class StreamContext {
         return mMixPortConfig;
     }
     int32_t getNominalLatencyMs() const { return mNominalLatency; }
+    std::weak_ptr<Telephony> getTelephony() { return mTelephony; }
 
   private:
     std::unique_ptr<CommandMQ> mCommandMQ;
@@ -203,6 +210,7 @@ class StreamContext {
     DebugParameters mDebugParameters;
     long mFrameCount = 0;
     int32_t mNominalLatency = 0;
+    std::weak_ptr<Telephony> mTelephony;
 };
 
 // This interface provides operations of the stream which are executed on the worker thread.
@@ -311,7 +319,8 @@ class StreamWorkerImpl : public StreamWorkerInterface,
     void setIsConnected(bool isConnected) override { WorkerImpl::setIsConnected(isConnected); }
     void setClosed() override { WorkerImpl::setClosed(); }
     bool start() override {
-        return WorkerImpl::start(WorkerImpl::kThreadName, ANDROID_PRIORITY_AUDIO);
+        // This is an "audio service thread," must have elevated priority.
+        return WorkerImpl::start(WorkerImpl::kThreadName, ANDROID_PRIORITY_URGENT_AUDIO);
     }
     pid_t getTid() override { return WorkerImpl::getTid(); }
     void stop() override { return WorkerImpl::stop(); }

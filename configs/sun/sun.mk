@@ -69,6 +69,7 @@ PRODUCT_PACKAGES += fai__2.9.0_1.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_4.6_enp
 PRODUCT_PACKAGES += fai__2.9.2_1.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_4.6_enpuv5.pmd
 PRODUCT_PACKAGES += fai__4.8.4_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_4.6_enpuv5.pmd
 PRODUCT_PACKAGES += fai__8.0.2_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_4.6_enpuv5.pmd
+PRODUCT_PACKAGES += fai__8.0.3_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_4.6_enpuv5.pmd
 PRODUCT_PACKAGES += fai__3.0.0_0.0__eai_4.6_enpuv5.pmd
 
 # Audio configuration xml's related to Lanai
@@ -101,6 +102,9 @@ PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.audio.pro.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.pro.xml \
     frameworks/native/data/etc/android.hardware.audio.low_latency.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.low_latency.xml \
     frameworks/native/data/etc/android.hardware.sensor.dynamic.head_tracker.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/sku_$(DEVICE_SKU)/android.hardware.sensor.dynamic.head_tracker.xml
+# Copy AudioEffects config
+PRODUCT_COPY_FILES += \
+    hardware/interfaces/audio/aidl/default/audio_effects_config.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects_config_stub.xml
 
 #XML Audio configuration files
 ifneq ($(TARGET_USES_AOSP_FOR_AUDIO), true)
@@ -126,6 +130,7 @@ PRODUCT_COPY_FILES += \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/default_volume_tables.xml:$(TARGET_COPY_OUT_VENDOR)/etc/default_volume_tables.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/r_submix_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/r_submix_audio_policy_configuration.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/usb_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usb_audio_policy_configuration.xml \
+    $(TOPDIR)frameworks/av/services/audiopolicy/config/stub_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/stub_audio_policy_configuration.xml \
     $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/bluetooth_qti_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/bluetooth_qti_audio_policy_configuration.xml \
     $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/bluetooth_qti_hearing_aid_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/bluetooth_qti_hearing_aid_audio_policy_configuration.xml
 

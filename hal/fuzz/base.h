@@ -4,11 +4,6 @@
 #pragma once
 
 #include <memory>
-#include <qti-audio-core/Module.h>
-#include <qti-audio-core/ModulePrimary.h>
-
-using qti::audio::core::Module;
-using qti::audio::core::ModulePrimary;
 
 template <typename P, typename T>
 class FuzzerBase {

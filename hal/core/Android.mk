@@ -1,3 +1,4 @@
+ifneq ($(AUDIO_USE_STUB_HAL), true)
 LOCAL_PATH := $(call my-dir)
 CURRENT_PATH := $(call my-dir)
 
@@ -21,9 +22,6 @@ LOCAL_VINTF_FRAGMENTS   := \
 
 LOCAL_VINTF_FRAGMENTS += \
     ../../configs/common/manifest_non_qmaa_extn.xml
-
-LOCAL_VINTF_FRAGMENTS += \
-    manifest_audiocoreservices_qti.xml
 
 LOCAL_SRC_FILES := \
     CoreService.cpp \
@@ -94,3 +92,4 @@ include $(BUILD_SHARED_LIBRARY)
 include $(CURRENT_PATH)/extensions/Android.mk
 include $(CURRENT_PATH)/platform/Android.mk
 include $(CURRENT_PATH)/utils/Android.mk
+endif

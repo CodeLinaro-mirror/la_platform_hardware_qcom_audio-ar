@@ -74,6 +74,13 @@ bool isDevicePortConfig(const AudioPortConfig& audioPortConfig) noexcept {
     return audioPortConfig.ext.getTag() == AudioPortExt::Tag::device;
 };
 
+bool isOutputAudioDevice(const AudioDevice& device) noexcept {
+    if (device.type.type >= AudioDeviceType::OUT_DEFAULT) {
+        return true;
+    }
+    return false;
+}
+
 bool isTelephonyRXDevice(const AudioDevice& device) noexcept {
     return device.type.type == AudioDeviceType::IN_TELEPHONY_RX;
 };
@@ -128,9 +135,62 @@ bool isInputAFEProxyDevice(const AudioDevice& device) noexcept {
     return device.type.type == AudioDeviceType::IN_AFE_PROXY;
 }
 
-bool isIPDevice(const AudioDevice& device) noexcept {
-    return  device.type.type == AudioDeviceType::OUT_DEVICE &&
-             device.type.connection == AudioDeviceDescription::CONNECTION_IP_V4;
+bool isIPDevice(const AudioDevice& d) noexcept {
+    return isIPInDevice(d) || isIPOutDevice(d);
+}
+
+bool isIPInDevice(const AudioDevice& d) noexcept {
+    if(d.type.type == AudioDeviceType::IN_DEVICE &&
+       d.type.connection == AudioDeviceDescription::CONNECTION_IP_V4) {
+        return true;
+    }
+    return false;
+}
+
+bool isIPOutDevice(const AudioDevice& d) noexcept {
+    if(d.type.type == AudioDeviceType::OUT_DEVICE &&
+       d.type.connection == AudioDeviceDescription::CONNECTION_IP_V4) {
+        return true;
+    }
+    return false;
+}
+
+bool isHdmiDevice(const AudioDevice& d) noexcept {
+    if (d.type.connection == AudioDeviceDescription::CONNECTION_HDMI) {
+        return true;
+    }
+    return false;
+}
+
+bool isOutputDevice(const AudioDevice& d) noexcept {
+    if (d.type.type >= AudioDeviceType::OUT_DEFAULT) {
+        return true;
+    }
+    return false;
+}
+
+bool isInputDevice(const AudioDevice& d) noexcept {
+    if (d.type.type < AudioDeviceType::OUT_DEFAULT) {
+        return true;
+    }
+    return false;
+}
+
+bool isValidAlsaAddr(const std::vector<int>& alsaAddress) noexcept {
+    if (alsaAddress.size() != 2 || alsaAddress[0] < 0 || alsaAddress[1] < 0) {
+        LOG(ERROR) << __func__
+                   << ": malformed alsa address: "
+                   << ::android::internal::ToString(alsaAddress);
+        return false;
+    }
+    return true;
+}
+
+bool isUsbDevice(const AudioDevice& d) noexcept {
+    if (d.type.connection == AudioDeviceDescription::CONNECTION_USB) {
+        return true;
+    }
+    return false;
 }
 
 bool hasOutputDirectFlag(const AudioIoFlags& ioFlags) noexcept {
@@ -138,6 +198,24 @@ bool hasOutputDirectFlag(const AudioIoFlags& ioFlags) noexcept {
         constexpr auto directFlag =
                 static_cast<int32_t>(1 << static_cast<int32_t>(AudioOutputFlags::DIRECT));
         return ((directFlag & ioFlags.get<AudioIoFlags::Tag::output>()) != 0);
+    }
+    return false;
+}
+
+bool hasInputRawFlag(const AudioIoFlags& ioFlags) noexcept {
+    if (ioFlags.getTag() == AudioIoFlags::Tag::input) {
+        constexpr auto rawFlag =
+                static_cast<int32_t>(1 << static_cast<int32_t>(AudioInputFlags::RAW));
+        return ((rawFlag & ioFlags.get<AudioIoFlags::Tag::input>()) != 0);
+    }
+    return false;
+}
+
+bool hasOutputRawFlag(const AudioIoFlags& ioFlags) noexcept {
+    if (ioFlags.getTag() == AudioIoFlags::Tag::output) {
+        constexpr auto rawFlag =
+                static_cast<int32_t>(1 << static_cast<int32_t>(AudioOutputFlags::RAW));
+        return ((rawFlag & ioFlags.get<AudioIoFlags::Tag::output>()) != 0);
     }
     return false;
 }

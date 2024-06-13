@@ -19,6 +19,7 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <xi:include href="r_submix_audio_policy_configuration.xml"/>
         <!-- USB Audio HAL -->
         <xi:include href="usb_audio_policy_configuration.xml"/>
+        <xi:include href="stub_audio_policy_configuration.xml"/>
     </modules>
     <!-- End of Modules section -->
 

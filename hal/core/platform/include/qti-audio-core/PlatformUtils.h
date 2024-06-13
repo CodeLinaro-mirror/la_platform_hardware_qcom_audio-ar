@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -62,9 +62,6 @@ AudioChannelLayout getChannelIndexMaskFromChannelCount(unsigned int channelCount
 AudioChannelLayout getChannelLayoutMaskFromChannelCount(unsigned int channelCount, int isInput);
 
 void setPalDeviceCustomKey(pal_device& palDevice, const std::string& customKey) noexcept;
-
-::aidl::android::hardware::audio::core::VendorParameter constructVendorParameter(
-        const std::string& id, const std::string& value) noexcept;
 
 std::vector<uint8_t> makePalVolumes(std::vector<float> const& volumes) noexcept;
 

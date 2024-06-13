@@ -72,6 +72,7 @@ class Platform {
     bool bt_lc3_speech_enabled;
     static btsco_lc3_cfg_t btsco_lc3_cfg;
 
+    mutable bool mUSBCapEnable;
     int mCallState;
     int mCallMode;
     static Platform& getInstance();
@@ -104,19 +105,8 @@ class Platform {
 
     std::string getParameter(const std::string& key) const;
     std::string toString() const;
-    bool isFormatTypePCM(const ::aidl::android::media::audio::common::AudioFormatDescription&) const
-            noexcept;
-    bool isUsbDevice(const ::aidl::android::media::audio::common::AudioDevice&) const noexcept;
-    bool isHdmiDevice(const ::aidl::android::media::audio::common::AudioDevice&) const noexcept;
-    bool isInputDevice(const ::aidl::android::media::audio::common::AudioDevice&) const noexcept;
-    bool isOutputDevice(const ::aidl::android::media::audio::common::AudioDevice&) const noexcept;
-    bool isBluetoothDevice(const ::aidl::android::media::audio::common::AudioDevice& d) const
-            noexcept;
-    bool isIPInDevice(const ::aidl::android::media::audio::common::AudioDevice&) const noexcept;
     bool isSoundCardUp() const noexcept;
     bool isSoundCardDown() const noexcept;
-    bool isValidAlsaAddr(const std::vector<int>& alsaAddress) const noexcept;
-
 
     size_t getMinimumStreamSizeFrames(
             const std::vector<::aidl::android::media::audio::common::AudioPortConfig*>& sources,
@@ -233,18 +223,13 @@ class Platform {
     PlaybackRateStatus setPlaybackRate(
             pal_stream_handle_t* handle, const Usecase& tag,
             const ::aidl::android::media::audio::common::AudioPlaybackRate& playbackRate);
-    std::vector<::aidl::android::media::audio::common::AudioDevice> getPrimaryPlaybackDevices()
-            const {
-        return mPrimaryPlaybackDevices;
-    }
-
-    void setPrimaryPlaybackDevices(
-            const std::vector<::aidl::android::media::audio::common::AudioDevice>& devices) {
-        mPrimaryPlaybackDevices = devices;
-    }
 
     void setInCallMusicState(const bool state) noexcept { mInCallMusicEnabled = state; }
     bool getInCallMusicState() noexcept { return mInCallMusicEnabled; }
+
+    // Set and Get Value Functions for Translate Record.
+    void setTranslationRecordState(const bool state) noexcept { mIsTranslationRecordEnabled = state; }
+    bool getTranslationRecordState() noexcept { return mIsTranslationRecordEnabled; }
 
     void updateCallState(int callState) { mCallState = callState; }
     void updateCallMode(int callMode) { mCallMode = callMode; }
@@ -254,6 +239,8 @@ class Platform {
     bool isA2dpSuspended();
 
     void setWFDProxyChannels(const uint32_t numProxyChannels) noexcept;
+    void setProxyRecordFMQSize(const size_t& FMQSize) noexcept;
+    size_t getProxyRecordFMQSize() const noexcept;
     uint32_t getWFDProxyChannels() const noexcept;
     /* Check if proxy record session is active in  PAL_DEVICE_IN_RECORD_PROXY */
     std::string IsProxyRecordActive() const noexcept;
@@ -292,6 +279,7 @@ class Platform {
     void setHdrOnPalDevice(pal_device* palDeviceIn);
     bool isHDRARMenabled();
     bool isHDRSPFEnabled();
+    bool getUSBCapEnable() { return mUSBCapEnable; }
   private:
     void customizePalDevices(
             const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig,
@@ -317,6 +305,7 @@ class Platform {
     std::map<std::string, std::string> mParameters;
     card_status_t mSndCardStatus{CARD_STATUS_OFFLINE};
     bool mInCallMusicEnabled{false};
+    bool mIsTranslationRecordEnabled{false};
     bool mIsScreenTurnedOn{false};
     uint32_t mWFDProxyChannels{0};
     bool mIsUHQAEnabled{false};
@@ -341,5 +330,7 @@ class Platform {
             pal_device_id_t,
             std::vector<::aidl::android::media::audio::common::MicrophoneDynamicInfo>>;
     PalDevToMicDynamicInfoMap mMicrophoneDynamicInfoMap;
+    // proxy related info
+    size_t mProxyRecordFMQSize{0};
 };
 } // namespace qti::audio::core

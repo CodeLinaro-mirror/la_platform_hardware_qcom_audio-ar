@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -10,7 +10,9 @@
 #include <android-base/logging.h>
 #include <qti-audio-core/Platform.h>
 #include <qti-audio-core/PlatformUtils.h>
+#include <qti-audio/PlatformConverter.h>
 #include <system/audio.h>
+
 #include <map>
 #include <set>
 #include <vector>
@@ -222,31 +224,22 @@ void setPalDeviceCustomKey(pal_device& palDevice, const std::string& customKey) 
     strlcpy(palDevice.custom_config.custom_key, customKey.c_str(), PAL_MAX_CUSTOM_KEY_SIZE);
 }
 
-VendorParameter constructVendorParameter(const std::string& id, const std::string& value) noexcept {
-    VString parcel;
-    parcel.value = value;
-    VendorParameter param;
-    param.id = id;
-    if (param.ext.setParcelable(parcel) != android::OK) {
-        LOG(ERROR) << __func__ << ": failed to set parcel for " << param.id;
-    }
-    return std::move(param);
-}
-
 std::vector<uint8_t> makePalVolumes(std::vector<float> const& volumes) noexcept {
     if (volumes.empty()) {
         return {};
     }
-    const auto dataLength = sizeof(pal_volume_data) + sizeof(pal_channel_vol_kv) * volumes.size();
+
+    auto channels = volumes.size();
+    auto palChannelInfo = PlatformConverter::getPalChannelInfoForChannelCount(channels);
+
+    const auto dataLength = sizeof(pal_volume_data) + sizeof(pal_channel_vol_kv) * channels;
     auto data = std::vector<uint8_t>(dataLength);
     auto palVolumeData = reinterpret_cast<pal_volume_data*>(data.data());
-    palVolumeData->no_of_volpair = volumes.size();
+    palVolumeData->no_of_volpair = channels;
 
-    size_t index = 0;
-    for (const auto& volume : volumes) {
-        palVolumeData->volume_pair[index].channel_mask = 0x1 << index;
-        palVolumeData->volume_pair[index].vol = volume;
-        index++;
+    for (unsigned long channel = 0; channel < channels; channel++) {
+        palVolumeData->volume_pair[channel].channel_mask = palChannelInfo->ch_map[channel];
+        palVolumeData->volume_pair[channel].vol = volumes[channel];
     }
     return data;
 }

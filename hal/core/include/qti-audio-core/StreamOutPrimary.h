@@ -105,6 +105,7 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl {
     const size_t mFrameSizeBytes;
     bool mIsPaused{false};
     std::vector<float> mVolumes{};
+    bool mUseCachedVolume = false;
     bool mHwVolumeSupported = false;
     // check validaty of mPalHandle before use
     pal_stream_handle_t* mPalHandle{nullptr};
@@ -138,6 +139,7 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl {
 
   private:
     std::string mLogPrefix = "";
+    bool mStarted = false;
     bool isHwVolumeSupported();
     struct BufferConfig getBufferConfig();
 

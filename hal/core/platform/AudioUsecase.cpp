@@ -249,17 +249,14 @@ size_t UllPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
 
 // [ULLPlayback End]
 
-// [MMapPlayback Start]
-size_t MMapPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
-    return kPeriodSize;
-}
+// [MmapUsecaseBase Start]
 
-void MMapPlayback::setPalHandle(pal_stream_handle_t* handle) {
+void MmapUsecaseBase::setPalHandle(pal_stream_handle_t* handle) {
     mPalHandle = handle;
 }
 
-int32_t MMapPlayback::createMMapBuffer(int64_t frameSize, int32_t* fd, int64_t* burstSizeFrames,
-                                       int32_t* flags, int32_t* bufferSizeFrames) {
+int32_t MmapUsecaseBase::createMMapBuffer(int64_t frameSize, int32_t* fd, int64_t* burstSizeFrames,
+                                          int32_t* flags, int32_t* bufferSizeFrames) {
     if (!mPalHandle) {
         LOG(ERROR) << __func__ << ": pal stream handle is null";
         return -EINVAL;
@@ -274,10 +271,12 @@ int32_t MMapPlayback::createMMapBuffer(int64_t frameSize, int32_t* fd, int64_t* 
     *burstSizeFrames = palMMapBuf.burst_size_frames;
     *flags = palMMapBuf.flags;
     *bufferSizeFrames = palMMapBuf.buffer_size_frames;
+    LOG(DEBUG) << __func__ << " burstSizeFrames " << *burstSizeFrames << " flags " << *flags
+               << " bufferSizeFrames " << *bufferSizeFrames << " fd " << *fd;
     return 0;
 }
 
-int32_t MMapPlayback::getMMapPosition(int64_t* frames, int64_t* timeNs) {
+int32_t MmapUsecaseBase::getMMapPosition(int64_t* frames, int64_t* timeNs) {
     if (!mPalHandle) {
         LOG(ERROR) << __func__ << ": pal stream handle is null";
         return -EINVAL;
@@ -292,6 +291,11 @@ int32_t MMapPlayback::getMMapPosition(int64_t* frames, int64_t* timeNs) {
     *frames = pal_mmap_pos.position_frames;
     LOG(VERBOSE) << __func__ << ": frames:" << *frames << ", timeNs:" << *timeNs;
     return 0;
+}
+// [MmapUsecaseBase End]
+// [MMapPlayback Start]
+size_t MMapPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
+    return kPeriodSize;
 }
 
 // [MMapPlayback End]
@@ -359,20 +363,6 @@ void CompressPlayback::configureGapless(pal_stream_handle_t* handle) {
     configureGapLessMetadata();
 }
 
-void CompressPlayback::reconfigureOnFlush() const {
-    if (mCompressPlaybackHandle == nullptr) {
-        return;
-    }
-    configureGapLessMetadata();
-}
-
-void CompressPlayback::reconfigureOnPartialDrain() const {
-    if (mCompressPlaybackHandle == nullptr) {
-        return;
-    }
-    configureGapLessMetadata();
-}
-
 ndk::ScopedAStatus CompressPlayback::getVendorParameters(
         const std::vector<std::string>& in_ids,
         std::vector<::aidl::android::hardware::audio::core::VendorParameter>* _aidl_return) {
@@ -414,7 +404,6 @@ int32_t CompressPlayback::palCallback(pal_stream_handle_t* palHandle, uint32_t e
         } break;
         case PAL_STREAM_CBK_EVENT_PARTIAL_DRAIN_READY: {
             LOG(VERBOSE) << __func__ << " partial drain ready";
-            compressPlayback->reconfigureOnPartialDrain();
             compressPlayback->setDrainReady();
             compressPlayback->mAsyncCallback->onDrainReady();
         } break;
@@ -815,6 +804,28 @@ size_t FastRecord::getFrameCount(const AudioPortConfig& mixPortConfig) {
 
 // [UltraFastRecord Start]
 size_t UltraFastRecord::getFrameCount(const AudioPortConfig& mixPortConfig) {
+    /**
+     * Some clients which directly uses AHAL service for Fast Record like
+     * proxy capture
+     **/
+    auto& platform = Platform::getInstance();
+    if (const auto& propFrameSize = platform.getProxyRecordFMQSize(); propFrameSize > 0) {
+        LOG(VERBOSE) << __func__ << ": client applied FMQSize in Frames:" << propFrameSize;
+        return propFrameSize;
+    }
+
+    if (!hasInputRawFlag(mixPortConfig.flags.value())) {
+        /**
+         * Most likey this is for WFD Usecase,
+         * they demand PCM frames of 1024 in every read
+         * TODO, move this requirement to FastRecord
+         **/
+        constexpr size_t kWFDPCMFramesPerRead = 1024;
+        LOG(VERBOSE) << __func__ << ": expecting for WFD proxy record:";
+        return kWFDPCMFramesPerRead;
+    }
+
+    // return default period size for ULL
     return kPeriodSize;
 }
 
@@ -826,45 +837,6 @@ size_t MMapRecord::getFrameCount(const AudioPortConfig& mixPortConfig) {
     return kPeriodSize;
 }
 
-void MMapRecord::setPalHandle(pal_stream_handle_t* handle) {
-    mPalHandle = handle;
-}
-
-int32_t MMapRecord::createMMapBuffer(int64_t frameSize, int32_t* fd, int64_t* burstSizeFrames,
-                                     int32_t* flags, int32_t* bufferSizeFrames) {
-    if (!mPalHandle) {
-        LOG(ERROR) << __func__ << ": pal stream handle is null";
-        return -EINVAL;
-    }
-    struct pal_mmap_buffer palMMapBuf;
-    if (int32_t ret = pal_stream_create_mmap_buffer(mPalHandle, frameSize, &palMMapBuf); ret) {
-        LOG(ERROR) << __func__ << ": pal stream create mmap buffer failed "
-                   << "returned " << ret;
-        return ret;
-    }
-    *fd = palMMapBuf.fd;
-    *burstSizeFrames = palMMapBuf.burst_size_frames;
-    *flags = palMMapBuf.flags;
-    *bufferSizeFrames = palMMapBuf.buffer_size_frames;
-    return 0;
-}
-
-int32_t MMapRecord::getMMapPosition(int64_t* frames, int64_t* timeNs) {
-    if (!mPalHandle) {
-        LOG(ERROR) << __func__ << ": pal stream handle is null";
-        return -EINVAL;
-    }
-    struct pal_mmap_position pal_mmap_pos;
-    if (int32_t ret = pal_stream_get_mmap_position(mPalHandle, &pal_mmap_pos); ret) {
-        LOG(ERROR) << __func__ << ": failed to get mmap positon "
-                   << "returned " << ret;
-        return ret;
-    }
-    *timeNs = pal_mmap_pos.time_nanoseconds;
-    *frames = pal_mmap_pos.position_frames;
-    LOG(VERBOSE) << __func__ << ": frames:" << *frames << ", timeNs:" << *timeNs;
-    return 0;
-}
 // [MMapRecord End]
 
 // [HotwordRecord Start]
@@ -1032,9 +1004,9 @@ ndk::ScopedAStatus CompressCapture::getVendorParameters(
     for (const auto& id : in_ids) {
         if (id == Aac::kDSPAacBitRate) {
             result.emplace_back(
-                    constructVendorParameter(id, std::to_string(mPalSndEnc.aac_enc.aac_bit_rate)));
+                    makeVendorParameter(id, std::to_string(mPalSndEnc.aac_enc.aac_bit_rate)));
         } else if (id == Aac::kDSPAacGlobalCutoffFrequency) {
-            result.emplace_back(constructVendorParameter(
+            result.emplace_back(makeVendorParameter(
                     id, std::to_string(mPalSndEnc.aac_enc.global_cutoff_freq)));
         }
     }

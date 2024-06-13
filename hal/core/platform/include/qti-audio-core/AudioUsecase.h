@@ -27,7 +27,7 @@
 
 #define DIV_ROUND_UP(x, y) (((x) + (y) - 1) / (y))
 #define ALIGN(x, y) ((y) * DIV_ROUND_UP((x), (y)))
-
+#define DEFAULT_SAMPLE_RATE 48000
 namespace qti::audio::core {
 
 enum class Usecase : uint16_t {
@@ -133,10 +133,10 @@ class UsecaseConfig {
 
 class PrimaryPlayback : public UsecaseConfig<PrimaryPlayback> {
   public:
-    constexpr static size_t kPeriodSize = 1920;
     constexpr static size_t kPeriodCount = 2;
     constexpr static size_t kPlatformDelayMs = 29;
     constexpr static size_t kPeriodDurationMs = 40;
+    constexpr static size_t kPeriodSize = kPeriodDurationMs * DEFAULT_SAMPLE_RATE /1000;
 
     static size_t getFrameCount(
             const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig);
@@ -146,10 +146,10 @@ class PrimaryPlayback : public UsecaseConfig<PrimaryPlayback> {
 
 class DeepBufferPlayback : public UsecaseConfig<DeepBufferPlayback> {
   public:
-    constexpr static size_t kPeriodSize = 1920;
     constexpr static size_t kPeriodCount = 2;
     constexpr static size_t kPeriodDurationMs = 40;
     constexpr static size_t kPlatformDelayMs = 29;
+    constexpr static size_t kPeriodSize = kPeriodDurationMs * DEFAULT_SAMPLE_RATE /1000;
 
     static size_t getFrameCount(
             const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig);
@@ -159,10 +159,10 @@ class DeepBufferPlayback : public UsecaseConfig<DeepBufferPlayback> {
 
 class LowLatencyPlayback : public UsecaseConfig<LowLatencyPlayback> {
   public:
-    constexpr static size_t kPeriodSize = 240;
     constexpr static size_t kPeriodCount = 2;
     constexpr static size_t kPlatformDelayMs = 13;
     constexpr static size_t kPeriodDurationMs = 4;
+    constexpr static size_t kPeriodSize = kPeriodDurationMs * DEFAULT_SAMPLE_RATE /1000;
     static std::unordered_set<size_t> kSupportedFrameSizes;
 
     static size_t getFrameCount(
@@ -177,28 +177,36 @@ class UllPlayback : public UsecaseConfig<UllPlayback> {
     constexpr static size_t kPeriodMultiplier = 3;
     constexpr static size_t kPlatformDelayMs = 4;
     constexpr static uint32_t kPeriodCount = 512;
+    constexpr static size_t kPeriodDurationMs = 1;
 
     static size_t getFrameCount(
             const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig);
 
-    static int32_t getLatency() { return kPeriodSize * kPeriodMultiplier + kPlatformDelayMs; }
+    static int32_t getLatency() { return kPeriodDurationMs * kPeriodMultiplier + kPlatformDelayMs; }
 };
 
-class MMapPlayback : public UsecaseConfig<MMapPlayback> {
+class MmapUsecaseBase {
+  public:
+    virtual ~MmapUsecaseBase() {}
+    virtual void setPalHandle(pal_stream_handle_t* handle);
+    virtual int32_t createMMapBuffer(int64_t frameSize, int32_t* fd, int64_t* burstSizeFrames,
+                                     int32_t* flags, int32_t* bufferSizeFrames);
+    virtual int32_t getMMapPosition(int64_t* frames, int64_t* timeNs);
+
+  protected:
+    pal_stream_handle_t* mPalHandle{nullptr};
+};
+
+class MMapPlayback : public MmapUsecaseBase, public UsecaseConfig<MMapPlayback> {
   public:
     constexpr static size_t kPeriodSize = 48; // 1ms
     constexpr static size_t kPlatformDelayMs = 3;
     constexpr static uint32_t kPeriodCount = 512;
-    void setPalHandle(pal_stream_handle_t* handle);
-    int32_t createMMapBuffer(int64_t frameSize, int32_t* fd, int64_t* burstSizeFrames,
-                             int32_t* flags, int32_t* bufferSizeFrames);
-    int32_t getMMapPosition(int64_t* frames, int64_t* timeNs);
 
     static size_t getFrameCount(
             const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig);
 
-    static int32_t getLatency() { return kPeriodSize + kPlatformDelayMs; }
-    pal_stream_handle_t* mPalHandle{nullptr};
+    static int32_t getLatency() { return kPlatformDelayMs; }
 };
 
 class CompressPlayback : public UsecaseConfig<CompressPlayback, false /*IsPcm*/> {
@@ -294,8 +302,6 @@ class CompressPlayback : public UsecaseConfig<CompressPlayback, false /*IsPcm*/>
     /* To reconfigure the codec, gapless info */
     void setAndConfigureCodecInfo(pal_stream_handle_t* handle);
     void configureGapless(pal_stream_handle_t* handle);
-    void reconfigureOnFlush() const;
-    void reconfigureOnPartialDrain() const;
     // if fetched, when status is set, it resets the status
     bool fetchDrainReady();
     void setDrainReady();
@@ -398,6 +404,7 @@ class InCallMusic : public UsecaseConfig<InCallMusic> {
   public:
     constexpr static size_t kPeriodSize = 960;
     constexpr static size_t kPeriodCount = 4;
+    constexpr static size_t kPlatformDelayMs = 0;
 
     static size_t getFrameCount(
             const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig);
@@ -447,9 +454,9 @@ class UltraFastRecord : public UsecaseConfig<UltraFastRecord> {
   public:
     constexpr static int32_t kSampleRate = 48000;
     // The below values at the moment are not generic, TODO make generic
-    constexpr static size_t kPeriodSize = 1024; // as per WFD requirement
-    constexpr static size_t kPeriodCount = 4;   // as per WFD requirement
-    constexpr static size_t kPlatformDelayMs = 20;
+    constexpr static size_t kPeriodSize = 96; //2msec worth framecount for 48k
+    constexpr static size_t kPeriodCount = 4;
+    constexpr static size_t kPlatformDelayMs = 4;
     // This Use case behave differently when the device connected is input AFE proxy
     bool mIsWFDCapture{false};
 
@@ -459,17 +466,11 @@ class UltraFastRecord : public UsecaseConfig<UltraFastRecord> {
     static int32_t getLatency() { return kPlatformDelayMs; }
 };
 
-class MMapRecord : public UsecaseConfig<MMapRecord> {
+class MMapRecord : public MmapUsecaseBase, public UsecaseConfig<MMapRecord> {
   public:
     constexpr static uint32_t kPeriodSize = 48; // Same as Playback?
     constexpr static size_t kPeriodCount = 512;
     constexpr static size_t kPlatformDelayMs = 4;
-    void setPalHandle(pal_stream_handle_t* handle);
-    int32_t createMMapBuffer(int64_t frameSize, int32_t* fd, int64_t* burstSizeFrames,
-                             int32_t* flags, int32_t* bufferSizeFrames);
-    int32_t getMMapPosition(int64_t* frames, int64_t* timeNs);
-
-    pal_stream_handle_t* mPalHandle{nullptr};
 
     static size_t getFrameCount(
             const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig);
@@ -480,6 +481,7 @@ class MMapRecord : public UsecaseConfig<MMapRecord> {
 class HotwordRecord : public UsecaseConfig<HotwordRecord> {
   public:
     constexpr static uint32_t kPeriodCount = 4;
+    constexpr static size_t kPlatformDelayMs = 0;
     static size_t getFrameCount(
             const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig);
 
@@ -493,6 +495,7 @@ class VoipRecord : public UsecaseConfig<VoipRecord> {
   public:
     constexpr static uint32_t kCaptureDurationMs = 20;
     constexpr static uint32_t kPeriodCount = 4;
+    constexpr static size_t kPlatformDelayMs = 0;
 
     static size_t getFrameCount(
             const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig);
@@ -504,6 +507,7 @@ class VoiceCallRecord : public UsecaseConfig<VoiceCallRecord> {
   public:
     constexpr static size_t kCaptureDurationMs = 20;
     constexpr static size_t kPeriodCount = 2;
+    constexpr static size_t kPlatformDelayMs = 0;
 
     static size_t getFrameCount(
             const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig);

@@ -158,7 +158,7 @@ ndk::ScopedAStatus ModulePrimary::setMicMute(bool in_mute) {
         LOG(ERROR) << __func__ << ": Telephony not created ";
         return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
     }
-    LOG(VERBOSE) << __func__ << ": " << in_mute;
+    LOG(DEBUG) << __func__ << ": " << in_mute;
     mMicMute = in_mute;
 
     mTelephony->setMicMute(mMicMute);
@@ -167,7 +167,12 @@ ndk::ScopedAStatus ModulePrimary::setMicMute(bool in_mute) {
 
     for (const auto& inputMixPortConfigId :
          getActiveInputMixPortConfigIds(getConfig().portConfigs)) {
-        mStreams.setStreamMicMute(inputMixPortConfigId, mMicMute);
+        if(!mPlatform.getTranslationRecordState()){
+            mStreams.setStreamMicMute(inputMixPortConfigId, mMicMute);
+        } else {
+            // Need to keep the Audio FFECNS Record stream unmuted when Translate Record Usecase Enabled
+            LOG(DEBUG) << __func__ << ": SetStreamMicMute skipped for Voice Translate Record";
+        }
     }
     return ndk::ScopedAStatus::ok();
 }
@@ -261,7 +266,7 @@ ndk::ScopedAStatus ModulePrimary::createOutputStream(
 
 std::vector<::aidl::android::media::audio::common::AudioProfile> ModulePrimary::getDynamicProfiles(
         const ::aidl::android::media::audio::common::AudioPort& audioPort) {
-    if (mPlatform.isUsbDevice(audioPort.ext.get<AudioPortExt::Tag::device>().device)) {
+    if (isUsbDevice(audioPort.ext.get<AudioPortExt::Tag::device>().device)) {
         /* as of now, we do dynamic fetching for usb devices*/
         auto dynamicProfiles = mPlatform.getDynamicProfiles(audioPort);
         return dynamicProfiles;
@@ -289,12 +294,14 @@ void ModulePrimary::setAudioPatchTelephony(const std::vector<AudioPortConfig*>& 
                                            const std::vector<AudioPortConfig*>& sinks,
                                            const AudioPatch& patch) {
     std::string patchDetails = getPatchDetails(patch);
+
     if (!mTelephony) {
         LOG(ERROR) << __func__ << ": Telephony not created " << patchDetails << patch.toString();
         return;
     }
 
     if (!isDevicePortConfig(*(sources.at(0))) || !isDevicePortConfig(*(sinks.at(0)))) {
+        LOG(VERBOSE) << __func__ << ": its not device to device patch ";
         return;
     }
     bool updateRx = isTelephonyRXDevice(sources.at(0)->ext.get<AudioPortExt::Tag::device>().device);
@@ -334,9 +341,10 @@ int ModulePrimary::onExternalDeviceConnectionChanged(
         return 0;
     }
 
-    if (connected) {
-        mTelephony->updateDevicesFromPrimaryPlayback();
-    }
+    // At this point it is safe to assume this audio port if of type audio device
+    const auto& extDevice = audioPort.ext.get<AudioPortExt::Tag::device>().device;
+    mTelephony->onExternalDeviceConnectionChanged(extDevice, connected);
+
     return 0;
 }
 
@@ -431,6 +439,11 @@ void ModulePrimary::onSetGenericParameters(const std::vector<VendorParameter>& p
         } else if (Parameters::kUHQA == param.id) {
             const bool enable = paramValue == "on" ? true : false;
             mPlatform.updateUHQA(enable);
+        } else if (Parameters::kTranslateRecord == param.id) {
+            // Add Translate_Record param check and update using the Set Function
+            const auto isOn = getBoolFromString(paramValue);
+            mPlatform.setTranslationRecordState(isOn);
+            LOG(INFO) << __func__ << ": PCM Record FFECNS for Translation:" << isOn;
         }
     }
 }
@@ -537,6 +550,9 @@ void ModulePrimary::onSetWFDParameters(const std::vector<VendorParameter>& param
         } else if (Parameters::kWfdIPAsProxyDevConnected == p.id) {
             auto isIPAsProxy = getBoolFromString(paramValue);
             mPlatform.setIPAsProxyDeviceConnected(isIPAsProxy);
+        } else if (Parameters::kProxyRecordFMQSize == p.id) {
+            const size_t& proxyRecordFMQSize = static_cast<int32_t>(getInt64FromString(paramValue));
+            mPlatform.setProxyRecordFMQSize(proxyRecordFMQSize);
         }
     }
     return;
@@ -625,6 +641,7 @@ ModulePrimary::SetParameterToFeatureMap ModulePrimary::fillSetParameterToFeature
                                  {Parameters::kVoiceDeviceMute, Feature::TELEPHONY},
                                  {Parameters::kVoiceDirection, Feature::TELEPHONY},
                                  {Parameters::kInCallMusic, Feature::GENERIC},
+                                 {Parameters::kTranslateRecord, Feature::GENERIC},
                                  {Parameters::kUHQA, Feature::GENERIC},
                                  {Parameters::kFbspCfgWaitTime, Feature::FTM},
                                  {Parameters::kFbspFTMWaitTime, Feature::FTM},
@@ -633,6 +650,7 @@ ModulePrimary::SetParameterToFeatureMap ModulePrimary::fillSetParameterToFeature
                                  {Parameters::kTriggerSpeakerCall, Feature::FTM},
                                  {Parameters::kWfdChannelMap, Feature::WFD},
                                  {Parameters::kWfdIPAsProxyDevConnected, Feature::WFD},
+                                 {Parameters::kProxyRecordFMQSize, Feature::WFD},
                                  {Parameters::kHapticsVolume, Feature::HAPTICS},
                                  {Parameters::kHapticsIntensity, Feature::HAPTICS}};
     return map;

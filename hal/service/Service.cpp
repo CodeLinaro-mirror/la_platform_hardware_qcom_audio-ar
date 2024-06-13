@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -69,23 +69,22 @@ bool registerFromConfigs() {
     return !interfaces.empty();
 }
 
+/*
+* Don't modify default entries unless the library is a must for stub mode bootup.
+*/
 void registerDefaultInterfaces() {
     Interfaces defaultInterfaces = {
-            {.name = "audiohal",
-             .libraryName = "libaudiocorehal.qti.so",
-             .method = "registerService",
+            {.name = "audiohal-default",
+             .libraryName = "libaudiocorehal.default.so",
+             .method = "registerServices",
              .mandatory = true},
             {.name = "audioeffecthal",
              .libraryName = "libaudioeffecthal.qti.so",
              .method = "registerService",
              .mandatory = true},
-            {.name = "sthal",
-             .libraryName = "libsoundtriggerhal.qti.so",
-             .method = "createISoundTriggerFactory",
-             .mandatory = true},
             {.name = "bthal",
-             .libraryName = "android.hardware.bluetooth.audio-impl.so",
-             .method = "createIBluetoothAudioProviderFactory",
+             .libraryName = "android.hardware.bluetooth.audio_sw.so",
+             .method = "registerIModuleBluetoothSWQti",
              .mandatory = false},
     };
 
@@ -93,8 +92,9 @@ void registerDefaultInterfaces() {
 }
 
 void registerAvailableInterfaces() {
-    if (!registerFromConfigs()) {
-        ALOGI("registerDefaultInterfaces");
+    auto stubmode = ::android::base::GetIntProperty<int8_t>("vendor.audio.hal.stubmode", 0);
+    if (stubmode || !registerFromConfigs()) {
+        ALOGI("registerDefaultInterfaces stub mode %d", stubmode);
         registerDefaultInterfaces();
     }
 }

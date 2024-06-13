@@ -141,29 +141,8 @@ AUDIO_MODULES += \
 AUDIO_MODULES += \
     audiohalservice.qti \
     libaudiocorehal.qti \
+    libaudiocorehal.default \
     libaudioeffecthal.qti
 
-LATEST_ANDROID_HARDWARE_AUDIO_EFFECT := android.hardware.audio.effect-V2-ndk
-LATEST_ANDROID_HARDWARE_COMMON := android.hardware.common-V2-ndk
-LATEST_ANDROID_MEDIA_ADUIO_COMMON_TYPES := android.media.audio.common.types-V3-ndk
-LATEST_ANDROID_HARDWARE_COMMON_FMQ := android.hardware.common.fmq-V1-ndk
-
-# to have similar to cc_defaults in make files
-EFFECTS_DEFAULTS_SHARED_LIBRARIES := \
-    $(LATEST_ANDROID_HARDWARE_AUDIO_EFFECT) \
-    $(LATEST_ANDROID_HARDWARE_COMMON) \
-    $(LATEST_ANDROID_MEDIA_ADUIO_COMMON_TYPES) \
-    $(LATEST_ANDROID_HARDWARE_COMMON_FMQ) \
-    libaudioaidlcommon \
-    libbase \
-    libbinder_ndk \
-    libcutils \
-    libfmq \
-    libutils
-
-EFFECTS_DEFAULTS_HEADERS_LIBRARIES := \
-    libaudioeffectsaidlqti_headers \
-    libaudio_system_headers \
-    libsystem_headers
 
 endif

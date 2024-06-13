@@ -27,13 +27,25 @@
 #include <android-base/logging.h>
 #include <android/binder_manager.h>
 #include <android/binder_process.h>
+#include <android-base/properties.h>
 #include <system/audio_config.h>
 
 /** Default name of effect configuration file. */
 static const char* kDefaultConfigName = "audio_effects_config.xml";
+static const char* kStubConfigName = "audio_effects_config_stub.xml";
+
+static inline std::string getEffectConfig() {
+    auto stubmode = ::android::base::GetIntProperty<int8_t>("vendor.audio.hal.stubmode", 0);
+    if (stubmode) {
+        LOG(INFO) << __func__ << " using effects in stub mode";
+        return android::audio_find_readable_configuration_file(kStubConfigName);
+    }
+
+    return android::audio_find_readable_configuration_file(kDefaultConfigName);
+}
 
 extern "C" __attribute__((visibility("default"))) binder_status_t registerService() {
-    auto configFile = android::audio_find_readable_configuration_file(kDefaultConfigName);
+    auto configFile = getEffectConfig();
     if (configFile == "") {
         LOG(ERROR) << __func__ << ": config file " << kDefaultConfigName << " not found!";
         return EXIT_FAILURE;

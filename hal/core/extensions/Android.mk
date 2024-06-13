@@ -10,8 +10,7 @@ LOCAL_EXPORT_C_INCLUDE_DIRS   := $(LOCAL_PATH)/include
 LOCAL_CFLAGS := -Wall -Wextra -Werror -Wthread-safety
 
 LOCAL_SRC_FILES := \
-    AudioExtension.cpp \
-    PerfLock.cpp
+    AudioExtension.cpp
 
 LOCAL_HEADER_LIBRARIES :=  \
     libaudioclient_headers \
