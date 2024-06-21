@@ -172,7 +172,8 @@ PRODUCT_COPY_FILES += \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/r_submix_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/r_submix_audio_policy_configuration.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/usb_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/usb_audio_policy_configuration.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/audio_policy_volumes.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_volumes.xml \
-    $(TOPDIR)frameworks/av/services/audiopolicy/config/default_volume_tables.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/default_volume_tables.xml
+    $(TOPDIR)frameworks/av/services/audiopolicy/config/default_volume_tables.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/default_volume_tables.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/microphone_characteristics.xml
 
 # Configuration files that were copied by Elite HAL before. Now copy them in AR HAL.
 PRODUCT_COPY_FILES += \
@@ -194,7 +195,8 @@ PRODUCT_COPY_FILES += \
 ifeq ($(TARGET_USES_GY), true)
 PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/mixer_paths_VIOSND.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_VIOSND.xml \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/audio_policy_configuration_7_0_pure.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_configuration.xml
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/audio_policy_configuration_7_0_pure.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_configuration.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/microphone_characteristics.xml
 else
 PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_policy_configuration_7_0.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_configuration.xml
