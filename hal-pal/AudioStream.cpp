@@ -4021,7 +4021,10 @@ ssize_t StreamInPrimary::read(const void *buffer, size_t bytes) {
         source_ != AUDIO_SOURCE_VOICE_RECOGNITION &&
         property_get_bool("persist.vendor.audio.va_concurrency_mute_enabled",
         false)) {
-        memset(palBuffer.buffer, 0, palBuffer.size);
+        /* aviod FM usecase muting, upon muting MIC.*/
+        if (usecase_ != USECASE_AUDIO_RECORD_FM_VIRTUAL) {
+            memset(palBuffer.buffer, 0, palBuffer.size);
+         }
     }
 
     // do not add bytes when read fails
