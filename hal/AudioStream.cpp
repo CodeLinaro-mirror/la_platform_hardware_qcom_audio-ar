@@ -836,7 +836,7 @@ static uint32_t astream_get_latency(const struct audio_stream_out *stream) {
             StreamOutPrimary::GetRenderLatency(astream_out->flags_) / 1000;
         break;
     case USECASE_AUDIO_PLAYBACK_OFFLOAD2:
-        latency = PCM_OFFLOAD_OUTPUT_PERIOD_DURATION;
+        latency = PCM_OFFLOAD_OUTPUT_PERIOD_DURATION * PCM_OFFLOAD_PLAYBACK_PERIOD_COUNT;
         latency += StreamOutPrimary::GetRenderLatency(astream_out->flags_) / 1000;
         break;
     case USECASE_AUDIO_PLAYBACK_DEEP_BUFFER:
@@ -2698,11 +2698,10 @@ int StreamOutPrimary::SetParameters(struct str_parms *parms) {
         goto error;
 
     ret = AudioExtn::get_controller_stream_from_params(parms, &controller, &stream);
-    if (ret >= 0) {
+    if (ret >= 0 && (controller >=0 || stream >=0)) {
         adevice->dp_controller = controller;
         adevice->dp_stream = stream;
-        if (stream >= 0 || controller >= 0)
-            AHAL_INFO("ret %d, plugin device cont %d stream %d", ret, controller, stream);
+        AHAL_INFO("ret %d, plugin device cont %d stream %d", ret, controller, stream);
     } else {
         AHAL_ERR("error %d, failed to get stream and controller", ret);
     }
@@ -3321,10 +3320,14 @@ int StreamOutPrimary::Open() {
         if (volume_->no_of_volpair != streamAttributes_.out_media_config.ch_info.channels)
             refactorVolumeData(volume_->volume_pair[0].vol, volume_->no_of_volpair == 1 ?
                                 volume_->volume_pair[0].vol : volume_->volume_pair[1].vol);
-        AHAL_DBG("set cached volume (%f)", volume_->volume_pair[0].vol);
-        ret = pal_stream_set_volume(pal_stream_handle_, volume_);
-        if (ret) {
-            AHAL_ERR("Pal Stream volume Error (%x)", ret);
+        if (volume_) {
+            AHAL_DBG("set cached volume (%f)", volume_->volume_pair[0].vol);
+            ret = pal_stream_set_volume(pal_stream_handle_, volume_);
+            if (ret) {
+                AHAL_ERR("Pal Stream volume Error (%x)", ret);
+            }
+        } else {
+            AHAL_ERR("Pal Stream volume Error , unable to allocate memory");
         }
     }
 

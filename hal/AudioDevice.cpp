@@ -33,9 +33,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
  *
- * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -2500,7 +2500,7 @@ int AudioDevice::GetPalDeviceIds(const std::set<audio_devices_t>& hal_device_ids
                     it->second == PAL_DEVICE_OUT_HDMI) {
                AHAL_DBG("dp_controller: %d dp_stream: %d",
                        dp_controller, dp_stream);
-               if (dp_controller * MAX_STREAMS_PER_CONTROLLER + dp_stream) {
+               if (dp_stream == 1) {
                   pal_device_id[device_count] = PAL_DEVICE_OUT_AUX_DIGITAL_1;
                } else {
                   pal_device_id[device_count] = it->second;

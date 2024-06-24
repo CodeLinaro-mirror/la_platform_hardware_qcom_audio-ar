@@ -43,6 +43,7 @@
 #include "PalApi.h"
 #include "AudioCommon.h"
 #include <AudioExtn.h>
+#include <utils/Trace.h>
 
 #ifndef AUDIO_MODE_CALL_SCREEN
 #define AUDIO_MODE_CALL_SCREEN 4
@@ -52,7 +53,7 @@
 int AudioVoice::SetMode(const audio_mode_t mode) {
     std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
     int ret = 0;
-
+    ATRACE_BEGIN("hal: SetMode");
     AHAL_DBG("Enter: mode: %d", mode);
     if (mode_ != mode) {
         /*start a new session for full voice call*/
@@ -81,6 +82,7 @@ int AudioVoice::SetMode(const audio_mode_t mode) {
         }
     }
     AHAL_DBG("Exit ret: %d", ret);
+    ATRACE_END();
     return ret;
 }
 
@@ -111,7 +113,7 @@ int AudioVoice::VoiceSetParameters(const char *kvpairs) {
     bool slow_talk;
     bool hd_voice;
     bool hac;
-
+    ATRACE_BEGIN("hal: VoiceSetParameters");
     parms = str_parms_create_str(kvpairs);
     if (!parms)
        return  -EINVAL;
@@ -373,6 +375,7 @@ int AudioVoice::VoiceSetParameters(const char *kvpairs) {
 done:
     str_parms_destroy(parms);
     AHAL_DBG("Exit ret: %d", ret);
+    ATRACE_END();
     return ret;
 }
 
@@ -653,7 +656,7 @@ int AudioVoice::UpdateCallState(uint32_t vsid, int call_state) {
 int AudioVoice::UpdateCalls(voice_session_t *pSession) {
     int i, ret = 0;
     voice_session_t *session = NULL;
-
+    ATRACE_BEGIN("hal: UpdateCalls");
     pal_param_bta2dp_t *param_bt_a2dp_ptr = nullptr;
     size_t bt_param_size = 0;
     bool a2dp_suspended = false;
@@ -769,7 +772,7 @@ int AudioVoice::UpdateCalls(voice_session_t *pSession) {
             break;
         } //end out switch loop
     } //end for loop
-
+    ATRACE_END();
     return ret;
 }
 
@@ -809,7 +812,7 @@ int AudioVoice::VoiceStart(voice_session_t *session) {
     struct pal_device palDevices[2];
     struct pal_channel_info out_ch_info = {0, {0}}, in_ch_info = {0, {0}};
     pal_param_payload *param_payload = nullptr;
-
+    ATRACE_BEGIN("hal: VoiceStart");
     if (!session) {
         AHAL_ERR("Invalid session");
         return -EINVAL;
@@ -1121,6 +1124,7 @@ int AudioVoice::VoiceStart(voice_session_t *session) {
 
 error_open:
     AHAL_DBG("Exit ret: %d", ret);
+    ATRACE_END();
     return ret;
 }
 

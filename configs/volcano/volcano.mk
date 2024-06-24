@@ -127,6 +127,8 @@ PRODUCT_PACKAGES += fai__4.8.4_0.0__3.0.0_0.0__3.1.1_0.0__3.2.0_0.1__eai_3.4_enp
 PRODUCT_PACKAGES += fai__8.0.2_0.0__3.0.0_0.0__3.1.1_0.0__3.2.0_0.1__eai_3.4_enpuv4.pmd
 PRODUCT_PACKAGES += fai__2.9.2_1.0__3.0.0_0.0__3.1.1_0.0__3.2.0_0.0__eai_3.4_enpuv4.pmd
 PRODUCT_PACKAGES += fai__3.0.0_0.0__eai_3.4_enpuv4.pmd
+PRODUCT_PACKAGES += fai__2.9.2_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_3.4_enpuv4
+PRODUCT_PACKAGES += fai__8.0.3_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_3.4_enpuv4
 
 # Audio configuration xml's related to Volcano
 QCV_FAMILY_SKUS := volcano
