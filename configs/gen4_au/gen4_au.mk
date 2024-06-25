@@ -105,6 +105,7 @@ AUDIO_FEATURE_ENABLED_BATTERY_LISTENER := false
 AUDIO_FEATURE_ENABLED_AUTO_HAL := true
 AUDIO_FEATURE_ENABLED_EXT_HW_PLUGIN := true
 AUDIO_FEATURE_ENABLED_AUDIO_CONTROL_HAL := true
+AUDIO_FEATURE_ENABLED_AUDIO_PARSERS := true
 ifneq ($(ENABLE_HYP),true)
 AUDIO_FEATURE_ENABLED_AUTO_AUDIOD := true
 AUDIO_FEATURE_ENABLED_SND_MONITOR := false
@@ -127,7 +128,7 @@ endif
 endif
 endif
 
-ifneq (,$(filter U UpsideDownCake 14, $(PLATFORM_VERSION)))
+ifneq (,$(filter U UpsideDownCake 14 V VanillaIceCream 15, $(PLATFORM_VERSION)))
 AUDIO_FEATURE_ENABLED_HAL_V7 := true
 PRODUCT_PACKAGES += libarpowerpolicy
 PRODUCT_ODM_PROPERTIES += \
@@ -377,6 +378,9 @@ ro.bluetooth.a2dp_offload.supported=false
 PRODUCT_PROPERTY_OVERRIDES += \
 persist.bluetooth.a2dp_offload.disabled=true
 
+#enable qcom parsers for WMA/APE/FLAC/ALAC
+PRODUCT_PROPERTY_OVERRIDES += \
+vendor.mm.target.enable.qcom_parser=655632
 
 #enable software decoders for ALAC and APE
 PRODUCT_PROPERTY_OVERRIDES += \
@@ -640,7 +644,7 @@ PRODUCT_PACKAGES += \
     android.hardware.audio.effect@6.0-impl
 
 # enable audio hidl hal 7.0
-ifneq ( ,$(filter U UpsideDownCake 14, $(PLATFORM_VERSION)))
+ifneq ( ,$(filter U UpsideDownCake 14 V VanillaIceCream 15, $(PLATFORM_VERSION)))
 PRODUCT_PACKAGES += \
     android.hardware.audio@7.0 \
     android.hardware.audio.common@7.0 \

@@ -26,6 +26,10 @@
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+/* Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
 
 #define LOG_TAG "auto_hal"
 #define LOG_NDDEBUG 0
@@ -125,20 +129,22 @@ pal_stream_type_t autohal_GetCarAudioPalStreamType(char * address) {
     char *str = NULL;
     char *last_r = NULL;
     char local_address[AUDIO_DEVICE_MAX_ADDRESS_LEN] = {0};
-    pal_stream_type_t palStreamType = PAL_STREAM_PLAYBACK_BUS;
+    pal_stream_type_t palStreamType = PAL_STREAM_INVALID;
 
-    /* strtok will modify the original string. make a copy first */
-    strlcpy(local_address, address, AUDIO_DEVICE_MAX_ADDRESS_LEN);
-
-    /* extract bus number from address */
-    str = strtok_r(local_address, "BUS_",&last_r);
-    if (str != NULL)
-      bus_num = (int)strtol(str, (char **)NULL, 10);
-
-    /* validate bus number */
-    if ((bus_num < 0) || (bus_num >= MAX_CAR_AUDIO_STREAMS)) {
-      ALOGE("%s: invalid bus number %d", __func__, bus_num);
-      return palStreamType;
+    if ((strcmp(address, "BUS00_MEDIA") == 0) ||
+        (strcmp(address, "BUS01_SYS_NOTIFICATION") == 0) ||
+        (strcmp(address, "BUS02_NAV_GUIDANCE") == 0) ||
+        (strcmp(address, "BUS03_PHONE") == 0) ||
+        (strcmp(address, "BUS05_ALERTS") == 0) ||
+        (strcmp(address, "BUS08_FRONT_PASSENGER") == 0) ||
+        (strcmp(address, "BUS16_REAR_SEAT") == 0)) {
+        palStreamType = PAL_STREAM_PLAYBACK_BUS;
+    } else if ((strcmp(address, "BUS04_INPUT") == 0) ||
+        (strcmp(address, "BUS09_INPUT_FRONT_PASSENGER") == 0) ||
+        (strcmp(address, "BUS17_INPUT_REAR_SEAT") == 0)) {
+        palStreamType = PAL_STREAM_CAPTURE_BUS;
+    } else {
+        ALOGE("%s: invalid address %s", __func__, address);
     }
 
     return palStreamType;
