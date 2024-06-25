@@ -1108,7 +1108,7 @@ void StreamOutPrimary::configure() {
 
     if (mTag == Usecase::HAPTICS_PLAYBACK && mHapticsPalHandle) {
         size_t hapticsFrameSize = getFrameSizeInBytes(mMixPortConfig.format.value(), channelLayout);
-        ringBufSizeInBytes = LowLatencyPlayback::kPeriodSize * hapticsFrameSize;
+        ringBufSizeInBytes = HapticsPlayback::getFrameCount(mMixPortConfig) * hapticsFrameSize;
     }
 
     if (auto converter = Platform::requiresBufferReformat(mMixPortConfig);
@@ -1134,7 +1134,7 @@ void StreamOutPrimary::configure() {
     if (mTag == Usecase::HAPTICS_PLAYBACK && mHapticsPalHandle) {
         const size_t hapticsRingBufCount = ringBufCount;
         size_t hapticsFrameSize = getFrameSizeInBytes(mMixPortConfig.format.value(), hapticChannelLayout);
-        const size_t hapticsRingBufSizeInBytes = LowLatencyPlayback::kPeriodSize * hapticsFrameSize;
+        const size_t hapticsRingBufSizeInBytes = HapticsPlayback::getFrameCount(mMixPortConfig) * hapticsFrameSize;
 
         auto hapticsPalBufferConfig = mPlatform.getPalBufferConfig(hapticsRingBufSizeInBytes, hapticsRingBufCount);
         if (int32_t ret =

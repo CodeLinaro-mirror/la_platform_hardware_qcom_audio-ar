@@ -140,6 +140,20 @@ ndk::ScopedAStatus StreamInPrimary::configureConnectedDevices_I() {
                 mPlatform.configurePalDevicesCustomKey(connectedPalDevices, "dual-mic");
             }
         }
+    } else if (mTag == Usecase::FAST_RECORD) {
+        auto countProxyDevices = std::count_if(mConnectedDevices.cbegin(), mConnectedDevices.cend(),
+                                               isInputAFEProxyDevice);
+        if (countProxyDevices > 0) {
+            std::get<FastRecord>(mExt).mIsWFDCapture = true;
+            LOG(INFO) << __func__ << mLogPrefix
+                      << ": ultra fast record on input AFE proxy (WFD client AHAL CAPTURE)";
+        } else {
+            std::get<FastRecord>(mExt).mIsWFDCapture = false;
+            auto channelCount = getChannelCount(mMixPortConfig.channelMask.value());
+            if (channelCount == 2) {
+                mPlatform.configurePalDevicesCustomKey(connectedPalDevices, "dual-mic");
+            }
+        }
     }
 
     if (this->mPalHandle != nullptr && connectedPalDevices.size() > 0) {
@@ -655,7 +669,12 @@ void StreamInPrimary::configure() {
         attr->info.voice_rec_info.record_direction =
                 std::get<VoiceCallRecord>(mExt).getRecordDirection(mMixPortConfig);
     } else if (mTag == Usecase::FAST_RECORD) {
-        attr->type = PAL_STREAM_LOW_LATENCY;
+        if (std::get<FastRecord>(mExt).mIsWFDCapture) {
+            attr->type = PAL_STREAM_PROXY;
+            attr->info.opt_stream_info.tx_proxy_type = PAL_STREAM_PROXY_TX_WFD;
+        } else {
+            attr->type = PAL_STREAM_LOW_LATENCY;
+        }
     } else if (mTag == Usecase::ULTRA_FAST_RECORD) {
         if (std::get<UltraFastRecord>(mExt).mIsWFDCapture) {
             attr->type = PAL_STREAM_PROXY;
@@ -701,6 +720,13 @@ void StreamInPrimary::configure() {
     const auto palOpenApiEndTime = std::chrono::steady_clock::now();
 
     auto bufConfig = getBufferConfig();
+    if (mTag == Usecase::ULTRA_FAST_RECORD) {
+        const size_t durationMs = 1;
+        size_t frameSizeInBytes = ::aidl::android::hardware::audio::common::getFrameSizeInBytes(
+                mMixPortConfig.format.value(), mMixPortConfig.channelMask.value());
+        bufConfig.bufferSize = durationMs *
+                    (mMixPortConfig.sampleRate.value().value /1000) * frameSizeInBytes;
+    }
     const size_t ringBufSizeInBytes = bufConfig.bufferSize;
     const size_t ringBufCount = bufConfig.bufferCount;
     auto palBufferConfig = mPlatform.getPalBufferConfig(ringBufSizeInBytes, ringBufCount);

@@ -134,11 +134,10 @@ Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConf
                     tag = Usecase::VOICE_CALL_RECORD;
                 }
             }
-        } else if (inFlags == fastRecordFlags || inFlags == ullRecordFlags) {
+        } else if (inFlags == fastRecordFlags) {
             tag = Usecase::FAST_RECORD;
-            if (streamSampleRate == UltraFastRecord::kSampleRate) {
-                tag = Usecase::ULTRA_FAST_RECORD;
-            }
+        } else if (inFlags == ullRecordFlags) {
+            tag = Usecase::ULTRA_FAST_RECORD;
         } else if (inFlags == compressCaptureFlags) {
             tag = Usecase::COMPRESS_CAPTURE;
         } else if (inFlags == recordVoipFlags && mixUsecaseTag == AudioPortMixExtUseCase::source &&
@@ -222,12 +221,12 @@ std::unordered_set<size_t> LowLatencyPlayback::kSupportedFrameSizes = {160, 192,
 
 size_t LowLatencyPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
     const std::string kPeriodSizeProp = "vendor.audio_hal.period_size";
-    auto frameSize = ::android::base::GetUintProperty<size_t>(kPeriodSizeProp,
-                                                              LowLatencyPlayback::kPeriodSize);
+    size_t periodSize = kPeriodDurationMs * getSampleRate(mixPortConfig).value() / 1000;
+    auto frameSize = ::android::base::GetUintProperty<size_t>(kPeriodSizeProp, periodSize);
     if (kSupportedFrameSizes.count(frameSize)) {
         return frameSize;
     }
-    return LowLatencyPlayback::kPeriodSize;
+    return periodSize;
 }
 
 // [LowLatencyPlayback End]
@@ -235,17 +234,17 @@ size_t LowLatencyPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
 // [Deep Buffer Start]
 
 size_t DeepBufferPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
-    return kPeriodSize;
+    return kPeriodDurationMs * getSampleRate(mixPortConfig).value() / 1000;
 }
 
 // [Deep Buffer End]
 size_t PrimaryPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
-    return kPeriodSize;
+    return kPeriodDurationMs * getSampleRate(mixPortConfig).value() / 1000;
 }
 
 // [ULLPlayback Start]
 size_t UllPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
-    return kPeriodSize * kPeriodMultiplier;
+    return kPeriodDurationMs * getSampleRate(mixPortConfig).value() / 1000;
 }
 
 // [ULLPlayback End]
@@ -296,7 +295,7 @@ int32_t MmapUsecaseBase::getMMapPosition(int64_t* frames, int64_t* timeNs) {
 // [MmapUsecaseBase End]
 // [MMapPlayback Start]
 size_t MMapPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
-    return kPeriodSize;
+    return kPeriodDurationMs * getSampleRate(mixPortConfig).value() / 1000;
 }
 
 // [MMapPlayback End]
@@ -742,34 +741,34 @@ void PcmOffloadPlayback::onFlush() {
 
 // [SpatialPlayback Start]
 size_t SpatialPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
-    return kPeriodSize;
+    return kPeriodDurationMs * getSampleRate(mixPortConfig).value() / 1000;
 }
 
 // [SpatialPlayback End]
 
 // [InCallMusic Start]
 size_t InCallMusic::getFrameCount(const AudioPortConfig& mixPortConfig) {
-    return kPeriodSize;
+    return kPeriodDurationMs * getSampleRate(mixPortConfig).value() / 1000;
 }
 
 // [InCallMusic End]
 
 // [VoipPlayback Start]
 size_t VoipPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
-    return (kPeriodDurationMs * mixPortConfig.sampleRate.value().value) / 1000;
+    return kPeriodDurationMs * getSampleRate(mixPortConfig).value() / 1000;
 }
 
 // [VoipPlayback End]
 
 // [HapticPlayback Start]
 size_t HapticsPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
-    return kPeriodSize;
+    return kPeriodDurationMs * getSampleRate(mixPortConfig).value() / 1000;
 }
 
 // [HapticsPlayback End]
 // [PcmRecord Start]
 size_t PcmRecord::getFrameCount(const AudioPortConfig& mixPortConfig) {
-    size_t frameCount = kCaptureDurationMs * (mixPortConfig.sampleRate.value().value / 1000);
+    size_t frameCount = kCaptureDurationMs * getSampleRate(mixPortConfig).value() / 1000;
     frameCount = getNearestMultiple(
             frameCount, std::lcm(32, getPcmSampleSizeInBytes(mixPortConfig.format.value().pcm)));
     // Adjusting to frameCount as atleast kFMQMinFrameSize (160).
@@ -782,17 +781,6 @@ size_t PcmRecord::getFrameCount(const AudioPortConfig& mixPortConfig) {
 
 // [FastRecord Start]
 size_t FastRecord::getFrameCount(const AudioPortConfig& mixPortConfig) {
-    size_t frameSize =
-            getFrameSizeInBytes(mixPortConfig.format.value(), mixPortConfig.channelMask.value());
-    size_t size = kPeriodSize * frameSize;
-    size = getNearestMultiple(size, std::lcm(32, frameSize));
-    return size / frameSize;
-}
-
-// [FastRecord Start]
-
-// [UltraFastRecord Start]
-size_t UltraFastRecord::getFrameCount(const AudioPortConfig& mixPortConfig) {
     /**
      * Some clients which directly uses AHAL service for Fast Record like
      * proxy capture
@@ -803,19 +791,29 @@ size_t UltraFastRecord::getFrameCount(const AudioPortConfig& mixPortConfig) {
         return propFrameSize;
     }
 
-    if (!hasInputRawFlag(mixPortConfig.flags.value())) {
-        /**
-         * Most likey this is for WFD Usecase,
-         * they demand PCM frames of 1024 in every read
-         * TODO, move this requirement to FastRecord
-         **/
-        constexpr size_t kWFDPCMFramesPerRead = 1024;
-        LOG(VERBOSE) << __func__ << ": expecting for WFD proxy record:";
-        return kWFDPCMFramesPerRead;
+    size_t periodSize = (kCaptureDurationMs * getSampleRate(mixPortConfig).value()) / 1000;
+    size_t frameSize =
+            getFrameSizeInBytes(mixPortConfig.format.value(), mixPortConfig.channelMask.value());
+    size_t size = periodSize * frameSize;
+    size = getNearestMultiple(size, std::lcm(32, frameSize));
+    return size / frameSize;
+}
+// [FastRecord End]
+
+// [UltraFastRecord Start]
+size_t UltraFastRecord::getFrameCount(const AudioPortConfig& mixPortConfig) {
+    /**
+     * Some clients which directly uses AHAL service for ULL Record like
+     * proxy capture
+     **/
+    auto& platform = Platform::getInstance();
+    if (const auto& propFrameSize = platform.getProxyRecordFMQSize(); propFrameSize > 0) {
+        LOG(VERBOSE) << __func__ << ": client applied FMQSize in Frames:" << propFrameSize;
+        return propFrameSize;
     }
 
     // return default period size for ULL
-    return kPeriodSize;
+    return kCaptureDurationMs * getSampleRate(mixPortConfig).value() / 1000;
 }
 
 // [UltraFastRecord End]
@@ -823,7 +821,7 @@ size_t UltraFastRecord::getFrameCount(const AudioPortConfig& mixPortConfig) {
 // [MMapRecord Start]
 
 size_t MMapRecord::getFrameCount(const AudioPortConfig& mixPortConfig) {
-    return kPeriodSize;
+    return kCaptureDurationMs * getSampleRate(mixPortConfig).value() / 1000;
 }
 
 // [MMapRecord End]
