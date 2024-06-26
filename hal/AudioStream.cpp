@@ -28,7 +28,7 @@
  *
  * Changes from Qualcomm Innovation Center are provided under the following license:
  *
- * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -3258,6 +3258,13 @@ int StreamOutPrimary::Open() {
     //TODO: Remove below code, once pal_stream_open is moved to
     //adev_open_output_stream
     if (streamAttributes_.type == PAL_STREAM_COMPRESSED) {
+        if (!isCompressMetadataAvail) {
+            struct str_parms *parms = str_parms_create();
+            if (parms != NULL)
+                AudioExtn::audio_extn_parse_compress_metadata(&config_, &palSndDec, parms,
+                                         &msample_rate, &mchannels, &isCompressMetadataAvail);
+        }
+
         pal_param_payload *param_payload = nullptr;
         param_payload = (pal_param_payload *) calloc (1,
                                               sizeof(pal_param_payload) +
