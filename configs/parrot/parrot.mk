@@ -266,6 +266,7 @@ CONFIG_SKU_OUT_DIR := $(TARGET_COPY_OUT_VENDOR)/etc/audio/sku_$(DEVICE_SKU)
 PRODUCT_COPY_FILES += \
     $(CONFIG_HAL_SRC_DIR)/audio_effects.conf:$(CONFIG_SKU_OUT_DIR)/audio_effects.conf \
     $(CONFIG_HAL_SRC_DIR)/audio_effects.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects.xml \
+    $(CONFIG_HAL_SRC_DIR)/audio_effects_config.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects_config.xml \
     $(CONFIG_HAL_SRC_DIR)/mixer_paths_ravelin_qrd.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_ravelin_qrd.xml \
     $(CONFIG_HAL_SRC_DIR)/mixer_paths_ravelin_idp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_ravelin_idp.xml \
     $(CONFIG_HAL_SRC_DIR)/mixer_paths_ravelin_idp_wsahac.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_ravelin_idp_wsahac.xml \
@@ -273,6 +274,10 @@ PRODUCT_COPY_FILES += \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_ravelin_idp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_ravelin_idp.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_ravelin_idp_wsahac.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_ravelin_idp_wsahac.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_upd.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_upd.xml \
+
+# Copy AudioEffects config
+PRODUCT_COPY_FILES += \
+    hardware/interfaces/audio/aidl/default/audio_effects_config.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects_config_stub.xml
 
 #XML Audio configuration files
 ifneq ($(TARGET_USES_AOSP_FOR_AUDIO), true)
