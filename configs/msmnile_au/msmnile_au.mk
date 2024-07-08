@@ -20,7 +20,7 @@ AUDIO_FEATURE_ENABLED_POWER_POLICY := true
 endif
 endif
 else
-ifeq ($(call math_gt_or_eq, $(PLATFORM_VERSION), 13), true)
+ifneq ( ,$(filter T Tiramisu 13 U UpsideDownCake 14 V VanillaIceCream 15, $(PLATFORM_VERSION)))
 AUDIO_FEATURE_ENABLED_POWER_POLICY := true
 PRODUCT_PACKAGES += libarpowerpolicy
 PRODUCT_ODM_PROPERTIES += \

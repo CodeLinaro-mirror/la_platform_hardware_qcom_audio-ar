@@ -1128,6 +1128,11 @@ int AudioDevice::Init(hw_device_t **device, const hw_module_t *module) {
     mute_ = false;
     current_rotation = PAL_SPEAKER_ROTATION_LR;
 
+    if (adev_->is_arpowerpolicy_enabled) {
+        adev_->out_power_policy = POWER_POLICY_STATUS_ONLINE;
+        adev_->in_power_policy = POWER_POLICY_STATUS_ONLINE;
+    }
+
     FillAndroidDeviceMap();
     audio_extn_gef_init(adev_);
     adev_init_ref_count += 1;
