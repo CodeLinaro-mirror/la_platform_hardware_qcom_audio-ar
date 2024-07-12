@@ -781,7 +781,7 @@ void StreamInPrimary::configure() {
         return;
     }
 
-    if (mPlatform.getMicMuteStatus()) {
+    if (mPlatform.getMicMuteStatus() && !(mPlatform.getTranslationRecordState())) {
         setStreamMicMute(true);
     }
 
@@ -854,6 +854,7 @@ void StreamInPrimary::shutdown_I() {
         }
     }
     mPalHandle = nullptr;
+    mPlatform.setMicMuteStatus(false);
 }
 
 ::android::status_t StreamInPrimary::burstZero() {
