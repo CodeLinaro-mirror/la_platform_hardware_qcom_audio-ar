@@ -74,6 +74,16 @@ ndk::ScopedAStatus Telephony::getSupportedAudioModes(std::vector<AudioMode>* _ai
     return ndk::ScopedAStatus::ok();
 }
 
+void Telephony::VoiceStop() {
+    for (int i = 0; i < MAX_VOICE_SESSIONS; i++) {
+         mVoiceSession.session[i].CallUpdate.mCallState = CallState::IN_ACTIVE;
+         mVoiceSession.session[i].state.new_ = CallState::IN_ACTIVE;
+    }
+    updateCalls();
+
+    LOG(DEBUG) << __func__ << ": Exit";
+}
+
 ndk::ScopedAStatus Telephony::switchAudioMode(AudioMode newAudioMode) {
     std::scoped_lock lock{mLock};
 
@@ -95,7 +105,7 @@ ndk::ScopedAStatus Telephony::switchAudioMode(AudioMode newAudioMode) {
         LOG(DEBUG) << __func__ << ": start call on call state ACTIVE";
     } else if (newAudioMode == AudioMode::NORMAL && mAudioMode == AudioMode::IN_CALL) {
         // safe to stop now
-        stopCall();
+        VoiceStop();
     } else if (newAudioMode == AudioMode::RINGTONE && mSetUpdates.mIsCrsCall) {
         if (!mIsCRSStarted) {
             updateCrsDevice();

@@ -158,6 +158,7 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
   protected:
     void startCall();
     void stopCall();
+    void VoiceStop();
     void configureVolumeBoost();
     void configureSlowTalk();
     void configureHDVoice();
