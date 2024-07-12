@@ -22,9 +22,9 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
                 </mixPort>
                 <mixPort name="compress_offload_out" role="source" flags="DIRECT COMPRESS_OFFLOAD NON_BLOCKING">
                     <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_STEREO LAYOUT_MONO" formatType="NON_PCM" encoding="audio/mpeg"/>
-                    <profile format="AUDIO_FORMAT_AAC_LC" samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000 64000 88200 96000" channelLayouts="LAYOUT_STEREO LAYOUT_MONO" formatType="NON_PCM" encoding=" "/>
-                    <profile format="AUDIO_FORMAT_AAC_HE_V1" samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000 64000 88200 96000" channelLayouts="LAYOUT_STEREO LAYOUT_MONO" formatType="NON_PCM" encoding=""/>
-                    <profile format="AUDIO_FORMAT_AAC_HE_V2" samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_STEREO LAYOUT_MONO" formatType="NON_PCM" encoding=""/>
+            <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000 64000 88200 96000" channelLayouts="LAYOUT_STEREO LAYOUT_MONO" formatType="NON_PCM" encoding="audio/aac-adts.02"/>
+            <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000 64000 88200 96000" channelLayouts="LAYOUT_STEREO LAYOUT_MONO" formatType="NON_PCM" encoding="audio/aac-adts.05"/>
+            <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_STEREO LAYOUT_MONO" formatType="NON_PCM" encoding="audio/aac-adts.29"/>
                 </mixPort>
                 <mixPort name="voice_tx" role="source">
                     <profile samplingRates="8000 16000 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT"/>
@@ -55,62 +55,59 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
                     <profile samplingRates="8000 16000 32000 48000" channelLayouts="LAYOUT_MONO" formatType="PCM" pcmType="INT_16_BIT"/>
                 </mixPort>
             </mixPorts>
-            <devicePorts>
-                <devicePort tagName="speaker" role="sink" deviceType="OUT_SPEAKER">
+        <devicePorts>
+                <devicePort tagName="speaker" role="sink" attached="true" defaultDevice="true" deviceType="OUT_SPEAKER">
+                    <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
                 </devicePort>
                 <devicePort tagName="bt_sco_out" deviceType="OUT_DEVICE" connection="bt-sco" role="sink">
+                    <profile samplingRates="8000 16000" channelLayouts="LAYOUT_MONO" formatType="PCM" pcmType="INT_16_BIT" />
                 </devicePort>
-        	<devicePort tagName="bt_sco_headset" deviceType="OUT_HEADSET" connection="bt-sco" role="sink">
+                <devicePort tagName="bt_sco_headset" deviceType="OUT_HEADSET" connection="bt-sco" role="sink">
+                    <profile samplingRates="8000 16000" channelLayouts="LAYOUT_MONO" formatType="PCM" pcmType="INT_16_BIT" />
                 </devicePort>
-        	<devicePort tagName="bt_sco_car_kit" deviceType="OUT_CARKIT" connection="bt-sco" role="sink">
+                <devicePort tagName="bt_sco_car_kit" deviceType="OUT_CARKIT" connection="bt-sco" role="sink">
+                    <profile samplingRates="8000 16000" channelLayouts="LAYOUT_MONO" formatType="PCM" pcmType="INT_16_BIT" />
                 </devicePort>
-        	<devicePort tagName="telephony_tx" deviceType="OUT_TELEPHONY_TX" role="sink" attached="true">
+                <devicePort tagName="telephony_tx" deviceType="OUT_TELEPHONY_TX" role="sink" attached="true">
+                    <profile samplingRates="8000 16000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
                 </devicePort>
-       		<devicePort tagName="usb_device_out" deviceType="OUT_DEVICE" connection="usb" role="sink">
-                </devicePort>
-        	<devicePort tagName="usb_headset" deviceType="OUT_HEADSET" connection="usb" role="sink">
-                </devicePort>
-                <devicePort tagName="bt_a2dp_out" deviceType="OUT_DEVICE" connection="bt-a2dp" role="sink" encodings="audio/vnd.sony.ldac audio/aptx audio/vnd.qcom.aptx.hd AUDIO_FORMAT_AAC audio/x-sbc audio/vnd.qcom.aptx.adaptive">
+                <devicePort tagName="bt_a2dp_out" deviceType="OUT_DEVICE" connection="bt-a2dp" role="sink" encodings="audio/vnd.sony.ldac audio/aptx audio/vnd.qcom.aptx.hd audio/x-sbc audio/vnd.qcom.aptx.adaptive">
                     <profile samplingRates="44100 48000 88200 96000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
                 </devicePort>
-                <devicePort tagName="bt_a2dp_headphones" deviceType="OUT_HEADPHONE" connection="bt-a2dp" role="sink" encodings="audio/vnd.sony.ldac audio/aptx audio/vnd.qcom.aptx.hd AUDIO_FORMAT_AAC audio/x-sbc audio/vnd.qcom.aptx.adaptive">
+                <devicePort tagName="bt_a2dp_headphones" deviceType="OUT_HEADPHONE" connection="bt-a2dp" role="sink" encodings="audio/vnd.sony.ldac audio/aptx audio/vnd.qcom.aptx.hd audio/x-sbc audio/vnd.qcom.aptx.adaptive">
                     <profile samplingRates="44100 48000 88200 96000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT"/>
                 </devicePort>
-                <devicePort tagName="bt_a2dp_speaker" deviceType="OUT_SPEAKER" connection="bt-a2dp" role="sink" encodedFormats="audio/vnd.sony.ldac audio/aptx audio/vnd.qcom.aptx.hd AUDIO_FORMAT_AAC audio/x-sbc audio/vnd.qcom.aptx.adaptive">
+                <devicePort tagName="bt_a2dp_speaker" deviceType="OUT_SPEAKER" connection="bt-a2dp" role="sink" encodings="audio/vnd.sony.ldac audio/aptx audio/vnd.qcom.aptx.hd audio/x-sbc audio/vnd.qcom.aptx.adaptive">
                     <profile samplingRates="44100 48000 88200 96000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT"/>
                 </devicePort>
-                <devicePort tagName="built_in_mic" deviceType="IN_MICROPHONE" role="source" >
+                <devicePort tagName="built_in_mic" deviceType="IN_MICROPHONE" role="source" attached="true" defaultDevice="true" address="bottom" >
+                    <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_FRONT_BACK" formatType="PCM" pcmType="INT_16_BIT" />
                 </devicePort>
-                <devicePort tagName="built_in_back_mic" deviceType="IN_MICROPHONE_BACK" role="source">
+                <devicePort tagName="built_in_back_mic" deviceType="IN_MICROPHONE_BACK" role="source" attached="true" address="back">
+                    <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_FRONT_BACK" formatType="PCM" pcmType="INT_16_BIT" />
                 </devicePort>
                 <devicePort tagName="bt_sco_headset_mic" deviceType="IN_HEADSET" connection="bt-sco" role="source">
+                    <profile samplingRates="8000 16000" channelLayouts="LAYOUT_MONO" formatType="PCM" pcmType="INT_16_BIT" />
                 </devicePort>
-                <devicePort tagName="telephony_rx" deviceType="IN_TELEPHONY_RX" role="source">
+                <devicePort tagName="telephony_rx" deviceType="IN_TELEPHONY_RX" role="source" attached="true">
+                    <profile samplingRates="8000 16000 48000" channelLayouts="LAYOUT_MONO" formatType="PCM" pcmType="INT_16_BIT" />
                 </devicePort>
-                <!-- TODO: Enable multi-channel recording -->
-                <devicePort tagName="usb_mic" deviceType="IN_DEVICE" connection="usb" role="source">
-                </devicePort>
-                <devicePort tagName="usb_headset_mic" deviceType="IN_HEADSET" connection="usb" role="source">
-                </devicePort>
-            </devicePorts>
-            <routes>
-                <route type="mix" sink="speaker" sources="primary_out,raw_out,deep_buffer_out,compress_offload_out,mmap_no_irq_out,voip_playback"/>
-                <route type="mix" sink="bt_sco_out" sources="primary_out,raw_out,deep_buffer_out,voip_playback"/>
-                <route type="mix" sink="bt_sco_headset" sources="primary_out,raw_out,deep_buffer_out,voip_playback"/>
-                <route type="mix" sink="bt_sco_car_kit" sources="primary_out,raw_out,deep_buffer_out,voip_playback"/>
-                <route type="mix" sink="usb_device_out" sources="primary_out,raw_out,deep_buffer_out,compressed_offload_out,hifi_playback,mmap_no_irq_out,voip_playback"/>
-                <route type="mix" sink="usb_headset" sources="primary_out,raw_out,deep_buffer_out,compressed_offload_out,hifi_playback,mmap_no_irq_out,voip_playback"/>
-                <route type="mix" sink="telephony_tx" sources="voice_tx,in_call_music"/>
-                <route type="mix" sink="primary_in" sources="built_in_mic,built_in_back_mic,bt_sco_headset_mic,usb_mic,usb_headset_mic"/>
-                <route type="mix" sink="fast input" sources="built_in_mic,built_in_back_mic,bt_sco_headset_mic,usb_mic,usb_headset_mic"/>
-                <route type="mix" sink="voice_rx" sources="telephony_rx"/>
-        	<route type="mix" sink="hifi_input" sources="usb_mic,usb_headset_mic" />
-                <route type="mix" sink="mmap_no_irq_in" sources="built_in_mic,built_in_back_mic,usb_mic,usb_headset_mic"/>
-                <route type="mix" sink="voip_tx" sources="built_in_mic,built_in_back_mic,bt_sco_headset_mic,usb_mic,usb_headset_mic"/>
-                <route type="mix" sink="bt_a2dp_out" sources="primary_out,deep_buffer_out,compressed_offload_out,voip_playback"/>
-                <route type="mix" sink="bt_a2dp_headphones" sources="primary_out,deep_buffer_out,compressed_offload_out,voip_playback"/>
-                <route type="mix" sink="bt_a2dp_speaker" sources="primary_out,deep_buffer_out,compressed_offload_out,voip_playback"/>
-            </routes>
-
+        <!-- end of source DEVICE PORT -->
+        </devicePorts>
+    <routes>
+        <route type="mix" sink="speaker" sources="low_latency_out,raw_out,deep_buffer_out,compress_offload_out,mmap_no_irq_out,voip_playback"/>
+        <route type="mix" sink="bt_sco_out" sources="low_latency_out,raw_out,deep_buffer_out,voip_playback"/>
+        <route type="mix" sink="bt_sco_headset" sources="low_latency_out,raw_out,deep_buffer_out,voip_playback"/>
+        <route type="mix" sink="bt_sco_car_kit" sources="low_latency_out,raw_out,deep_buffer_out,voip_playback"/>
+        <route type="mix" sink="telephony_tx" sources="voice_tx,in_call_music"/>
+        <route type="mix" sink="primary_in" sources="built_in_mic,built_in_back_mic,bt_sco_headset_mic"/>
+        <route type="mix" sink="fast input" sources="built_in_mic,built_in_back_mic,bt_sco_headset_mic"/>
+        <route type="mix" sink="voice_rx" sources="telephony_rx"/>
+        <route type="mix" sink="mmap_no_irq_in" sources="built_in_mic,built_in_back_mic"/>
+        <route type="mix" sink="voip_tx" sources="built_in_mic,built_in_back_mic,bt_sco_headset_mic"/>
+        <route type="mix" sink="bt_a2dp_out" sources="low_latency_out,deep_buffer_out,compressed_offload_out,voip_playback"/>
+        <route type="mix" sink="bt_a2dp_headphones" sources="low_latency_out,deep_buffer_out,compressed_offload_out,voip_playback"/>
+        <route type="mix" sink="bt_a2dp_speaker" sources="low_latency_out,deep_buffer_out,compressed_offload_out,voip_playback"/>
+    </routes>
 </module>
 </modules>
