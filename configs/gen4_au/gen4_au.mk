@@ -106,6 +106,11 @@ AUDIO_FEATURE_ENABLED_AUTO_HAL := true
 AUDIO_FEATURE_ENABLED_EXT_HW_PLUGIN := true
 AUDIO_FEATURE_ENABLED_AUDIO_CONTROL_HAL := true
 AUDIO_FEATURE_ENABLED_AUDIO_PARSERS := true
+
+#enable qcom parsers for WMA/APE/FLAC/ALAC
+PRODUCT_PROPERTY_OVERRIDES += \
+vendor.mm.target.enable.qcom_parser=655632
+
 ifneq ($(ENABLE_HYP),true)
 AUDIO_FEATURE_ENABLED_AUTO_AUDIOD := true
 AUDIO_FEATURE_ENABLED_SND_MONITOR := false
@@ -377,10 +382,6 @@ ro.bluetooth.a2dp_offload.supported=false
 # Disable A2DP offload
 PRODUCT_PROPERTY_OVERRIDES += \
 persist.bluetooth.a2dp_offload.disabled=true
-
-#enable qcom parsers for WMA/APE/FLAC/ALAC
-PRODUCT_PROPERTY_OVERRIDES += \
-vendor.mm.target.enable.qcom_parser=655632
 
 #enable software decoders for ALAC and APE
 PRODUCT_PROPERTY_OVERRIDES += \
