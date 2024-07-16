@@ -241,6 +241,14 @@ class Module final : public ::aidl::android::hardware::audio::core::BnModule,
 
     void setVoipTxMute(bool mute_state);
     void setVoipRxMute(bool state);
+    // Update voice cue based on the cue data recieved from APK
+    void updateVoiceCueBytes(const std::string&& cueBytes);
+    // Update multi-usecase UV enable/disable status from APK
+    void updateVoiceCueStatus(uint32_t usecaseMask);
+    // API to convert string to byte array
+    uint8_t* stringToUint8Array(const std::string&& str, size_t* size);
+    // parse the usecase specific enable/disable state from param recieved by APK
+    static bool parseUvVoiceCueStatusConfig(const std::string& value, uint32_t* usecaseMask);
 
     // start of module parameters handling
     bool processSetVendorParameters(
