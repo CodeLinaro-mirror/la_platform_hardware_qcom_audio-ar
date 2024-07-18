@@ -132,7 +132,10 @@ AUDIO_MODULES += libsoundtriggerhal.qti
 
 # enable Listen Sound Model aidl 1.0
 AUDIO_MODULES += \
-    liblistensoundmodelaidl
+    liblistensoundmodelaidl \
+    liblistensoundmodel2vendor \
+    vendor.qti.hardware.ListenSoundModelAidl-V1-ndk \
+    vendor.qti.hardware.ListenSoundModelAidl-V1-ndk.vendor
 
 AUDIO_MODULES += \
     audiohalservice.qti \
