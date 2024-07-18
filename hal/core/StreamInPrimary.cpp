@@ -363,9 +363,6 @@ void StreamInPrimary::resume() {
             memset(palBuffer.buffer, 0, palBuffer.size);
             bytesRead = palBuffer.size;
         }
-    } else if (bytesRead < 0) {
-        LOG(ERROR) << __func__ << mLogPrefix << " read failed, ret:" << std::to_string(bytesRead);
-        return ::android::NOT_ENOUGH_DATA;
     }
 
     if (mTag == Usecase::COMPRESS_CAPTURE) {
