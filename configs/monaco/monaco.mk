@@ -42,11 +42,6 @@ endif
 TARGET_USES_QTI_TINYCOMPRESS := false
 
 DEVICE_SKU := $(TARGET_PRODUCT)
-
-ifneq ($(strip $(TARGET_USES_RRO)), true)
-#Audio Specific device overlays
-DEVICE_PACKAGE_OVERLAYS += $(CONFIG_HAL_COMMON_SRC_DIR)/overlay
-endif
 PRODUCT_PACKAGES += $(AUDIO_AGM)
 PRODUCT_PACKAGES += $(AUDIO_PAL)
 ifeq ($(AUDIO_FEATURE_ENABLED_CODEC_2_0), true)
