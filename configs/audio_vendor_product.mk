@@ -1,5 +1,5 @@
 #Audio product definitions 
-include vendor/qcom/opensource/audio-hal/primary-hal/configs/audio-generic-modules.mk
+include $(BOARD_OPENSOURCE_DIR)/audio-hal/primary-hal/configs/audio-generic-modules.mk
 PRODUCT_PACKAGES += $(AUDIO_GENERIC_MODULES)
 
 PRODUCT_PACKAGES_DEBUG += $(MM_AUDIO_DBG)

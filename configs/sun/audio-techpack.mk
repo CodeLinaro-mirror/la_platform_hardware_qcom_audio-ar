@@ -1,6 +1,6 @@
-include vendor/qcom/opensource/audio-hal/primary-hal/configs/sun/audio-modules.mk
-include vendor/qcom/opensource/audio-hal/primary-hal/configs/audio-generic-modules.mk
-include vendor/qcom/opensource/audio-kernel/audio_kernel_modules.mk
+include $(BOARD_OPENSOURCE_DIR)/audio-hal/primary-hal/configs/sun/audio-modules.mk
+include $(BOARD_OPENSOURCE_DIR)/audio-hal/primary-hal/configs/audio-generic-modules.mk
+include $(BOARD_OPENSOURCE_DIR)/audio-kernel/audio_kernel_modules.mk
 
 
 .PHONY: audio_tp audio_tp_hal audio_tp_dlkm
