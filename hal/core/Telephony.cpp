@@ -276,6 +276,25 @@ void Telephony::onExternalDeviceConnectionChanged(const AudioDevice& extDevice,
                                                   const bool& connect) {
     std::scoped_lock lock{mLock};
     // Placeholder for telephony to act upon external device connection
+    if (!isOutputDevice(extDevice)) {
+        return;
+    }
+    if (isBluetoothSCODevice(extDevice) || isBluetoothA2dpDevice(extDevice)) {
+        LOG(VERBOSE) << __func__ << ": sco/a2dp no change";
+        return;
+    }
+    if (connect) {
+        mRxDevice = extDevice;
+        mTxDevice = getMatchingTxDevice(mRxDevice);
+        updateDevices();
+    } else {
+        if (mIsCRSStarted && !hasValidPlaybackStream) {
+            mRxDevice = kDefaultCRSRxDevice;
+            mTxDevice = getMatchingTxDevice(mRxDevice);
+            updateDevices();
+        }
+    }
+
 }
 
 void Telephony::onOutputPrimaryStreamDevices(const std::vector<AudioDevice>& primaryStreamDevices) {
@@ -317,6 +336,9 @@ void Telephony::onBluetoothScoEvent(const bool& enable) {
 
 void Telephony::updateCrsDevice() {
     LOG(VERBOSE) << __func__ << ": Enter";
+    if (hasValidPlaybackStream) {
+        return;
+    }
 
     if (mRxDevice.type.type == AudioDeviceType::OUT_SPEAKER_EARPIECE) {
         mRxDevice = kDefaultCRSRxDevice;
@@ -579,11 +601,6 @@ void Telephony::setVoipPlaybackStream(std::weak_ptr<StreamCommonInterface> voipS
     mVoipStreamWptr = voipStream;
 }
 
-void Telephony::onVoipPlaybackClose() {
-    std::scoped_lock lock{mLock};
-    // TODO
-}
-
 void Telephony::triggerHACinVoipPlayback() {
     auto voipStream = mVoipStreamWptr.lock();
     if (!voipStream) {
@@ -593,6 +610,24 @@ void Telephony::triggerHACinVoipPlayback() {
     if (hasOutputSpeakerEarpiece(voipConnectedDevices)) {
         LOG(INFO) << __func__ << ": HAC status changed for VOIP playback";
         voipStream->reconfigureConnectedDevices();
+    }
+}
+
+void Telephony::onPlaybackStart() {
+    std::scoped_lock lock{mLock};
+    hasValidPlaybackStream = true;
+    if (mIsCRSStarted) {
+        LOG(INFO) << __func__ << ": playback conc status changed for CRS call";
+        updateDevices();
+    }
+}
+
+void Telephony::onPlaybackClose() {
+    std::scoped_lock lock{mLock};
+    hasValidPlaybackStream = false;
+    if (mIsCRSStarted) {
+        LOG(INFO) << __func__ << ": playback conc status changed for CRS call";
+        updateDevices();
     }
 }
 
@@ -698,6 +733,10 @@ void Telephony::startCall() {
 
 void Telephony::startCrsLoopback() {
     LOG(DEBUG) << __func__ << ": Enter";
+    if (hasValidPlaybackStream) {
+        LOG(VERBOSE) << __func__ << ": block loopback start";
+        return;
+    }
     auto attributes = mPlatform.getDefaultCRSTelephonyAttributes();
     std::vector<::aidl::android::media::audio::common::AudioDevice> RxDevices;
     RxDevices = {kDefaultCRSRxDevice};
@@ -754,6 +793,7 @@ void Telephony::stopCall() {
     mPalHandle = nullptr;
     if (mSetUpdates.mIsCrsCall) {
         mRxDevice = kDefaultRxDevice;
+        mTxDevice = getMatchingTxDevice(mRxDevice);
     }
     LOG(DEBUG) << __func__ << ": EXIT";
 }

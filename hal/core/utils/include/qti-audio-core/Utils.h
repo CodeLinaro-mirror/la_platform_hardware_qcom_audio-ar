@@ -124,6 +124,7 @@ bool hasOutputRawFlag(const ::aidl::android::media::audio::common::AudioIoFlags&
 bool hasInputRawFlag(const ::aidl::android::media::audio::common::AudioIoFlags&) noexcept;
 
 bool hasOutputVoipRxFlag(const ::aidl::android::media::audio::common::AudioIoFlags&) noexcept;
+bool hasOutputDeepBufferFlag(const ::aidl::android::media::audio::common::AudioIoFlags&) noexcept;
 
 bool hasOutputCompressOffloadFlag(
         const ::aidl::android::media::audio::common::AudioIoFlags&) noexcept;

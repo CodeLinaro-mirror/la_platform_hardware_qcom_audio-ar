@@ -373,6 +373,13 @@ void StreamOutPrimary::resume() {
     if (mPalHandle && mIsPaused) {
         resume();
     }
+
+    if (hasOutputVoipRxFlag(mMixPortConfig.flags.value()) ||
+        hasOutputDeepBufferFlag(mMixPortConfig.flags.value())) {
+        if (auto telephony = mContext.getTelephony().lock()) {
+            telephony->onPlaybackStart();
+        }
+    }
     return ::android::OK;
 }
 
@@ -573,9 +580,10 @@ void StreamOutPrimary::resume() {
 void StreamOutPrimary::shutdown() {
     shutdown_I();
 
-    if (hasOutputVoipRxFlag(mMixPortConfig.flags.value())) {
+    if (hasOutputVoipRxFlag(mMixPortConfig.flags.value()) ||
+        hasOutputDeepBufferFlag(mMixPortConfig.flags.value())) {
         if (auto telephony = mContext.getTelephony().lock()) {
-            telephony->onVoipPlaybackClose();
+            telephony->onPlaybackClose();
         }
     }
 }
