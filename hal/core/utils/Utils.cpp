@@ -89,6 +89,14 @@ bool isTelephonyTXDevice(const AudioDevice& device) noexcept {
     return device.type.type == AudioDeviceType::OUT_TELEPHONY_TX;
 };
 
+bool isBluetoothSCODevice(const AudioDevice& device) noexcept {
+    return (device.type.connection == AudioDeviceDescription::CONNECTION_BT_SCO);
+}
+
+bool isBluetoothLEDevice(const AudioDevice& device) noexcept {
+    return (device.type.connection == AudioDeviceDescription::CONNECTION_BT_LE);
+}
+
 bool isBluetoothDevice(const AudioDevice& device) noexcept {
     return (device.type.connection == AudioDeviceDescription::CONNECTION_BT_A2DP ||
             device.type.connection == AudioDeviceDescription::CONNECTION_BT_LE);
@@ -155,6 +163,18 @@ bool isIPOutDevice(const AudioDevice& d) noexcept {
     return false;
 }
 
+bool isOutputSpeakerEarpiece(const AudioDevice& d) noexcept {
+    if (d.type.type == AudioDeviceType::OUT_SPEAKER_EARPIECE) {
+        return true;
+    }
+    return false;
+}
+
+bool hasOutputSpeakerEarpiece(const std::vector<AudioDevice>& devices) noexcept {
+    auto itr = std::find_if(devices.cbegin(), devices.cend(), isOutputSpeakerEarpiece);
+    return itr != devices.cend();
+}
+
 bool isHdmiDevice(const AudioDevice& d) noexcept {
     if (d.type.connection == AudioDeviceDescription::CONNECTION_HDMI) {
         return true;
@@ -216,6 +236,15 @@ bool hasOutputRawFlag(const AudioIoFlags& ioFlags) noexcept {
         constexpr auto rawFlag =
                 static_cast<int32_t>(1 << static_cast<int32_t>(AudioOutputFlags::RAW));
         return ((rawFlag & ioFlags.get<AudioIoFlags::Tag::output>()) != 0);
+    }
+    return false;
+}
+
+bool hasOutputVoipRxFlag(const AudioIoFlags& ioFlags) noexcept {
+    if (ioFlags.getTag() == AudioIoFlags::Tag::output) {
+        constexpr auto voipRxFlag =
+                static_cast<int32_t>(1 << static_cast<int32_t>(AudioOutputFlags::VOIP_RX));
+        return ((voipRxFlag & ioFlags.get<AudioIoFlags::Tag::output>()) != 0);
     }
     return false;
 }

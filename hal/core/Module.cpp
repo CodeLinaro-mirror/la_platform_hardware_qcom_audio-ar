@@ -904,6 +904,9 @@ ndk::ScopedAStatus Module::openOutputStream(const OpenOutputStreamArguments& in_
         mmapRef.burstSizeFrames = burstSizeFrames;
         mmapRef.flags = mmapFlags;
         _aidl_return->desc.bufferSizeFrames = bufferSizeFrames;
+    } else if (mTelephony && hasOutputVoipRxFlag(port->flags)) {
+        // TODO remove this way of handling streams for telephony
+        mTelephony.getInstance()->setVoipPlaybackStream(stream);
     }
 
     auto streamBinder = streamWrapper.getBinder();
@@ -994,43 +997,6 @@ ndk::ScopedAStatus Module::setAudioPatch(const AudioPatch& in_requested, AudioPa
             return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
         }
     }
-    else {
-        //check if current portconfig exists in any other patches
-        //if its there, then update to new patch and remove it from list
-        for (auto & element : patches)
-        {
-             if (isMixPortConfig(*(sources.at(0))) ||
-                (isDevicePortConfig(*(sources.at(0))) &&
-                 isTelephonyRXDevice(sources.at(0)->ext.get<AudioPortExt::Tag::device>().device))) {
-                 if (element.sourcePortConfigIds == in_requested.sourcePortConfigIds) {
-                     LOG(ERROR) << __func__ << " found same mixport config in patch id: " << element.id;
-                     existing = findById<AudioPatch>(patches, element.id);
-                     if (existing != patches.end()) {
-                         patchesBackup = mPatches;
-                         cleanUpPatch(existing->id);
-                     } else {
-                          LOG(ERROR) << __func__ << ": not found existing patch id " << in_requested.id;
-                          return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
-                     }
-                     break;
-                 }
-             }
-             else {
-                 if (element.sinkPortConfigIds == in_requested.sinkPortConfigIds) {
-                     LOG(ERROR) << __func__ << " found same sink mixport config in patch id: " << element.id;
-                     existing = findById<AudioPatch>(patches, element.id);
-                     if (existing != patches.end()) {
-                         patchesBackup = mPatches;
-                         cleanUpPatch(existing->id);
-                     } else {
-                          LOG(ERROR) << __func__ << ": not found existing patch id " << in_requested.id;
-                          return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
-                     }
-                     break;
-                 }
-             }
-        }
-    }
     // Validate the requested patch.
     for (const auto & [ sinkPortId, nonExclusive ] : allowedSinkPorts) {
         if (!nonExclusive && mPatches.count(sinkPortId) != 0) {
@@ -1049,8 +1015,11 @@ ndk::ScopedAStatus Module::setAudioPatch(const AudioPatch& in_requested, AudioPa
         _aidl_return->id = getConfig().nextPatchId++;
         _aidl_return->minimumStreamBufferSizeFrames = kMinimumStreamBufferSizeFrames;
         _aidl_return->latenciesMs.clear();
+        // LatencyMs for a new patch is provided with arbitary value.
+        // Real LatencyMs is fetched via StreamDescriptor::Reply::latencyMs 
+        constexpr int32_t kLatencyMsDefault = 10;
         _aidl_return->latenciesMs.insert(_aidl_return->latenciesMs.end(),
-                                         _aidl_return->sinkPortConfigIds.size(), kLatencyMs);
+                                         _aidl_return->sinkPortConfigIds.size(), kLatencyMsDefault);
         onNewPatchCreation(sources, sinks, *_aidl_return);
         patches.push_back(*_aidl_return);
     } else {
@@ -1139,6 +1108,10 @@ void Module::setAudioPatchTelephony(
         const ::aidl::android::hardware::audio::core::AudioPatch& patch) {
     LOG(INFO) << __func__ << " no-op implementation ";
     return;
+}
+
+void Module::resetAudioPatchTelephony(const AudioPatch& patch) {
+    LOG(INFO) << __func__ << " no-op implementation ";
 }
 
 ndk::ScopedAStatus Module::setAudioPortConfig(const AudioPortConfig& in_requested,
@@ -1292,6 +1265,7 @@ ndk::ScopedAStatus Module::resetAudioPatch(int32_t in_patchId) {
     auto& patches = getConfig().patches;
     auto patchIt = findById<AudioPatch>(patches, in_patchId);
     if (patchIt != patches.end()) {
+        resetAudioPatchTelephony(*patchIt);
         auto patchesBackup = mPatches;
         cleanUpPatch(patchIt->id);
         if (auto status = updateStreamsConnectedState(*patchIt, AudioPatch{}); !status.isOk()) {

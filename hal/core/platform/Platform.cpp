@@ -202,6 +202,14 @@ void Platform::configurePalDevicesCustomKey(std::vector<pal_device>& palDevices,
     }
 }
 
+bool Platform::getMicMuteStatus() {
+    return mMicMuted;
+}
+
+void Platform::setMicMuteStatus(bool mute) {
+    mMicMuted = mute;
+}
+
 bool Platform::setStreamMicMute(pal_stream_handle_t* streamHandlePtr, const bool muted) {
     if (int32_t ret = ::pal_stream_set_mute(streamHandlePtr, muted); ret) {
         return false;
@@ -262,9 +270,16 @@ void Platform::configurePalDevicesForHIFIPCMFilter(
 
 void Platform::customizePalDevices(const AudioPortConfig& mixPortConfig, const Usecase& tag,
                                    std::vector<pal_device>& palDevices) const noexcept {
-    const auto& sampleRate = mixPortConfig.sampleRate.value().value;
-    if (sampleRate != 384000 && sampleRate != 352800) {
+    const auto& sampleRate = getSampleRate(mixPortConfig);
+    if (sampleRate && sampleRate.value() != 384000 && sampleRate.value() != 352800) {
         configurePalDevicesForHIFIPCMFilter(palDevices);
+    }
+
+    if (mIsHACEnabled && hasOutputVoipRxFlag(mixPortConfig.flags.value())) {
+        auto itr = std::find_if(palDevices.begin(), palDevices.end(), [](const auto& palDevice) {
+            return palDevice.id == PAL_DEVICE_OUT_HANDSET;
+        });
+        setPalDeviceCustomKey(*itr, "HAC");
     }
 }
 
@@ -329,6 +344,10 @@ std::vector<pal_device> Platform::convertToPalDevices(
     return palDevices;
 }
 
+
+/**
+ * API is common for both Output and input streams
+ */
 std::vector<pal_device> Platform::configureAndFetchPalDevices(
         const AudioPortConfig& mixPortConfig, const Usecase& tag,
         const std::vector<AudioDevice>& devices) const {
@@ -695,6 +714,21 @@ void Platform::updateScreenRotation(const IModule::ScreenRotation in_rotation) n
         /* Phone was in inverted landspace and now is changed to portrait or inverted portrait. */
         paramDeviceRotation.rotation_type = PAL_SPEAKER_ROTATION_LR;
         notifyDeviceRotation();
+    }
+
+    // set for hdr params
+    if (in_rotation == IModule::ScreenRotation::DEG_90 ||
+        in_rotation == IModule::ScreenRotation::DEG_270) {
+        setOrientation("landscape");
+    } else {
+        setOrientation("portrait");
+    }
+
+    if (in_rotation == IModule::ScreenRotation::DEG_270 ||
+        in_rotation == IModule::ScreenRotation::DEG_180) {
+        setInverted(true);
+    } else {
+        setInverted(false);
     }
 
     mCurrentScreenRotation = in_rotation;
@@ -1197,7 +1231,6 @@ void Platform::setHdrOnPalDevice(pal_device* palDeviceIn) {
     const bool isInverted = platform.isInverted();
 
     LOG(ERROR) << __func__ << " platform.getOrientation():" << std::string(platform.getOrientation());
-
 
     if (isOrientationLandscape && !isInverted) {
         setPalDeviceCustomKey(*palDeviceIn, "unprocessed-hdr-mic-landscape");

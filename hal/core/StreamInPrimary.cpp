@@ -110,6 +110,14 @@ ndk::ScopedAStatus StreamInPrimary::setConnectedDevices(
         const std::vector<::aidl::android::media::audio::common::AudioDevice>& devices) {
     mWorker->setIsConnected(!devices.empty());
     mConnectedDevices = devices;
+    return configureConnectedDevices_I();
+}
+
+ndk::ScopedAStatus StreamInPrimary::reconfigureConnectedDevices() {
+    return configureConnectedDevices_I();
+}
+
+ndk::ScopedAStatus StreamInPrimary::configureConnectedDevices_I() {
     auto connectedPalDevices =
             mPlatform.configureAndFetchPalDevices(mMixPortConfig, mTag, mConnectedDevices);
     if (mTag == Usecase::PCM_RECORD || mTag == Usecase::COMPRESS_CAPTURE) {
@@ -148,8 +156,8 @@ ndk::ScopedAStatus StreamInPrimary::setConnectedDevices(
     };
 
     LOG(DEBUG) << __func__ << mLogPrefix << " stream is connected to devices:"
-                 << std::accumulate(mConnectedDevices.cbegin(), mConnectedDevices.cend(),
-                                    std::string(""), devicesString);
+               << std::accumulate(mConnectedDevices.cbegin(), mConnectedDevices.cend(),
+                                  std::string(""), devicesString);
 
     return ndk::ScopedAStatus::ok();
 }
@@ -235,6 +243,10 @@ ndk::ScopedAStatus StreamInPrimary::configureMMapStream(int32_t* fd, int64_t* bu
         ::pal_stream_close(mPalHandle);
         mPalHandle = nullptr;
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
+    }
+
+    if (mPlatform.getMicMuteStatus()) {
+        setStreamMicMute(true);
     }
 
     LOG(INFO) << __func__ << mLogPrefix << ": stream is configured";
@@ -350,10 +362,8 @@ void StreamInPrimary::resume() {
         *latencyMs = compressCapture.getLatencyMs();
     } else if (mTag == Usecase::PCM_RECORD || mTag == Usecase::HOTWORD_RECORD) {
         *latencyMs = PcmRecord::kCaptureDurationMs;
-    } else {
-        // default latency
-        *latencyMs = Module::kLatencyMs;
     }
+
     if (bytesRead < 0) {
         LOG(ERROR) << __func__ << mLogPrefix << " read failed, ret:" << std::to_string(bytesRead);
         *actualFrameCount = frameCount;
@@ -719,6 +729,10 @@ void StreamInPrimary::configure() {
         ::pal_stream_close(mPalHandle);
         mPalHandle = nullptr;
         return;
+    }
+
+    if (mPlatform.getMicMuteStatus()) {
+        setStreamMicMute(true);
     }
 
     const auto palStartApiEndTime = std::chrono::steady_clock::now();

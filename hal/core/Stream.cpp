@@ -337,7 +337,7 @@ bool StreamInWorkerLogic::read(size_t clientSize, StreamDescriptor::Reply* reply
     const size_t frameSize = mContext->getFrameSize();
     size_t actualFrameCount = 0;
     bool fatal = false;
-    int32_t latency = Module::kLatencyMs;
+    int32_t latency = mContext->getNominalLatencyMs();
     if (isConnected) {
         if (::android::status_t status = mDriver->transfer(mDataBuffer.get(), byteCount / frameSize,
                                                            &actualFrameCount, &latency);
@@ -605,7 +605,7 @@ bool StreamOutWorkerLogic::write(size_t clientSize, StreamDescriptor::Reply* rep
     const size_t readByteCount = dataMQ->availableToRead();
     const size_t frameSize = mContext->getFrameSize();
     bool fatal = false;
-    int32_t latency = Module::kLatencyMs;
+    int32_t latency = mContext->getNominalLatencyMs();
     if (bool success = readByteCount > 0 ? dataMQ->read(&mDataBuffer[0], readByteCount) : true) {
         const bool isConnected = mIsConnected;
 #ifdef VERY_VERBOSE_LOGGING

@@ -28,6 +28,8 @@
 #include "include/effect-impl/EffectTypes.h"
 
 using aidl::android::hardware::audio::effect::IEffect;
+using aidl::android::hardware::audio::effect::kEventFlagDataMqNotEmpty;
+using aidl::android::hardware::audio::effect::kReopenSupportedVersion;
 using aidl::android::hardware::audio::effect::State;
 using aidl::android::media::audio::common::PcmType;
 using ::android::hardware::EventFlag;
@@ -63,10 +65,12 @@ ndk::ScopedAStatus EffectImpl::open(const Parameter::Common& common,
     mImplContext = createContext(common, mProcessData);
     RETURN_IF(!mImplContext, EX_NULL_POINTER, "nullContext");
 
-    int version = 0;
-    RETURN_IF(!getInterfaceVersion(&version).isOk(), EX_UNSUPPORTED_OPERATION,
+    RETURN_IF(!getInterfaceVersion(&mVersion).isOk(), EX_UNSUPPORTED_OPERATION,
               "FailedToGetInterfaceVersion");
-    mImplContext->setVersion(version);
+    mImplContext->setVersion(mVersion);
+    mEventFlag = mImplContext->getStatusEventFlag();
+    mDataMqNotEmptyEf =
+            mVersion >= kReopenSupportedVersion ? kEventFlagDataMqNotEmpty : kEventFlagNotEmpty;
 
     if (specific.has_value()) {
         RETURN_IF_ASTATUS_NOT_OK(setParameterSpecific(specific.value()), "setSpecParamErr");
@@ -104,7 +108,7 @@ ndk::ScopedAStatus EffectImpl::close() {
         mState = State::INIT;
     }
 
-    RETURN_IF(notifyEventFlag(kEventFlagNotEmpty) != RetCode::SUCCESS, EX_ILLEGAL_STATE,
+    RETURN_IF(notifyEventFlag(mDataMqNotEmptyEf) != RetCode::SUCCESS, EX_ILLEGAL_STATE,
               "notifyEventFlagFailed");
     // stop the worker thread, ignore the return code
     RETURN_IF(destroyThread() != RetCode::SUCCESS, EX_UNSUPPORTED_OPERATION,
@@ -263,7 +267,7 @@ ndk::ScopedAStatus EffectImpl::command(CommandId command) {
             RETURN_OK_IF(mState == State::PROCESSING);
             RETURN_IF_ASTATUS_NOT_OK(commandImpl(command), "commandImplFailed");
             mState = State::PROCESSING;
-            RETURN_IF(notifyEventFlag(kEventFlagNotEmpty) != RetCode::SUCCESS, EX_ILLEGAL_STATE,
+            RETURN_IF(notifyEventFlag(mDataMqNotEmptyEf) != RetCode::SUCCESS, EX_ILLEGAL_STATE,
                       "notifyEventFlagFailed");
             startThread();
             break;
@@ -271,7 +275,7 @@ ndk::ScopedAStatus EffectImpl::command(CommandId command) {
         case CommandId::RESET:
             RETURN_OK_IF(mState == State::IDLE);
             mState = State::IDLE;
-            RETURN_IF(notifyEventFlag(kEventFlagNotEmpty) != RetCode::SUCCESS, EX_ILLEGAL_STATE,
+            RETURN_IF(notifyEventFlag(mDataMqNotEmptyEf) != RetCode::SUCCESS, EX_ILLEGAL_STATE,
                       "notifyEventFlagFailed");
             stopThread();
             RETURN_IF_ASTATUS_NOT_OK(commandImpl(command), "commandImplFailed");
@@ -342,9 +346,9 @@ void EffectImpl::process() {
      */
     uint32_t efState = 0;
     if (!mEventFlag ||
-        ::android::OK != mEventFlag->wait(kEventFlagNotEmpty, &efState, 0 /* no timeout */,
+        ::android::OK != mEventFlag->wait(mDataMqNotEmptyEf, &efState, 0 /* no timeout */,
                                           true /* retry */) ||
-        !(efState & kEventFlagNotEmpty)) {
+        !(efState & mDataMqNotEmptyEf)) {
         LOG(ERROR) << getEffectName() << __func__ << ": StatusEventFlag - " << mEventFlag
                    << " efState - " << std::hex << efState;
         return;

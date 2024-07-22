@@ -75,6 +75,7 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl {
     ndk::ScopedAStatus setConnectedDevices(
             const std::vector<::aidl::android::media::audio::common::AudioDevice>& devices)
             override;
+    ndk::ScopedAStatus reconfigureConnectedDevices() override;
     ndk::ScopedAStatus configureMMapStream(int32_t* fd, int64_t* burstSizeFrames, int32_t* flags,
                                            int32_t* bufferSizeFrames) override;
 
@@ -99,6 +100,9 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl {
 
     // This API calls startEffect/stopEffect only on offload/pcm offload outputs.
     void enableOffloadEffects(const bool enable);
+
+    // API which are *_I are internal 
+    ndk::ScopedAStatus configureConnectedDevices_I();
 
     const Usecase mTag;
     const std::string mTagName;

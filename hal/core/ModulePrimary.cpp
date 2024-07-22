@@ -159,11 +159,13 @@ ndk::ScopedAStatus ModulePrimary::setMicMute(bool in_mute) {
         return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
     }
     LOG(DEBUG) << __func__ << ": " << in_mute;
+
     mMicMute = in_mute;
+    mPlatform.setMicMuteStatus(mMicMute);
 
     mTelephony->setMicMute(mMicMute);
 
-    int ret = mAudExt.mHfpExtension->audio_extn_hfp_set_mic_mute(in_mute);
+    int ret = mAudExt.mHfpExtension->audio_extn_hfp_set_mic_mute(mMicMute);
 
     for (const auto& inputMixPortConfigId :
          getActiveInputMixPortConfigIds(getConfig().portConfigs)) {
@@ -222,6 +224,7 @@ ndk::ScopedAStatus ModulePrimary::getBluetoothLe(std::shared_ptr<IBluetoothLe>* 
 ndk::ScopedAStatus ModulePrimary::getTelephony(std::shared_ptr<ITelephony>* _aidl_return) {
     if (!mTelephony) {
         mTelephony = ndk::SharedRefBase::make<Telephony>();
+        mPlatform.setTelephony(mTelephony.getInstance());
     }
     *_aidl_return = mTelephony.getInstance();
     LOG(DEBUG) << __func__
@@ -301,9 +304,9 @@ void ModulePrimary::setAudioPatchTelephony(const std::vector<AudioPortConfig*>& 
     }
 
     if (!isDevicePortConfig(*(sources.at(0))) || !isDevicePortConfig(*(sinks.at(0)))) {
-        LOG(VERBOSE) << __func__ << ": its not device to device patch ";
         return;
     }
+
     bool updateRx = isTelephonyRXDevice(sources.at(0)->ext.get<AudioPortExt::Tag::device>().device);
     bool updateTx = isTelephonyTXDevice(sinks.at(0)->ext.get<AudioPortExt::Tag::device>().device);
 
@@ -320,7 +323,45 @@ void ModulePrimary::setAudioPatchTelephony(const std::vector<AudioPortConfig*>& 
     }
 
     mTelephony->setDevices(devices, updateRx);
-    LOG(DEBUG) << __func__ << ": device patch : " << patchDetails << patch.toString();
+    LOG(INFO) << __func__ << ": set telephony " << (updateRx ? "RX" : "TX") << " devices";
+}
+
+void ModulePrimary::resetAudioPatchTelephony(const AudioPatch& patch) {
+    const std::string patchDetails = getPatchDetails(patch);
+    if (!mTelephony) {
+        LOG(ERROR) << __func__ << ": Telephony not created " << patchDetails << patch.toString();
+        return;
+    }
+
+    auto& configs = getConfig().portConfigs;
+    std::vector<int32_t> missingIds;
+    auto sources = selectByIds<AudioPortConfig>(configs, patch.sourcePortConfigIds, &missingIds);
+    if (!missingIds.empty()) {
+        LOG(ERROR) << __func__ << ": following source port config ids not found: "
+                   << ::android::internal::ToString(missingIds);
+    }
+    auto sinks = selectByIds<AudioPortConfig>(configs, patch.sinkPortConfigIds, &missingIds);
+    if (!missingIds.empty()) {
+        LOG(ERROR) << __func__ << ": following sink port config ids not found: "
+                   << ::android::internal::ToString(missingIds);
+    }
+
+    if (!isDevicePortConfig(*(sources.at(0))) || !isDevicePortConfig(*(sinks.at(0)))) {
+        // atleast one of the port config is a mix port config.
+        return;
+    }
+
+    bool updateRx = isTelephonyRXDevice(sources.at(0)->ext.get<AudioPortExt::Tag::device>().device);
+    bool updateTx = isTelephonyTXDevice(sinks.at(0)->ext.get<AudioPortExt::Tag::device>().device);
+
+    if (!updateRx && !updateTx) {
+        LOG(ERROR) << __func__ << ": neither RX nor TX update " << patchDetails << patch.toString();
+        return;
+    }
+
+    mTelephony->resetDevices(updateRx);
+
+    LOG(INFO) << __func__ << ": reset telephony " << (updateRx ? "RX" : "TX") << " devices";
 }
 
 int ModulePrimary::onExternalDeviceConnectionChanged(
@@ -524,6 +565,11 @@ void ModulePrimary::onSetTelephonyParameters(const std::vector<VendorParameter>&
             isDeviceMuteUpdate = true;
         } else if (Parameters::kVoiceDirection == p.id) {
             muteDirection = paramValue;
+        } else if (Parameters::kVoiceTranslationRxMute == p.id) {
+            const auto isOn = getBoolFromString(paramValue);
+            mPlatform.setTranslationRxMuteState(isOn);
+            LOG(DEBUG) << __func__ << " : translation Rx mute set as true" ;
+            mTelephony->updateVoiceVolume();
         }
     }
 
@@ -640,6 +686,7 @@ ModulePrimary::SetParameterToFeatureMap ModulePrimary::fillSetParameterToFeature
                                  {Parameters::kVoiceHDVoice, Feature::TELEPHONY},
                                  {Parameters::kVoiceDeviceMute, Feature::TELEPHONY},
                                  {Parameters::kVoiceDirection, Feature::TELEPHONY},
+                                 {Parameters::kVoiceTranslationRxMute, Feature::TELEPHONY},
                                  {Parameters::kInCallMusic, Feature::GENERIC},
                                  {Parameters::kTranslateRecord, Feature::GENERIC},
                                  {Parameters::kUHQA, Feature::GENERIC},
@@ -779,11 +826,12 @@ std::vector<VendorParameter> ModulePrimary::onGetBluetoothParams(
     for (const auto& id : ids) {
         if (id == Parameters::kA2dpSuspended) {
             VendorParameter param;
-            bool a2dpSuspended = false;
+            bool a2dpEnabled = false;
             param.id = id;
             VString parcel;
-            mBluetoothA2dp->isEnabled(&a2dpSuspended);
-            parcel.value = a2dpSuspended ? "1" : "0";
+            mBluetoothA2dp->isEnabled(&a2dpEnabled);
+            //if a2dp enabled is true then suspend is 0, else suspend is 1
+            parcel.value = a2dpEnabled ? "0" : "1";
             setParameter(parcel, param);
             results.push_back(param);
         }

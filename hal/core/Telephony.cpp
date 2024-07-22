@@ -48,8 +48,12 @@ const AudioDevice Telephony::kDefaultCRSRxDevice =
         AudioDevice{.type.type = AudioDeviceType::OUT_SPEAKER};
 
 Telephony::Telephony() {
-    mVoiceSession.session[VSID1_VOICE_SESSION].mVSID = VSID::VSID_1;
-    mVoiceSession.session[VSID2_VOICE_SESSION].mVSID = VSID::VSID_2;
+    mVoiceSession.session[VSID1_VOICE_SESSION].CallUpdate.mVSID = VSID::VSID_1;
+    mVoiceSession.session[VSID1_VOICE_SESSION].state.current_ = CallState::IN_ACTIVE;
+    mVoiceSession.session[VSID1_VOICE_SESSION].state.new_ = CallState::IN_ACTIVE;
+    mVoiceSession.session[VSID2_VOICE_SESSION].CallUpdate.mVSID = VSID::VSID_2;
+    mVoiceSession.session[VSID2_VOICE_SESSION].state.current_ = CallState::IN_ACTIVE;
+    mVoiceSession.session[VSID2_VOICE_SESSION].state.new_ = CallState::IN_ACTIVE;
     mTelecomConfig.voiceVolume = Float{TelecomConfig::VOICE_VOLUME_MAX};
     mTelecomConfig.ttyMode = TelecomConfig::TtyMode::OFF;
     mTelecomConfig.isHacEnabled = Boolean{false};
@@ -85,9 +89,10 @@ ndk::ScopedAStatus Telephony::switchAudioMode(AudioMode newAudioMode) {
         LOG(VERBOSE) << __func__ << ": no change" << toString(newAudioMode);
         return ndk::ScopedAStatus::ok();
     }
-    if (newAudioMode == AudioMode::IN_CALL && mAudioMode == AudioMode::NORMAL) {
-        // means call ready to start but defer start on set parameters
-        LOG(DEBUG) << __func__ << ": defer start call on call state ACTIVE";
+    if (newAudioMode == AudioMode::IN_CALL && (mAudioMode == AudioMode::NORMAL ||
+                                               mAudioMode == AudioMode::RINGTONE || mAudioMode == AudioMode::IN_COMMUNICATION)) {
+        updateCalls();
+        LOG(DEBUG) << __func__ << ": start call on call state ACTIVE";
     } else if (newAudioMode == AudioMode::NORMAL && mAudioMode == AudioMode::IN_CALL) {
         // safe to stop now
         stopCall();
@@ -111,7 +116,7 @@ ndk::ScopedAStatus Telephony::switchAudioMode(AudioMode newAudioMode) {
 
 ndk::ScopedAStatus Telephony::setTelecomConfig(const TelecomConfig& in_config,
                                                TelecomConfig* _aidl_return) {
-    std::scoped_lock lock{mLock};
+    std::unique_lock lock{mLock};
 
     if (in_config.voiceVolume.has_value() &&
         (in_config.voiceVolume.value().value <
@@ -134,6 +139,16 @@ ndk::ScopedAStatus Telephony::setTelecomConfig(const TelecomConfig& in_config,
     }
     if (in_config.isHacEnabled.has_value()) {
         mTelecomConfig.isHacEnabled = in_config.isHacEnabled;
+        mPlatform.setHACEnabled(mTelecomConfig.isHacEnabled.value().value);
+        /**
+         * TODO remove this unusual way with streams
+         * remove the telephony lock before handling the streams.
+         * unlocking the telephony is necessary because the stream already have telephony instance.
+         */
+
+        lock.unlock();
+        triggerHACinVoipPlayback();
+        lock.lock();
     }
     *_aidl_return = mTelecomConfig;
     LOG(DEBUG) << __func__ << ": received " << in_config.toString() << ", returning "
@@ -158,11 +173,22 @@ bool Telephony::isCrsCallSupported() {
 
 bool Telephony::isAnyCallActive() {
     for (int i = 0; i < MAX_VOICE_SESSIONS; i++) {
-         if (mVoiceSession.session[i].mCallState == CallState::ACTIVE) {
+         if (mVoiceSession.session[i].state.current_ == CallState::ACTIVE) {
              return true;
          }
     }
     return false;
+}
+
+void Telephony::resetDevices(const bool resetRx) {
+    std::scoped_lock lock{mLock};
+    if (resetRx) {
+        mRxDevice = kDefaultRxDevice;
+    } else {
+        // may be have default Tx device;
+        mTxDevice = getMatchingTxDevice(kDefaultRxDevice);
+    }
+    LOG(INFO)<<__func__<<": reset device "<<(resetRx?"Rx":"Tx");
 }
 
 void Telephony::setDevices(const std::vector<AudioDevice>& devices, const bool updateRx) {
@@ -268,6 +294,27 @@ void Telephony::onOutputPrimaryStreamDevices(const std::vector<AudioDevice>& pri
      }
 }
 
+void Telephony::onBluetoothScoEvent(const bool& enable) {
+    std::scoped_lock lock{mLock};
+
+    if (!mIsCRSStarted) {
+        return;
+    }
+
+   if (enable) {
+      mRxDevice = AudioDevice{.type.type = AudioDeviceType::OUT_DEVICE,
+                              .type.connection = AudioDeviceDescription::CONNECTION_BT_SCO};
+      mTxDevice = getMatchingTxDevice(mRxDevice);
+      updateDevices();
+   } else {
+     if (isBluetoothSCODevice(mRxDevice) || isBluetoothA2dpDevice(mRxDevice)) {
+         mRxDevice = kDefaultCRSRxDevice;
+         mTxDevice = getMatchingTxDevice(mRxDevice);
+         updateDevices();
+     }
+  }
+}
+
 void Telephony::updateCrsDevice() {
     LOG(VERBOSE) << __func__ << ": Enter";
 
@@ -296,8 +343,7 @@ AudioDevice Telephony::getMatchingTxDevice(const AudioDevice& rxDevice) {
                rxDevice.type.connection == AudioDeviceDescription::CONNECTION_BT_SCO) {
         return AudioDevice{.type.type = AudioDeviceType::IN_HEADSET,
                            .type.connection = AudioDeviceDescription::CONNECTION_BT_SCO};
-    } else if ((rxDevice.type.type == AudioDeviceType::OUT_HEADSET ||
-                rxDevice.type.type == AudioDeviceType::OUT_BROADCAST) &&
+    } else if (rxDevice.type.type == AudioDeviceType::OUT_HEADSET &&
                rxDevice.type.connection == AudioDeviceDescription::CONNECTION_BT_LE) {
         return AudioDevice{.type.type = AudioDeviceType::IN_HEADSET,
                            .type.connection = AudioDeviceDescription::CONNECTION_BT_LE};
@@ -344,7 +390,7 @@ void Telephony::reconfigure(const SetUpdates& newUpdates) {
     } else {
          if (mIsCRSStarted && mCRSVSID == newUpdates.mVSID) {
              stopCall();
-             if (mRxDevice.type.type != AudioDeviceType::OUT_SPEAKER) {
+             if (mPalCrsHandle != nullptr) {
                  stopCrsLoopback();
              }
              mSetUpdates.mIsCrsCall = newUpdates.mIsCrsCall;
@@ -355,60 +401,68 @@ void Telephony::reconfigure(const SetUpdates& newUpdates) {
     }
 
     for (int i = 0; i < MAX_VOICE_SESSIONS; i++) {
-         if (newUpdates.mVSID == mVoiceSession.session[i].mVSID) {
-             switch (newUpdates.mCallState) {
-                 case CallState::ACTIVE:
-                     switch (mVoiceSession.session[i].mCallState) {
-                         case CallState::IN_ACTIVE:
-                             if (mAudioMode != AudioMode::IN_CALL) {
-                                 // call state is ready to start but defer start on incall mode comes
-                                 LOG(DEBUG) << __func__ << ": defer start call on incall mode";
-                             } else {
-                                 LOG(DEBUG) << __func__ << " CallState: INACTIVE -> ACTIVE vsid:" << newUpdates.mVSID;
-                                 mSetUpdates = newUpdates;
-                                 if ((palDevices[0].id == PAL_DEVICE_OUT_BLUETOOTH_BLE) &&
-                                     (palDevices[1].id == PAL_DEVICE_IN_BLUETOOTH_BLE)) {
-                                     updateVoiceMetadataForBT(true);
-                                 }
-                                 if (!isAnyCallActive()) {
-                                     startCall();
-                                     mVoiceSession.session[i] = mSetUpdates;
-                                 } else {
-                                     LOG(DEBUG) << __func__ << ": voice already started";
-                                 }
-                             }
-                             break;
-
-                         default:
-                             LOG(INFO) << __func__ << " CallState: ACTIVE cannot be handled in "
-                                        << "state " << mVoiceSession.session[i].mCallState
-                                        << " vsid " << mVoiceSession.session[i].mVSID;
-                             break;
-                     }
-                     break;
-
-                 case CallState::IN_ACTIVE:
-                     switch (mVoiceSession.session[i].mCallState) {
-                         case CallState::ACTIVE:
-                             LOG(DEBUG) << __func__ << " CallState: ACTIVE -> INACTIVE vsid:" << newUpdates.mVSID;
-                             mSetUpdates = newUpdates;
-                             stopCall();
-                             mVoiceSession.session[i] = mSetUpdates;
-                             break;
-
-                         default:
-                             LOG(INFO) << __func__ << " CallState: Default cannot be handled in "
-                                        << "state " << mVoiceSession.session[i].mCallState
-                                        << " vsid " << mVoiceSession.session[i].mVSID;
-                             break;
-                     }
-                     break;
-                 default:
-                     break;
-             }
+         if (newUpdates.mVSID == mVoiceSession.session[i].CallUpdate.mVSID) {
+             mVoiceSession.session[i].state.new_  = newUpdates.mCallState;
+             mVoiceSession.session[i].CallUpdate = newUpdates;
+             break;
          }
     }
+    if (mAudioMode == AudioMode::IN_CALL) {
+       updateCalls();
+    }
+
     LOG(DEBUG) << __func__ << ": Exit";
+}
+
+void Telephony::updateCalls() {
+     auto palDevices = mPlatform.convertToPalDevices({mRxDevice, mTxDevice});
+     for (int i = 0; i < MAX_VOICE_SESSIONS; i++) {
+            switch (mVoiceSession.session[i].state.new_) {
+                  case CallState::ACTIVE:
+                      switch (mVoiceSession.session[i].state.current_) {
+                            case CallState::IN_ACTIVE:
+                                LOG(DEBUG) << __func__ << " CallState: INACTIVE -> ACTIVE vsid:" << mVoiceSession.session[i].CallUpdate.mVSID;
+                                if ((palDevices[0].id == PAL_DEVICE_OUT_BLUETOOTH_BLE) &&
+                                    (palDevices[1].id == PAL_DEVICE_IN_BLUETOOTH_BLE)) {
+                                    updateVoiceMetadataForBT(true);
+                                }
+                                if (!isAnyCallActive()) {
+                                    mSetUpdates =  mVoiceSession.session[i].CallUpdate;
+                                    startCall();
+                                    mVoiceSession.session[i].state.current_ = mVoiceSession.session[i].state.new_;
+                                } else {
+                                    LOG(DEBUG) << __func__ << ": voice already started";
+                                }
+                                break;
+
+                            default:
+                                LOG(INFO) << __func__ << " CallState: ACTIVE cannot be handled in "
+                                          << "state " << mVoiceSession.session[i].state.current_
+                                          << " vsid " << mVoiceSession.session[i].CallUpdate.mVSID;
+                                break;
+                      }
+                      break;
+
+                  case CallState::IN_ACTIVE:
+                      switch (mVoiceSession.session[i].state.current_) {
+                            case CallState::ACTIVE:
+                                LOG(DEBUG) << __func__ << " CallState: ACTIVE -> INACTIVE vsid:" << mVoiceSession.session[i].CallUpdate.mVSID;
+                                mSetUpdates =  mVoiceSession.session[i].CallUpdate;
+                                stopCall();
+                                mVoiceSession.session[i].state.current_ = mVoiceSession.session[i].state.new_;
+                                break;
+
+                             default:
+                                 LOG(INFO) << __func__ << " CallState: Default cannot be handled in "
+                                           << "state " << mVoiceSession.session[i].state.current_
+                                           << " vsid " << mVoiceSession.session[i].CallUpdate.mVSID;
+                                break;
+                      }
+                      break;
+                  default:
+                      break;
+            }
+     }
 }
 
 void Telephony::updateVolumeBoost(const bool enable) {
@@ -502,8 +556,7 @@ void Telephony::configureDeviceMute() {
     auto bytes = std::make_unique<uint8_t[]>(byteSize);
     auto palParamPayload = reinterpret_cast<pal_param_payload*>(bytes.get());
     palParamPayload->payload_size = sizeof(pal_device_mute_t);
-    auto palDeviceMute =
-            reinterpret_cast<pal_device_mute_t*>(palParamPayload + sizeof(pal_param_payload));
+    auto palDeviceMute = reinterpret_cast<pal_device_mute_t*>(palParamPayload->payload);
     palDeviceMute->mute = mIsDeviceMuted;
     if (mMuteDirection == "rx") {
         palDeviceMute->dir = PAL_AUDIO_OUTPUT;
@@ -514,6 +567,23 @@ void Telephony::configureDeviceMute() {
         ret) {
         LOG(ERROR) << __func__ << ": failed to set PAL_PARAM_ID_DEVICE_MUTE";
         return;
+    }
+}
+
+void Telephony::setVoipPlaybackStream(std::weak_ptr<StreamCommonInterface> voipStream) {
+    std::scoped_lock lock{mLock};
+    mVoipStreamWptr = voipStream;
+}
+
+void Telephony::triggerHACinVoipPlayback() {
+    auto voipStream = mVoipStreamWptr.lock();
+    if (!voipStream) {
+        return;
+    }
+    const auto& voipConnectedDevices = voipStream->getConnectedDevices();
+    if (hasOutputSpeakerEarpiece(voipConnectedDevices)) {
+        LOG(INFO) << __func__ << ": HAC status changed for VOIP playback";
+        voipStream->reconfigureConnectedDevices();
     }
 }
 
@@ -535,14 +605,18 @@ void Telephony::updateVoiceVolume() {
     float volumeFloat = 0.0f;
     if (mSetUpdates.mIsCrsCall) {
         volumeFloat = mCRSVolume;
+    } else if (mPlatform.getTranslationRxMuteState()) {
+        volumeFloat = 0.0f;
+        LOG(INFO) << __func__ << ": set voice volume to mute.";
     } else {
         volumeFloat = mTelecomConfig.voiceVolume ? mTelecomConfig.voiceVolume.value().value : 1.0;
     }
+
     if (int32_t ret = mPlatform.setVolume(mPalHandle, {volumeFloat}); ret) {
         LOG(ERROR) << __func__ << ": pal stream set volume failed !!" << ret;
         return;
     }
-    LOG(VERBOSE) << __func__ << ": updated voice volume value as " << volumeFloat;
+    LOG(DEBUG) << __func__ << ": updated voice volume value as " << volumeFloat;
 }
 
 void Telephony::updateTtyMode() {
@@ -584,6 +658,12 @@ void Telephony::startCall() {
         strlcpy(palDevices[0].custom_config.custom_key, "",
                 sizeof(palDevices[0].custom_config.custom_key));
     }
+    //set custom key for hac mode
+    if (mTelecomConfig.isHacEnabled && palDevices[0].id == PAL_DEVICE_OUT_HANDSET) {
+        strlcpy(palDevices[0].custom_config.custom_key, "HAC",
+                sizeof(palDevices[0].custom_config.custom_key));
+        LOG(VERBOSE) << __func__ << "setting custom key as ", palDevices[0].custom_config.custom_key;
+    }
     if (int32_t ret = ::pal_stream_open(
                 attributes.get(), numDevices, reinterpret_cast<pal_device*>(palDevices.data()), 0,
                 nullptr, nullptr, reinterpret_cast<uint64_t>(this), &mPalHandle);
@@ -596,6 +676,9 @@ void Telephony::startCall() {
         pal_stream_close(mPalHandle);
         mPalHandle = nullptr;
         return;
+    }
+    if (mPlatform.getMicMuteStatus()) {
+        mPlatform.setStreamMicMute(mPalHandle, true);
     }
     updateVoiceVolume();
     if (mSetUpdates.mIsCrsCall) {
@@ -661,6 +744,9 @@ void Telephony::stopCall() {
         updateVoiceMetadataForBT(false);
     }
     mPalHandle = nullptr;
+    if (mSetUpdates.mIsCrsCall) {
+        mRxDevice = kDefaultRxDevice;
+    }
     LOG(DEBUG) << __func__ << ": EXIT";
 }
 
@@ -752,7 +838,8 @@ void Telephony::updateDevices() {
     }
 
     if (mSetUpdates.mIsCrsCall) {
-        stopCrsLoopback();
+        if (mPalCrsHandle != nullptr)
+            stopCrsLoopback();
         updateCrsDevice();
         palDevices = mPlatform.convertToPalDevices({mRxDevice, mTxDevice});
         strlcpy(palDevices[0].custom_config.custom_key, "crsCall",
@@ -763,6 +850,13 @@ void Telephony::updateDevices() {
     }
 
     if (mPalHandle == nullptr) return;
+
+     //set custom key for hac mode
+    if (mTelecomConfig.isHacEnabled && palDevices[0].id == PAL_DEVICE_OUT_HANDSET) {
+        strlcpy(palDevices[0].custom_config.custom_key, "HAC",
+                sizeof(palDevices[0].custom_config.custom_key));
+        LOG(VERBOSE) << __func__ << "setting custom key as ", palDevices[0].custom_config.custom_key;
+    }
 
     if (int32_t ret = ::pal_stream_set_device(mPalHandle, 2,
                                               reinterpret_cast<pal_device*>(palDevices.data()));
@@ -775,6 +869,7 @@ void Telephony::updateDevices() {
             startCrsLoopback();
         }
     }
+    updateVoiceVolume();
     LOG(DEBUG) << __func__ << ": Exit : Rx: " << mRxDevice.toString() << " Tx: " << mTxDevice.toString();
 }
 

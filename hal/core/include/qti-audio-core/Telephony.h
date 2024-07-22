@@ -66,6 +66,11 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
         }
     };
 
+    struct CallStatus {
+        CallState current_;
+        CallState new_;
+    };
+
     float mCRSVolume = 0.4f; //default CRS call volume
     bool mIsCRSStarted{false};
     VSID mCRSVSID{VSID::VSID_1};
@@ -78,10 +83,14 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
     static constexpr int32_t MIN_CRS_VOL_INDEX = 0;
     static constexpr int32_t MAX_CRS_VOL_INDEX = 7;
     struct SetUpdateSession {
-        SetUpdates session[MAX_VOICE_SESSIONS];
+        CallStatus state;
+        SetUpdates CallUpdate;
     };
 
-    SetUpdateSession mVoiceSession;
+    struct VoiceSession {
+        SetUpdateSession session[MAX_VOICE_SESSIONS];
+    };
+    VoiceSession mVoiceSession;
 
     /* All the public APIs are guarded by mLock, Hence never call a public
      * API from anther public API */
@@ -104,9 +113,9 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
 
     bool isCrsCallSupported();
     void setCRSVolumeFromIndex(const int index);
-
+    void updateVoiceVolume();
     void setMicMute(const bool muted);
-    bool isAnyCallActive();
+    void updateCalls();
 
     // The following below API are both aimed to solve routing on telephony
     /**
@@ -117,6 +126,11 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
     */
     void setDevices(const std::vector<::aidl::android::media::audio::common::AudioDevice>& devices,
                     const bool updateRx);
+    /**
+     * The following API resets the RX and TX device
+     * @param resetRx, indicates device to reset, true for RX, false for TX
+     **/
+    void resetDevices(const bool resetRx);
 
     // Telephony to decide its strategy where there is external device connection change
     void onExternalDeviceConnectionChanged(
@@ -126,6 +140,12 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
     /* Telephony to act on primary stream devices change */
     void onOutputPrimaryStreamDevices(
             const std::vector<::aidl::android::media::audio::common::AudioDevice>&);
+
+    /* Telephony to act upon bluetooth sco enabled or disabled */
+    void onBluetoothScoEvent(const bool& enable);
+
+    /* set the voip stream */
+    void setVoipPlaybackStream(std::weak_ptr<StreamCommonInterface> voipStream);
 
     void updateVoiceMetadataForBT(bool call_active);
     std::weak_ptr<StreamOut> mStreamOutPrimary;
@@ -138,14 +158,15 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
     void configureSlowTalk();
     void configureHDVoice();
     void configureDeviceMute();
-    void updateVoiceVolume();
     void updateDevices();
     void updateTtyMode();
     void updateCrsDevice();
     void startCrsLoopback();
     void stopCrsLoopback();
+    void triggerHACinVoipPlayback();
     ::aidl::android::media::audio::common::AudioDevice getMatchingTxDevice(
             const ::aidl::android::media::audio::common::AudioDevice & rxDevice);
+    bool isAnyCallActive();
 
   protected:
     // Gaurd all the public APIs
@@ -168,6 +189,7 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
     bool mIsHDVoiceEnabled{false};
     bool mIsDeviceMuted{false};
     std::string mMuteDirection{""};
+
     using TtyMap = std::map<TelecomConfig::TtyMode, pal_tty_t>;
     const TtyMap mTtyMap{
             {TelecomConfig::TtyMode::OFF, PAL_TTY_OFF},
@@ -180,6 +202,8 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
     ::aidl::android::media::audio::common::AudioDevice mTxDevice; // mic, speaker mic
     pal_stream_handle_t* mPalCrsHandle{nullptr};
     pal_stream_handle_t* mPalHandle{nullptr};
+    // Stream Handle for VOIP Playback
+    std::weak_ptr<StreamCommonInterface> mVoipStreamWptr;
     Platform& mPlatform{Platform::getInstance()};
 };
 

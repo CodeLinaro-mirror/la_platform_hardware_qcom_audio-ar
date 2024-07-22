@@ -101,6 +101,10 @@ class EffectImpl : public BnEffect, public EffectThread {
     void process() override;
 
   protected:
+    // current Hal version
+    int mVersion = 0;
+    // Use kEventFlagNotEmpty for V1 HAL, kEventFlagDataMqNotEmpty for V2 and above
+    int mDataMqNotEmptyEf = aidl::android::hardware::audio::effect::kEventFlagDataMqNotEmpty;
     State mState = State::INIT;
     const Descriptor* mDescriptor;
     const std::string* mEffectName;

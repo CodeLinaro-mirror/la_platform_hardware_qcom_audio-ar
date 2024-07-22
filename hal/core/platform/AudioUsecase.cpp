@@ -677,7 +677,8 @@ int64_t CompressPlayback::getPositionInFrames(pal_stream_handle_t* palHandle) {
              tstamp.session_time.value_lsw);
     const auto& sampleRate = getSampleRate(mMixPortConfig).value();
     // sessionTimeUs to frames
-    mPrevFrames = static_cast<int64_t>((sessionTimeUs / 1000) * (sampleRate / 1000));
+    // try to convert the session to frames without loss of precision.
+    mPrevFrames = static_cast<int64_t>((sessionTimeUs / 1000) * sampleRate / 1000);
     LOG(VERBOSE) << __func__ << " dsp frames consumed: (" << mTotalDSPFrames << "+" << mPrevFrames
                  << ") = " << mTotalDSPFrames + mPrevFrames;
     return mTotalDSPFrames + mPrevFrames;
@@ -685,9 +686,8 @@ int64_t CompressPlayback::getPositionInFrames(pal_stream_handle_t* palHandle) {
 
 void CompressPlayback::onFlush() {
     // on flush SPR module is reset to 0. Hence, we cache the DSP frames
-    // uncomment below to have observable position as non-retrograde
-    // mTotalDSPFrames = mTotalDSPFrames + mPrevFrames;
-    // mPrevFrames = 0;
+    mTotalDSPFrames = mTotalDSPFrames + mPrevFrames;
+    mPrevFrames = 0;
 }
 
 // [CompressPlayback End]
@@ -725,6 +725,13 @@ int64_t PcmOffloadPlayback::getPositionInFrames(pal_stream_handle_t* palHandle) 
         return mTotalDSPFrames + mPrevFrames;
     }
 
+    // if sound card not up, then cache position
+    auto& platform = Platform::getInstance();
+    if (!platform.isSoundCardUp()) {
+        mTotalDSPFrames = mTotalDSPFrames + mPrevFrames;
+        return mTotalDSPFrames;
+    }
+
     pal_session_time tstamp;
     if (int32_t ret = ::pal_get_timestamp(palHandle, &tstamp); ret) {
         LOG(ERROR) << __func__ << " pal_get_timestamp failure, returning previous" << ret;
@@ -736,7 +743,8 @@ int64_t PcmOffloadPlayback::getPositionInFrames(pal_stream_handle_t* palHandle) 
              tstamp.session_time.value_lsw);
     const auto& sampleRate = getSampleRate(mMixPortConfig).value();
     // sessionTimeUs to frames
-    mPrevFrames = static_cast<int64_t>((sessionTimeUs / 1000) * (sampleRate / 1000));
+    // try to convert the session to frames without loss of precision.
+    mPrevFrames = static_cast<int64_t>((sessionTimeUs / 1000) * sampleRate / 1000);
     LOG(VERBOSE) << __func__ << " dsp frames consumed: (" << mTotalDSPFrames << "+" << mPrevFrames
                  << ") = " << mTotalDSPFrames + mPrevFrames;
     return mTotalDSPFrames + mPrevFrames;
@@ -744,9 +752,8 @@ int64_t PcmOffloadPlayback::getPositionInFrames(pal_stream_handle_t* palHandle) 
 
 void PcmOffloadPlayback::onFlush() {
     // on flush SPR module is reset to 0. Hence, we cache the DSP frames
-    // uncomment below to have observable position as non-retrograde
-    // mTotalDSPFrames = mTotalDSPFrames + mPrevFrames;
-    // mPrevFrames = 0;
+    mTotalDSPFrames = mTotalDSPFrames + mPrevFrames;
+    mPrevFrames = 0;
 }
 
 // [PcmOffloadPlayback End]

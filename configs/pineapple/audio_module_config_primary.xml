@@ -103,7 +103,6 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
             <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_FRONT_BACK" channelMasks="INDEX_MASK_3" formatType="PCM" pcmType="INT_24_BIT" />
             <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_FRONT_BACK" channelMasks="INDEX_MASK_3" formatType="PCM" pcmType="FIXED_Q_8_24" />
         </mixPort>
-        <mixPort name="hifi_input" role="sink" />
         <mixPort name="hotword_input" role="sink" flags="HW_HOTWORD">
             <profile samplingRates="16000" channelLayouts="LAYOUT_MONO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
@@ -244,7 +243,7 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <route type="mix" sink="bt_a2dp_speaker" sources="low_latency_out,deep_buffer_out,direct_pcm_out,compress_offload_out,voip_playback,raw_out,mmap_no_irq_out,haptics_out" />
 
         <route type="mix" sink="bt_ble_speaker" sources="low_latency_out,deep_buffer_out,direct_pcm_out,compress_offload_out,voip_playback,raw_out,mmap_no_irq_out,haptics_out,telephony_rx" />
-        <route type="mix" sink="bt_ble_headset" sources="low_latency_out,deep_buffer_out,direct_pcm_out,compress_offload_out,voip_playback,raw_out,haptics_out,spatial_out,telephony_rx" />
+        <route type="mix" sink="bt_ble_headset" sources="low_latency_out,deep_buffer_out,direct_pcm_out,compress_offload_out,voip_playback,raw_out,haptics_out,spatial_out,telephony_rx,mmap_no_irq_out" />
         <route type="mix" sink="bt_ble_broadcast" sources="low_latency_out,deep_buffer_out,direct_pcm_out,compress_offload_out" />
 
         <route type="mix" sink="line_out" sources="low_latency_out,deep_buffer_out,direct_pcm_out,compress_offload_out,voip_playback,raw_out,mmap_no_irq_out,haptics_out" />
@@ -266,7 +265,6 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <route type="mix" sink="voip_record" sources="built_in_mic,built_in_back_mic,wired_headset_mic,bt_sco_headset_mic,usb_mic,usb_headset_mic,bt_a2dp_mic,echo_reference_mic,bt_le_mic,ip_input_device" />
         <route type="mix" sink="hotword_input" sources="built_in_mic,wired_headset_mic" />
         <route type="mix" sink="usb_surround_sound_input" sources="usb_mic,usb_headset_mic" />
-        <route type="mix" sink="hifi_input" sources="usb_mic,usb_headset_mic" />
         <route type="mix" sink="voice_rx" sources="telephony_rx" />
     </routes>
 </module>

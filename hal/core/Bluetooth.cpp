@@ -24,6 +24,7 @@
 #include <android-base/logging.h>
 #include <cutils/properties.h>
 #include <qti-audio-core/Bluetooth.h>
+#include <qti-audio-core/Telephony.h>
 
 using aidl::android::hardware::audio::core::VendorParameter;
 using aidl::android::media::audio::common::Boolean;
@@ -46,6 +47,12 @@ ndk::ScopedAStatus Bluetooth::setScoConfig(const ScoConfig& in_config, ScoConfig
         mScoConfig.isEnabled = in_config.isEnabled;
         mScoConfig.isEnabled.value().value == true ? mPlatform.setBluetoothParameters("BT_SCO=on")
                                                    : mPlatform.setBluetoothParameters("BT_SCO=off");
+        /* never call telephony with any lock held*/
+        if(auto telephony = mPlatform.getTelephony().lock()) {
+            // Todo remove the unsafe casting, although we ITelephony is also Telephony
+            auto tele = static_cast<Telephony*>(telephony.get());
+            tele->onBluetoothScoEvent(mScoConfig.isEnabled.value().value);
+        }
     }
     if (in_config.isNrecEnabled.has_value()) {
         mScoConfig.isNrecEnabled = in_config.isNrecEnabled;

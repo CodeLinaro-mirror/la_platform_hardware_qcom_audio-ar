@@ -407,6 +407,12 @@ struct StreamCommonInterface {
     virtual const ConnectedDevices& getConnectedDevices() const = 0;
     virtual ndk::ScopedAStatus setConnectedDevices(
             const std::vector<::aidl::android::media::audio::common::AudioDevice>& devices) = 0;
+    /**
+     * API to configure the connected devices based on the latest platform configuration
+     * Example: whenever there is a HAC enabled on the platform, we would want to reconfigure
+     * VOIP playback stream with HAC enabled Handset speaker.
+     */
+    virtual ndk::ScopedAStatus reconfigureConnectedDevices() = 0;
     virtual ndk::ScopedAStatus configureMMapStream(int32_t* fd, int64_t* burstSizeFrames,
                                                    int32_t* flags, int32_t* bufferSizeFrames) = 0;
      virtual void setStreamMicMute(const bool muted) = 0;

@@ -1,3 +1,10 @@
+#Enable AAudio MMAP/NOIRQ data path
+#2 is AAUDIO_POLICY_AUTO so it will try MMAP then fallback to Legacy path
+PRODUCT_PROPERTY_OVERRIDES += aaudio.mmap_policy=2
+#Allow EXCLUSIVE then fall back to SHARED.
+PRODUCT_PROPERTY_OVERRIDES += aaudio.mmap_exclusive_policy=2
+PRODUCT_PROPERTY_OVERRIDES += aaudio.hw_burst_min_usec=2000
+
 # spf hdr record either true or false
 AUDIO_HAL_PROP += \
 vendor.audio.hdr.spf.record.enable=false

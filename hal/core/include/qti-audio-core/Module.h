@@ -39,8 +39,6 @@ namespace qti::audio::core {
 class Module : public ::aidl::android::hardware::audio::core::BnModule,
                public std::enable_shared_from_this<Module> {
   public:
-    // This value is used for all AudioPatches and reported by all streams.
-    static constexpr int32_t kLatencyMs = 10;
     enum Type : int { DEFAULT, R_SUBMIX, STUB, USB };
 
     explicit Module(Type type);
@@ -205,6 +203,8 @@ class Module : public ::aidl::android::hardware::audio::core::BnModule,
             const std::vector<::aidl::android::media::audio::common::AudioPortConfig*>& sources,
             const std::vector<::aidl::android::media::audio::common::AudioPortConfig*>& sinks,
             const ::aidl::android::hardware::audio::core::AudioPatch& patch);
+    virtual void resetAudioPatchTelephony(
+            const ::aidl::android::hardware::audio::core::AudioPatch&);
     virtual std::string toStringInternal() { return std::string("No-op implementation"); }
     /**
      * Call this API only for debugging purpose

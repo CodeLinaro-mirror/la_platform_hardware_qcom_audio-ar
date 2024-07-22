@@ -118,6 +118,14 @@ ndk::ScopedAStatus StreamOutPrimary::setConnectedDevices(
     mWorker->setIsConnected(!devices.empty());
     mConnectedDevices = devices;
 
+    return configureConnectedDevices_I();
+}
+
+ndk::ScopedAStatus StreamOutPrimary::reconfigureConnectedDevices() {
+    return configureConnectedDevices_I();
+}
+
+ndk::ScopedAStatus StreamOutPrimary::configureConnectedDevices_I() {
     if (mConnectedDevices.empty()) {
         LOG(DEBUG) << __func__ << mLogPrefix << ": stream is not connected";
         return ndk::ScopedAStatus::ok();
@@ -137,7 +145,7 @@ ndk::ScopedAStatus StreamOutPrimary::setConnectedDevices(
     auto connectedPalDevices =
             mPlatform.configureAndFetchPalDevices(mMixPortConfig, mTag, mConnectedDevices);
 
-   if (int32_t ret = ::pal_stream_set_device(mPalHandle, connectedPalDevices.size(),
+    if (int32_t ret = ::pal_stream_set_device(mPalHandle, connectedPalDevices.size(),
                                               connectedPalDevices.data());
         ret) {
         LOG(ERROR) << __func__ << mLogPrefix << " failed to set devices on stream, ret:" << ret;

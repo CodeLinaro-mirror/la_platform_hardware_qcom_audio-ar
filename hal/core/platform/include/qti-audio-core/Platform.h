@@ -12,6 +12,7 @@
 #include <aidl/android/media/audio/common/AudioPlaybackRate.h>
 #include <aidl/android/media/audio/common/AudioPort.h>
 #include <aidl/android/media/audio/common/AudioPortConfig.h>
+#include <aidl/android/hardware/audio/core/ITelephony.h>
 #include <aidl/android/media/audio/common/MicrophoneDynamicInfo.h>
 #include <aidl/android/media/audio/common/MicrophoneInfo.h>
 #include <extensions/AudioExtension.h>
@@ -178,6 +179,8 @@ class Platform {
                                       const std::string& customKey) const;
 
     bool setStreamMicMute(pal_stream_handle_t* streamHandlePtr, const bool muted);
+    bool getMicMuteStatus();
+    void setMicMuteStatus(bool mute);
     bool updateScreenState(const bool isTurnedOn) noexcept;
     bool isScreenTurnedOn() const noexcept;
 
@@ -209,6 +212,13 @@ class Platform {
 
     void setFacing(std::string const& value) { mFacing = value; }
 
+    void setTelephony(const std::weak_ptr<::aidl::android::hardware::audio::core::ITelephony> telephony) noexcept {
+        mTelephony = telephony;
+    }
+
+    std::weak_ptr<::aidl::android::hardware::audio::core::ITelephony> getTelephony() const noexcept {
+        return mTelephony;
+    }
 
     /*
     * @brief creates a pal payload for a speed factor and sets to PAL
@@ -230,6 +240,14 @@ class Platform {
     // Set and Get Value Functions for Translate Record.
     void setTranslationRecordState(const bool state) noexcept { mIsTranslationRecordEnabled = state; }
     bool getTranslationRecordState() noexcept { return mIsTranslationRecordEnabled; }
+
+    // Set and Get Value Functions for Voice Call Volume mute during Translation Record Usecase.
+    void setTranslationRxMuteState(const bool state) noexcept { mIsTranslationRxMuteEnabled = state; }
+    bool getTranslationRxMuteState() noexcept { return mIsTranslationRxMuteEnabled; }
+
+    void setHACEnabled(const bool& enable) noexcept { mIsHACEnabled = enable; }
+
+    bool isHACEnabled() const noexcept { return mIsHACEnabled; }
 
     void updateCallState(int callState) { mCallState = callState; }
     void updateCallMode(int callMode) { mCallMode = callMode; }
@@ -306,6 +324,7 @@ class Platform {
     card_status_t mSndCardStatus{CARD_STATUS_OFFLINE};
     bool mInCallMusicEnabled{false};
     bool mIsTranslationRecordEnabled{false};
+    bool mIsTranslationRxMuteEnabled{false};
     bool mIsScreenTurnedOn{false};
     uint32_t mWFDProxyChannels{0};
     bool mIsUHQAEnabled{false};
@@ -313,6 +332,7 @@ class Platform {
     ::aidl::android::hardware::audio::core::IModule::ScreenRotation mCurrentScreenRotation{
             ::aidl::android::hardware::audio::core::IModule::ScreenRotation::DEG_0};
     bool mOffloadSpeedSupported = false;
+    bool mMicMuted = false;
 
     /* HDR */
     bool mHDREnabled{false};
@@ -324,6 +344,9 @@ class Platform {
     std::string mOrientation{""};
     std::string mFacing{""};
 
+    /* HAC enablement*/
+    bool mIsHACEnabled{false};
+
     std::unordered_map<Usecase, UsecaseOps> mUsecaseOpMap;
     std::vector<::aidl::android::media::audio::common::MicrophoneInfo> mMicrophoneInfo;
     using PalDevToMicDynamicInfoMap = std::unordered_map<
@@ -332,5 +355,6 @@ class Platform {
     PalDevToMicDynamicInfoMap mMicrophoneDynamicInfoMap;
     // proxy related info
     size_t mProxyRecordFMQSize{0};
+    std::weak_ptr<::aidl::android::hardware::audio::core::ITelephony> mTelephony;
 };
 } // namespace qti::audio::core

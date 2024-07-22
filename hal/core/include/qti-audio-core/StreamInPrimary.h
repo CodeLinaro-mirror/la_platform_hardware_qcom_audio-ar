@@ -63,6 +63,7 @@ class StreamInPrimary : public StreamIn, public StreamCommonImpl {
     ndk::ScopedAStatus setConnectedDevices(
             const std::vector<::aidl::android::media::audio::common::AudioDevice>& devices)
             override;
+    ndk::ScopedAStatus reconfigureConnectedDevices() override;
     void setStreamMicMute(const bool muted) override;
     ndk::ScopedAStatus configureMMapStream(int32_t* fd, int64_t* burstSizeFrames, int32_t* flags,
                                            int32_t* bufferSizeFrames) override;
@@ -79,6 +80,9 @@ class StreamInPrimary : public StreamIn, public StreamCommonImpl {
     void configure();
     void resume();
     size_t getPlatformDelay() const noexcept;
+
+    // API which are *_I are internal 
+    ndk::ScopedAStatus configureConnectedDevices_I();
 
     const Usecase mTag;
     const std::string mTagName;

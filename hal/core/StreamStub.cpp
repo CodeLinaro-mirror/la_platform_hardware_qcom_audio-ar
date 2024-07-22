@@ -118,7 +118,6 @@ StreamStub::StreamStub(StreamContext* context, const Metadata& metadata)
         }
     }
     *actualFrameCount = frameCount;
-    *latencyMs = Module::kLatencyMs;
     return ::android::OK;
 }
 
@@ -148,4 +147,13 @@ int32_t StreamOutStub::setAggregateSourceMetadata(bool value) {
 int32_t StreamInStub::setAggregateSinkMetadata(bool value) {
     return 0;
 }
+
+ndk::ScopedAStatus StreamInStub::reconfigureConnectedDevices() {
+    return ndk::ScopedAStatus::ok();
+}
+
+ndk::ScopedAStatus StreamOutStub::reconfigureConnectedDevices() {
+    return ndk::ScopedAStatus::ok();
+}
+
 } // namespace qti::audio::core

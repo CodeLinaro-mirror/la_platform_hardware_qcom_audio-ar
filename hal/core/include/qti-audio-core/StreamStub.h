@@ -59,6 +59,7 @@ class StreamInStub final : public StreamIn, public StreamStub {
             const std::vector<::aidl::android::media::audio::common::MicrophoneInfo>& microphones);
     ~StreamInStub() override;
     int32_t setAggregateSinkMetadata(bool) override;
+    ndk::ScopedAStatus reconfigureConnectedDevices() override;
 
   private:
     void onClose() override { defaultOnClose(); }
@@ -73,6 +74,7 @@ class StreamOutStub final : public StreamOut, public StreamStub {
                           offloadInfo);
     ~StreamOutStub() override;
     int32_t setAggregateSourceMetadata(bool) override;
+    ndk::ScopedAStatus reconfigureConnectedDevices() override;
 
   private:
     void onClose() override { defaultOnClose(); }
