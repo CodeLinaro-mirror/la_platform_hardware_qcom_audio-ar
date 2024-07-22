@@ -430,7 +430,7 @@ int equalizer_set_parameter(effect_context_t *context, effect_param_t *p,
             p->status = -EINVAL;
             break;
         }
-        band =  *param_tmp;
+        band =  *(int16_t *)param_tmp;
         level = (int32_t)(*(int16_t *)value);
         if (band < 0 || band >= NUM_EQ_BANDS) {
             p->status = -EINVAL;
