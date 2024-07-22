@@ -36,7 +36,7 @@
  */
 
 /* Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -2301,6 +2301,8 @@ static int adev_open(const hw_module_t *module, const char *name __unused,
     if (ret || (*device == NULL)) {
         AHAL_ERR("error, audio device init failed, ret(%d),*device(%p)",
                  ret, *device);
+        adevice->adev_init_mutex.unlock();
+        return ret;
     }
     adevice->adev_init_mutex.unlock();
 exit:
