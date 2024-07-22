@@ -127,7 +127,6 @@ AUDIO_HARDWARE := vendor.qti.hardware.automotive.audiocontrol-service
 AUDIO_HARDWARE += libqtiautobundle
 AUDIO_HARDWARE += audio.r_submix.default
 AUDIO_HARDWARE += audio.usb.default
-AUDIO_HARDWARE += audio.a2dp.default
 ifeq ($(TARGET_BOARD_AUTO), true)
 ifeq ($(TARGET_USES_RRO), true)
 AUDIO_HARDWARE += CarServiceResAutoTarget_Vendor
