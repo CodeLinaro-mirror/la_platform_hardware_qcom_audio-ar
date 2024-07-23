@@ -632,7 +632,7 @@ void StreamInPrimary::configure() {
                 attr->type = PAL_STREAM_RAW;
                 LOG(INFO) << __func__ << mLogPrefix << ": unprocessed capture";
             } else if (source.value() == AudioSource::VOICE_RECOGNITION) {
-                attr->type = PAL_STREAM_VOICE_RECOGNITION;
+                attr->type = PAL_STREAM_DEEP_BUFFER;
                 LOG(INFO) << __func__ << mLogPrefix << ": voice recognition capture";
             } else {
                 auto countTelephonyRxDevices =

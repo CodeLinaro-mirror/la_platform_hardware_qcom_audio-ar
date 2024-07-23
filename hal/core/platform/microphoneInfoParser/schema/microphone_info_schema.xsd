@@ -63,6 +63,7 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
 <xs:simpleType name="AudioDeviceType">
     <xs:restriction base="xs:string">
         <xs:enumeration value="IN_MICROPHONE" />
+        <xs:enumeration value="IN_BUS" />
         <xs:enumeration value="IN_MICROPHONE_BACK" />
         <xs:enumeration value="IN_AFE_PROXY" />
         <xs:enumeration value="IN_DEVICE" />

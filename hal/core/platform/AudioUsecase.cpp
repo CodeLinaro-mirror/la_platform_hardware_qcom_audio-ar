@@ -46,7 +46,6 @@ Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConf
         LOG(ERROR) << __func__ << ": mix port config missing sample rate!!!";
         return tag;
     }
-
     const auto& streamSampleRate = mixPortConfig.sampleRate.value().value;
     const auto& mixUsecase = mixPortConfig.ext.get<AudioPortExt::Tag::mix>().usecase;
     const auto mixUsecaseTag = mixUsecase.getTag();
@@ -59,6 +58,19 @@ Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConf
     constexpr int32_t noneFlags = 0;
     constexpr auto primaryPlaybackFlags =
             static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::PRIMARY));
+//Auto specific
+    constexpr auto mediaPlaybackFlags =
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::PRIMARY));
+    constexpr auto navGuidancePlaybbackFlag =
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::FAST));
+    constexpr auto sysNotificationPlaybackFlag =
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::PRIMARY));
+    constexpr auto alertPlaybackFlag =
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::PRIMARY));
+    constexpr auto phonePlaybackFlags =
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::PRIMARY));
+
+//end
     constexpr auto deepBufferPlaybackFlags =
             static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DEEP_BUFFER));
     constexpr auto compressOffloadPlaybackFlags =
@@ -101,8 +113,21 @@ Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConf
                    channelLayout.get<AudioChannelLayout::Tag::layoutMask>() ==
                            AudioChannelLayout::LAYOUT_STEREO_HAPTIC_A) {
             tag = Usecase::HAPTICS_PLAYBACK;
+//Auto specific
+        } else if (outFlags == mediaPlaybackFlags) {
+            tag = Usecase::MEDIA_PLAYBACK;
+        } else if (outFlags == navGuidancePlaybbackFlag) {
+            tag = Usecase::NAV_GUIDANCE_PLAYBACK;
+        } else if (outFlags == sysNotificationPlaybackFlag) {
+            tag = Usecase::SYS_NOTIFICATION_PLAYBACK;
+        } else if (outFlags == alertPlaybackFlag) {
+            tag = Usecase::ALERTS_PLAYBACK;
+        } else if (outFlags == phonePlaybackFlags) {
+            tag = Usecase::PHONE_PLAYBACK;
+//end
         } else if (outFlags == primaryPlaybackFlags) {
             tag = Usecase::PRIMARY_PLAYBACK;
+
         } else if (outFlags == deepBufferPlaybackFlags || (outFlags == noneFlags)) {
             tag = Usecase::DEEP_BUFFER_PLAYBACK;
         } else if (outFlags == lowLatencyPlaybackFlags) {
@@ -162,6 +187,16 @@ std::string getName(const Usecase tag) {
             return "INVALID";
         case Usecase::PRIMARY_PLAYBACK:
             return "PRIMARY_PLAYBACK";
+        case Usecase::MEDIA_PLAYBACK:
+            return "MEDIA_PLAYBACK";
+        case Usecase::SYS_NOTIFICATION_PLAYBACK:
+            return "SYS_NOTIFICATION_PLAYBACK";
+        case Usecase::NAV_GUIDANCE_PLAYBACK:
+            return "NAV_GUIDANCE_PLAYBACK";
+        case Usecase::PHONE_PLAYBACK:
+            return "PHONE_PLAYBACK";
+        case Usecase::ALERTS_PLAYBACK:
+            return "ALERTS_PLAYBACK";
         case Usecase::DEEP_BUFFER_PLAYBACK:
             return "DEEP_BUFFER_PLAYBACK";
         case Usecase::LOW_LATENCY_PLAYBACK:
@@ -231,6 +266,69 @@ size_t LowLatencyPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
 }
 
 // [LowLatencyPlayback End]
+
+// [MediaPlayback Start]
+
+size_t MediaPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
+    return kPeriodSize;
+}
+// [MediaPlayback end]
+// [NavGuidancePlayback Start]
+std::unordered_set<size_t> NavGuidancePlayback::kSupportedFrameSizes = {160, 192, 240, 320, 480};
+
+size_t NavGuidancePlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
+    const std::string kPeriodSizeProp = "vendor.audio_hal.period_size";
+    auto frameSize = ::android::base::GetUintProperty<size_t>(kPeriodSizeProp,
+                                                              NavGuidancePlayback::kPeriodSize);
+    if (kSupportedFrameSizes.count(frameSize)) {
+        return frameSize;
+    }
+    return NavGuidancePlayback::kPeriodSize;
+}
+// [NavGuidancePlayback End]
+
+// [SysNotificationPlayback Start]
+std::unordered_set<size_t> SysNotificationPlayback::kSupportedFrameSizes = {160, 192, 240, 320, 480};
+
+size_t SysNotificationPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
+    const std::string kPeriodSizeProp = "vendor.audio_hal.period_size";
+    auto frameSize = ::android::base::GetUintProperty<size_t>(kPeriodSizeProp,
+                                                              SysNotificationPlayback::kPeriodSize);
+    if (kSupportedFrameSizes.count(frameSize)) {
+        return frameSize;
+    }
+    return SysNotificationPlayback::kPeriodSize;
+}
+// [SysNotificationPlayback End]
+
+// [AlertPlayback Start]
+std::unordered_set<size_t> AlertPlayback::kSupportedFrameSizes = {160, 192, 240, 320, 480};
+
+size_t AlertPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
+    const std::string kPeriodSizeProp = "vendor.audio_hal.period_size";
+    auto frameSize = ::android::base::GetUintProperty<size_t>(kPeriodSizeProp,
+                                                              AlertPlayback::kPeriodSize);
+    if (kSupportedFrameSizes.count(frameSize)) {
+        return frameSize;
+    }
+    return AlertPlayback::kPeriodSize;
+}
+// [AlertPlayback End]
+
+// [PhonePlayback Start]
+std::unordered_set<size_t> PhonePlayback::kSupportedFrameSizes = {160, 192, 240, 320, 480};
+
+size_t PhonePlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
+    const std::string kPeriodSizeProp = "vendor.audio_hal.period_size";
+    auto frameSize = ::android::base::GetUintProperty<size_t>(kPeriodSizeProp,
+                                                              PhonePlayback::kPeriodSize);
+    if (kSupportedFrameSizes.count(frameSize)) {
+        return frameSize;
+    }
+    return PhonePlayback::kPeriodSize;
+}
+// [PhonePlayback End]
+
 
 // [Deep Buffer Start]
 

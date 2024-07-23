@@ -71,7 +71,7 @@ namespace xsd = ::audio_module_config_qti;
 namespace qti::audio::core {
 
 const static char kRouteDelimiter = ',';
-const static std::string kDefaultOutputDevice = "speaker";
+const static std::string kDefaultOutputDevice = "Media Bus";
 
 const static std::unordered_map<xsd::AudioPcmType, PcmType> XsdToPcmType = {
         {xsd::AudioPcmType::DEFAULT, PcmType::DEFAULT},
@@ -94,8 +94,10 @@ const static std::unordered_map<xsd::AudioDeviceType, AudioDeviceType> XsdToAudi
         {xsd::AudioDeviceType::IN_HEADSET, AudioDeviceType::IN_HEADSET},
         {xsd::AudioDeviceType::IN_LOOPBACK, AudioDeviceType::IN_LOOPBACK},
         {xsd::AudioDeviceType::IN_MICROPHONE, AudioDeviceType::IN_MICROPHONE},
+        {xsd::AudioDeviceType::IN_BUS, AudioDeviceType::IN_BUS},
         {xsd::AudioDeviceType::IN_MICROPHONE_BACK, AudioDeviceType::IN_MICROPHONE_BACK},
         {xsd::AudioDeviceType::IN_SUBMIX, AudioDeviceType::IN_SUBMIX},
+        {xsd::AudioDeviceType::IN_BUS, AudioDeviceType::IN_BUS},
         {xsd::AudioDeviceType::IN_TELEPHONY_RX, AudioDeviceType::IN_TELEPHONY_RX},
         {xsd::AudioDeviceType::IN_TV_TUNER, AudioDeviceType::IN_TV_TUNER},
         {xsd::AudioDeviceType::IN_DOCK, AudioDeviceType::IN_DOCK},
@@ -103,7 +105,6 @@ const static std::unordered_map<xsd::AudioDeviceType, AudioDeviceType> XsdToAudi
         {xsd::AudioDeviceType::OUT_ACCESSORY, AudioDeviceType::OUT_ACCESSORY},
         {xsd::AudioDeviceType::OUT_AFE_PROXY, AudioDeviceType::OUT_AFE_PROXY},
         {xsd::AudioDeviceType::OUT_CARKIT, AudioDeviceType::OUT_CARKIT},
-        {xsd::AudioDeviceType::OUT_DEVICE, AudioDeviceType::OUT_DEVICE},
         {xsd::AudioDeviceType::OUT_ECHO_CANCELLER, AudioDeviceType::OUT_ECHO_CANCELLER},
         {xsd::AudioDeviceType::OUT_FM, AudioDeviceType::OUT_FM},
         {xsd::AudioDeviceType::OUT_HEADPHONE, AudioDeviceType::OUT_HEADPHONE},
@@ -111,6 +112,8 @@ const static std::unordered_map<xsd::AudioDeviceType, AudioDeviceType> XsdToAudi
         {xsd::AudioDeviceType::OUT_HEARING_AID, AudioDeviceType::OUT_HEARING_AID},
         {xsd::AudioDeviceType::OUT_LINE_AUX, AudioDeviceType::OUT_LINE_AUX},
         {xsd::AudioDeviceType::OUT_SPEAKER, AudioDeviceType::OUT_SPEAKER},
+        {xsd::AudioDeviceType::OUT_BUS, AudioDeviceType::OUT_BUS},
+        {xsd::AudioDeviceType::OUT_DEVICE, AudioDeviceType::OUT_DEVICE},
         {xsd::AudioDeviceType::OUT_SPEAKER_EARPIECE, AudioDeviceType::OUT_SPEAKER_EARPIECE},
         {xsd::AudioDeviceType::OUT_SPEAKER_SAFE, AudioDeviceType::OUT_SPEAKER_SAFE},
         {xsd::AudioDeviceType::OUT_SUBMIX, AudioDeviceType::OUT_SUBMIX},
@@ -184,7 +187,7 @@ static int32_t findPortIdByTagName(const std::vector<AudioPort>& ports, std::str
 
 static std::vector<std::string> getAudioHalConfigurationPaths() {
     static const std::vector<std::string> paths = []() {
-        return std::vector<std::string>({"/vendor/etc/audio"});
+        return std::vector<std::string>({"/vendor/etc/audio_ar"});
     }();
     return paths;
 }
@@ -192,6 +195,7 @@ static std::vector<std::string> getAudioHalConfigurationPaths() {
 static std::string getReadAbleConfigurationFile(const char* fileName) {
     for (const auto& path : getAudioHalConfigurationPaths()) {
         std::string tryPath = path + "/" + fileName;
+        LOG(INFO) << __func__ << " audio config path: " << tryPath ;
         if (::access(tryPath.c_str(), R_OK) == 0) {
             return tryPath;
         }
@@ -468,15 +472,15 @@ static std::vector<AudioGain> populateGains(
     std::vector<AudioGain> audioGains;
     auto getMode = [](const xsd::Gains::Gain& gain) {
         if (!gain.hasMode()) {
-            return 0;
+            return static_cast<int32_t>(xsd::AudioGainMode::JOINT);
         }
         return static_cast<int32_t>(gain.getMode()[0]);
     };
     auto getChannelLayout = [](const xsd::Gains::Gain& gain) {
         if (!gain.hasChannel_layout()) {
-            return xsd::AudioChannelLayout::LAYOUT_MONO;
+            return xsd::AudioChannelMasks::AUDIO_CHANNEL_OUT_MONO;
         }
-        return gain.getChannel_layout();
+        return xsd::AudioChannelMasks::AUDIO_CHANNEL_OUT_MONO;
     };
     auto getMinMaxGain = [](const xsd::Gains::Gain& gain) {
         int32_t min = gain.hasMinValueMB() ? gain.getMinValueMB() : 0;
@@ -499,7 +503,6 @@ static std::vector<AudioGain> populateGains(
         }
         return gain.getUseForVolume();
     };
-
     std::visit(
             [&](const auto& port) {
                 for (const auto& gain : port.getFirstGains()->getGain()) {

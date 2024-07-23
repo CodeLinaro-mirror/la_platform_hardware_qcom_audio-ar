@@ -4,6 +4,7 @@ package qti.audio.microphone_info {
   public enum AudioDeviceType {
     method @NonNull public String getRawName();
     enum_constant public static final qti.audio.microphone_info.AudioDeviceType IN_AFE_PROXY;
+    enum_constant public static final qti.audio.microphone_info.AudioDeviceType IN_BUS;
     enum_constant public static final qti.audio.microphone_info.AudioDeviceType IN_DEVICE;
     enum_constant public static final qti.audio.microphone_info.AudioDeviceType IN_DOCK;
     enum_constant public static final qti.audio.microphone_info.AudioDeviceType IN_ECHO_REFERENCE;

@@ -298,13 +298,13 @@ std::vector<pal_device> Platform::convertToPalDevices(
             return {};
         }
         palDevices[i].id = palDeviceId;
-
         /* Todo map each AIDL device type to alteast one PAL device */
+        
         if (palDevices[i].id == PAL_DEVICE_OUT_SPEAKER &&
-            device.type.type == AudioDeviceType::OUT_SPEAKER_SAFE) {
-            setPalDeviceCustomKey(palDevices[i], "speaker-safe");
+            device.type.type == AudioDeviceType::OUT_DEVICE) {
+            setPalDeviceCustomKey(palDevices[i], "BUS00_MEDIA");
         } else if (palDevices[i].id == PAL_DEVICE_OUT_SPEAKER &&
-                   device.type.type == AudioDeviceType::OUT_SPEAKER) {
+                   device.type.type == AudioDeviceType::OUT_DEVICE) {
             const auto isMSPPEnabled =
                     ::android::base::GetBoolProperty("vendor.audio.mspp.enable", false);
             if (isMSPPEnabled) {
@@ -356,7 +356,6 @@ std::vector<pal_device> Platform::configureAndFetchPalDevices(
         return {};
     }
     auto palDevices = convertToPalDevices(devices);
-
     customizePalDevices(mixPortConfig,tag,palDevices);
 
     return palDevices;
@@ -1341,6 +1340,13 @@ int Platform::palGlobalCallback(uint32_t event_id, uint32_t* event_data, uint64_
 
 void Platform::initUsecaseOpMap() {
     mUsecaseOpMap[Usecase::PRIMARY_PLAYBACK] = makeUsecaseOps<PrimaryPlayback>();
+//AUTO
+    mUsecaseOpMap[Usecase::MEDIA_PLAYBACK] = makeUsecaseOps<MediaPlayback>();
+    mUsecaseOpMap[Usecase::NAV_GUIDANCE_PLAYBACK] = makeUsecaseOps<NavGuidancePlayback>();
+    mUsecaseOpMap[Usecase::SYS_NOTIFICATION_PLAYBACK] = makeUsecaseOps<SysNotificationPlayback>();
+    mUsecaseOpMap[Usecase::ALERTS_PLAYBACK] = makeUsecaseOps<AlertPlayback>();
+    mUsecaseOpMap[Usecase::PHONE_PLAYBACK] = makeUsecaseOps<PhonePlayback>();
+//END
     mUsecaseOpMap[Usecase::LOW_LATENCY_PLAYBACK] = makeUsecaseOps<LowLatencyPlayback>();
     mUsecaseOpMap[Usecase::DEEP_BUFFER_PLAYBACK] = makeUsecaseOps<DeepBufferPlayback>();
     mUsecaseOpMap[Usecase::ULL_PLAYBACK] = makeUsecaseOps<UllPlayback>();

@@ -65,10 +65,18 @@ package audio_module_config_qti {
     enum_constant public static final audio_module_config_qti.AudioChannelLayout LAYOUT_TRI_BACK;
   }
 
+  public enum AudioChannelMasks {
+    method @NonNull public String getRawName();
+    enum_constant public static final audio_module_config_qti.AudioChannelMasks AUDIO_CHANNEL_OUT_7POINT1;
+    enum_constant public static final audio_module_config_qti.AudioChannelMasks AUDIO_CHANNEL_OUT_MONO;
+    enum_constant public static final audio_module_config_qti.AudioChannelMasks AUDIO_CHANNEL_OUT_STEREO;
+  }
+
   public enum AudioDeviceType {
     method @NonNull public String getRawName();
     enum_constant public static final audio_module_config_qti.AudioDeviceType IN_ACCESSORY;
     enum_constant public static final audio_module_config_qti.AudioDeviceType IN_AFE_PROXY;
+    enum_constant public static final audio_module_config_qti.AudioDeviceType IN_BUS;
     enum_constant public static final audio_module_config_qti.AudioDeviceType IN_DEFAULT;
     enum_constant public static final audio_module_config_qti.AudioDeviceType IN_DEVICE;
     enum_constant public static final audio_module_config_qti.AudioDeviceType IN_DOCK;
@@ -85,6 +93,7 @@ package audio_module_config_qti {
     enum_constant public static final audio_module_config_qti.AudioDeviceType OUT_ACCESSORY;
     enum_constant public static final audio_module_config_qti.AudioDeviceType OUT_AFE_PROXY;
     enum_constant public static final audio_module_config_qti.AudioDeviceType OUT_BROADCAST;
+    enum_constant public static final audio_module_config_qti.AudioDeviceType OUT_BUS;
     enum_constant public static final audio_module_config_qti.AudioDeviceType OUT_CARKIT;
     enum_constant public static final audio_module_config_qti.AudioDeviceType OUT_DEFAULT;
     enum_constant public static final audio_module_config_qti.AudioDeviceType OUT_DEVICE;
