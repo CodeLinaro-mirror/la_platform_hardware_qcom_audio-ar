@@ -364,6 +364,14 @@ PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.use.sw.ape.decoder=false
 endif
 
+#enable qcom parsers for WMA/APE/FLAC/ALAC
+ifeq ($(ENABLE_HYP), true)
+ifeq ($(TARGET_GVMGH_SPECIFIC), false)
+PRODUCT_PROPERTY_OVERRIDES += \
+vendor.mm.target.enable.qcom_parser=655632
+endif
+endif
+
 # Disable A2DP offload
 ifeq ($(ENABLE_HYP), true)
 ifeq ($(TARGET_GVMGH_SPECIFIC), false)
