@@ -220,8 +220,8 @@ public:
     std::vector<payload_pers_t> payloadpersv;
     bool hfp_params_sent;
     payload_pers_t payloadpers;
-    power_policy_status_t out_power_policy;
-    power_policy_status_t in_power_policy;
+    power_policy_status_t out_power_policy = POWER_POLICY_STATUS_ONLINE;
+    power_policy_status_t in_power_policy = POWER_POLICY_STATUS_ONLINE;
     bool is_arpowerpolicy_enabled = false;
     static bool mic_characteristics_available;
     static microphone_characteristics_t microphones;

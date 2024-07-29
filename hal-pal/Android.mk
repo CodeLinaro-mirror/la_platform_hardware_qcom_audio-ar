@@ -14,10 +14,7 @@ include $(BUILD_PREBUILT)
 
 include $(CLEAR_VARS)
 
-LOCAL_COPY_HEADERS_TO   := mm-audio
-LOCAL_COPY_HEADERS      := \
-                           audio_extn/audio_defs_ar.h \
-                           audio_extn/AudioExtn.h
+LOCAL_EXPORT_C_INCLUDE_DIRS      := $(LOCAL_PATH)/audio_extn
 
 #LOCAL_VINTF_FRAGMENTS := ../configs/common/manifest_non_qmaa.xml
 
@@ -108,8 +105,6 @@ ln -sf /vendor/lib/hw/audio.primary.msmnile.casa.so $(TARGET_OUT_VENDOR)/lib/hw/
 ln -sf /vendor/lib64/hw/audio.primary.msmnile.casa.so $(TARGET_OUT_VENDOR)/lib64/hw/audio.primary.msmnile.so
 else
 LOCAL_MODULE := audio.primary.$(TARGET_BOARD_PLATFORM).ar
-LOCAL_POST_INSTALL_CMD := \
-ln -sf /vendor/bin/audioadsprpcd-ar $(TARGET_OUT_VENDOR)/bin/audioadsprpcd
 endif
 LOCAL_MODULE_RELATIVE_PATH := hw
 LOCAL_MODULE_TAGS := optional
