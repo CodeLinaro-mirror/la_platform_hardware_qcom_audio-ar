@@ -177,6 +177,29 @@ ndk::ScopedAStatus StreamOutPrimary::configureMMapStream(int32_t* fd, int64_t* b
         LOG(ERROR) << __func__ << mLogPrefix << " no connected devices on stream";
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
     }
+    /* For MMAP playback usecase, audio framework updates track metadata to AHAL after
+     * CreateMmapBuffer(). In case of MMAP playback on BT, device starts well before
+     * track metadata updated to BT stack. Due to this, it requires unnecessary
+     * reconfig to change existing BT config to gaming config params. Thus to avoid
+     * extra reconfig event and ISO parameters error, HAL updates metadata to BT stack
+     * before MMAP stream opens.
+     */
+    if (hasBluetoothLEDevice(mConnectedDevices)) {
+        ssize_t track_count = 1;
+        std::vector<playback_track_metadata_t> sourceTracks;
+        source_metadata_t btSourceMetadata;
+        sourceTracks.resize(track_count);
+
+        btSourceMetadata.track_count = track_count;
+        btSourceMetadata.tracks = sourceTracks.data();
+        btSourceMetadata.tracks->usage = AUDIO_USAGE_GAME;
+        btSourceMetadata.tracks->content_type = AUDIO_CONTENT_TYPE_MUSIC;
+        LOG(DEBUG) << __func__<< "Source metadata for mmap usage: "
+                   << btSourceMetadata.tracks->usage << " content_type: "
+                   << btSourceMetadata.tracks->content_type;
+         // Pass the source metadata to PAL
+         pal_set_param(PAL_PARAM_ID_SET_SOURCE_METADATA, (void*)&btSourceMetadata, 0);
+    }
     uint64_t cookie = reinterpret_cast<uint64_t>(this);
     pal_stream_callback palFn = nullptr;
     attr->flags = static_cast<pal_stream_flags_t>(PAL_STREAM_FLAG_MMAP_NO_IRQ);

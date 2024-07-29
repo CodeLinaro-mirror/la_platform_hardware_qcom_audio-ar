@@ -111,6 +111,11 @@ bool isBluetoothA2dpDevice(const AudioDevice& device) noexcept {
     return (device.type.connection == AudioDeviceDescription::CONNECTION_BT_A2DP);
 }
 
+bool hasBluetoothLEDevice(const std::vector<AudioDevice>& devices) noexcept {
+    auto itr = std::find_if(devices.cbegin(), devices.cend(), isBluetoothLEDevice);
+    return itr != devices.cend();
+}
+
 bool hasBluetoothA2dpDevice(const std::vector<AudioDevice>& devices) noexcept {
     auto itr = std::find_if(devices.cbegin(), devices.cend(), isBluetoothA2dpDevice);
     return itr != devices.cend();
