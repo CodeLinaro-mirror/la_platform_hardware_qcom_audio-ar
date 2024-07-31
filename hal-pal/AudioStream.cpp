@@ -61,6 +61,7 @@
 
 #define AFE_PROXY_RECORD_PERIOD_SIZE  768
 static bool hw_ts_enable= false;
+static bool isEchoRefDev = false;
 
 static bool is_pcm_format(audio_format_t format)
 {
@@ -1164,10 +1165,14 @@ uint64_t StreamInPrimary::GetFramesRead(int64_t* time)
 
     signed_frames = read_frames + kernel_frames;
 
-#ifndef HARDWARE_TIMESTAMP
-    *time = (readAt.tv_sec * 1000000000LL) + readAt.tv_nsec - (dsp_latency * 1000LL);
+#ifdef HARDWARE_TIMESTAMP
+    if (isEchoRefDev) {
+        *time = (readAt.tv_sec * 1000000000LL) + readAt.tv_nsec - (dsp_latency * 1000LL);
+    } else {
+        *time = (readAt.tv_sec * 1000000000LL) + readAt.tv_nsec;
+    }
 #else
-    *time = (readAt.tv_sec * 1000000000LL) + readAt.tv_nsec;
+    *time = (readAt.tv_sec * 1000000000LL) + readAt.tv_nsec - (dsp_latency * 1000LL);
 #endif
 
 #ifndef HARDWARE_TIMESTAMP
@@ -1218,9 +1223,11 @@ static int astream_in_get_capture_position(const struct audio_stream_in* stream,
     else
         return -ENOSYS;
 #ifdef HARDWARE_TIMESTAMP
-    if((*time) == 0) {
-        AHAL_ERR("error: read failed or fetching hardware timestamp failed");
-        return -EINVAL;
+    if (!isEchoRefDev) {
+        if ((*time) == 0) {
+            AHAL_ERR("error: read failed or fetching hardware timestamp failed");
+            return -EINVAL;
+        }
     }
 #endif
     AHAL_VERBOSE("frames %lld played at %lld ", ((long long)*frames), ((long long)*time));
@@ -3940,9 +3947,11 @@ ssize_t StreamInPrimary::read(const void *buffer, size_t bytes) {
     std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
     palBuffer.ts = NULL;
 #ifdef HARDWARE_TIMESTAMP
-    palBuffer.ts = (struct timespec *) calloc(1, sizeof(struct timespec));
-    if(!palBuffer.ts) {
-        AHAL_ERR("calloc fails for size %zu for palBuffer.ts", sizeof(struct timespec));
+    if (!isEchoRefDev) {
+        palBuffer.ts = (struct timespec *) calloc(1, sizeof(struct timespec));
+        if (!palBuffer.ts) {
+            AHAL_ERR("calloc fails for size %zu for palBuffer.ts", sizeof(struct timespec));
+        }
     }
 #endif
 
@@ -4040,14 +4049,18 @@ ssize_t StreamInPrimary::read(const void *buffer, size_t bytes) {
     }
 exit:
     stream_mutex_.unlock();
-#ifndef HARDWARE_TIMESTAMP
-    clock_gettime(CLOCK_MONOTONIC, &readAt);
-#else
-    if(palBuffer.ts) {
-        readAt.tv_sec = palBuffer.ts->tv_sec;
-        readAt.tv_nsec = palBuffer.ts->tv_nsec;
-        free(palBuffer.ts);
+#ifdef HARDWARE_TIMESTAMP
+    if (isEchoRefDev) {
+        clock_gettime(CLOCK_MONOTONIC, &readAt);
+    } else {
+        if (palBuffer.ts) {
+            readAt.tv_sec = palBuffer.ts->tv_sec;
+            readAt.tv_nsec = palBuffer.ts->tv_nsec;
+            free(palBuffer.ts);
+        }
     }
+#else
+    clock_gettime(CLOCK_MONOTONIC, &readAt);
 #endif
 
     return (ret < 0 ? onReadError(bytes) : bytes);
@@ -4187,6 +4200,11 @@ StreamInPrimary::StreamInPrimary(audio_io_handle_t handle,
            (mPalInDeviceIds[i] == PAL_DEVICE_IN_USB_HEADSET)) {
             mPalInDevice[i].address.card_id = adevice->usb_card_id_;
             mPalInDevice[i].address.device_num = adevice->usb_dev_num_;
+        }
+        if (mPalInDeviceIds[i] == PAL_DEVICE_IN_ECHO_REF) {
+            isEchoRefDev = true;
+        } else {
+            isEchoRefDev = false;
         }
 
         /* HDR use case check */
