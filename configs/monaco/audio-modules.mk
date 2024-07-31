@@ -123,6 +123,10 @@ AUDIO_MODULES += \
     libaudiocorehal.qti \
     libaudioeffecthal.qti
 
+# AIDL AHAL VENDOR EXTENSION
+AUDIO_MODULES += \
+    libaudiohalvendorextn
+
 LATEST_ANDROID_HARDWARE_AUDIO_EFFECT := android.hardware.audio.effect-V2-ndk
 LATEST_ANDROID_HARDWARE_COMMON := android.hardware.common-V2-ndk
 LATEST_ANDROID_MEDIA_ADUIO_COMMON_TYPES := android.media.audio.common.types-V3-ndk
