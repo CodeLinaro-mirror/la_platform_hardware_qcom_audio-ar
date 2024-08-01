@@ -1,6 +1,7 @@
 #BOARD_USES_GENERIC_AUDIO := true
 #
 #AUDIO_FEATURE_FLAGS
+ifeq ($(AUDIO_FRAMEWORK_AUDIOREACH),true)
 ifeq ($(TARGET_USES_QMAA_OVERRIDE_AUDIO), false)
 ifeq ($(TARGET_USES_QMAA),true)
 AUDIO_USE_STUB_HAL := true
@@ -104,6 +105,7 @@ AUDIO_FEATURE_ENABLED_BATTERY_LISTENER := false
 AUDIO_FEATURE_ENABLED_AUTO_HAL := true
 AUDIO_FEATURE_ENABLED_EXT_HW_PLUGIN := true
 AUDIO_FEATURE_ENABLED_AUDIO_CONTROL_HAL := true
+AUDIO_FEATURE_ENABLED_AUDIO_PARSERS := true
 ifneq ($(ENABLE_HYP),true)
 AUDIO_FEATURE_ENABLED_AUTO_AUDIOD := true
 AUDIO_FEATURE_ENABLED_SND_MONITOR := false
@@ -117,16 +119,23 @@ ifeq ($(ENABLE_HYP),true)
 AUDIO_FEATURE_ENABLED_POWER_POLICY := true
 AUDIO_FEATURE_ENABLED_AUDIO_PARSERS := true
 AUDIO_FEATURE_ENABLED_AUDIO_CONTROL_HAL_AIDL := true
-PRODUCT_PACKAGES += vendor.qti.hardware.automotive.audiocontrol-service
-PRODUCT_PACKAGES += libqtiautobundle
-ifeq ($(TARGET_BOARD_AUTO), true)
-ifeq ($(TARGET_USES_RRO), true)
-PRODUCT_PACKAGES += CarServiceResAutoTarget_Vendor
-endif
-endif
 endif
 
-ifneq (,$(filter U UpsideDownCake 14, $(PLATFORM_VERSION)))
+# Integrate libraries to gen4_gvm which was done by Elite HAL before
+ifeq ($(ENABLE_HYP),true)
+AUDIO_HARDWARE := vendor.qti.hardware.automotive.audiocontrol-service
+AUDIO_HARDWARE += libqtiautobundle
+AUDIO_HARDWARE += audio.r_submix.default
+AUDIO_HARDWARE += audio.usb.default
+ifeq ($(TARGET_BOARD_AUTO), true)
+ifeq ($(TARGET_USES_RRO), true)
+AUDIO_HARDWARE += CarServiceResAutoTarget_Vendor
+endif
+endif
+PRODUCT_PACKAGES += $(AUDIO_HARDWARE)
+endif
+
+ifneq (,$(filter U UpsideDownCake 14 V VanillaIceCream 15, $(PLATFORM_VERSION)))
 AUDIO_FEATURE_ENABLED_HAL_V7 := true
 PRODUCT_PACKAGES += libarpowerpolicy
 PRODUCT_ODM_PROPERTIES += \
@@ -147,7 +156,7 @@ PRODUCT_COPY_FILES += \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/card-defs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/card-defs.xml \
     vendor/qcom/opensource/agm/plugins/tinyalsa/test/backend_conf.xml:$(TARGET_COPY_OUT_VENDOR)/etc/backend_conf.xml
 
-# Configuration files for gen4_gvm only.
+# Configuration files for devices inheriting from gen4_gvm
 ifeq ($(ENABLE_HYP), true)
 ifeq ($(TARGET_GVMGH_SPECIFIC), false)
 PRODUCT_COPY_FILES += \
@@ -159,11 +168,11 @@ PRODUCT_COPY_FILES += \
 PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/car_audio_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/car_audio_configuration.xml \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/a2dp_audio_policy_configuration_7_0.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/a2dp_audio_policy_configuration.xml \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_policy_configuration_7_0.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_configuration.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/r_submix_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/r_submix_audio_policy_configuration.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/usb_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/usb_audio_policy_configuration.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/audio_policy_volumes.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_volumes.xml \
-    $(TOPDIR)frameworks/av/services/audiopolicy/config/default_volume_tables.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/default_volume_tables.xml
+    $(TOPDIR)frameworks/av/services/audiopolicy/config/default_volume_tables.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/default_volume_tables.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/microphone_characteristics.xml
 
 # Configuration files that were copied by Elite HAL before. Now copy them in AR HAL.
 PRODUCT_COPY_FILES += \
@@ -181,15 +190,18 @@ PRODUCT_COPY_FILES += \
     $(TOPDIR)frameworks/native/data/etc/android.hardware.audio.pro.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.pro.xml \
     $(TOPDIR)frameworks/native/data/etc/android.hardware.audio.low_latency.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.low_latency.xml
 
-endif
-endif
-
-# HGY specific configuration files
+# gen4_gvm_gy specific configuration files
 ifeq ($(TARGET_USES_GY), true)
 PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/mixer_paths_VIOSND.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_VIOSND.xml \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/audio_policy_configuration_7_0_pure.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_configuration.xml
-endif
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/audio_policy_configuration_7_0_pure.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_configuration.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/microphone_characteristics.xml
+else
+PRODUCT_COPY_FILES += \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_policy_configuration_7_0.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_configuration.xml
+endif # ends TARGET_USES_GY
+endif # ends TARGET_GVMGH_SPECIFIC, false
+endif # ends ENABLE_HYP
 
 ifeq ($(ENABLE_HYP), false)
 ifeq ($(TARGET_GVMGH_SPECIFIC), false)
@@ -375,6 +387,9 @@ ro.bluetooth.a2dp_offload.supported=false
 PRODUCT_PROPERTY_OVERRIDES += \
 persist.bluetooth.a2dp_offload.disabled=true
 
+#enable qcom parsers for WMA/APE/FLAC/ALAC
+PRODUCT_PROPERTY_OVERRIDES += \
+vendor.mm.target.enable.qcom_parser=655632
 
 #enable software decoders for ALAC and APE
 PRODUCT_PROPERTY_OVERRIDES += \
@@ -638,7 +653,7 @@ PRODUCT_PACKAGES += \
     android.hardware.audio.effect@6.0-impl
 
 # enable audio hidl hal 7.0
-ifneq ( ,$(filter U UpsideDownCake 14, $(PLATFORM_VERSION)))
+ifneq ( ,$(filter U UpsideDownCake 14 V VanillaIceCream 15, $(PLATFORM_VERSION)))
 PRODUCT_PACKAGES += \
     android.hardware.audio@7.0 \
     android.hardware.audio.common@7.0 \
@@ -681,3 +696,4 @@ persist.vendor.audio.calfile6=/vendor/etc/acdbdata/ADP/Hdmi_cal.acdb\
 persist.vendor.audio.calfile7=/vendor/etc/acdbdata/ADP/Headset_cal.acdb\
 persist.vendor.audio.calfile8=/vendor/etc/acdbdata/ADP/Speaker_cal.acdb
 endif
+endif # AUDIO_FRAMEWORK_AUDIOREACH

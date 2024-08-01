@@ -28,7 +28,7 @@
  */
 
 /* Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -995,7 +995,7 @@ feature_disabled:
 
 pal_stream_type_t AudioExtn::audio_extn_autohal_GetCarAudioPalStreamType(char* address)
 {
-    pal_stream_type_t pal_stream_type = PAL_STREAM_PLAYBACK_BUS;
+    pal_stream_type_t pal_stream_type = PAL_STREAM_INVALID;
 
     if(autohal_GetCarAudioPalStreamType)
         return autohal_GetCarAudioPalStreamType(address);
