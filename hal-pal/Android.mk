@@ -14,10 +14,7 @@ include $(BUILD_PREBUILT)
 
 include $(CLEAR_VARS)
 
-LOCAL_COPY_HEADERS_TO   := mm-audio
-LOCAL_COPY_HEADERS      := \
-                           audio_extn/audio_defs_ar.h \
-                           audio_extn/AudioExtn.h
+LOCAL_EXPORT_C_INCLUDE_DIRS      := $(LOCAL_PATH)/audio_extn
 
 #LOCAL_VINTF_FRAGMENTS := ../configs/common/manifest_non_qmaa.xml
 

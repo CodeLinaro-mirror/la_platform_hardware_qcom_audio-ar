@@ -25,7 +25,7 @@ PRODUCT_PACKAGES += \
     android.hardware.audio.effect@6.0-impl
 
 # enable audio hidl hal 7.0
-ifneq ( ,$(filter U UpsideDownCake 14, $(PLATFORM_VERSION)))
+ifneq ( ,$(filter U UpsideDownCake 14 V VanillaIceCream 15, $(PLATFORM_VERSION)))
 PRODUCT_PACKAGES += \
     android.hardware.audio@7.0 \
     android.hardware.audio.common@7.0 \
