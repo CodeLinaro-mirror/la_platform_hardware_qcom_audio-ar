@@ -118,7 +118,6 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     const size_t mFrameSizeBytes;
     bool mIsPaused{false};
     std::vector<float> mVolumes{};
-    bool mUseCachedVolume = false;
     bool mHwVolumeSupported = false;
     bool mHwFlushSupported = false;
     bool mHwPauseSupported = false;
