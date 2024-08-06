@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-LOCAL_AUDIO_SERVICE_64 := taro kalama parrot neo
+LOCAL_AUDIO_SERVICE_64 := taro kalama parrot neo neo61
 
 include $(CLEAR_VARS)
 ifeq ($(call is-board-platform-in-list,$(LOCAL_AUDIO_SERVICE_64)), true)
