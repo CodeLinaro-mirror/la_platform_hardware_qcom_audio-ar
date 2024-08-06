@@ -116,6 +116,8 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     std::vector<float> mVolumes{};
     bool mUseCachedVolume = false;
     bool mHwVolumeSupported = false;
+    bool mHwFlushSupported = false;
+    bool mHwPauseSupported = false;
     // check validaty of mPalHandle before use
     pal_stream_handle_t* mPalHandle{nullptr};
     pal_stream_handle_t* mHapticsPalHandle{nullptr};
@@ -150,6 +152,8 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     std::string mLogPrefix = "";
     bool mIsMMapStarted = false;
     bool isHwVolumeSupported();
+    bool isHwFlushSupported();
+    bool isHwPauseSupported();
     struct BufferConfig getBufferConfig();
 
     // optional buffer format converter, if stream input and output formats are different

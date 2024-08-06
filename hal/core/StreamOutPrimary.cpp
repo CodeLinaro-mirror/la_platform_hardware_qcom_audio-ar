@@ -82,6 +82,8 @@ StreamOutPrimary::StreamOutPrimary(StreamContext&& context, const SourceMetadata
     }
 
     mHwVolumeSupported = isHwVolumeSupported();
+    mHwFlushSupported = isHwFlushSupported();
+    mHwPauseSupported = isHwPauseSupported();
     mVolumes.resize(getChannelCount(mMixPortConfig.channelMask.value()));
     std::ostringstream os;
     os << " : usecase: " << mTagName;
@@ -96,6 +98,28 @@ bool StreamOutPrimary::isHwVolumeSupported() {
         case Usecase::PCM_OFFLOAD_PLAYBACK:
         case Usecase::MMAP_PLAYBACK:
         case Usecase::VOIP_PLAYBACK:
+            return true;
+        default:
+            break;
+    }
+    return false;
+}
+
+bool StreamOutPrimary::isHwFlushSupported() {
+    switch (mTag) {
+        case Usecase::COMPRESS_OFFLOAD_PLAYBACK:
+        case Usecase::PCM_OFFLOAD_PLAYBACK:
+            return true;
+        default:
+            break;
+    }
+    return false;
+}
+
+bool StreamOutPrimary::isHwPauseSupported() {
+    switch (mTag) {
+        case Usecase::COMPRESS_OFFLOAD_PLAYBACK:
+        case Usecase::PCM_OFFLOAD_PLAYBACK:
             return true;
         default:
             break;
@@ -289,13 +313,12 @@ ndk::ScopedAStatus StreamOutPrimary::configureMMapStream(int32_t* fd, int64_t* b
 }
 
 ::android::status_t StreamOutPrimary::flush() {
-    if (!mPalHandle) {
-        LOG(WARNING) << __func__ << mLogPrefix << ": stream is not configured ";
+    if (!mHwFlushSupported) {
+        LOG(VERBOSE) << __func__ << mLogPrefix << " unsupported operation!!, Hence ignored";
         return ::android::OK;
     }
-    if (mTag == Usecase::MMAP_PLAYBACK || mTag == Usecase::LOW_LATENCY_PLAYBACK ||
-        mTag == Usecase::ULL_PLAYBACK) {
-        LOG(VERBOSE) << __func__ << mLogPrefix << " unsupported operation!!, Hence ignored";
+    if (!mPalHandle) {
+        LOG(WARNING) << __func__ << mLogPrefix << ": stream is not configured ";
         return ::android::OK;
     }
 
@@ -325,15 +348,12 @@ ndk::ScopedAStatus StreamOutPrimary::configureMMapStream(int32_t* fd, int64_t* b
 }
 
 ::android::status_t StreamOutPrimary::pause() {
-    if (!mPalHandle) {
-        LOG(WARNING) << __func__ << mLogPrefix << ": stream is not configured ";
+    if (!mHwPauseSupported) {
+        LOG(VERBOSE) << __func__ << mLogPrefix << " unsupported operation!!, Hence ignored";
         return ::android::OK;
     }
-
-    // AAUdio/mmap triggres stop for pause, so we can ignore here
-    if (mTag == Usecase::LOW_LATENCY_PLAYBACK || mTag == Usecase::ULL_PLAYBACK ||
-                       mTag == Usecase::MMAP_PLAYBACK ) {
-        LOG(VERBOSE) << __func__ << mLogPrefix << " unsupported operation!!, Hence ignored";
+    if (!mPalHandle) {
+        LOG(WARNING) << __func__ << mLogPrefix << ": stream is not configured ";
         return ::android::OK;
     }
 
