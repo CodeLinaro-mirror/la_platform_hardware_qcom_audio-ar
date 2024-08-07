@@ -593,8 +593,7 @@ bool CompressPlayback::configureGapLessMetadata() {
     auto gapLessPtr = reinterpret_cast<pal_compr_gapless_mdata*>(dataPtr.get() + payloadSize);
     gapLessPtr->encoderDelay = mOffloadMetadata.delayFrames;
     gapLessPtr->encoderPadding = mOffloadMetadata.paddingFrames;
-    LOG(VERBOSE) << __func__ << ": encoderDelay:" << gapLessPtr->encoderDelay
-                 << ", encoderPadding:" << gapLessPtr->encoderPadding;
+
     if (mCompressPlaybackHandle) {
         if (int32_t ret = ::pal_stream_set_param(mCompressPlaybackHandle, PAL_PARAM_ID_GAPLESS_MDATA,
                                              payloadPtr);
@@ -602,9 +601,12 @@ bool CompressPlayback::configureGapLessMetadata() {
             LOG(ERROR) << __func__ << ": failed PAL_PARAM_ID_GAPLESS_MDATA!! ret:" << ret;
             return false;
         }
+        mIsGaplessConfigured = true;
+        LOG(VERBOSE) << __func__ << ": encoderDelay:" << gapLessPtr->encoderDelay
+                 << ", encoderPadding:" << gapLessPtr->encoderPadding;
+        return true;
     }
-    mIsGaplessConfigured = true;
-    return true;
+    return false;
 }
 
 void CompressPlayback::updateOffloadMetadata(
