@@ -192,13 +192,7 @@ bool Telephony::isAnyCallActive() {
 
 void Telephony::resetDevices(const bool resetRx) {
     std::scoped_lock lock{mLock};
-    if (resetRx) {
-        mRxDevice = kDefaultRxDevice;
-    } else {
-        // may be have default Tx device;
-        mTxDevice = getMatchingTxDevice(kDefaultRxDevice);
-    }
-    LOG(INFO)<<__func__<<": reset device "<<(resetRx?"Rx":"Tx");
+    LOG(INFO)<<__func__<<": ignore reset device ";
 }
 
 void Telephony::setDevices(const std::vector<AudioDevice>& devices, const bool updateRx) {
