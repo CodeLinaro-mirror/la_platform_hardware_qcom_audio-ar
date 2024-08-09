@@ -124,13 +124,20 @@ ifeq ($(ENABLE_HYP),true)
 AUDIO_FEATURE_ENABLED_POWER_POLICY := true
 AUDIO_FEATURE_ENABLED_AUDIO_PARSERS := true
 AUDIO_FEATURE_ENABLED_AUDIO_CONTROL_HAL_AIDL := true
-PRODUCT_PACKAGES += vendor.qti.hardware.automotive.audiocontrol-service
-PRODUCT_PACKAGES += libqtiautobundle
+endif
+
+# Integrate libraries to gen4_gvm which was done by Elite HAL before
+ifeq ($(ENABLE_HYP),true)
+AUDIO_HARDWARE := vendor.qti.hardware.automotive.audiocontrol-service
+AUDIO_HARDWARE += libqtiautobundle
+AUDIO_HARDWARE += audio.r_submix.default
+AUDIO_HARDWARE += audio.usb.default
 ifeq ($(TARGET_BOARD_AUTO), true)
 ifeq ($(TARGET_USES_RRO), true)
-PRODUCT_PACKAGES += CarServiceResAutoTarget_Vendor
+AUDIO_HARDWARE += CarServiceResAutoTarget_Vendor
 endif
 endif
+PRODUCT_PACKAGES += $(AUDIO_HARDWARE)
 endif
 
 ifneq (,$(filter U UpsideDownCake 14 V VanillaIceCream 15, $(PLATFORM_VERSION)))
@@ -169,7 +176,8 @@ PRODUCT_COPY_FILES += \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/r_submix_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/r_submix_audio_policy_configuration.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/usb_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/usb_audio_policy_configuration.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/audio_policy_volumes.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_volumes.xml \
-    $(TOPDIR)frameworks/av/services/audiopolicy/config/default_volume_tables.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/default_volume_tables.xml
+    $(TOPDIR)frameworks/av/services/audiopolicy/config/default_volume_tables.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/default_volume_tables.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/microphone_characteristics.xml
 
 # Configuration files that were copied by Elite HAL before. Now copy them in AR HAL.
 PRODUCT_COPY_FILES += \
@@ -191,7 +199,8 @@ PRODUCT_COPY_FILES += \
 ifeq ($(TARGET_USES_GY), true)
 PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/mixer_paths_VIOSND.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_VIOSND.xml \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/audio_policy_configuration_7_0_pure.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_configuration.xml
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/audio_policy_configuration_7_0_pure.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_configuration.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/microphone_characteristics.xml
 else
 PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_policy_configuration_7_0.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_configuration.xml
