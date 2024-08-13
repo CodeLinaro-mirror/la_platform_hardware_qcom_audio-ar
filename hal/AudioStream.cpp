@@ -1992,7 +1992,8 @@ pal_stream_type_t StreamInPrimary::GetPalStreamType(
      *For AUDIO_SOURCE_UNPROCESSED we use LL pal stream as it corresponds to
      *RAW record graphs ( record with no pp)
      */
-    if (source_ == AUDIO_SOURCE_UNPROCESSED) {
+    if (source_ == AUDIO_SOURCE_UNPROCESSED &&
+        halStreamFlags != AUDIO_INPUT_FLAG_MMAP_NOIRQ) {
         palStreamType = PAL_STREAM_RAW;
         return palStreamType;
     } else if (source_ == AUDIO_SOURCE_VOICE_RECOGNITION) {

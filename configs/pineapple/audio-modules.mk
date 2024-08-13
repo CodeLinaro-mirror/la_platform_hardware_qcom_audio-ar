@@ -109,6 +109,7 @@ AUDIO_MODULES += fai__2.7.20_0.0__3.0.0_0.0__eai_1.36_enpu2.pmd
 AUDIO_MODULES += fai__3.0.0_0.0__eai_1.36_enpu2.pmd
 AUDIO_MODULES += ffv__5.0.1_0.1__3.0.0_0.0__eai_2.10_enpu3.pmd
 AUDIO_MODULES += ffv__5.0.1_0.1__eai_2.10_enpu3.pmd
+AUDIO_MODULES += ffv__5.0.2_0.1__eai_3.4_enpu_v4.pmd
 AUDIO_MODULES += ffv__6.2.5_0.1__eai_3.4__enpu_v4.pmd
 AUDIO_MODULES += ffv__7.0.1_0.1__eai_3.4_enpu_v4.pmd
 AUDIO_MODULES += click.pcm

@@ -2263,6 +2263,39 @@ int AudioDevice::SetParameters(const char *kvpairs) {
         param_bt_a2dp.dev_id = PAL_DEVICE_OUT_BLUETOOTH_BLE_BROADCAST;
         ret = pal_set_param(PAL_PARAM_ID_BT_A2DP_SUSPENDED, (void*)&param_bt_a2dp,
             sizeof(pal_param_bta2dp_t));
+
+        if (strcmp(value, "false") == 0) {
+            if (crs_device.size() == 0) {
+                crs_device.insert(AUDIO_DEVICE_OUT_BLE_HEADSET);
+                if (voice_->voice_.crsCall || voice_->voice_.crsVsid)
+                    voice_->RouteStream(crs_device);
+            } else {
+                pos = std::find(crs_device.begin(), crs_device.end(), AUDIO_DEVICE_OUT_BLE_HEADSET);
+                if (pos != crs_device.end()) {
+                    AHAL_INFO("same device has added");
+                } else {
+                    crs_device.insert(AUDIO_DEVICE_OUT_BLE_HEADSET);
+                    if (voice_->voice_.crsCall || voice_->voice_.crsVsid) {
+                        voice_->RouteStream({AUDIO_DEVICE_OUT_BLE_HEADSET});
+                    }
+                }
+            }
+        } else {
+            pos = std::find(crs_device.begin(), crs_device.end(), AUDIO_DEVICE_OUT_BLE_HEADSET);
+            if (pos != crs_device.end()) {
+                crs_device.erase(pos);
+                if (crs_device.size() >= 1) {
+                    if (voice_->voice_.crsCall || voice_->voice_.crsVsid) {
+                        voice_->RouteStream(crs_device);
+                        AHAL_INFO("route to device 0x%x", AudioExtn::get_device_types(crs_device));
+                    }
+                } else {
+                    crs_device.clear();
+                    if (voice_->voice_.crsCall || voice_->voice_.crsVsid)
+                        voice_->RouteStream({AUDIO_DEVICE_OUT_SPEAKER});
+                }
+            }
+        }
     }
 
 exit:
