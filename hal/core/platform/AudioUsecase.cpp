@@ -292,6 +292,51 @@ int32_t MmapUsecaseBase::getMMapPosition(int64_t* frames, int64_t* timeNs) {
     LOG(VERBOSE) << __func__ << ": frames:" << *frames << ", timeNs:" << *timeNs;
     return 0;
 }
+
+int32_t MmapUsecaseBase::start() {
+    if (!mPalHandle) {
+        LOG(ERROR) << __func__ << ": pal stream handle is null";
+        return -EINVAL;
+    }
+
+    if (mIsStarted) {
+        LOG(VERBOSE) << __func__ << ": MMAP already started";
+        return 0;
+    }
+
+    if (int32_t ret = ::pal_stream_start(mPalHandle); ret) {
+        LOG(ERROR) << __func__ << " pal stream start failed, ret:" << ret;
+        return ret;
+    }
+
+    mIsStarted = true;
+    LOG(VERBOSE) << __func__ << ": MMAP start success";
+
+    return 0;
+}
+
+int32_t MmapUsecaseBase::stop() {
+    if (!mPalHandle) {
+        LOG(ERROR) << __func__ << ": pal stream handle is null";
+        return -EINVAL;
+    }
+
+    if (!mIsStarted) {
+        LOG(VERBOSE) << __func__ << ": MMAP already stopped";
+        return 0;
+    }
+
+    if (int32_t ret = ::pal_stream_stop(mPalHandle); ret) {
+        LOG(ERROR) << __func__ << " pal stream stop failed, ret:" << ret;
+        return -EINVAL;
+    }
+
+    mIsStarted = false;
+    LOG(VERBOSE) << __func__ << ": MMAP stop success";
+
+    return 0;
+}
+
 // [MmapUsecaseBase End]
 // [MMapPlayback Start]
 size_t MMapPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {

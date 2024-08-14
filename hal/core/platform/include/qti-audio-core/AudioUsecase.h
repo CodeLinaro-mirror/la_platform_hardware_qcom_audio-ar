@@ -190,9 +190,11 @@ class MmapUsecaseBase {
     virtual int32_t createMMapBuffer(int64_t frameSize, int32_t* fd, int64_t* burstSizeFrames,
                                      int32_t* flags, int32_t* bufferSizeFrames);
     virtual int32_t getMMapPosition(int64_t* frames, int64_t* timeNs);
-
+    virtual int32_t start();
+    virtual int32_t stop();
   protected:
     pal_stream_handle_t* mPalHandle{nullptr};
+    bool mIsStarted = false;
 };
 
 class MMapPlayback : public MmapUsecaseBase, public UsecaseConfig<MMapPlayback> {
