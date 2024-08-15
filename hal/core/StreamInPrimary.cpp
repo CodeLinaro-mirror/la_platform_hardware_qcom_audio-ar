@@ -381,7 +381,8 @@ void StreamInPrimary::resume() {
      * This results VA buffering stop in PAL. Add retry mechanism to get valid data
      * for HOTWORD read stream
      */
-    if (mTag == Usecase::HOTWORD_RECORD && bytesRead <= 0) {
+    if (mTag == Usecase::HOTWORD_RECORD &&
+        std::get<HotwordRecord>(mExt).isStRecord() && bytesRead <= 0) {
         if (bytesRead == 0) {
             int32_t retryCnt = 0;
             do {
@@ -847,7 +848,7 @@ void StreamInPrimary::shutdown_I() {
 
     mEffectsApplied = true;
     if (mPalHandle != nullptr) {
-        if (mTag == Usecase::HOTWORD_RECORD) {
+        if (mTag == Usecase::HOTWORD_RECORD && std::get<HotwordRecord>(mExt).isStRecord()) {
             ::pal_stream_set_param(mPalHandle, PAL_PARAM_ID_STOP_BUFFERING, nullptr);
         } else {
             ::pal_stream_stop(mPalHandle);

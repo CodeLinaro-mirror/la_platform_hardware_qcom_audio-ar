@@ -479,6 +479,11 @@ class HotwordRecord : public UsecaseConfig<HotwordRecord> {
     static int32_t getLatency() { return PcmRecord::getLatency(); }
     pal_stream_handle_t* getPalHandle(
             const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig);
+
+    bool isStRecord() { return mIsStRecord; }
+
+  private:
+    bool mIsStRecord{false};
 };
 
 class VoipRecord : public UsecaseConfig<VoipRecord> {

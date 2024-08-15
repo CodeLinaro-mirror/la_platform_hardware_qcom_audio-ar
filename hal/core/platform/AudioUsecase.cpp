@@ -887,11 +887,12 @@ pal_stream_handle_t* HotwordRecord::getPalHandle(
 
     int32_t ret = pal_get_param(PAL_PARAM_ID_ST_CAPTURE_INFO, (void**)&stCaptureInfo, &payloadSize,
                                 nullptr);
-    if (ret) {
+    if (ret || !stCaptureInfo.pal_handle) {
         LOG(ERROR) << __func__ << ": sound trigger handle not found, status " << ret;
         return nullptr;
     }
 
+    mIsStRecord = true;
     LOG(DEBUG) << __func__ << ": sound trigger pal handle " << stCaptureInfo.pal_handle
                << " for IOHandle  " << ioHandle;
 
