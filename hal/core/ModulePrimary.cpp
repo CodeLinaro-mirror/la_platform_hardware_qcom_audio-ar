@@ -377,15 +377,6 @@ int ModulePrimary::onExternalDeviceConnectionChanged(
         return ret;
     }
 
-    if (!mTelephony) {
-        LOG(ERROR) << __func__ << ": Telephony not created ";
-        return 0;
-    }
-
-    // At this point it is safe to assume this audio port if of type audio device
-    const auto& extDevice = audioPort.ext.get<AudioPortExt::Tag::device>().device;
-    mTelephony->onExternalDeviceConnectionChanged(extDevice, connected);
-
     return 0;
 }
 

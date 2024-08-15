@@ -276,21 +276,32 @@ void Telephony::onExternalDeviceConnectionChanged(const AudioDevice& extDevice,
                                                   const bool& connect) {
     std::scoped_lock lock{mLock};
     // Placeholder for telephony to act upon external device connection
-    if (!isOutputDevice(extDevice)) {
-        return;
-    }
     if (isBluetoothSCODevice(extDevice) || isBluetoothA2dpDevice(extDevice)) {
         LOG(VERBOSE) << __func__ << ": sco/a2dp no change";
         return;
     }
+    if (isAnyCallActive()) {
+        LOG(VERBOSE) << __func__ << ": voice call exist";
+        return;
+    }
     if (connect) {
-        mRxDevice = extDevice;
-        mTxDevice = getMatchingTxDevice(mRxDevice);
-        updateDevices();
+        if (isOutputDevice(extDevice)) {
+            mRxDevice = extDevice;
+            mTxDevice = getMatchingTxDevice(mRxDevice);
+            updateDevices();
+        } else {
+            if (mTxDevice.type.type != extDevice.type.type) {
+                mTxDevice = getMatchingTxDevice(mRxDevice);
+                updateDevices();
+            }
+        }
     } else {
-        mRxDevice = kDefaultRxDevice;
-        mTxDevice = getMatchingTxDevice(mRxDevice);
-        updateDevices();
+        if (isOutputDevice(extDevice)) {
+            mRxDevice = kDefaultRxDevice;
+            mTxDevice = getMatchingTxDevice(mRxDevice);
+            updateDevices();
+        }
+
     }
 
 }
