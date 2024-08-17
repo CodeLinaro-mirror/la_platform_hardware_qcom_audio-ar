@@ -339,6 +339,7 @@ void CompressPlayback::configureDefault() {
         mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC ||
         mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_HE_V1 ||
         mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_HE_V2 ||
+        mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_ADTS_LC ||
         mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_LC) {
         mPalSndDec.aac_dec.audio_obj_type = 29;
         mPalSndDec.aac_dec.pce_bits_size = 0;
