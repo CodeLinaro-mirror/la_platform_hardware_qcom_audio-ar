@@ -62,7 +62,6 @@ extern "C" {
 struct hfp_module {
     bool is_hfp_running;
     float hfp_volume;
-    //    int ucid;
     float mic_volume;
     bool mic_mute;
     uint32_t sample_rate;
@@ -75,7 +74,6 @@ struct hfp_module {
 static struct hfp_module hfpmod = {
         .is_hfp_running = 0,
         .hfp_volume = 0,
-        //  .ucid = USECASE_AUDIO_HFP_SCO,
         .mic_volume = CAPTURE_VOLUME_DEFAULT,
         .mic_mute = 0,
         .sample_rate = 16000,
@@ -86,25 +84,15 @@ static int32_t hfp_set_volume(float value) {
     struct pal_volume_data *pal_volume = NULL;
 
     LOG(VERBOSE) << __func__ << " entry";
-    LOG(DEBUG) << __func__ << " volume is " << value;
 
     hfpmod.hfp_volume = value;
-
-    if (value < 0.0) {
-        LOG(DEBUG) << __func__ << " " << value << " Under 0.0, assuming 0.0";
-        value = 0.0;
-    } else {
-        value = ((value > 15.000000) ? 1.0 : (value / 15));
-        LOG(DEBUG) << __func__ << " Volume brought with in range  " << value;
-    }
-    vol = lrint((value * 0x2000) + 0.5);
 
     if (!hfpmod.is_hfp_running) {
         LOG(VERBOSE) << __func__ << " HFP not active, ignoring set_hfp_volume call";
         return -EIO;
     }
 
-    LOG(DEBUG) << __func__ << " Setting HFP volume to  " << vol;
+    LOG(DEBUG) << __func__ << " Setting HFP volume to  " << value;
 
     pal_volume = (struct pal_volume_data *)malloc(sizeof(struct pal_volume_data) +
                                                   sizeof(struct pal_channel_vol_kv));
@@ -373,6 +361,54 @@ void hfp_init() {
 
 bool hfp_is_active() {
     return hfpmod.is_hfp_running;
+}
+
+bool is_valid_out_device(pal_device_id_t id) {
+    switch (id) {
+        case PAL_DEVICE_OUT_HANDSET:
+        case PAL_DEVICE_OUT_SPEAKER:
+        case PAL_DEVICE_OUT_WIRED_HEADSET:
+        case PAL_DEVICE_OUT_WIRED_HEADPHONE:
+        case PAL_DEVICE_OUT_USB_DEVICE:
+        case PAL_DEVICE_OUT_USB_HEADSET:
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool is_valid_in_device(pal_device_id_t id) {
+    switch (id) {
+        case PAL_DEVICE_IN_HANDSET_MIC:
+        case PAL_DEVICE_IN_SPEAKER_MIC:
+        case PAL_DEVICE_IN_WIRED_HEADSET:
+        case PAL_DEVICE_IN_USB_DEVICE:
+        case PAL_DEVICE_IN_USB_HEADSET:
+            return true;
+        default:
+            return false;
+    }
+}
+  
+bool has_valid_stream_handle() {
+    return (hfpmod.rx_stream_handle && hfpmod.tx_stream_handle);
+}
+
+void hfp_set_device(struct pal_device *devices) {
+    int rc = 0;
+
+    if (hfpmod.is_hfp_running && has_valid_stream_handle() &&
+        is_valid_out_device(devices[0].id) && is_valid_in_device(devices[1].id)) {
+        rc = pal_stream_set_device(hfpmod.rx_stream_handle, 1, &devices[0]);
+        if (!rc) {
+            rc = pal_stream_set_device(hfpmod.tx_stream_handle, 1, &devices[1]);
+        }
+    }
+
+    if (rc) {
+        LOG(ERROR) << __func__ << ": failed to set devices for hfp";
+    }
+    return;
 }
 
 /*Set mic mute state.

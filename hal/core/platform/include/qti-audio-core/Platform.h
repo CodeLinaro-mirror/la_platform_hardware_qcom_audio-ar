@@ -15,7 +15,6 @@
 #include <aidl/android/hardware/audio/core/ITelephony.h>
 #include <aidl/android/media/audio/common/MicrophoneDynamicInfo.h>
 #include <aidl/android/media/audio/common/MicrophoneInfo.h>
-#include <extensions/AudioExtension.h>
 #include <qti-audio-core/AudioUsecase.h>
 #include <system/audio.h>
 

@@ -81,6 +81,8 @@ ndk::ScopedAStatus Bluetooth::setScoConfig(const ScoConfig& in_config, ScoConfig
 }
 
 ndk::ScopedAStatus Bluetooth::setHfpConfig(const HfpConfig& in_config, HfpConfig* _aidl_return) {
+    struct str_parms* parms = nullptr;
+    std::string kvpairs = "";
     if (in_config.sampleRate.has_value() && in_config.sampleRate.value().value <= 0) {
         LOG(ERROR) << __func__ << ": invalid sample rate: " << in_config.sampleRate.value().value;
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
@@ -94,12 +96,20 @@ ndk::ScopedAStatus Bluetooth::setHfpConfig(const HfpConfig& in_config, HfpConfig
 
     if (in_config.isEnabled.has_value()) {
         mHfpConfig.isEnabled = in_config.isEnabled;
+        std::string isEnabled = in_config.isEnabled.value().value?"true":"false";
+        kvpairs += "hfp_enable=" + isEnabled + ";";
     }
     if (in_config.sampleRate.has_value()) {
         mHfpConfig.sampleRate = in_config.sampleRate;
+        kvpairs += "hfp_set_sampling_rate=" + std::to_string(in_config.sampleRate.value().value) + ";";
     }
     if (in_config.volume.has_value()) {
         mHfpConfig.volume = in_config.volume;
+        kvpairs += "hfp_volume=" + std::to_string(in_config.volume.value().value) + ";";
+    }
+    if (!kvpairs.empty()) {
+        parms = str_parms_create_str(kvpairs.c_str());
+        mAudExt.audio_extn_set_parameters(parms);
     }
     *_aidl_return = mHfpConfig;
     LOG(DEBUG) << __func__ << ": received " << in_config.toString() << ", returning "

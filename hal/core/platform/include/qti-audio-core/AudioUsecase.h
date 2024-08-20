@@ -30,6 +30,9 @@
 #define DEFAULT_SAMPLE_RATE 48000
 namespace qti::audio::core {
 
+// forward declaration
+struct PlatformStreamCallback;
+
 enum class Usecase : uint16_t {
     INVALID = 0,
     PRIMARY_PLAYBACK,
@@ -219,7 +222,7 @@ class CompressPlayback : public UsecaseConfig<CompressPlayback, false /*IsPcm*/>
     static size_t getFrameCount(
             const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig);
 
-    static int32_t getLatency() { return kLatencyMs * 2; }
+    static int32_t getLatency() { return kLatencyMs; }
 
     class Flac final {
       public:
@@ -297,17 +300,11 @@ class CompressPlayback : public UsecaseConfig<CompressPlayback, false /*IsPcm*/>
 
     explicit CompressPlayback(
             const ::aidl::android::media::audio::common::AudioOffloadInfo& offloadInfo,
-            std::shared_ptr<::aidl::android::hardware::audio::core::IStreamCallback> asyncCallback,
+            PlatformStreamCallback* const platformStreamCallback,
             const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig);
     /* To reconfigure the codec, gapless info */
     void setAndConfigureCodecInfo(pal_stream_handle_t* handle);
     void configureGapless(pal_stream_handle_t* handle);
-    // if fetched, when status is set, it resets the status
-    bool fetchDrainReady();
-    void setDrainReady();
-    // if fetched, when status is set, it resets the status
-    bool fetchTransferReady();
-    void setTransferReady();
     ndk::ScopedAStatus getVendorParameters(
             const std::vector<std::string>& in_ids,
             std::vector<::aidl::android::hardware::audio::core::VendorParameter>* _aidl_return);
@@ -321,13 +318,14 @@ class CompressPlayback : public UsecaseConfig<CompressPlayback, false /*IsPcm*/>
             const ::aidl::android::hardware::audio::common::SourceMetadata& sourceMetaData);
     int64_t getPositionInFrames(pal_stream_handle_t* palHandle);
     void onFlush();
+    bool isGaplessConfigured() const noexcept { return mIsGaplessConfigured; }
 
   protected:
     void configureDefault();
     // configure the codec info which is cached already
     bool configureCodecInfo() const;
     // configure the gapless info which is cached already
-    bool configureGapLessMetadata() const;
+    bool configureGapLessMetadata();
 
   protected:
     // dynamic compress info
@@ -335,7 +333,6 @@ class CompressPlayback : public UsecaseConfig<CompressPlayback, false /*IsPcm*/>
     const ::aidl::android::hardware::audio::common::SourceMetadata* mSourceMetadata{nullptr};
     // this is static info at the stream creation, for dynamic info check AudioOffloadMetadata
     const ::aidl::android::media::audio::common::AudioOffloadInfo& mOffloadInfo;
-    std::shared_ptr<::aidl::android::hardware::audio::core::IStreamCallback> mAsyncCallback;
     uint16_t mCompressBitWidth{0};
     pal_stream_handle_t* mCompressPlaybackHandle{nullptr};
     pal_snd_dec_t mPalSndDec{};
@@ -343,11 +340,11 @@ class CompressPlayback : public UsecaseConfig<CompressPlayback, false /*IsPcm*/>
     ::aidl::android::media::audio::common::AudioFormatDescription mCompressFormat;
     ::aidl::android::media::audio::common::AudioChannelLayout mChannelLayout;
     int32_t mBitWidth;
-    std::atomic<bool> mIsDrainReady{false};
-    std::atomic<bool> mIsTransferReady{false};
     int64_t mTotalDSPFrames{0};
     int64_t mPrevFrames{0};
     const ::aidl::android::media::audio::common::AudioPortConfig& mMixPortConfig;
+    PlatformStreamCallback * const mPlatformStreamCallback;
+    std::atomic<bool> mIsGaplessConfigured = false;
 };
 
 class PcmOffloadPlayback : public UsecaseConfig<PcmOffloadPlayback> {

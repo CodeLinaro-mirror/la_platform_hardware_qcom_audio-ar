@@ -79,6 +79,7 @@ class StreamInPrimary : public StreamIn, public StreamCommonImpl {
      */
     void configure();
     void resume();
+    void shutdown_I();
     size_t getPlatformDelay() const noexcept;
 
     // API which are *_I are internal 
@@ -106,6 +107,7 @@ class StreamInPrimary : public StreamIn, public StreamCommonImpl {
     bool mAECEnabled = false;
     bool mNSEnabled = false;
     bool mEffectsApplied = true;
+    bool mIsMMapStarted = false;
     std::string mLogPrefix = "";
 };
 

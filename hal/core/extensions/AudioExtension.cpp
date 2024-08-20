@@ -6,6 +6,7 @@
 #define LOG_TAG "AHAL_AudioExtension_QTI"
 
 #include <Utils.h>
+#include <qti-audio-core/Utils.h>
 #include <android-base/logging.h>
 #include <dlfcn.h>
 #include <extensions/AudioExtension.h>
@@ -19,6 +20,10 @@
 #define AUDIO_PARAMETER_KEY_CAN_OPEN_PROXY "can_open_proxy"
 
 #define AFS_QVA_FILE_NAME "/data/vendor/audio/adc_qva_version.txt"
+
+using ::aidl::android::media::audio::common::AudioDevice;
+using ::aidl::android::media::audio::common::AudioDeviceType;
+using ::aidl::android::media::audio::common::AudioDeviceDescription;
 
 namespace qti::audio::core {
 
@@ -271,6 +276,66 @@ feature_disabled:
     LOG(VERBOSE) << __func__ << "---- Feature A2DP offload is disabled ---";
 }
 
+AudioDevice HfpExtension::audio_extn_hfp_get_matching_tx_device(const AudioDevice& rxDevice) {
+    if (rxDevice.type.type == AudioDeviceType::OUT_SPEAKER_EARPIECE) {
+        return AudioDevice{.type.type = AudioDeviceType::IN_MICROPHONE};
+    } else if (rxDevice.type.type == AudioDeviceType::OUT_SPEAKER) {
+        return AudioDevice{.type.type = AudioDeviceType::IN_MICROPHONE_BACK};
+    } else if (rxDevice.type.type == AudioDeviceType::OUT_HEADSET &&
+               rxDevice.type.connection == AudioDeviceDescription::CONNECTION_ANALOG) {
+        return AudioDevice{.type.type = AudioDeviceType::IN_HEADSET,
+                           .type.connection = AudioDeviceDescription::CONNECTION_ANALOG,
+                           .address = rxDevice.address};
+    } else if (rxDevice.type.type == AudioDeviceType::OUT_HEADPHONE &&
+               rxDevice.type.connection == AudioDeviceDescription::CONNECTION_ANALOG) {
+        return AudioDevice{.type.type = AudioDeviceType::IN_MICROPHONE};
+    } else if ((rxDevice.type.type == AudioDeviceType::OUT_DEVICE ||
+                rxDevice.type.type == AudioDeviceType::OUT_HEADSET) &&
+               rxDevice.type.connection == AudioDeviceDescription::CONNECTION_BT_SCO) {
+        return AudioDevice{.type.type = AudioDeviceType::IN_HEADSET,
+                           .type.connection = AudioDeviceDescription::CONNECTION_BT_SCO};
+    } else if (rxDevice.type.type == AudioDeviceType::OUT_HEADSET &&
+               rxDevice.type.connection == AudioDeviceDescription::CONNECTION_BT_LE) {
+        return AudioDevice{.type.type = AudioDeviceType::IN_HEADSET,
+                           .type.connection = AudioDeviceDescription::CONNECTION_BT_LE};
+    } else if ((rxDevice.type.type == AudioDeviceType::OUT_DEVICE ||
+                rxDevice.type.type == AudioDeviceType::OUT_HEADSET) &&
+               rxDevice.type.connection == AudioDeviceDescription::CONNECTION_USB) {
+        if (mPlatform.getUSBCapEnable()) {
+            return AudioDevice{.type.type = AudioDeviceType::IN_HEADSET,
+                               .type.connection = AudioDeviceDescription::CONNECTION_USB,
+                               .address = rxDevice.address};
+        } else {
+            return AudioDevice{.type.type = AudioDeviceType::IN_MICROPHONE};
+        }
+    } else if (rxDevice.type.type == AudioDeviceType::OUT_HEARING_AID) {
+        return AudioDevice{.type.type = AudioDeviceType::IN_MICROPHONE};
+    } else {
+        LOG(ERROR) << __func__ << ": unable to find matching TX device for " << rxDevice.toString();
+    }
+    return {};
+}
+
+void HfpExtension::audio_extn_hfp_set_device(const std::vector<AudioDevice>& devices,
+                                              const bool updateRx) {
+    AudioDevice rxDevice;
+    AudioDevice txDevice;
+    if (devices.size() != 1) {
+        LOG(ERROR) << __func__ << " invalid size / combo devices unsupported: " << devices;
+        return;
+    }
+
+    LOG(DEBUG) << __func__ << (updateRx ? " Rx " : " Tx") << " devices : " << devices;
+    if (updateRx) {
+        rxDevice = devices[0];
+        txDevice = audio_extn_hfp_get_matching_tx_device(rxDevice);
+        if (hfp_set_device) {
+            auto palDevices = mPlatform.convertToPalDevices({rxDevice, txDevice});
+            hfp_set_device(reinterpret_cast<pal_device*>(palDevices.data()));
+        }
+    }
+}
+
 void HfpExtension::audio_extn_hfp_set_parameters(struct str_parms *params) {
     if (hfp_set_parameters) hfp_set_parameters(micMute, params);
 }
@@ -293,10 +358,10 @@ HfpExtension::HfpExtension() : AudioExtensionBase(kHfpLibrary, isExtensionEnable
     if (mHandle != nullptr) {
         if (!(hfp_init = (hfp_init_t)dlsym(mHandle, "hfp_init")) ||
             !(hfp_is_active = (hfp_is_active_t)dlsym(mHandle, "hfp_is_active")) ||
-            !(hfp_get_usecase = (hfp_get_usecase_t)dlsym(mHandle, "hfp_get_usecase")) ||
             !(hfp_set_mic_mute = (hfp_set_mic_mute_t)dlsym(mHandle, "hfp_set_mic_mute")) ||
             !(hfp_set_mic_mute2 = (hfp_set_mic_mute2_t)dlsym(mHandle, "hfp_set_mic_mute2")) ||
-            !(hfp_set_parameters = (hfp_set_parameters_t)dlsym(mHandle, "hfp_set_parameters"))) {
+            !(hfp_set_parameters = (hfp_set_parameters_t)dlsym(mHandle, "hfp_set_parameters")) ||
+            !(hfp_set_device = (hfp_set_device_t)dlsym(mHandle, "hfp_set_device"))) {
             LOG(ERROR) << __func__ << " dlsym failed";
             goto feature_disabled;
         }

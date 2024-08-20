@@ -134,6 +134,7 @@ AUDIO_MODULES += libsoundtriggerhal.qti
 AUDIO_MODULES += \
     liblistensoundmodelaidl \
     liblistensoundmodel2vendor \
+    vendor.qti.hardware.ListenSoundModelAidl-V1-ndk \
     vendor.qti.hardware.ListenSoundModelAidl-V1-ndk.vendor
 
 AUDIO_MODULES += \

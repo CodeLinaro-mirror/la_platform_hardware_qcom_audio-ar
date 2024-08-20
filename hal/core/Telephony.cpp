@@ -74,6 +74,16 @@ ndk::ScopedAStatus Telephony::getSupportedAudioModes(std::vector<AudioMode>* _ai
     return ndk::ScopedAStatus::ok();
 }
 
+void Telephony::VoiceStop() {
+    for (int i = 0; i < MAX_VOICE_SESSIONS; i++) {
+         mVoiceSession.session[i].CallUpdate.mCallState = CallState::IN_ACTIVE;
+         mVoiceSession.session[i].state.new_ = CallState::IN_ACTIVE;
+    }
+    updateCalls();
+
+    LOG(DEBUG) << __func__ << ": Exit";
+}
+
 ndk::ScopedAStatus Telephony::switchAudioMode(AudioMode newAudioMode) {
     std::scoped_lock lock{mLock};
 
@@ -95,9 +105,9 @@ ndk::ScopedAStatus Telephony::switchAudioMode(AudioMode newAudioMode) {
         LOG(DEBUG) << __func__ << ": start call on call state ACTIVE";
     } else if (newAudioMode == AudioMode::NORMAL && mAudioMode == AudioMode::IN_CALL) {
         // safe to stop now
-        stopCall();
+        VoiceStop();
     } else if (newAudioMode == AudioMode::RINGTONE && mSetUpdates.mIsCrsCall) {
-        if (!mIsCRSStarted) {
+        if (!mIsCRSStarted && !isAnyCallActive()) {
             updateCrsDevice();
             startCall();
             if (mRxDevice.type.type != AudioDeviceType::OUT_SPEAKER) {
@@ -182,13 +192,7 @@ bool Telephony::isAnyCallActive() {
 
 void Telephony::resetDevices(const bool resetRx) {
     std::scoped_lock lock{mLock};
-    if (resetRx) {
-        mRxDevice = kDefaultRxDevice;
-    } else {
-        // may be have default Tx device;
-        mTxDevice = getMatchingTxDevice(kDefaultRxDevice);
-    }
-    LOG(INFO)<<__func__<<": reset device "<<(resetRx?"Rx":"Tx");
+    LOG(INFO)<<__func__<<": ignore reset device ";
 }
 
 void Telephony::setDevices(const std::vector<AudioDevice>& devices, const bool updateRx) {
@@ -276,6 +280,25 @@ void Telephony::onExternalDeviceConnectionChanged(const AudioDevice& extDevice,
                                                   const bool& connect) {
     std::scoped_lock lock{mLock};
     // Placeholder for telephony to act upon external device connection
+    if (!isOutputDevice(extDevice)) {
+        return;
+    }
+    if (isBluetoothSCODevice(extDevice) || isBluetoothA2dpDevice(extDevice)) {
+        LOG(VERBOSE) << __func__ << ": sco/a2dp no change";
+        return;
+    }
+    if (connect) {
+        mRxDevice = extDevice;
+        mTxDevice = getMatchingTxDevice(mRxDevice);
+        updateDevices();
+    } else {
+        if (mIsCRSStarted && !hasValidPlaybackStream) {
+            mRxDevice = kDefaultCRSRxDevice;
+            mTxDevice = getMatchingTxDevice(mRxDevice);
+            updateDevices();
+        }
+    }
+
 }
 
 void Telephony::onOutputPrimaryStreamDevices(const std::vector<AudioDevice>& primaryStreamDevices) {
@@ -317,6 +340,9 @@ void Telephony::onBluetoothScoEvent(const bool& enable) {
 
 void Telephony::updateCrsDevice() {
     LOG(VERBOSE) << __func__ << ": Enter";
+    if (hasValidPlaybackStream) {
+        return;
+    }
 
     if (mRxDevice.type.type == AudioDeviceType::OUT_SPEAKER_EARPIECE) {
         mRxDevice = kDefaultCRSRxDevice;
@@ -347,6 +373,10 @@ AudioDevice Telephony::getMatchingTxDevice(const AudioDevice& rxDevice) {
                rxDevice.type.connection == AudioDeviceDescription::CONNECTION_BT_LE) {
         return AudioDevice{.type.type = AudioDeviceType::IN_HEADSET,
                            .type.connection = AudioDeviceDescription::CONNECTION_BT_LE};
+    } else if (rxDevice.type.type == AudioDeviceType::OUT_CARKIT &&
+               rxDevice.type.connection == AudioDeviceDescription::CONNECTION_BT_SCO) {
+        return AudioDevice{.type.type = AudioDeviceType::IN_HEADSET,
+                           .type.connection = AudioDeviceDescription::CONNECTION_BT_SCO};
     } else if ((rxDevice.type.type == AudioDeviceType::OUT_DEVICE ||
                 rxDevice.type.type == AudioDeviceType::OUT_HEADSET) &&
                rxDevice.type.connection == AudioDeviceDescription::CONNECTION_USB) {
@@ -376,7 +406,8 @@ void Telephony::reconfigure(const SetUpdates& newUpdates) {
     if (newUpdates.mIsCrsCall) {
         mSetUpdates.mIsCrsCall = newUpdates.mIsCrsCall;
         mSetUpdates.mVSID = newUpdates.mVSID;
-        if (!mIsCRSStarted && mAudioMode == AudioMode::RINGTONE) {
+        if (!mIsCRSStarted && !isAnyCallActive() &&
+            mAudioMode == AudioMode::RINGTONE) {
              updateCrsDevice();
              startCall();
              if (mRxDevice.type.type != AudioDeviceType::OUT_SPEAKER) {
@@ -426,7 +457,7 @@ void Telephony::updateCalls() {
                                     (palDevices[1].id == PAL_DEVICE_IN_BLUETOOTH_BLE)) {
                                     updateVoiceMetadataForBT(true);
                                 }
-                                if (!isAnyCallActive()) {
+                                if (!isAnyCallActive() && !mIsCRSStarted) {
                                     mSetUpdates =  mVoiceSession.session[i].CallUpdate;
                                     startCall();
                                     mVoiceSession.session[i].state.current_ = mVoiceSession.session[i].state.new_;
@@ -587,6 +618,24 @@ void Telephony::triggerHACinVoipPlayback() {
     }
 }
 
+void Telephony::onPlaybackStart() {
+    std::scoped_lock lock{mLock};
+    hasValidPlaybackStream = true;
+    if (mIsCRSStarted) {
+        LOG(INFO) << __func__ << ": playback conc status changed for CRS call";
+        updateDevices();
+    }
+}
+
+void Telephony::onPlaybackClose() {
+    std::scoped_lock lock{mLock};
+    hasValidPlaybackStream = false;
+    if (mIsCRSStarted) {
+        LOG(INFO) << __func__ << ": playback conc status changed for CRS call";
+        updateDevices();
+    }
+}
+
 void Telephony::setCRSVolumeFromIndex(const int index) {
     std::scoped_lock lock{mLock};
     if (index <= MAX_CRS_VOL_INDEX && index >= MIN_CRS_VOL_INDEX)
@@ -650,20 +699,19 @@ void Telephony::startCall() {
     }
 
     const size_t numDevices = 2;
+    //set custom key for hac mode
+    if (mTelecomConfig.isHacEnabled.has_value() && mTelecomConfig.isHacEnabled.value().value &&
+        palDevices[0].id == PAL_DEVICE_OUT_HANDSET) {
+        strlcpy(palDevices[0].custom_config.custom_key, "HAC",
+                sizeof(palDevices[0].custom_config.custom_key));
+        LOG(VERBOSE) << __func__ << "setting custom key as " << palDevices[0].custom_config.custom_key;
+    }
     if (mSetUpdates.mIsCrsCall) {
         strlcpy(palDevices[0].custom_config.custom_key, "crsCall",
                 sizeof(palDevices[0].custom_config.custom_key));
-        LOG(VERBOSE) << __func__ << "setting custom key as ", palDevices[0].custom_config.custom_key;
-    } else {
-        strlcpy(palDevices[0].custom_config.custom_key, "",
-                sizeof(palDevices[0].custom_config.custom_key));
+        LOG(VERBOSE) << __func__ << "setting custom key as " << palDevices[0].custom_config.custom_key;
     }
-    //set custom key for hac mode
-    if (mTelecomConfig.isHacEnabled && palDevices[0].id == PAL_DEVICE_OUT_HANDSET) {
-        strlcpy(palDevices[0].custom_config.custom_key, "HAC",
-                sizeof(palDevices[0].custom_config.custom_key));
-        LOG(VERBOSE) << __func__ << "setting custom key as ", palDevices[0].custom_config.custom_key;
-    }
+
     if (int32_t ret = ::pal_stream_open(
                 attributes.get(), numDevices, reinterpret_cast<pal_device*>(palDevices.data()), 0,
                 nullptr, nullptr, reinterpret_cast<uint64_t>(this), &mPalHandle);
@@ -690,6 +738,10 @@ void Telephony::startCall() {
 
 void Telephony::startCrsLoopback() {
     LOG(DEBUG) << __func__ << ": Enter";
+    if (hasValidPlaybackStream) {
+        LOG(VERBOSE) << __func__ << ": block loopback start";
+        return;
+    }
     auto attributes = mPlatform.getDefaultCRSTelephonyAttributes();
     std::vector<::aidl::android::media::audio::common::AudioDevice> RxDevices;
     RxDevices = {kDefaultCRSRxDevice};
@@ -746,6 +798,7 @@ void Telephony::stopCall() {
     mPalHandle = nullptr;
     if (mSetUpdates.mIsCrsCall) {
         mRxDevice = kDefaultRxDevice;
+        mTxDevice = getMatchingTxDevice(mRxDevice);
     }
     LOG(DEBUG) << __func__ << ": EXIT";
 }
@@ -785,7 +838,7 @@ void Telephony::updateDevices() {
     /*If callstate is active, but no palHandle, that means pal stream open
       failed, so start call again , we might get updated devices now which
       helps in pal stream open successful, so call startCall here*/
-    if (mSetUpdates.mCallState == CallState::ACTIVE && mPalHandle == nullptr) {
+    if (mSetUpdates.mCallState == CallState::ACTIVE && !mIsCRSStarted && mPalHandle == nullptr) {
         LOG(DEBUG) << __func__ << ": starting call as palHandle is null and call state active";
         startCall();
         return;
@@ -837,6 +890,17 @@ void Telephony::updateDevices() {
         }
     }
 
+    //set or remove custom key for hac mode
+    if (mTelecomConfig.isHacEnabled.has_value() && mTelecomConfig.isHacEnabled.value().value &&
+        palDevices[0].id == PAL_DEVICE_OUT_HANDSET) {
+        strlcpy(palDevices[0].custom_config.custom_key, "HAC",
+                sizeof(palDevices[0].custom_config.custom_key));
+        LOG(VERBOSE) << __func__ << "setting custom key as " << palDevices[0].custom_config.custom_key;
+    } else {
+        strlcpy(palDevices[0].custom_config.custom_key, "",
+                sizeof(palDevices[0].custom_config.custom_key));
+    }
+
     if (mSetUpdates.mIsCrsCall) {
         if (mPalCrsHandle != nullptr)
             stopCrsLoopback();
@@ -844,19 +908,9 @@ void Telephony::updateDevices() {
         palDevices = mPlatform.convertToPalDevices({mRxDevice, mTxDevice});
         strlcpy(palDevices[0].custom_config.custom_key, "crsCall",
                   sizeof(palDevices[0].custom_config.custom_key));
-    } else {
-        strlcpy(palDevices[0].custom_config.custom_key, "",
-                  sizeof(palDevices[0].custom_config.custom_key));
     }
 
     if (mPalHandle == nullptr) return;
-
-     //set custom key for hac mode
-    if (mTelecomConfig.isHacEnabled && palDevices[0].id == PAL_DEVICE_OUT_HANDSET) {
-        strlcpy(palDevices[0].custom_config.custom_key, "HAC",
-                sizeof(palDevices[0].custom_config.custom_key));
-        LOG(VERBOSE) << __func__ << "setting custom key as ", palDevices[0].custom_config.custom_key;
-    }
 
     if (int32_t ret = ::pal_stream_set_device(mPalHandle, 2,
                                               reinterpret_cast<pal_device*>(palDevices.data()));

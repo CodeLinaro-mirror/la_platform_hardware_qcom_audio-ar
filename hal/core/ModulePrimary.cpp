@@ -323,6 +323,7 @@ void ModulePrimary::setAudioPatchTelephony(const std::vector<AudioPortConfig*>& 
     }
 
     mTelephony->setDevices(devices, updateRx);
+    mAudExt.mHfpExtension->audio_extn_hfp_set_device(devices, updateRx);
     LOG(INFO) << __func__ << ": set telephony " << (updateRx ? "RX" : "TX") << " devices";
 }
 

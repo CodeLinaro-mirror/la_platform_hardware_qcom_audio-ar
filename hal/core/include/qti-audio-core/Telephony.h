@@ -147,6 +147,10 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
     /* set the voip stream */
     void setVoipPlaybackStream(std::weak_ptr<StreamCommonInterface> voipStream);
 
+    /* called on playback stream start/close */
+    void onPlaybackStart();
+    void onPlaybackClose();
+
     void updateVoiceMetadataForBT(bool call_active);
     std::weak_ptr<StreamOut> mStreamOutPrimary;
     std::weak_ptr<StreamIn> mStreamInPrimary;
@@ -154,6 +158,7 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
   protected:
     void startCall();
     void stopCall();
+    void VoiceStop();
     void configureVolumeBoost();
     void configureSlowTalk();
     void configureHDVoice();
@@ -188,6 +193,7 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
     bool mIsSlowTalkEnabled{false};
     bool mIsHDVoiceEnabled{false};
     bool mIsDeviceMuted{false};
+    bool hasValidPlaybackStream{false};
     std::string mMuteDirection{""};
 
     using TtyMap = std::map<TelecomConfig::TtyMode, pal_tty_t>;

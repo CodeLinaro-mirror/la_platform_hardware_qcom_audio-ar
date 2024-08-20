@@ -11,6 +11,8 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <aidl/android/media/audio/common/AudioDevice.h>
+#include <qti-audio-core/Platform.h>
 #include "extensions/battery_listener.h"
 
 typedef enum {
@@ -94,6 +96,7 @@ typedef bool (*hfp_is_active_t)();
 typedef int (*hfp_get_usecase_t)();
 typedef int (*hfp_set_mic_mute_t)(bool state);
 typedef int (*hfp_set_mic_mute2_t)(bool state);
+typedef void (*hfp_set_device_t)(struct pal_device *devices);
 
 typedef void (*a2dp_bt_audio_pre_init_t)(void);
 typedef void (*register_reconfig_cb_t)(int (*reconfig_cb)(tSESSION_TYPE, int));
@@ -113,6 +116,7 @@ class AudioExtensionBase {
     void* mHandle = nullptr;
     bool mEnabled;
     std::string mLibraryName;
+    Platform& mPlatform{Platform::getInstance()};
 
   private:
     void cleanUp();
@@ -151,6 +155,10 @@ class HfpExtension : public AudioExtensionBase {
     int audio_extn_hfp_set_mic_mute(bool state);
     int audio_extn_hfp_set_mic_mute2(bool state);
     void audio_extn_hfp_set_parameters(struct str_parms* params);
+    void audio_extn_hfp_set_device(const std::vector<::aidl::android::media::audio::common::AudioDevice>&
+            devices, const bool updateRx);
+    ::aidl::android::media::audio::common::AudioDevice audio_extn_hfp_get_matching_tx_device(
+            const ::aidl::android::media::audio::common::AudioDevice& rxDevice);
 
   private:
     hfp_init_t hfp_init;
@@ -159,6 +167,7 @@ class HfpExtension : public AudioExtensionBase {
     hfp_set_mic_mute_t hfp_set_mic_mute;
     hfp_set_parameters_t hfp_set_parameters;
     hfp_set_mic_mute2_t hfp_set_mic_mute2;
+    hfp_set_device_t hfp_set_device;
     bool micMute;
 };
 

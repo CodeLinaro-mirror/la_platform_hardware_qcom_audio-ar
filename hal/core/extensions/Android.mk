@@ -3,7 +3,9 @@ include $(CLEAR_VARS)
 LOCAL_MODULE            := libaudiocore.extension
 LOCAL_VENDOR_MODULE     := true
 
-LOCAL_C_INCLUDES            := $(LOCAL_PATH)/include
+LOCAL_C_INCLUDES            := $(LOCAL_PATH)/include \
+                               $(LOCAL_PATH)/../platform/include \
+                               $(LOCAL_PATH)/../utils/include
 
 LOCAL_EXPORT_C_INCLUDE_DIRS   := $(LOCAL_PATH)/include
 
@@ -32,6 +34,7 @@ LOCAL_SHARED_LIBRARIES := \
     android.hardware.common.fmq-V1-ndk \
     android.media.audio.common.types-V3-ndk \
     android.hardware.audio.core-V2-ndk \
+    qti-audio-types-aidl-V1-ndk \
     libar-pal
 
 include $(BUILD_STATIC_LIBRARY)

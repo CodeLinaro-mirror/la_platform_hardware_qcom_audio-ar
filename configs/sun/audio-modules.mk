@@ -35,6 +35,7 @@ AUDIO_PAL += libhfp_pal
 #PAL Service
 AUDIO_PAL += libpalclient
 AUDIO_PAL += libpalipcservice
+AUDIO_PAL += libpaleventnotifier
 
 # C2 Audio
 AUDIO_C2 := libqc2audio_base
@@ -80,9 +81,9 @@ AUDIO_MODULES += fai__2.0.0_0.1__3.0.0_0.0__eai_1.36_enpu2.pmd
 AUDIO_MODULES += fai__2.7.2_0.0__3.0.0_0.0__eai_1.36_enpu2.pmd
 AUDIO_MODULES += fai__2.7.20_0.0__3.0.0_0.0__eai_1.36_enpu2.pmd
 AUDIO_MODULES += fai__3.0.0_0.0__eai_1.36_enpu2.pmd
-AUDIO_MODULES += ffv__7.0.1_0.1__eai_4.6.0_enpu5.pmd
-AUDIO_MODULES += ffv__7.0.2_0.2__eai_4.6.0_enpu5.pmd
-AUDIO_MODULES += ffv__5.0.2_0.1__eai_4.8_arm.pmd
+AUDIO_MODULES += ffv__7.1.1_0.1__eai_4.8_enpu_v5.pmd
+AUDIO_MODULES += ffv__7.1.1_0.2__eai_4.8_enpu_v5.pmd
+AUDIO_MODULES += ffv__5.0.2_0.1__eai_4.8_enpu_v5.pmd
 AUDIO_MODULES += hk01b_relu_eAI_4.6_eNPU_V5_adsp_i.pmd
 AUDIO_MODULES += click.pcm
 AUDIO_MODULES += double_click.pcm
@@ -121,6 +122,10 @@ AUDIO_MODULES += libvui_intf
 AUDIO_MODULES += libVoiceSdk
 AUDIO_MODULES += libtensorflowlite_c
 AUDIO_MODULES += libqasr
+AUDIO_MODULES += libQnnHtp
+AUDIO_MODULES += libQnnHtpV79Skel
+AUDIO_MODULES += libQnnHtpV79Stub
+AUDIO_MODULES += libQnnSystem
 
 AUDIO_MODULES += $(AUDIO_AGM)
 AUDIO_MODULES += $(AUDIO_PAL)
@@ -132,7 +137,9 @@ AUDIO_MODULES += libsoundtriggerhal.qti
 
 # enable Listen Sound Model aidl 1.0
 AUDIO_MODULES += \
-    liblistensoundmodelaidl
+    liblistensoundmodelaidl \
+    liblistensoundmodel2vendor \
+    vendor.qti.hardware.ListenSoundModelAidl-V1-ndk.vendor
 
 # AIDL Audio modules
 

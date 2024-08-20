@@ -25,6 +25,7 @@
 #include <aidl/android/hardware/audio/core/BnBluetoothA2dp.h>
 #include <aidl/android/hardware/audio/core/BnBluetoothLe.h>
 #include <qti-audio-core/Platform.h>
+#include <extensions/AudioExtension.h>
 
 namespace qti::audio::core {
 
@@ -39,6 +40,7 @@ class Bluetooth : public ::aidl::android::hardware::audio::core::BnBluetooth {
     ScoConfig mScoConfig;
     HfpConfig mHfpConfig;
     Platform& mPlatform{Platform::getInstance()};
+    AudioExtension& mAudExt{AudioExtension::getInstance()};
 };
 
 class BluetoothA2dp : public ::aidl::android::hardware::audio::core::BnBluetoothA2dp {

@@ -36,6 +36,7 @@
 #include <aidl/android/media/audio/common/AudioIoFlags.h>
 #include <aidl/android/media/audio/common/AudioOffloadInfo.h>
 #include <aidl/android/media/audio/common/MicrophoneInfo.h>
+#include <extensions/AudioExtension.h>
 #include <error/expected_utils.h>
 #include <fmq/AidlMessageQueue.h>
 #include <system/thread_defs.h>
@@ -234,10 +235,7 @@ struct DriverInterface {
             ::aidl::android::hardware::audio::core::StreamDescriptor::Reply* /*reply*/) {
         return ::android::OK;
     }
-    /* only for meant for Asynchronus StreamOut*/
-    virtual bool isDrainReady() { return false; }
-    /* only for meant for Asynchronus StreamOut*/
-    virtual bool isTransferReady() { return false; }
+
     // This function is only called once.
     // Implementers must provide implementation to shutdown the platform resources
     virtual void shutdown() { return;}
@@ -253,6 +251,13 @@ class StreamWorkerCommonLogic : public ::android::hardware::audio::common::Strea
                 StreamContext::STATE_CLOSED);
     }
     void setIsConnected(bool connected) { mIsConnected = connected; }
+
+    /**
+     * IStreamCallback equivalents for StreamWorker
+     **/
+    virtual void publishTransferReady() {}
+    virtual void publishDrainReady() {}
+    virtual void publishError() {}
 
   protected:
     using DataBufferElement = int8_t;
@@ -291,6 +296,20 @@ class StreamWorkerCommonLogic : public ::android::hardware::audio::common::Strea
     // detect memory allocation issues.
     std::unique_ptr<DataBufferElement[]> mDataBuffer;
     size_t mDataBufferSize;
+    /**
+     * only used in Asynchrous Stream(In|Out) context, to synchronize the
+     * callbacks from the hardware.
+     * Hardware sends callback any time irrespective of the Stream State.
+     * Hence the synchronization.
+     **/
+    std::mutex mAsyncMutex;
+    enum StreamCallbackType {
+        TR = 1,  // TransferReady
+        DR = 2,  // DrainReady
+        ER = 3,  // Error
+    };
+    std::optional<StreamCallbackType> mPendingCallBack = std::nullopt;
+    std::condition_variable mPendingCV;
 };
 
 // This interface is used to decouple stream implementations from a concrete
@@ -304,7 +323,10 @@ struct StreamWorkerInterface {
     virtual void setClosed() = 0;
     virtual bool start() = 0;
     virtual pid_t getTid() = 0;
-    virtual void stop() = 0;
+    virtual void join() = 0;
+    virtual void publishTransferReady() = 0;
+    virtual void publishDrainReady() = 0;
+    virtual void publishError() = 0;
 };
 
 template <class WorkerLogic>
@@ -323,7 +345,10 @@ class StreamWorkerImpl : public StreamWorkerInterface,
         return WorkerImpl::start(WorkerImpl::kThreadName, ANDROID_PRIORITY_URGENT_AUDIO);
     }
     pid_t getTid() override { return WorkerImpl::getTid(); }
-    void stop() override { return WorkerImpl::stop(); }
+    void join() override { return WorkerImpl::join(); }
+    void publishTransferReady() override { return WorkerImpl::publishTransferReady(); };
+    void publishDrainReady() override { return WorkerImpl::publishDrainReady(); }
+    void publishError() override { return WorkerImpl::publishError(); }
 };
 
 class StreamInWorkerLogic : public StreamWorkerCommonLogic {
@@ -347,6 +372,9 @@ class StreamOutWorkerLogic : public StreamWorkerCommonLogic {
     StreamOutWorkerLogic(StreamContext* context, DriverInterface* driver)
         : StreamWorkerCommonLogic(context, driver),
           mEventCallback(context->getOutEventCallback()) {}
+    void publishTransferReady() override;
+    void publishDrainReady() override;
+    void publishError() override;
 
   protected:
     Status cycle() override;
@@ -528,6 +556,14 @@ class StreamCommonImpl : virtual public StreamCommonInterface, virtual public Dr
     void setStreamMicMute(const bool muted) override;
     ndk::ScopedAStatus configureMMapStream(int32_t* fd, int64_t* burstSizeFrames, int32_t* flags,
                                            int32_t* bufferSizeFrames) override;
+
+    // start of Equivalent of IStreamCallbacks
+    void publishTransferReady() { mWorker->publishTransferReady(); }
+
+    void publishDrainReady() { mWorker->publishDrainReady(); }
+
+    void publishError() { mWorker->publishError(); }
+    // end of Equivalent of IStreamCallbacks
 
   protected:
     static StreamWorkerInterface::CreateInstance getDefaultInWorkerCreator() {

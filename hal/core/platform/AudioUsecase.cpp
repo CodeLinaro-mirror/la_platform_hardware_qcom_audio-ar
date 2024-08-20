@@ -12,6 +12,7 @@
 #include <qti-audio-core/AudioUsecase.h>
 #include <qti-audio-core/Platform.h>
 #include <qti-audio-core/PlatformUtils.h>
+#include <qti-audio-core/PlatformStreamCallback.h>
 #include <qti-audio-core/Utils.h>
 
 using ::aidl::android::media::audio::common::AudioIoFlags;
@@ -320,9 +321,9 @@ size_t CompressPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
 
 CompressPlayback::CompressPlayback(
         const ::aidl::android::media::audio::common::AudioOffloadInfo& offloadInfo,
-        std::shared_ptr<::aidl::android::hardware::audio::core::IStreamCallback> asyncCallback,
+        PlatformStreamCallback* const callback,
         const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig)
-    : mOffloadInfo(offloadInfo), mAsyncCallback(asyncCallback), mMixPortConfig(mixPortConfig) {
+    : mOffloadInfo(offloadInfo), mPlatformStreamCallback(callback), mMixPortConfig(mixPortConfig) {
     configureDefault();
 }
 
@@ -369,22 +370,6 @@ ndk::ScopedAStatus CompressPlayback::getVendorParameters(
     return ndk::ScopedAStatus::ok();
 }
 
-bool CompressPlayback::fetchDrainReady() {
-    return mIsDrainReady.exchange(false);
-}
-
-void CompressPlayback::setDrainReady() {
-    mIsDrainReady.store(true);
-}
-
-bool CompressPlayback::fetchTransferReady() {
-    return mIsTransferReady.exchange(false);
-}
-
-void CompressPlayback::setTransferReady() {
-    mIsTransferReady.store(true);
-}
-
 // static
 int32_t CompressPlayback::palCallback(pal_stream_handle_t* palHandle, uint32_t eventId,
                                       uint32_t* eventData, uint32_t eventSize, uint64_t cookie) {
@@ -392,25 +377,19 @@ int32_t CompressPlayback::palCallback(pal_stream_handle_t* palHandle, uint32_t e
 
     switch (eventId) {
         case PAL_STREAM_CBK_EVENT_WRITE_READY: {
-            LOG(VERBOSE) << __func__ << " ready to write";
-            compressPlayback->setTransferReady();
-            compressPlayback->mAsyncCallback->onTransferReady();
+            compressPlayback->mPlatformStreamCallback->onTransferReady();
         } break;
-
         case PAL_STREAM_CBK_EVENT_DRAIN_READY: {
-            LOG(VERBOSE) << __func__ << " drain ready";
-            compressPlayback->setDrainReady();
-            compressPlayback->mAsyncCallback->onDrainReady();
+            compressPlayback->mPlatformStreamCallback->onDrainReady();
         } break;
         case PAL_STREAM_CBK_EVENT_PARTIAL_DRAIN_READY: {
-            LOG(VERBOSE) << __func__ << " partial drain ready";
-            compressPlayback->setDrainReady();
-            compressPlayback->mAsyncCallback->onDrainReady();
+            compressPlayback->mPlatformStreamCallback->onDrainReady();
+            // gapless resets in PAL, when partial drain is received,
+            compressPlayback->mIsGaplessConfigured = false;
         } break;
-        case PAL_STREAM_CBK_EVENT_ERROR:
-            LOG(ERROR) << __func__ << " error!!!";
-            compressPlayback->mAsyncCallback->onError();
-            break;
+        case PAL_STREAM_CBK_EVENT_ERROR: {
+            compressPlayback->mPlatformStreamCallback->onError();
+        } break;
         default:
             LOG(ERROR) << __func__ << " invalid!!! event id:" << eventId;
             return -EINVAL;
@@ -605,7 +584,7 @@ ndk::ScopedAStatus CompressPlayback::setVendorParameters(
     return ndk::ScopedAStatus::ok();
 }
 
-bool CompressPlayback::configureGapLessMetadata() const {
+bool CompressPlayback::configureGapLessMetadata() {
     const auto payloadSize = sizeof(pal_param_payload);
     const auto kGapLessSize = sizeof(pal_compr_gapless_mdata);
     auto dataPtr = std::make_unique<uint8_t[]>(payloadSize + kGapLessSize);
@@ -614,8 +593,7 @@ bool CompressPlayback::configureGapLessMetadata() const {
     auto gapLessPtr = reinterpret_cast<pal_compr_gapless_mdata*>(dataPtr.get() + payloadSize);
     gapLessPtr->encoderDelay = mOffloadMetadata.delayFrames;
     gapLessPtr->encoderPadding = mOffloadMetadata.paddingFrames;
-    LOG(VERBOSE) << __func__ << ": encoderDelay:" << gapLessPtr->encoderDelay
-                 << ", encoderPadding:" << gapLessPtr->encoderPadding;
+
     if (mCompressPlaybackHandle) {
         if (int32_t ret = ::pal_stream_set_param(mCompressPlaybackHandle, PAL_PARAM_ID_GAPLESS_MDATA,
                                              payloadPtr);
@@ -623,8 +601,12 @@ bool CompressPlayback::configureGapLessMetadata() const {
             LOG(ERROR) << __func__ << ": failed PAL_PARAM_ID_GAPLESS_MDATA!! ret:" << ret;
             return false;
         }
+        mIsGaplessConfigured = true;
+        LOG(VERBOSE) << __func__ << ": encoderDelay:" << gapLessPtr->encoderDelay
+                 << ", encoderPadding:" << gapLessPtr->encoderPadding;
+        return true;
     }
-    return true;
+    return false;
 }
 
 void CompressPlayback::updateOffloadMetadata(

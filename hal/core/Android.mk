@@ -89,6 +89,7 @@ LOCAL_SHARED_LIBRARIES := \
 
 include $(BUILD_SHARED_LIBRARY)
 
+include $(CURRENT_PATH)/fuzzer/Android.mk
 include $(CURRENT_PATH)/extensions/Android.mk
 include $(CURRENT_PATH)/platform/Android.mk
 include $(CURRENT_PATH)/utils/Android.mk
