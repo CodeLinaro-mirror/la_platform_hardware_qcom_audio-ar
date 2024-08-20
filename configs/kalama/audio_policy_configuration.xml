@@ -93,6 +93,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 <item>FM Tuner</item>
                 <item>Telephony Rx</item>
                 <item>Echo Reference</item>
+                <item>HDMI-in</item>
             </attachedDevices>
             <defaultOutputDevice>Speaker</defaultOutputDevice>
             <mixPorts>
@@ -280,6 +281,9 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
                 </mixPort>
                 <mixPort name="hifi_input" role="sink" />
+                <mixPort name="HDMI input" role="sink">
+                    <profile name="" format="AUDIO_FORMAT_PCM_16_BIT" samplingRates="32000,44100,48000" channelMasks="AUDIO_CHANNEL_IN_STEREO"/>
+                </mixPort>
             </mixPorts>
 
             <devicePorts>
@@ -422,6 +426,9 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                     <profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
                              samplingRates="8000 16000 24000 44100 48000" channelMasks="AUDIO_CHANNEL_IN_MONO AUDIO_CHANNEL_IN_STEREO"/>
                 </devicePort>
+                <devicePort tagName="HDMI-in" type="AUDIO_DEVICE_IN_HDMI" role="source">
+                    <profile name="" format="AUDIO_FORMAT_PCM_16_BIT" samplingRates="48000" channelMasks="AUDIO_CHANNEL_IN_STEREO"/>
+                </devicePort>
             </devicePorts>
             <!-- route declaration, i.e. list all available sources for a given sink -->
             <routes>
@@ -484,6 +491,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 <route type="mix" sink="BT BLE Broadcast"
                        sources="primary output,deep_buffer,direct_pcm,compressed_offload"/>
                 <route type="mix" sink="hifi_input" sources="USB Device In,USB Headset In" />
+                <route type="mix" sink="HDMI input" sources="HDMI-in"/>
             </routes>
 
         </module>
