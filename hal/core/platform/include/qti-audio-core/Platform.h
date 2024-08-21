@@ -117,11 +117,25 @@ class Platform {
     std::vector<pal_device> convertToPalDevices(
             const std::vector<::aidl::android::media::audio::common::AudioDevice>& devices)
             const noexcept;
+
+    /*
+     * @breif provides pal devices for given mixport and audiodevices.
+     *
+     * @param mixPortConfig mixportconfig for which devices are requested
+     * @param tag usecase tag
+     * @param setDevices vector of devices for which pal devices are requested
+     * @param dummyDevice setDevices can be empty, in that case if client needs
+     * dummy device in form of PAL_DEVICE_[IN/OUT]_DUMMY
+     */
+
     std::vector<pal_device> configureAndFetchPalDevices(
             const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig,
             const Usecase& tag,
-            const std::vector<::aidl::android::media::audio::common::AudioDevice>& setDevices)
-            const;
+            const std::vector<::aidl::android::media::audio::common::AudioDevice>& setDevices,
+            const bool dummyDevice = false) const;
+
+    std::vector<pal_device> getDummyPalDevices(
+            const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig) const;
     /*
     * @breif In order to get stream position in the DSP pipeline
     * 

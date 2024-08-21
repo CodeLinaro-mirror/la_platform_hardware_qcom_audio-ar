@@ -195,12 +195,9 @@ ndk::ScopedAStatus StreamOutPrimary::configureMMapStream(int32_t* fd, int64_t* b
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
     }
     attr->type = PAL_STREAM_ULTRA_LOW_LATENCY;
-    auto palDevices =
-            mPlatform.configureAndFetchPalDevices(mMixPortConfig, mTag, mConnectedDevices);
-    if (!palDevices.size()) {
-        LOG(ERROR) << __func__ << mLogPrefix << " no connected devices on stream";
-        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
-    }
+    auto palDevices = mPlatform.configureAndFetchPalDevices(mMixPortConfig, mTag, mConnectedDevices,
+                                                            true /*dummyDevice*/);
+
     /* For MMAP playback usecase, audio framework updates track metadata to AHAL after
      * CreateMmapBuffer(). In case of MMAP playback on BT, device starts well before
      * track metadata updated to BT stack. Due to this, it requires unnecessary
@@ -230,7 +227,8 @@ ndk::ScopedAStatus StreamOutPrimary::configureMMapStream(int32_t* fd, int64_t* b
     if (int32_t ret = ::pal_stream_open(attr.get(), palDevices.size(), palDevices.data(), 0,
                                         nullptr, palFn, cookie, &(this->mPalHandle));
         ret) {
-        LOG(ERROR) << __func__ << mLogPrefix << " pal stream open failed, ret:" << std::to_string(ret);
+        LOG(ERROR) << __func__ << mLogPrefix
+                   << " pal stream open failed, ret:" << std::to_string(ret);
         mPalHandle = nullptr;
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
     }
