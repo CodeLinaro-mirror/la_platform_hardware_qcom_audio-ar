@@ -364,6 +364,9 @@ AudioDevice Telephony::getMatchingTxDevice(const AudioDevice& rxDevice) {
     } else if (rxDevice.type.type == AudioDeviceType::OUT_HEADPHONE &&
                rxDevice.type.connection == AudioDeviceDescription::CONNECTION_ANALOG) {
         return AudioDevice{.type.type = AudioDeviceType::IN_MICROPHONE};
+    } else if (rxDevice.type.type == AudioDeviceType::OUT_DEVICE &&
+               rxDevice.type.connection == AudioDeviceDescription::CONNECTION_ANALOG) {
+        return AudioDevice{.type.type = AudioDeviceType::IN_MICROPHONE};
     } else if ((rxDevice.type.type == AudioDeviceType::OUT_DEVICE ||
                 rxDevice.type.type == AudioDeviceType::OUT_HEADSET) &&
                rxDevice.type.connection == AudioDeviceDescription::CONNECTION_BT_SCO) {
