@@ -99,11 +99,7 @@ ndk::ScopedAStatus Telephony::switchAudioMode(AudioMode newAudioMode) {
         LOG(VERBOSE) << __func__ << ": no change" << toString(newAudioMode);
         return ndk::ScopedAStatus::ok();
     }
-    if (newAudioMode == AudioMode::IN_CALL && (mAudioMode == AudioMode::NORMAL ||
-                                               mAudioMode == AudioMode::RINGTONE || mAudioMode == AudioMode::IN_COMMUNICATION)) {
-        updateCalls();
-        LOG(DEBUG) << __func__ << ": start call on call state ACTIVE";
-    } else if (newAudioMode == AudioMode::NORMAL && mAudioMode == AudioMode::IN_CALL) {
+    if (newAudioMode == AudioMode::NORMAL) {
         // safe to stop now
         VoiceStop();
     } else if (newAudioMode == AudioMode::RINGTONE && mSetUpdates.mIsCrsCall) {
@@ -192,7 +188,7 @@ bool Telephony::isAnyCallActive() {
 
 void Telephony::resetDevices(const bool resetRx) {
     std::scoped_lock lock{mLock};
-    LOG(INFO)<<__func__<<": ignore reset device ";
+    LOG(VERBOSE)<<__func__<<": ignore reset device ";
 }
 
 void Telephony::setDevices(const std::vector<AudioDevice>& devices, const bool updateRx) {
@@ -837,13 +833,12 @@ void Telephony::updateDevices() {
     const int retry_period_ms = 100;
     bool is_suspend_setparam = false;
     LOG(DEBUG) << __func__ << ": Enter";
-    /*If callstate is active, but no palHandle, that means pal stream open
-      failed, so start call again , we might get updated devices now which
-      helps in pal stream open successful, so call startCall here*/
-    if (mSetUpdates.mCallState == CallState::ACTIVE && !mIsCRSStarted && mPalHandle == nullptr) {
-        LOG(DEBUG) << __func__ << ": starting call as palHandle is null and call state active";
-        startCall();
-        return;
+
+    if (!isAnyCallActive()) {
+        if (mAudioMode == AudioMode::IN_CALL && mPalHandle == nullptr) {
+            updateCalls();
+            return;
+        }
     }
 
     // TODO configure pal devices with custom key if any
