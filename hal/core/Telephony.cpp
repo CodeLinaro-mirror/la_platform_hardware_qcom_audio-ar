@@ -435,7 +435,7 @@ void Telephony::reconfigure(const SetUpdates& newUpdates) {
              break;
          }
     }
-    if (mAudioMode == AudioMode::IN_CALL) {
+    if (mAudioMode == AudioMode::IN_CALL || mAudioMode == AudioMode::IN_COMMUNICATION) {
        updateCalls();
     }
 
