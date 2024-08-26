@@ -21,6 +21,9 @@ LOCAL_SRC_FILES := \
 
 LOCAL_WHOLE_STATIC_LIBRARIES := libaudio_microphoneinfo_parser
 
+LOCAL_HEADER_LIBRARIES := \
+     libarpal_headers
+
 LOCAL_STATIC_LIBRARIES := \
     libaudiohalutils.qti
 

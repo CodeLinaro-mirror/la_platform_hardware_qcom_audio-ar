@@ -20,6 +20,7 @@ LOCAL_SHARED_LIBRARIES:= \
 
 LOCAL_HEADER_LIBRARIES:= \
     $(EFFECTS_DEFAULTS_HEADERS_LIBRARIES) \
-    libaudioutils_headers
+    libaudioutils_headers \
+    libarpal_headers
 
 include $(BUILD_SHARED_LIBRARY)

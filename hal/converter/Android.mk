@@ -7,7 +7,9 @@ LOCAL_MODULE_TAGS   := optional
 LOCAL_VENDOR_MODULE := true
 
 LOCAL_C_INCLUDES    += \
-     $(LOCAL_PATH)/include
+     $(LOCAL_PATH)/include \
+     $(TOP)/system/media/audio_route/include \
+     $(TOP)/system/media/audio/include
 
 LOCAL_EXPORT_C_INCLUDE_DIRS   := $(LOCAL_PATH)/include
 
