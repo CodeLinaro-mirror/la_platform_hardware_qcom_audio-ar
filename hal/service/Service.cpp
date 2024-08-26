@@ -25,8 +25,8 @@
 #include <log/log.h>
 #include "ConfigManager.h"
 
-// TODO Remove it
-static bool gFatalIfMandatoryInterfaceMissing = false;
+#define REGISTER_RETRY_COUNT 10
+#define SLEEP_TIME_SECONDS 1
 
 static bool registerServiceImplementation(const Interface& interface) {
     auto libraryName = interface.libraryName;
@@ -54,8 +54,23 @@ void registerInterfaces(const Interfaces& interfaces) {
     for (const auto& interface : interfaces) {
         if (registerServiceImplementation(interface)) {
             ALOGI("successfully registered %s", interface.toString().c_str());
-        } else if (interface.mandatory) { // TODO
-            LOG_ALWAYS_FATAL_IF(gFatalIfMandatoryInterfaceMissing, "failed to register %s ",
+        } else if (interface.mandatory) {
+            int32_t retryCount = 0;
+            bool isRegistered = false;
+            while (retryCount < REGISTER_RETRY_COUNT) {
+                ALOGI("failed to register service: %s, retry count: %d",
+                        interface.toString().c_str(), retryCount + 1);
+                isRegistered = registerServiceImplementation(interface);
+                if (isRegistered) {
+                    ALOGI("successfully registered %s", interface.toString().c_str());
+                    break;
+                } else {
+                    //the service may failed to register due to resource busy, sleep and try again
+                    sleep(SLEEP_TIME_SECONDS);
+                }
+                ++retryCount;
+            }
+            LOG_ALWAYS_FATAL_IF(!isRegistered, "failed to register %s ",
                                 interface.toString().c_str());
         } else {
             ALOGW("failed to register optional %s ", interface.toString().c_str());
