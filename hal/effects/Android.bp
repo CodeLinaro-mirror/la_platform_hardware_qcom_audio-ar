@@ -25,6 +25,7 @@ cc_defaults {
         "libaudioeffectsaidlqti_headers",
         "libaudio_system_headers",
         "libsystem_headers",
+        "libarpal_headers",
     ],
     cflags: [
         "-Wall",

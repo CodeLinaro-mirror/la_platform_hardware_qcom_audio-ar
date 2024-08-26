@@ -17,7 +17,8 @@ LOCAL_SRC_FILES := \
 LOCAL_HEADER_LIBRARIES :=  \
     libaudioclient_headers \
     libmedia_helper_headers \
-    libexpectedutils_headers
+    libexpectedutils_headers \
+    libarpal_headers
 
 LOCAL_SHARED_LIBRARIES := \
     libaudioaidlcommon \
