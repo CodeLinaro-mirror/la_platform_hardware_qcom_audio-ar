@@ -277,18 +277,26 @@ int32_t MmapUsecaseBase::createMMapBuffer(int64_t frameSize, int32_t* fd, int64_
 }
 
 int32_t MmapUsecaseBase::getMMapPosition(int64_t* frames, int64_t* timeNs) {
+    static int64_t sUnknown = -1;
     if (!mPalHandle) {
         LOG(ERROR) << __func__ << ": pal stream handle is null";
-        return -EINVAL;
+        *frames = *timeNs = sUnknown;
+        return 0;
+    }
+    if (!mIsStarted) {
+        LOG(ERROR) << __func__ << ": stream not started, position unknown";
+        *frames = *timeNs = sUnknown;
+        return 0;
     }
     struct pal_mmap_position pal_mmap_pos;
     if (int32_t ret = pal_stream_get_mmap_position(mPalHandle, &pal_mmap_pos); ret) {
-        LOG(ERROR) << __func__ << ": failed to get mmap positon "
-                   << "returned " << ret;
+        LOG(ERROR) << __func__ << ": error from pal_stream_get_mmap_position";
         return ret;
     }
     *timeNs = pal_mmap_pos.time_nanoseconds;
-    *frames = pal_mmap_pos.position_frames;
+    mFramesInSession = pal_mmap_pos.position_frames;
+    *frames = mTotalFrames + mFramesInSession;
+
     LOG(VERBOSE) << __func__ << ": frames:" << *frames << ", timeNs:" << *timeNs;
     return 0;
 }
@@ -331,6 +339,7 @@ int32_t MmapUsecaseBase::stop() {
         return -EINVAL;
     }
 
+    mTotalFrames = mTotalFrames + mFramesInSession;
     mIsStarted = false;
     LOG(VERBOSE) << __func__ << ": MMAP stop success";
 

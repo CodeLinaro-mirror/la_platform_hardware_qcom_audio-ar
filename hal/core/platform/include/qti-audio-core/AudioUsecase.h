@@ -195,6 +195,9 @@ class MmapUsecaseBase {
   protected:
     pal_stream_handle_t* mPalHandle{nullptr};
     bool mIsStarted = false;
+    int64_t mFramesInSession = 0;
+    /* cache the frames on stop*/
+    int64_t mTotalFrames = 0;
 };
 
 class MMapPlayback : public MmapUsecaseBase, public UsecaseConfig<MMapPlayback> {
