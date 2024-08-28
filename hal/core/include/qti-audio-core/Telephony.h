@@ -194,6 +194,7 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
     bool mIsHDVoiceEnabled{false};
     bool mIsDeviceMuted{false};
     bool hasValidPlaybackStream{false};
+    bool mIsVoiceStarted{false};
     std::string mMuteDirection{""};
 
     using TtyMap = std::map<TelecomConfig::TtyMode, pal_tty_t>;

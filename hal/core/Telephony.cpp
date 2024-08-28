@@ -79,6 +79,7 @@ void Telephony::VoiceStop() {
          mVoiceSession.session[i].CallUpdate.mCallState = CallState::IN_ACTIVE;
          mVoiceSession.session[i].state.new_ = CallState::IN_ACTIVE;
     }
+    mIsVoiceStarted = false;
     updateCalls();
 
     LOG(DEBUG) << __func__ << ": Exit";
@@ -188,7 +189,7 @@ bool Telephony::isAnyCallActive() {
 
 void Telephony::resetDevices(const bool resetRx) {
     std::scoped_lock lock{mLock};
-    LOG(VERBOSE)<<__func__<<": ignore reset device ";
+    LOG(VERBOSE) <<__func__<<": ignore reset device ";
 }
 
 void Telephony::setDevices(const std::vector<AudioDevice>& devices, const bool updateRx) {
@@ -280,7 +281,7 @@ void Telephony::onExternalDeviceConnectionChanged(const AudioDevice& extDevice,
         LOG(VERBOSE) << __func__ << ": sco/a2dp no change";
         return;
     }
-    if (isAnyCallActive()) {
+    if (isAnyCallActive() || mAudioMode == AudioMode::IN_CALL) {
         LOG(VERBOSE) << __func__ << ": voice call exist";
         return;
     }
@@ -301,9 +302,7 @@ void Telephony::onExternalDeviceConnectionChanged(const AudioDevice& extDevice,
             mTxDevice = getMatchingTxDevice(mRxDevice);
             updateDevices();
         }
-
     }
-
 }
 
 void Telephony::onOutputPrimaryStreamDevices(const std::vector<AudioDevice>& primaryStreamDevices) {
@@ -435,7 +434,6 @@ void Telephony::reconfigure(const SetUpdates& newUpdates) {
              mSetUpdates.mIsCrsCall = newUpdates.mIsCrsCall;
              mIsCRSStarted  = false;
              LOG(DEBUG) << __func__ << ": stop CRS call";
-             return;
          }
     }
 
@@ -446,7 +444,8 @@ void Telephony::reconfigure(const SetUpdates& newUpdates) {
              break;
          }
     }
-    if (mAudioMode == AudioMode::IN_CALL || mAudioMode == AudioMode::IN_COMMUNICATION) {
+    if (isAnyCallActive() ||
+       ((mAudioMode == AudioMode::IN_CALL) && mIsVoiceStarted)) {
        updateCalls();
     }
 
@@ -468,6 +467,7 @@ void Telephony::updateCalls() {
                                 if (!isAnyCallActive() && !mIsCRSStarted) {
                                     mSetUpdates =  mVoiceSession.session[i].CallUpdate;
                                     startCall();
+                                    mIsVoiceStarted = true;
                                     mVoiceSession.session[i].state.current_ = mVoiceSession.session[i].state.new_;
                                 } else {
                                     LOG(DEBUG) << __func__ << ": voice already started";
@@ -847,6 +847,7 @@ void Telephony::updateDevices() {
 
     if (!isAnyCallActive()) {
         if (mAudioMode == AudioMode::IN_CALL && mPalHandle == nullptr) {
+            mIsVoiceStarted = true;
             updateCalls();
             return;
         }
