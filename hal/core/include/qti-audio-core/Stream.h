@@ -289,6 +289,9 @@ class StreamWorkerCommonLogic : public ::android::hardware::audio::common::Strea
                           is_always_lock_free);
     std::atomic<::aidl::android::hardware::audio::core::StreamDescriptor::State> mState =
             ::aidl::android::hardware::audio::core::StreamDescriptor::State::STANDBY;
+    std::atomic<::aidl::android::hardware::audio::core::StreamDescriptor::DrainMode>
+        mRecentDrainMode =
+        ::aidl::android::hardware::audio::core::StreamDescriptor::DrainMode::DRAIN_UNSPECIFIED;
     // All fields below are used on the worker thread only.
     const std::chrono::duration<int, std::milli> mTransientStateDelayMs;
     std::chrono::time_point<std::chrono::steady_clock> mTransientStateStart;
