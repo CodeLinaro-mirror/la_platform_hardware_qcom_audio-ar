@@ -394,10 +394,7 @@ void StreamOutWorkerLogic::publishTransferReady() {
     if (!mContext->getAsyncCallback()) {
         return;
     }
-    std::unique_lock asyncLock{mAsyncMutex, std::defer_lock};
-    if(!asyncLock.try_lock()) {
-        LOG(WARNING) << __func__ << ": failed to acquire lock !!";
-    }
+    std::unique_lock lock{mAsyncMutex};
     mPendingCallBack = std::nullopt;
     if (mState == StreamDescriptor::State::TRANSFERRING) {
         mState = StreamDescriptor::State::ACTIVE;
@@ -415,10 +412,7 @@ void StreamOutWorkerLogic::publishDrainReady() {
     if (!mContext->getAsyncCallback()) {
         return;
     }
-    std::unique_lock asyncLock{mAsyncMutex, std::defer_lock};
-    if(!asyncLock.try_lock()) {
-        LOG(WARNING) << __func__ << ": failed to acquire lock !!";
-    }
+    std::unique_lock lock{mAsyncMutex};
     mPendingCallBack = std::nullopt;
     if (mState == StreamDescriptor::State::DRAINING) {
         mContext->getAsyncCallback()->onDrainReady();
