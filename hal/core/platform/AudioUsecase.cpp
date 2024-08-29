@@ -651,6 +651,7 @@ bool CompressPlayback::configureGapLessMetadata() {
                  << ", encoderPadding:" << gapLessPtr->encoderPadding;
         return true;
     }
+    LOG(ERROR) << __func__ << " PAL stream handle is NULL!";
     return false;
 }
 
@@ -677,15 +678,19 @@ bool CompressPlayback::configureCodecInfo() const {
     palParamPayload->payload_size = sizeof(pal_snd_dec_t);
     auto palSndDecPtr = reinterpret_cast<pal_snd_dec_t*>(dataPtr.get() + sizeof(pal_param_payload));
     *palSndDecPtr = mPalSndDec;
-    if (int32_t ret =
+    if (mCompressPlaybackHandle) {
+        if (int32_t ret =
                 ::pal_stream_set_param(mCompressPlaybackHandle, PAL_PARAM_ID_CODEC_CONFIGURATION,
                                        reinterpret_cast<pal_param_payload*>(dataPtr.get()));
         ret) {
-        LOG(ERROR) << __func__ << " PAL_PARAM_ID_CODEC_CONFIGURATION failed, ret:" << ret;
-        return false;
+            LOG(ERROR) << __func__ << " PAL_PARAM_ID_CODEC_CONFIGURATION failed, ret:" << ret;
+            return false;
+        }
+        LOG(VERBOSE) << __func__ << " PAL_PARAM_ID_CODEC_CONFIGURATION successful";
+        return true;
     }
-    LOG(VERBOSE) << __func__ << " PAL_PARAM_ID_CODEC_CONFIGURATION successful";
-    return true;
+    LOG(ERROR) << __func__ << " PAL stream handle is NULL!";
+    return false;
 }
 
 int64_t CompressPlayback::getPositionInFrames(pal_stream_handle_t* palHandle) {
@@ -995,15 +1000,18 @@ bool CompressCapture::configureCodecInfo(){
     palParamPayload->payload_size = sizeof(pal_snd_enc_t);
     auto payloadPtr = reinterpret_cast<pal_snd_enc_t*>(dataPtr.get() + sizeof(pal_param_payload));
     *payloadPtr = mPalSndEnc;
-
-    if (int32_t ret = ::pal_stream_set_param(mCompressHandle, PAL_PARAM_ID_CODEC_CONFIGURATION,
+    if (mCompressHandle) {
+        if (int32_t ret = ::pal_stream_set_param(mCompressHandle, PAL_PARAM_ID_CODEC_CONFIGURATION,
                                              palParamPayload); ret) {
-        LOG(ERROR) << __func__ << " PAL_PARAM_ID_CODEC_CONFIGURATION failed!!! ret:" << ret;
-        return false;
-    }
+            LOG(ERROR) << __func__ << " PAL_PARAM_ID_CODEC_CONFIGURATION failed!!! ret:" << ret;
+            return false;
+        }
 
-    LOG(VERBOSE) << __func__ << " PAL_PARAM_ID_CODEC_CONFIGURATION configured";
-    return true;
+        LOG(VERBOSE) << __func__ << " PAL_PARAM_ID_CODEC_CONFIGURATION configured";
+        return true;
+    }
+    LOG(ERROR) << __func__ << " PAL stream handle is NULL!";
+    return false;
 }
 
 ndk::ScopedAStatus CompressCapture::setVendorParameters(
@@ -1054,12 +1062,16 @@ void CompressCapture::setAACDSPBitRate() {
     auto paramPayload = (pal_param_payload*)payload.get();
     paramPayload->payload_size = palSndEncSize;
     memcpy(paramPayload->payload, &mPalSndEnc, paramPayload->payload_size);
-
-    if (int32_t ret = ::pal_stream_set_param(mCompressHandle, PAL_PARAM_ID_RECONFIG_ENCODER,
+    if (mCompressHandle) {
+        if (int32_t ret = ::pal_stream_set_param(mCompressHandle, PAL_PARAM_ID_RECONFIG_ENCODER,
                                              paramPayload);
         ret) {
-        LOG(ERROR) << __func__ << "pal set param PAL_PARAM_ID_RECONFIG_ENCODER failed:" << ret;
+            LOG(ERROR) << __func__ << "pal set param PAL_PARAM_ID_RECONFIG_ENCODER failed:" << ret;
+        }
+    } else {
+        LOG(ERROR) << __func__ << "PAL stream handle is NULL!";
     }
+
 }
 
 int32_t CompressCapture::getAACMinBitrateValue() {

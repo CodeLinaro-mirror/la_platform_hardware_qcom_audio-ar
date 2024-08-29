@@ -853,6 +853,9 @@ void StreamInPrimary::shutdown_I() {
             ::pal_stream_close(mPalHandle);
         }
     }
+    if (mTag == Usecase::COMPRESS_CAPTURE) {
+        std::get<CompressCapture>(mExt).setPalHandle(nullptr);
+    }
     mPalHandle = nullptr;
     mPlatform.setMicMuteStatus(false);
 }
