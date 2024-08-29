@@ -240,7 +240,7 @@ FormatPairs getFormatPairs() {
              make_AudioFormatDescription(::android::MEDIA_MIMETYPE_AUDIO_AAC_ADIF)},
             {PAL_AUDIO_FMT_AAC,
              make_AudioFormatDescription(::android::MEDIA_MIMETYPE_AUDIO_AAC_LC)},
-            {PAL_AUDIO_FMT_AAC,
+            {PAL_AUDIO_FMT_AAC_ADTS,
              make_AudioFormatDescription(::android::MEDIA_MIMETYPE_AUDIO_AAC_ADTS_LC)},
             {PAL_AUDIO_FMT_AAC,
              make_AudioFormatDescription(::android::MEDIA_MIMETYPE_AUDIO_AAC_ADTS_HE_V1)},
