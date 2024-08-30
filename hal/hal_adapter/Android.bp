@@ -2,7 +2,8 @@ aidl_interface {
     name: "qti-audio-types-aidl",
     stability: "vintf",
     owner: "qcom",
-    vendor: true,
+    system_ext_specific: true,
+    vendor_available: true,
     local_include_dir: "aidl",
     srcs: [
         "aidl/qti/audio/core/VString.aidl",
@@ -27,7 +28,7 @@ aidl_interface {
 
 cc_library {
     name: "libaudiohalvendorextn",
-    vendor: true,
+    system_ext_specific: true,
     srcs: ["HalAdapterVendorExtension.cpp"],
 
     export_include_dirs: [
