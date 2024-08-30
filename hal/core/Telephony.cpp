@@ -324,20 +324,23 @@ void Telephony::onOutputPrimaryStreamDevices(const std::vector<AudioDevice>& pri
 void Telephony::onBluetoothScoEvent(const bool& enable) {
     std::scoped_lock lock{mLock};
 
-    if (!mIsCRSStarted) {
+    if (isAnyCallActive() || mAudioMode == AudioMode::IN_CALL) {
+        LOG(VERBOSE) << __func__ << ": voice call exist";
         return;
     }
 
    if (enable) {
-      mRxDevice = AudioDevice{.type.type = AudioDeviceType::OUT_DEVICE,
-                              .type.connection = AudioDeviceDescription::CONNECTION_BT_SCO};
-      mTxDevice = getMatchingTxDevice(mRxDevice);
-      updateDevices();
+       if (mIsCRSStarted) {
+           mRxDevice = AudioDevice{.type.type = AudioDeviceType::OUT_DEVICE,
+                                   .type.connection = AudioDeviceDescription::CONNECTION_BT_SCO};
+           mTxDevice = getMatchingTxDevice(mRxDevice);
+           updateDevices();
+       }
    } else {
-     if (isBluetoothSCODevice(mRxDevice) || isBluetoothA2dpDevice(mRxDevice)) {
-         mRxDevice = kDefaultCRSRxDevice;
-         mTxDevice = getMatchingTxDevice(mRxDevice);
-         updateDevices();
+       if (isBluetoothSCODevice(mRxDevice) || isBluetoothA2dpDevice(mRxDevice)) {
+           mRxDevice = kDefaultRxDevice;
+           mTxDevice = getMatchingTxDevice(mRxDevice);
+           updateDevices();
      }
   }
 }
