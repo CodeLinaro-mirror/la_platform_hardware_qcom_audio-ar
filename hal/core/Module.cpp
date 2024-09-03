@@ -431,7 +431,8 @@ ndk::ScopedAStatus Module::updateStreamsConnectedState(const AudioPatch& oldPatc
     std::for_each(newConnections.begin(), newConnections.end(), [&](const auto& connectionPair) {
         const int32_t mixPortConfigId = connectionPair.first;
         if (auto it = oldConnections.find(mixPortConfigId);
-            it == oldConnections.end() || it->second != connectionPair.second) {
+            it == oldConnections.end() || it->second != connectionPair.second
+            || hasBluetoothDevice(findConnectedDevices(mixPortConfigId))) {
             const auto connectedDevices = findConnectedDevices(mixPortConfigId);
             if (connectedDevices.empty()) {
                 // This is important as workers use the vector size to
