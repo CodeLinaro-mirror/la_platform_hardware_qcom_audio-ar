@@ -4,10 +4,20 @@ Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
 SPDX-License-Identifier: BSD-3-Clause-Clear
 -->
 <libraries>
+    <!--
+    method expected API signature
+    "int32_t <function_name>()"
+    -->
+    <library name = "agmservice" libraryName="libagmipcservice.so"
+            method="registerService" mandatory="true"/>
+    <library name = "palservice" libraryName="libpalipcservice.so"
+            method="registerService" mandatory="true"/>
     <library name = "audiohal-qti" libraryName="libaudiocorehal.qti.so"
             method="registerServices" mandatory="true"/>
     <library name = "audiohal-default" libraryName="libaudiocorehal.default.so"
             method="registerServices" mandatory="true"/>
     <library name = "audioeffecthal" libraryName="libaudioeffecthal.qti.so"
             method="registerService" mandatory="true"/>
+    <library name = "sthal" libraryName="libsoundtriggerhal.qti.so"
+            method="createISoundTriggerFactory" mandatory="true" />
 </libraries>

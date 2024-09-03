@@ -17,6 +17,9 @@ LOCAL_CFLAGS := \
     -Werror \
     -Wthread-safety
 
+LOCAL_VINTF_FRAGMENTS   := \
+    ../../configs/common/manifest_non_qmaa.xml
+
 LOCAL_SRC_FILES := \
     CoreService.cpp \
     Bluetooth.cpp \
