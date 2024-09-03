@@ -20,7 +20,7 @@ AUDIO_FEATURE_ENABLED_POWER_POLICY := true
 endif
 endif
 else
-ifeq ($(call math_gt_or_eq, $(PLATFORM_VERSION), 13), true)
+ifneq ( ,$(filter T Tiramisu 13 U UpsideDownCake 14 V VanillaIceCream 15, $(PLATFORM_VERSION)))
 AUDIO_FEATURE_ENABLED_POWER_POLICY := true
 PRODUCT_PACKAGES += libarpowerpolicy
 PRODUCT_ODM_PROPERTIES += \
@@ -156,8 +156,9 @@ PRODUCT_COPY_FILES += \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/mixer_paths_VIOSND.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_VIOSND.xml
 endif
 
+
 # Configuration files for msmnile_gvmq AudioReach value added SI
-ifneq ( ,$(filter U UpsideDownCake 14 V VanillaIceCream 15, $(PLATFORM_VERSION)))
+ifneq ( ,$(filter U UpsideDownCake 14, $(PLATFORM_VERSION)))
 PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/audio_policy_configuration_7_0_pure.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_configuration.xml \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/a2dp_audio_policy_configuration_7_0.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/a2dp_audio_policy_configuration.xml \
@@ -165,12 +166,16 @@ PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/a2dp_audio_policy_configuration_7_0.xml:$(TARGET_COPY_OUT_VENDOR)/etc/a2dp_audio_policy_configuration.xml \
     $(TOPDIR)frameworks/native/data/etc/android.hardware.audio.pro.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.pro.xml
 else
+# Temparary change untill makena AIDL for AR is enabled
+ifeq ( ,$(filter V VanillaIceCream 15, $(PLATFORM_VERSION)))
 PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/a2dp_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/a2dp_audio_policy_configuration.xml \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_configuration.xml \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/a2dp_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/a2dp_audio_policy_configuration.xml \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_configuration.xml
+endif #Andoird_V
 endif
+
 
 PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/car_audio_configuration_pure.xml:$(TARGET_COPY_OUT_VENDOR)/etc/car_audio_configuration.xml \

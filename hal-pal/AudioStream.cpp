@@ -2403,8 +2403,7 @@ uint32_t StreamOutPrimary::GetBufferSize() {
             if( (strncmp(address_,"BUS03_PHONE",strlen("BUS03_PHONE"))) == 0 ||
                 (strncmp(address_,"BUS01_SYS",strlen("BUS01_SYS"))) == 0 ||
                 (strncmp(address_,"BUS02_NAV",strlen("BUS02_NAV"))) == 0 ||
-                (strncmp(address_,"BUS05_ALERTS",strlen("BUS05_ALERTS"))) == 0 ||
-                (strncmp(address_,"BUS00_MEDIA",strlen("BUS00_MEDIA"))) == 0) {
+                (strncmp(address_,"BUS05_ALERTS",strlen("BUS05_ALERTS"))) == 0) {
                 return  get_sampleRate_period_size(config_.sample_rate) *
                     audio_bytes_per_frame(
                             audio_channel_count_from_out_mask(config_.channel_mask),
@@ -4021,7 +4020,10 @@ ssize_t StreamInPrimary::read(const void *buffer, size_t bytes) {
         source_ != AUDIO_SOURCE_VOICE_RECOGNITION &&
         property_get_bool("persist.vendor.audio.va_concurrency_mute_enabled",
         false)) {
-        memset(palBuffer.buffer, 0, palBuffer.size);
+        /* aviod FM usecase muting, upon muting MIC.*/
+        if (usecase_ != USECASE_AUDIO_RECORD_FM_VIRTUAL) {
+            memset(palBuffer.buffer, 0, palBuffer.size);
+         }
     }
 
     // do not add bytes when read fails
