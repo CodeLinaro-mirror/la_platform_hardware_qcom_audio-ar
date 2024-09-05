@@ -134,7 +134,7 @@ struct BufferConfig StreamOutPrimary::getBufferConfig() {
 }
 
 StreamOutPrimary::~StreamOutPrimary() {
-    shutdown_I();
+    cleanupWorker();
     LOG(DEBUG) << __func__ << mLogPrefix;
 }
 

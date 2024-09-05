@@ -94,7 +94,7 @@ StreamInPrimary::StreamInPrimary(StreamContext&& context, const SinkMetadata& si
 }
 
 StreamInPrimary::~StreamInPrimary() {
-    shutdown_I();
+    cleanupWorker();
     LOG(DEBUG) << __func__ << mLogPrefix;
 }
 
