@@ -25,6 +25,7 @@ MM_AUDIO += libshoebox
 MM_AUDIO += libbatterylistener
 MM_AUDIO += audioflacapp
 MM_AUDIO += libvolumelistener
+MM_AUDIO += libqtigefar
 
 #KERNEL_TESTS
 #KERNEL_TESTS := mm-audio-native-test
