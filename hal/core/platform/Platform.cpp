@@ -482,6 +482,32 @@ std::vector<::aidl::android::media::audio::common::AudioProfile> Platform::getUs
         } else {
             mUSBCapEnable = true;
         }
+    } else {
+        // check if capture profile is supported or not
+        mUSBCapEnable = false;
+        size_t payloadSize = 0;
+        deviceCapability->addr.card_id = cardId;
+        deviceCapability->addr.device_num = deviceId;
+        deviceCapability->config = dynamicMediaConfig.get();
+        deviceCapability->id = PAL_DEVICE_IN_USB_HEADSET;
+        deviceCapability->is_playback = false;
+        void* deviceCapabilityPtr = deviceCapability.get();
+        if (int32_t ret = pal_get_param(PAL_PARAM_ID_DEVICE_CAPABILITY, &deviceCapabilityPtr,
+                                        &payloadSize, nullptr);
+            ret != 0) {
+            LOG(ERROR) << __func__ << " PAL get param failed for PAL_PARAM_ID_DEVICE_CAPABILITY" << ret;
+            return {};
+        }
+        if (!dynamicMediaConfig->jack_status) {
+            LOG(ERROR) << __func__ << " false usb jack status ";
+            return {};
+        }
+        if ((dynamicMediaConfig.get()->sample_rate[0] == 0 && dynamicMediaConfig.get()->format[0] == 0 &&
+             dynamicMediaConfig.get()->mask[0] == 0) || (dynamicMediaConfig->jack_status == false)) {
+             mUSBCapEnable = false;
+        } else {
+             mUSBCapEnable = true;
+        }
     }
 
     return getSupportedAudioProfiles(deviceCapability.get(), "usb");
