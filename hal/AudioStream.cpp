@@ -5399,7 +5399,13 @@ exit:
         return -ENODEV;
     }
     AHAL_VERBOSE("Exit: returning size: %zu size ", size);
-    return (ret < 0 ? onReadError(bytes, ret) : (size > 0 ? size : bytes));
+    if (ret < 0) {
+        memset(palBuffer.buffer, 0, palBuffer.size);
+        ret = onReadError(bytes, ret);
+    } else {
+        ret = size > 0 ? size : bytes;
+    }
+    return ret;
 }
 
 int StreamInPrimary::FillHalFnPtrs() {
