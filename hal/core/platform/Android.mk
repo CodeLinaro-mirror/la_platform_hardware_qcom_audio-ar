@@ -28,8 +28,8 @@ LOCAL_SHARED_LIBRARIES := \
     libbinder_ndk \
     libbase \
     libstagefright_foundation \
-    android.hardware.audio.core-V2-ndk \
-    android.media.audio.common.types-V3-ndk \
+    android.hardware.audio.core-V3-ndk \
+    android.media.audio.common.types-V4-ndk \
     libaudioaidlcommon \
     qti-audio-types-aidl-V1-ndk \
     libaudioplatformconverter.qti \

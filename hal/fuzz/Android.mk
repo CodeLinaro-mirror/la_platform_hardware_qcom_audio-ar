@@ -36,7 +36,7 @@ LOCAL_SHARED_LIBRARIES := \
     $(LATEST_ANDROID_HARDWARE_COMMON) \
     $(LATEST_ANDROID_HARDWARE_COMMON_FMQ) \
     $(LATEST_ANDROID_MEDIA_ADUIO_COMMON_TYPES) \
-    android.hardware.audio.core-V2-ndk \
+    android.hardware.audio.core-V3-ndk \
     $(LATEST_ANDROID_HARDWARE_AUDIO_EFFECT) \
     android.hardware.audio.core.sounddose-V2-ndk \
     libar-pal \
