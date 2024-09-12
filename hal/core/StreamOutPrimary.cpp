@@ -157,9 +157,11 @@ ndk::ScopedAStatus StreamOutPrimary::configureConnectedDevices_I() {
         return ndk::ScopedAStatus::ok();
     }
 
-    if (mTag == Usecase::LOW_LATENCY_PLAYBACK) {
+    if (mTag == Usecase::LOW_LATENCY_PLAYBACK ||
+        mTag == Usecase::DEEP_BUFFER_PLAYBACK ||
+        mTag == Usecase::VOIP_PLAYBACK) {
         if (auto telephony = mContext.getTelephony().lock()) {
-            telephony->onOutputPrimaryStreamDevices(mConnectedDevices);
+            telephony->onPlaybackStreamDevices(mConnectedDevices);
         }
     }
 
@@ -414,10 +416,14 @@ void StreamOutPrimary::resume() {
         resume();
     }
 
+    if (mConnectedDevices.empty()) {
+        LOG(DEBUG) << __func__ << mLogPrefix << ": stream is not connected";
+        return ::android::OK;
+    }
     if (hasOutputVoipRxFlag(mMixPortConfig.flags.value()) ||
         hasOutputDeepBufferFlag(mMixPortConfig.flags.value())) {
         if (auto telephony = mContext.getTelephony().lock()) {
-            telephony->onPlaybackStart();
+            telephony->onPlaybackStart(mConnectedDevices);
         }
     }
     return ::android::OK;

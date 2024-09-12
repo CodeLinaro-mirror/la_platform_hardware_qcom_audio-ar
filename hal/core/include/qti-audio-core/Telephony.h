@@ -137,8 +137,8 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
             const ::aidl::android::media::audio::common::AudioDevice& extDevice,
             const bool& connect);
 
-    /* Telephony to act on primary stream devices change */
-    void onOutputPrimaryStreamDevices(
+    /* Telephony to act on playback stream devices change */
+    void onPlaybackStreamDevices(
             const std::vector<::aidl::android::media::audio::common::AudioDevice>&);
 
     /* Telephony to act upon bluetooth sco enabled or disabled */
@@ -148,7 +148,8 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
     void setVoipPlaybackStream(std::weak_ptr<StreamCommonInterface> voipStream);
 
     /* called on playback stream start/close */
-    void onPlaybackStart();
+    void onPlaybackStart(
+            const std::vector<::aidl::android::media::audio::common::AudioDevice>&);
     void onPlaybackClose();
 
     void updateVoiceMetadataForBT(bool call_active);
@@ -169,9 +170,11 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
     void startCrsLoopback();
     void stopCrsLoopback();
     void triggerHACinVoipPlayback();
+    void getPlaybackStreamDevices();
     ::aidl::android::media::audio::common::AudioDevice getMatchingTxDevice(
             const ::aidl::android::media::audio::common::AudioDevice & rxDevice);
     bool isAnyCallActive();
+    bool isValidDevice(const ::aidl::android::media::audio::common::AudioDevice & rxDevice);
 
   protected:
     // Gaurd all the public APIs
@@ -211,6 +214,7 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
     pal_stream_handle_t* mPalHandle{nullptr};
     // Stream Handle for VOIP Playback
     std::weak_ptr<StreamCommonInterface> mVoipStreamWptr;
+    std::vector<::aidl::android::media::audio::common::AudioDevice> mPlaybackStreamDevices;
     Platform& mPlatform{Platform::getInstance()};
 };
 

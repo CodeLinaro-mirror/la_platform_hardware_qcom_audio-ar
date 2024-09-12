@@ -105,6 +105,7 @@ ndk::ScopedAStatus Telephony::switchAudioMode(AudioMode newAudioMode) {
         VoiceStop();
     } else if (newAudioMode == AudioMode::RINGTONE && mSetUpdates.mIsCrsCall) {
         if (!mIsCRSStarted && !isAnyCallActive()) {
+            getPlaybackStreamDevices();
             updateCrsDevice();
             startCall();
             if (mRxDevice.type.type != AudioDeviceType::OUT_SPEAKER) {
@@ -185,6 +186,13 @@ bool Telephony::isAnyCallActive() {
          }
     }
     return false;
+}
+
+bool Telephony::isValidDevice(const AudioDevice& rxDevice) {
+    if (getMatchingTxDevice(rxDevice).type.type == AudioDeviceType::NONE) {
+        return false;
+    }
+    return true;
 }
 
 void Telephony::resetDevices(const bool resetRx) {
@@ -305,17 +313,20 @@ void Telephony::onExternalDeviceConnectionChanged(const AudioDevice& extDevice,
     }
 }
 
-void Telephony::onOutputPrimaryStreamDevices(const std::vector<AudioDevice>& primaryStreamDevices) {
+void Telephony::onPlaybackStreamDevices(const std::vector<AudioDevice>& playbackStreamDevices) {
     std::scoped_lock lock{mLock};
 
     /**
      * CRS ringtone routing piggybacks on output primary stream devices
      **/
-    if (!mIsCRSStarted) {
+    if (isAnyCallActive() || mAudioMode == AudioMode::IN_CALL) {
+        LOG(VERBOSE) << __func__ << ": voice call exist";
         return;
     }
-    if (primaryStreamDevices.size() == 1) {// combo devices unsupported.
-        mRxDevice = primaryStreamDevices[0]; // expected to have 1 device.
+    if (playbackStreamDevices.size() == 1 &&
+        isValidDevice(playbackStreamDevices[0])) {// combo devices unsupported.
+        mPlaybackStreamDevices = playbackStreamDevices;
+        mRxDevice = playbackStreamDevices[0]; // expected to have 1 device.
         mTxDevice = getMatchingTxDevice(mRxDevice);
         updateDevices();
      }
@@ -418,6 +429,7 @@ void Telephony::reconfigure(const SetUpdates& newUpdates) {
         mSetUpdates.mVSID = newUpdates.mVSID;
         if (!mIsCRSStarted && !isAnyCallActive() &&
             mAudioMode == AudioMode::RINGTONE) {
+             getPlaybackStreamDevices();
              updateCrsDevice();
              startCall();
              if (mRxDevice.type.type != AudioDeviceType::OUT_SPEAKER) {
@@ -629,12 +641,26 @@ void Telephony::triggerHACinVoipPlayback() {
     }
 }
 
-void Telephony::onPlaybackStart() {
+void Telephony::getPlaybackStreamDevices() {
+    if (hasValidPlaybackStream) {
+       mRxDevice = mPlaybackStreamDevices[0];
+       mTxDevice = getMatchingTxDevice(mRxDevice);
+   }
+}
+
+void Telephony::onPlaybackStart(const std::vector<AudioDevice>& playbackStreamDevices) {
     std::scoped_lock lock{mLock};
+
     hasValidPlaybackStream = true;
-    if (mIsCRSStarted) {
-        LOG(INFO) << __func__ << ": playback conc status changed for CRS call";
-        updateDevices();
+    if (playbackStreamDevices.size() == 1 &&
+        isValidDevice(playbackStreamDevices[0])) {
+        mPlaybackStreamDevices = playbackStreamDevices;
+        if (mIsCRSStarted) {
+            mRxDevice = playbackStreamDevices[0];
+            mTxDevice = getMatchingTxDevice(mRxDevice);
+            LOG(INFO) << __func__ << ": playback conc status change for CRS call";
+            updateDevices();
+        }
     }
 }
 
@@ -642,7 +668,7 @@ void Telephony::onPlaybackClose() {
     std::scoped_lock lock{mLock};
     hasValidPlaybackStream = false;
     if (mIsCRSStarted) {
-        LOG(INFO) << __func__ << ": playback conc status changed for CRS call";
+        LOG(INFO) << __func__ << ": playback conc status stop for CRS call";
         updateDevices();
     }
 }
@@ -931,7 +957,8 @@ void Telephony::updateDevices() {
         return;
     }
     if (mSetUpdates.mIsCrsCall) {
-        if (mRxDevice.type.type != AudioDeviceType::OUT_SPEAKER) {
+        if (mRxDevice.type.type != AudioDeviceType::OUT_SPEAKER &&
+            mRxDevice.type.type != AudioDeviceType::OUT_SPEAKER_EARPIECE) {
             startCrsLoopback();
         }
     }
