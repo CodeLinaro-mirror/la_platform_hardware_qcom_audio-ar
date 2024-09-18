@@ -21,7 +21,6 @@
  */
 
 #define LOG_TAG "AHAL_Telephony_QTI"
-#include <Utils.h>
 #include <android-base/logging.h>
 #include <android/binder_to_string.h>
 #include <hardware/audio.h>
@@ -31,7 +30,6 @@
 #include <qti-audio-core/Utils.h>
 #include <system/audio.h>
 
-using aidl::android::hardware::audio::common::isValidAudioMode;
 using aidl::android::media::audio::common::AudioDevice;
 using aidl::android::media::audio::common::AudioDeviceAddress;
 using aidl::android::media::audio::common::AudioDeviceDescription;

@@ -6,7 +6,6 @@
 #pragma once
 
 #include <PalDefs.h>
-#include <Utils.h>
 #include <aidl/android/hardware/audio/common/AudioOffloadMetadata.h>
 #include <aidl/android/hardware/audio/common/SinkMetadata.h>
 #include <aidl/android/hardware/audio/common/SourceMetadata.h>
@@ -24,6 +23,8 @@
 #include <algorithm>
 #include <numeric>
 #include <unordered_set>
+
+#include <qti-audio-core/Utils.h>
 
 #define DIV_ROUND_UP(x, y) (((x) + (y) - 1) / (y))
 #define ALIGN(x, y) ((y) * DIV_ROUND_UP((x), (y)))
@@ -122,7 +123,7 @@ class UsecaseConfig {
         size_t frameCount = Usecase::getFrameCount(mixPortConfig);
         size_t frameSizeInBytes = 1;
         if (IsPcm) {
-            frameSizeInBytes = ::aidl::android::hardware::audio::common::getFrameSizeInBytes(
+            frameSizeInBytes = getFrameSizeInBytes(
                     mixPortConfig.format.value(), mixPortConfig.channelMask.value());
         }
         return frameCount * frameSizeInBytes;

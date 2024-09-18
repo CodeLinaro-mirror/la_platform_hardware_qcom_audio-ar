@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include <StreamWorker.h>
-#include <Utils.h>
+
+
 #include <aidl/android/hardware/audio/common/SinkMetadata.h>
 #include <aidl/android/hardware/audio/common/SourceMetadata.h>
 #include <aidl/android/hardware/audio/core/BnStreamCommon.h>
@@ -50,10 +50,10 @@
 #include <optional>
 #include <variant>
 
-#include <Utils.h>
 #include <qti-audio-core/ChildInterface.h>
 #include <qti-audio-core/Platform.h>
 #include <qti-audio-core/Utils.h>
+#include <qti-audio-core/StreamWorker.h>
 
 namespace qti::audio::core {
 
@@ -241,7 +241,7 @@ struct DriverInterface {
     virtual void shutdown() { return;}
 };
 
-class StreamWorkerCommonLogic : public ::android::hardware::audio::common::StreamLogic {
+class StreamWorkerCommonLogic : public StreamLogic {
   public:
     bool isClosed() const {
         return static_cast<int32_t>(mState.load()) == StreamContext::STATE_CLOSED;
@@ -334,8 +334,8 @@ struct StreamWorkerInterface {
 
 template <class WorkerLogic>
 class StreamWorkerImpl : public StreamWorkerInterface,
-                         public ::android::hardware::audio::common::StreamWorker<WorkerLogic> {
-    using WorkerImpl = ::android::hardware::audio::common::StreamWorker<WorkerLogic>;
+                         public StreamWorker<WorkerLogic> {
+    using WorkerImpl = StreamWorker<WorkerLogic>;
 
   public:
     StreamWorkerImpl(StreamContext* context, DriverInterface* driver)

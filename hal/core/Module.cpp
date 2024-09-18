@@ -25,7 +25,6 @@
 
 #define LOG_TAG "AHAL_Module_QTI"
 
-#include <Utils.h>
 #include <aidl/android/media/audio/common/AudioInputFlags.h>
 #include <aidl/android/media/audio/common/AudioOutputFlags.h>
 #include <android-base/logging.h>
@@ -37,9 +36,6 @@
 #include <qti-audio-core/SoundDose.h>
 #include <qti-audio-core/Utils.h>
 
-using aidl::android::hardware::audio::common::getFrameSizeInBytes;
-using aidl::android::hardware::audio::common::isBitPositionFlagSet;
-using aidl::android::hardware::audio::common::isValidAudioMode;
 using aidl::android::hardware::audio::common::SinkMetadata;
 using aidl::android::hardware::audio::common::SourceMetadata;
 using aidl::android::hardware::audio::core::sounddose::ISoundDose;
@@ -66,9 +62,6 @@ using aidl::android::media::audio::common::PcmType;
 
 using ::aidl::android::hardware::audio::common::SinkMetadata;
 using ::aidl::android::hardware::audio::common::SourceMetadata;
-using ::aidl::android::hardware::audio::common::getFrameSizeInBytes;
-using ::aidl::android::hardware::audio::common::isBitPositionFlagSet;
-using ::aidl::android::hardware::audio::common::isValidAudioMode;
 
 using ::aidl::android::hardware::audio::core::IStreamOut;
 using ::aidl::android::hardware::audio::core::IStreamIn;

@@ -17,7 +17,6 @@
 #include <qti-audio-core/Parameters.h>
 
 using aidl::android::hardware::audio::common::AudioOffloadMetadata;
-using aidl::android::hardware::audio::common::getFrameSizeInBytes;
 using aidl::android::hardware::audio::common::SinkMetadata;
 using aidl::android::hardware::audio::common::SourceMetadata;
 using aidl::android::media::audio::common::AudioDevice;
@@ -29,10 +28,7 @@ using aidl::android::media::audio::common::MicrophoneDynamicInfo;
 using aidl::android::media::audio::common::MicrophoneInfo;
 using aidl::android::media::audio::common::AudioLatencyMode;
 using aidl::android::media::audio::common::AudioChannelLayout;
-using ::aidl::android::hardware::audio::common::getChannelCount;
 
-using ::aidl::android::hardware::audio::common::getFrameSizeInBytes;
-using ::aidl::android::hardware::audio::common::getPcmSampleSizeInBytes;
 using ::aidl::android::hardware::audio::core::IStreamCallback;
 using ::aidl::android::hardware::audio::core::IStreamCommon;
 using ::aidl::android::hardware::audio::core::StreamDescriptor;
@@ -256,7 +252,7 @@ ndk::ScopedAStatus StreamOutPrimary::configureMMapStream(int32_t* fd, int64_t* b
 
     std::get<MMapPlayback>(mExt).setPalHandle(mPalHandle);
 
-    const auto frameSize = ::aidl::android::hardware::audio::common::getFrameSizeInBytes(
+    const auto frameSize = getFrameSizeInBytes(
             mMixPortConfig.format.value(), mMixPortConfig.channelMask.value());
     int32_t ret = std::get<MMapPlayback>(mExt).createMMapBuffer(frameSize, fd, burstSizeFrames,
                                                                 flags, bufferSizeFrames);
@@ -1097,7 +1093,7 @@ void StreamOutPrimary::configure() {
     if (mTag == Usecase::ULL_PLAYBACK) {
         //The buffer size for ULL_PLAYBACK set to PAL should not be more than 2ms
         const size_t durationMs = 1; // set to 1ms
-        size_t frameSizeInBytes = ::aidl::android::hardware::audio::common::getFrameSizeInBytes(
+        size_t frameSizeInBytes = getFrameSizeInBytes(
                 mMixPortConfig.format.value(), mMixPortConfig.channelMask.value());
         bufConfig.bufferSize = durationMs *
                     (mMixPortConfig.sampleRate.value().value /1000) * frameSizeInBytes;

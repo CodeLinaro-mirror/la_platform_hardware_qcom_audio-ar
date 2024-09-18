@@ -63,9 +63,5 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
         android::fuzzService(gModuleDefaultQti->asBinder().get(), std::move(provider));
     }
 
-    if (index == 1 && gConfigDefaultAosp != nullptr) {
-        android::fuzzService(gConfigDefaultAosp->asBinder().get(), std::move(provider));
-    }
-
     return 0;
 }

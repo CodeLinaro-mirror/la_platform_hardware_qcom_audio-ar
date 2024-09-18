@@ -23,7 +23,6 @@
 #define ATRACE_TAG (ATRACE_TAG_AUDIO | ATRACE_TAG_HAL)
 
 #define LOG_TAG "AHAL_Stream_QTI"
-#include <Utils.h>
 
 #include <android-base/logging.h>
 #include <android/binder_ibinder_platform.h>
@@ -37,9 +36,6 @@
 // uncomment this to enable logging of very verbose logs like burst commands.
 // #define VERY_VERBOSE_LOGGING 1
 using aidl::android::hardware::audio::common::AudioOffloadMetadata;
-using aidl::android::hardware::audio::common::getChannelCount;
-using aidl::android::hardware::audio::common::getFrameSizeInBytes;
-using aidl::android::hardware::audio::common::isBitPositionFlagSet;
 using aidl::android::hardware::audio::common::SinkMetadata;
 using aidl::android::hardware::audio::common::SourceMetadata;
 using aidl::android::media::audio::common::AudioDevice;
@@ -53,8 +49,6 @@ using aidl::android::media::audio::common::AudioPlaybackRate;
 using aidl::android::media::audio::common::MicrophoneDynamicInfo;
 using aidl::android::media::audio::common::MicrophoneInfo;
 
-using ::aidl::android::hardware::audio::common::getChannelCount;
-using ::aidl::android::hardware::audio::common::getFrameSizeInBytes;
 using ::aidl::android::hardware::audio::core::IStreamCallback;
 using ::aidl::android::hardware::audio::core::IStreamCommon;
 using ::aidl::android::hardware::audio::core::StreamDescriptor;
