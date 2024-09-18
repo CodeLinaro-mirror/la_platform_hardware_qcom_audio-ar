@@ -1,12 +1,11 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
 #define LOG_NDEBUG 0
 #define LOG_TAG "AHAL_Platform_QTI"
 
-#include <Utils.h>
 #include <android-base/logging.h>
 #include <android-base/properties.h>
 #include <cutils/str_parms.h>
@@ -45,9 +44,6 @@ using ::aidl::android::media::audio::common::AudioPortExt;
 using ::aidl::android::media::audio::common::AudioProfile;
 using ::aidl::android::media::audio::common::PcmType;
 
-using ::aidl::android::hardware::audio::common::getChannelCount;
-using ::aidl::android::hardware::audio::common::getFrameSizeInBytes;
-using ::aidl::android::hardware::audio::common::isBitPositionFlagSet;
 using ::aidl::android::hardware::audio::core::IModule;
 using aidl::android::media::audio::common::MicrophoneDynamicInfo;
 using aidl::android::media::audio::common::MicrophoneInfo;

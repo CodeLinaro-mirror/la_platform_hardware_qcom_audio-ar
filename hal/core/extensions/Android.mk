@@ -28,7 +28,6 @@ LOCAL_HEADER_LIBRARIES :=  \
     libarpal_headers
 
 LOCAL_SHARED_LIBRARIES := \
-    libaudioaidlcommon \
     libbase \
     libbinder_ndk \
     libcutils \

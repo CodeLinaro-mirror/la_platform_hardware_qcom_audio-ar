@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 #include <core-impl/AudioPolicyConfigXmlConverter.h>
@@ -35,10 +35,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
 
     if (index == 2 && gModuleDefaultQti != nullptr) {
         android::fuzzService(gModuleDefaultQti->asBinder().get(), std::move(provider));
-    }
-
-    if (index == 1 && gConfigDefaultAosp != nullptr) {
-        android::fuzzService(gConfigDefaultAosp->asBinder().get(), std::move(provider));
     }
 
     return 0;
