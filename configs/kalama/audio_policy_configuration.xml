@@ -282,7 +282,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 </mixPort>
                 <mixPort name="hifi_input" role="sink" />
                 <mixPort name="HDMI input" role="sink">
-                    <profile name="" format="AUDIO_FORMAT_PCM_16_BIT" samplingRates="32000,44100,48000" channelMasks="AUDIO_CHANNEL_IN_STEREO"/>
+                    <profile name="" format="AUDIO_FORMAT_PCM_16_BIT" samplingRates="32000 44100 48000" channelMasks="AUDIO_CHANNEL_IN_STEREO"/>
                 </mixPort>
             </mixPorts>
 

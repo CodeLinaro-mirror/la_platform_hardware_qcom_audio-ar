@@ -122,8 +122,10 @@ PRODUCT_COPY_FILES += \
     $(CONFIG_HAL_SRC_DIR)/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/microphone_characteristics.xml \
     $(CONFIG_PAL_SRC_DIR)/card-defs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/card-defs.xml \
     $(CONFIG_PAL_SRC_DIR)/mixer_paths_anorak_qxr.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_anorak_qxr.xml \
+    $(CONFIG_PAL_SRC_DIR)/mixer_paths_anorak_pro_qxr.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_anorak_pro_qxr.xml \
     $(CONFIG_PAL_SRC_DIR)/mixer_paths_anorak_idp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_anorak_idp.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_anorak_qxr.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_anorak_qxr.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_anorak_pro_qxr.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_anorak_pro_qxr.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_anorak_idp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_anorak_idp.xml \
     $(CONFIG_PAL_SRC_DIR)/usecaseKvManager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usecaseKvManager.xml \
     vendor/qcom/opensource/audio-hal/primary-hal/configs/common/media_codecs_vendor_audio.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_vendor_audio.xml \
