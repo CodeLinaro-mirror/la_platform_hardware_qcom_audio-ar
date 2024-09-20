@@ -587,6 +587,10 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
             break;
         case Tag::standby:
             if (mState == StreamDescriptor::State::IDLE) {
+                if (mContext->getAsyncCallback()) {
+                   // do explicit unlock, so that callback can acquire
+                    asyncLock.unlock();
+                }
                 if (::android::status_t status = mDriver->standby(); status == ::android::OK) {
                     populateReply(&reply, mIsConnected);
                     mState = StreamDescriptor::State::STANDBY;
@@ -594,6 +598,10 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
                     LOG(ERROR) << __func__ << ": standby failed: " << status;
                     // uncomment below, to treat the failure as HARD error, stream not recoverable
                     // mState = StreamDescriptor::State::ERROR;
+                }
+                if (mContext->getAsyncCallback()) {
+                    // do explicit lock
+                    asyncLock.lock();
                 }
             } else {
                 populateReplyWrongState(&reply, command);
