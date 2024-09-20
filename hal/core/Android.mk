@@ -17,11 +17,8 @@ LOCAL_CFLAGS := \
     -Werror \
     -Wthread-safety
 
-LOCAL_VINTF_FRAGMENTS   := \
-    ../../configs/common/manifest_non_qmaa.xml
-
-LOCAL_VINTF_FRAGMENTS += \
-    ../../configs/common/manifest_non_qmaa_extn.xml
+LOCAL_VINTF_FRAGMENTS := \
+    ../../configs/$(TARGET_BOARD_PLATFORM)/manifest_audio_qti_services.xml
 
 LOCAL_SRC_FILES := \
     CoreService.cpp \
