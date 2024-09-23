@@ -100,6 +100,10 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     void configure();
     void resume();
     void shutdown_I();
+    /* burst zero indicates that burst command with zero bytes issued from framework */
+    ::android::status_t burstZero();
+    ::android::status_t startMMAP();
+    ::android::status_t stopMMAP();
     size_t getPlatformDelay() const noexcept;
     ::android::status_t onWriteError(const size_t sleepFrameCount);
 
@@ -114,7 +118,6 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     const size_t mFrameSizeBytes;
     bool mIsPaused{false};
     std::vector<float> mVolumes{};
-    bool mUseCachedVolume = false;
     bool mHwVolumeSupported = false;
     bool mHwFlushSupported = false;
     bool mHwPauseSupported = false;
@@ -150,7 +153,6 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
 
   private:
     std::string mLogPrefix = "";
-    bool mIsMMapStarted = false;
     bool isHwVolumeSupported();
     bool isHwFlushSupported();
     bool isHwPauseSupported();

@@ -394,10 +394,7 @@ void StreamOutWorkerLogic::publishTransferReady() {
     if (!mContext->getAsyncCallback()) {
         return;
     }
-    std::unique_lock asyncLock{mAsyncMutex, std::defer_lock};
-    if(!asyncLock.try_lock()) {
-        LOG(WARNING) << __func__ << ": failed to acquire lock !!";
-    }
+    std::unique_lock lock{mAsyncMutex};
     mPendingCallBack = std::nullopt;
     if (mState == StreamDescriptor::State::TRANSFERRING) {
         mState = StreamDescriptor::State::ACTIVE;
@@ -415,14 +412,12 @@ void StreamOutWorkerLogic::publishDrainReady() {
     if (!mContext->getAsyncCallback()) {
         return;
     }
-    std::unique_lock asyncLock{mAsyncMutex, std::defer_lock};
-    if(!asyncLock.try_lock()) {
-        LOG(WARNING) << __func__ << ": failed to acquire lock !!";
-    }
+    std::unique_lock lock{mAsyncMutex};
     mPendingCallBack = std::nullopt;
     if (mState == StreamDescriptor::State::DRAINING) {
         mContext->getAsyncCallback()->onDrainReady();
-        mState = StreamDescriptor::State::IDLE;
+        if (mRecentDrainMode == StreamDescriptor::DrainMode::DRAIN_ALL)
+            mState = StreamDescriptor::State::IDLE;
         LOG(VERBOSE) << __func__ << ": sent drain ready to client";
     } else if (mState == StreamDescriptor::State::DRAIN_PAUSED) {
         mPendingCallBack = StreamCallbackType::DR;
@@ -561,12 +556,12 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
             }
             break;
         case Tag::drain:
-            if (const auto mode = command.get<Tag::drain>();
-                mode == StreamDescriptor::DrainMode::DRAIN_ALL ||
-                mode == StreamDescriptor::DrainMode::DRAIN_EARLY_NOTIFY) {
+            if (mRecentDrainMode = command.get<Tag::drain>();
+                mRecentDrainMode == StreamDescriptor::DrainMode::DRAIN_ALL ||
+                mRecentDrainMode == StreamDescriptor::DrainMode::DRAIN_EARLY_NOTIFY) {
                 if (mState == StreamDescriptor::State::ACTIVE ||
                     mState == StreamDescriptor::State::TRANSFERRING) {
-                    if (::android::status_t status = mDriver->drain(mode);
+                    if (::android::status_t status = mDriver->drain(mRecentDrainMode);
                         status == ::android::OK) {
                         populateReply(&reply, mIsConnected);
                         if (mState == StreamDescriptor::State::ACTIVE &&
@@ -587,7 +582,7 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
                     populateReplyWrongState(&reply, command);
                 }
             } else {
-                LOG(WARNING) << __func__ << ": invalid drain mode: " << toString(mode);
+                LOG(WARNING) << __func__ << ": invalid drain mode: " << toString(mRecentDrainMode);
             }
             break;
         case Tag::standby:
@@ -674,7 +669,8 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
         } else if (command.getTag() == Tag::start && mState == StreamDescriptor::State::DRAINING &&
                    mPendingCallBack == StreamCallbackType::DR) {
             mContext->getAsyncCallback()->onDrainReady();
-            mState = StreamDescriptor::State::IDLE;
+            if (mRecentDrainMode == StreamDescriptor::DrainMode::DRAIN_ALL)
+                mState = StreamDescriptor::State::IDLE;
             mPendingCallBack = {};
             LOG(VERBOSE) << __func__ << ": sent pending drain ready !!!";
         } else if (command.getTag() == Tag::flush || command.getTag() == Tag::drain) {

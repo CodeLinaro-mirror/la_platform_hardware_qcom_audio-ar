@@ -79,6 +79,7 @@ void Telephony::VoiceStop() {
          mVoiceSession.session[i].CallUpdate.mCallState = CallState::IN_ACTIVE;
          mVoiceSession.session[i].state.new_ = CallState::IN_ACTIVE;
     }
+    mIsVoiceStarted = false;
     updateCalls();
 
     LOG(DEBUG) << __func__ << ": Exit";
@@ -99,11 +100,7 @@ ndk::ScopedAStatus Telephony::switchAudioMode(AudioMode newAudioMode) {
         LOG(VERBOSE) << __func__ << ": no change" << toString(newAudioMode);
         return ndk::ScopedAStatus::ok();
     }
-    if (newAudioMode == AudioMode::IN_CALL && (mAudioMode == AudioMode::NORMAL ||
-                                               mAudioMode == AudioMode::RINGTONE || mAudioMode == AudioMode::IN_COMMUNICATION)) {
-        updateCalls();
-        LOG(DEBUG) << __func__ << ": start call on call state ACTIVE";
-    } else if (newAudioMode == AudioMode::NORMAL && mAudioMode == AudioMode::IN_CALL) {
+    if (newAudioMode == AudioMode::NORMAL) {
         // safe to stop now
         VoiceStop();
     } else if (newAudioMode == AudioMode::RINGTONE && mSetUpdates.mIsCrsCall) {
@@ -192,7 +189,7 @@ bool Telephony::isAnyCallActive() {
 
 void Telephony::resetDevices(const bool resetRx) {
     std::scoped_lock lock{mLock};
-    LOG(INFO)<<__func__<<": ignore reset device ";
+    LOG(VERBOSE) <<__func__<<": ignore reset device ";
 }
 
 void Telephony::setDevices(const std::vector<AudioDevice>& devices, const bool updateRx) {
@@ -280,25 +277,32 @@ void Telephony::onExternalDeviceConnectionChanged(const AudioDevice& extDevice,
                                                   const bool& connect) {
     std::scoped_lock lock{mLock};
     // Placeholder for telephony to act upon external device connection
-    if (!isOutputDevice(extDevice)) {
-        return;
-    }
     if (isBluetoothSCODevice(extDevice) || isBluetoothA2dpDevice(extDevice)) {
         LOG(VERBOSE) << __func__ << ": sco/a2dp no change";
         return;
     }
+    if (isAnyCallActive() || mAudioMode == AudioMode::IN_CALL) {
+        LOG(VERBOSE) << __func__ << ": voice call exist";
+        return;
+    }
     if (connect) {
-        mRxDevice = extDevice;
-        mTxDevice = getMatchingTxDevice(mRxDevice);
-        updateDevices();
+        if (isOutputDevice(extDevice)) {
+            mRxDevice = extDevice;
+            mTxDevice = getMatchingTxDevice(mRxDevice);
+            updateDevices();
+        } else {
+            if (mTxDevice.type.type != extDevice.type.type) {
+                mTxDevice = getMatchingTxDevice(mRxDevice);
+                updateDevices();
+            }
+        }
     } else {
-        if (mIsCRSStarted && !hasValidPlaybackStream) {
-            mRxDevice = kDefaultCRSRxDevice;
+        if (isOutputDevice(extDevice)) {
+            mRxDevice = kDefaultRxDevice;
             mTxDevice = getMatchingTxDevice(mRxDevice);
             updateDevices();
         }
     }
-
 }
 
 void Telephony::onOutputPrimaryStreamDevices(const std::vector<AudioDevice>& primaryStreamDevices) {
@@ -320,20 +324,23 @@ void Telephony::onOutputPrimaryStreamDevices(const std::vector<AudioDevice>& pri
 void Telephony::onBluetoothScoEvent(const bool& enable) {
     std::scoped_lock lock{mLock};
 
-    if (!mIsCRSStarted) {
+    if (isAnyCallActive() || mAudioMode == AudioMode::IN_CALL) {
+        LOG(VERBOSE) << __func__ << ": voice call exist";
         return;
     }
 
    if (enable) {
-      mRxDevice = AudioDevice{.type.type = AudioDeviceType::OUT_DEVICE,
-                              .type.connection = AudioDeviceDescription::CONNECTION_BT_SCO};
-      mTxDevice = getMatchingTxDevice(mRxDevice);
-      updateDevices();
+       if (mIsCRSStarted) {
+           mRxDevice = AudioDevice{.type.type = AudioDeviceType::OUT_DEVICE,
+                                   .type.connection = AudioDeviceDescription::CONNECTION_BT_SCO};
+           mTxDevice = getMatchingTxDevice(mRxDevice);
+           updateDevices();
+       }
    } else {
-     if (isBluetoothSCODevice(mRxDevice) || isBluetoothA2dpDevice(mRxDevice)) {
-         mRxDevice = kDefaultCRSRxDevice;
-         mTxDevice = getMatchingTxDevice(mRxDevice);
-         updateDevices();
+       if (isBluetoothSCODevice(mRxDevice) || isBluetoothA2dpDevice(mRxDevice)) {
+           mRxDevice = kDefaultRxDevice;
+           mTxDevice = getMatchingTxDevice(mRxDevice);
+           updateDevices();
      }
   }
 }
@@ -362,6 +369,9 @@ AudioDevice Telephony::getMatchingTxDevice(const AudioDevice& rxDevice) {
                            .type.connection = AudioDeviceDescription::CONNECTION_ANALOG,
                            .address = rxDevice.address};
     } else if (rxDevice.type.type == AudioDeviceType::OUT_HEADPHONE &&
+               rxDevice.type.connection == AudioDeviceDescription::CONNECTION_ANALOG) {
+        return AudioDevice{.type.type = AudioDeviceType::IN_MICROPHONE};
+    } else if (rxDevice.type.type == AudioDeviceType::OUT_DEVICE &&
                rxDevice.type.connection == AudioDeviceDescription::CONNECTION_ANALOG) {
         return AudioDevice{.type.type = AudioDeviceType::IN_MICROPHONE};
     } else if ((rxDevice.type.type == AudioDeviceType::OUT_DEVICE ||
@@ -427,7 +437,6 @@ void Telephony::reconfigure(const SetUpdates& newUpdates) {
              mSetUpdates.mIsCrsCall = newUpdates.mIsCrsCall;
              mIsCRSStarted  = false;
              LOG(DEBUG) << __func__ << ": stop CRS call";
-             return;
          }
     }
 
@@ -438,7 +447,8 @@ void Telephony::reconfigure(const SetUpdates& newUpdates) {
              break;
          }
     }
-    if (mAudioMode == AudioMode::IN_CALL) {
+    if (isAnyCallActive() ||
+       ((mAudioMode == AudioMode::IN_CALL) && mIsVoiceStarted)) {
        updateCalls();
     }
 
@@ -460,6 +470,7 @@ void Telephony::updateCalls() {
                                 if (!isAnyCallActive() && !mIsCRSStarted) {
                                     mSetUpdates =  mVoiceSession.session[i].CallUpdate;
                                     startCall();
+                                    mIsVoiceStarted = true;
                                     mVoiceSession.session[i].state.current_ = mVoiceSession.session[i].state.new_;
                                 } else {
                                     LOG(DEBUG) << __func__ << ": voice already started";
@@ -796,7 +807,8 @@ void Telephony::stopCall() {
         updateVoiceMetadataForBT(false);
     }
     mPalHandle = nullptr;
-    if (mSetUpdates.mIsCrsCall) {
+    if (mSetUpdates.mIsCrsCall &&
+        mRxDevice.type.type == AudioDeviceType::OUT_SPEAKER) {
         mRxDevice = kDefaultRxDevice;
         mTxDevice = getMatchingTxDevice(mRxDevice);
     }
@@ -835,13 +847,13 @@ void Telephony::updateDevices() {
     const int retry_period_ms = 100;
     bool is_suspend_setparam = false;
     LOG(DEBUG) << __func__ << ": Enter";
-    /*If callstate is active, but no palHandle, that means pal stream open
-      failed, so start call again , we might get updated devices now which
-      helps in pal stream open successful, so call startCall here*/
-    if (mSetUpdates.mCallState == CallState::ACTIVE && !mIsCRSStarted && mPalHandle == nullptr) {
-        LOG(DEBUG) << __func__ << ": starting call as palHandle is null and call state active";
-        startCall();
-        return;
+
+    if (!isAnyCallActive()) {
+        if (mAudioMode == AudioMode::IN_CALL && mPalHandle == nullptr) {
+            mIsVoiceStarted = true;
+            updateCalls();
+            return;
+        }
     }
 
     // TODO configure pal devices with custom key if any

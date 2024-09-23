@@ -134,11 +134,10 @@ Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConf
                     tag = Usecase::VOICE_CALL_RECORD;
                 }
             }
-        } else if (inFlags == fastRecordFlags || inFlags == ullRecordFlags) {
+        } else if (inFlags == fastRecordFlags) {
             tag = Usecase::FAST_RECORD;
-            if (streamSampleRate == UltraFastRecord::kSampleRate) {
-                tag = Usecase::ULTRA_FAST_RECORD;
-            }
+        } else if (inFlags == ullRecordFlags) {
+            tag = Usecase::ULTRA_FAST_RECORD;
         } else if (inFlags == compressCaptureFlags) {
             tag = Usecase::COMPRESS_CAPTURE;
         } else if (inFlags == recordVoipFlags && mixUsecaseTag == AudioPortMixExtUseCase::source &&
@@ -222,12 +221,12 @@ std::unordered_set<size_t> LowLatencyPlayback::kSupportedFrameSizes = {160, 192,
 
 size_t LowLatencyPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
     const std::string kPeriodSizeProp = "vendor.audio_hal.period_size";
-    auto frameSize = ::android::base::GetUintProperty<size_t>(kPeriodSizeProp,
-                                                              LowLatencyPlayback::kPeriodSize);
+    size_t periodSize = kPeriodDurationMs * getSampleRate(mixPortConfig).value() / 1000;
+    auto frameSize = ::android::base::GetUintProperty<size_t>(kPeriodSizeProp, periodSize);
     if (kSupportedFrameSizes.count(frameSize)) {
         return frameSize;
     }
-    return LowLatencyPlayback::kPeriodSize;
+    return periodSize;
 }
 
 // [LowLatencyPlayback End]
@@ -235,17 +234,17 @@ size_t LowLatencyPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
 // [Deep Buffer Start]
 
 size_t DeepBufferPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
-    return kPeriodSize;
+    return kPeriodDurationMs * getSampleRate(mixPortConfig).value() / 1000;
 }
 
 // [Deep Buffer End]
 size_t PrimaryPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
-    return kPeriodSize;
+    return kPeriodDurationMs * getSampleRate(mixPortConfig).value() / 1000;
 }
 
 // [ULLPlayback Start]
 size_t UllPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
-    return kPeriodSize * kPeriodMultiplier;
+    return kPeriodDurationMs * getSampleRate(mixPortConfig).value() / 1000;
 }
 
 // [ULLPlayback End]
@@ -293,10 +292,55 @@ int32_t MmapUsecaseBase::getMMapPosition(int64_t* frames, int64_t* timeNs) {
     LOG(VERBOSE) << __func__ << ": frames:" << *frames << ", timeNs:" << *timeNs;
     return 0;
 }
+
+int32_t MmapUsecaseBase::start() {
+    if (!mPalHandle) {
+        LOG(ERROR) << __func__ << ": pal stream handle is null";
+        return -EINVAL;
+    }
+
+    if (mIsStarted) {
+        LOG(VERBOSE) << __func__ << ": MMAP already started";
+        return 0;
+    }
+
+    if (int32_t ret = ::pal_stream_start(mPalHandle); ret) {
+        LOG(ERROR) << __func__ << " pal stream start failed, ret:" << ret;
+        return ret;
+    }
+
+    mIsStarted = true;
+    LOG(VERBOSE) << __func__ << ": MMAP start success";
+
+    return 0;
+}
+
+int32_t MmapUsecaseBase::stop() {
+    if (!mPalHandle) {
+        LOG(ERROR) << __func__ << ": pal stream handle is null";
+        return -EINVAL;
+    }
+
+    if (!mIsStarted) {
+        LOG(VERBOSE) << __func__ << ": MMAP already stopped";
+        return 0;
+    }
+
+    if (int32_t ret = ::pal_stream_stop(mPalHandle); ret) {
+        LOG(ERROR) << __func__ << " pal stream stop failed, ret:" << ret;
+        return -EINVAL;
+    }
+
+    mIsStarted = false;
+    LOG(VERBOSE) << __func__ << ": MMAP stop success";
+
+    return 0;
+}
+
 // [MmapUsecaseBase End]
 // [MMapPlayback Start]
 size_t MMapPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
-    return kPeriodSize;
+    return kPeriodDurationMs * getSampleRate(mixPortConfig).value() / 1000;
 }
 
 // [MMapPlayback End]
@@ -607,6 +651,7 @@ bool CompressPlayback::configureGapLessMetadata() {
                  << ", encoderPadding:" << gapLessPtr->encoderPadding;
         return true;
     }
+    LOG(ERROR) << __func__ << " PAL stream handle is NULL!";
     return false;
 }
 
@@ -633,15 +678,19 @@ bool CompressPlayback::configureCodecInfo() const {
     palParamPayload->payload_size = sizeof(pal_snd_dec_t);
     auto palSndDecPtr = reinterpret_cast<pal_snd_dec_t*>(dataPtr.get() + sizeof(pal_param_payload));
     *palSndDecPtr = mPalSndDec;
-    if (int32_t ret =
+    if (mCompressPlaybackHandle) {
+        if (int32_t ret =
                 ::pal_stream_set_param(mCompressPlaybackHandle, PAL_PARAM_ID_CODEC_CONFIGURATION,
                                        reinterpret_cast<pal_param_payload*>(dataPtr.get()));
         ret) {
-        LOG(ERROR) << __func__ << " PAL_PARAM_ID_CODEC_CONFIGURATION failed, ret:" << ret;
-        return false;
+            LOG(ERROR) << __func__ << " PAL_PARAM_ID_CODEC_CONFIGURATION failed, ret:" << ret;
+            return false;
+        }
+        LOG(VERBOSE) << __func__ << " PAL_PARAM_ID_CODEC_CONFIGURATION successful";
+        return true;
     }
-    LOG(VERBOSE) << __func__ << " PAL_PARAM_ID_CODEC_CONFIGURATION successful";
-    return true;
+    LOG(ERROR) << __func__ << " PAL stream handle is NULL!";
+    return false;
 }
 
 int64_t CompressPlayback::getPositionInFrames(pal_stream_handle_t* palHandle) {
@@ -743,34 +792,34 @@ void PcmOffloadPlayback::onFlush() {
 
 // [SpatialPlayback Start]
 size_t SpatialPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
-    return kPeriodSize;
+    return kPeriodDurationMs * getSampleRate(mixPortConfig).value() / 1000;
 }
 
 // [SpatialPlayback End]
 
 // [InCallMusic Start]
 size_t InCallMusic::getFrameCount(const AudioPortConfig& mixPortConfig) {
-    return kPeriodSize;
+    return kPeriodDurationMs * getSampleRate(mixPortConfig).value() / 1000;
 }
 
 // [InCallMusic End]
 
 // [VoipPlayback Start]
 size_t VoipPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
-    return (kPeriodDurationMs * mixPortConfig.sampleRate.value().value) / 1000;
+    return kPeriodDurationMs * getSampleRate(mixPortConfig).value() / 1000;
 }
 
 // [VoipPlayback End]
 
 // [HapticPlayback Start]
 size_t HapticsPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
-    return kPeriodSize;
+    return kPeriodDurationMs * getSampleRate(mixPortConfig).value() / 1000;
 }
 
 // [HapticsPlayback End]
 // [PcmRecord Start]
 size_t PcmRecord::getFrameCount(const AudioPortConfig& mixPortConfig) {
-    size_t frameCount = kCaptureDurationMs * (mixPortConfig.sampleRate.value().value / 1000);
+    size_t frameCount = kCaptureDurationMs * getSampleRate(mixPortConfig).value() / 1000;
     frameCount = getNearestMultiple(
             frameCount, std::lcm(32, getPcmSampleSizeInBytes(mixPortConfig.format.value().pcm)));
     // Adjusting to frameCount as atleast kFMQMinFrameSize (160).
@@ -783,17 +832,6 @@ size_t PcmRecord::getFrameCount(const AudioPortConfig& mixPortConfig) {
 
 // [FastRecord Start]
 size_t FastRecord::getFrameCount(const AudioPortConfig& mixPortConfig) {
-    size_t frameSize =
-            getFrameSizeInBytes(mixPortConfig.format.value(), mixPortConfig.channelMask.value());
-    size_t size = kPeriodSize * frameSize;
-    size = getNearestMultiple(size, std::lcm(32, frameSize));
-    return size / frameSize;
-}
-
-// [FastRecord Start]
-
-// [UltraFastRecord Start]
-size_t UltraFastRecord::getFrameCount(const AudioPortConfig& mixPortConfig) {
     /**
      * Some clients which directly uses AHAL service for Fast Record like
      * proxy capture
@@ -804,19 +842,29 @@ size_t UltraFastRecord::getFrameCount(const AudioPortConfig& mixPortConfig) {
         return propFrameSize;
     }
 
-    if (!hasInputRawFlag(mixPortConfig.flags.value())) {
-        /**
-         * Most likey this is for WFD Usecase,
-         * they demand PCM frames of 1024 in every read
-         * TODO, move this requirement to FastRecord
-         **/
-        constexpr size_t kWFDPCMFramesPerRead = 1024;
-        LOG(VERBOSE) << __func__ << ": expecting for WFD proxy record:";
-        return kWFDPCMFramesPerRead;
+    size_t periodSize = (kCaptureDurationMs * getSampleRate(mixPortConfig).value()) / 1000;
+    size_t frameSize =
+            getFrameSizeInBytes(mixPortConfig.format.value(), mixPortConfig.channelMask.value());
+    size_t size = periodSize * frameSize;
+    size = getNearestMultiple(size, std::lcm(32, frameSize));
+    return size / frameSize;
+}
+// [FastRecord End]
+
+// [UltraFastRecord Start]
+size_t UltraFastRecord::getFrameCount(const AudioPortConfig& mixPortConfig) {
+    /**
+     * Some clients which directly uses AHAL service for ULL Record like
+     * proxy capture
+     **/
+    auto& platform = Platform::getInstance();
+    if (const auto& propFrameSize = platform.getProxyRecordFMQSize(); propFrameSize > 0) {
+        LOG(VERBOSE) << __func__ << ": client applied FMQSize in Frames:" << propFrameSize;
+        return propFrameSize;
     }
 
     // return default period size for ULL
-    return kPeriodSize;
+    return kCaptureDurationMs * getSampleRate(mixPortConfig).value() / 1000;
 }
 
 // [UltraFastRecord End]
@@ -824,7 +872,7 @@ size_t UltraFastRecord::getFrameCount(const AudioPortConfig& mixPortConfig) {
 // [MMapRecord Start]
 
 size_t MMapRecord::getFrameCount(const AudioPortConfig& mixPortConfig) {
-    return kPeriodSize;
+    return kCaptureDurationMs * getSampleRate(mixPortConfig).value() / 1000;
 }
 
 // [MMapRecord End]
@@ -844,11 +892,12 @@ pal_stream_handle_t* HotwordRecord::getPalHandle(
 
     int32_t ret = pal_get_param(PAL_PARAM_ID_ST_CAPTURE_INFO, (void**)&stCaptureInfo, &payloadSize,
                                 nullptr);
-    if (ret) {
+    if (ret || !stCaptureInfo.pal_handle) {
         LOG(ERROR) << __func__ << ": sound trigger handle not found, status " << ret;
         return nullptr;
     }
 
+    mIsStRecord = true;
     LOG(DEBUG) << __func__ << ": sound trigger pal handle " << stCaptureInfo.pal_handle
                << " for IOHandle  " << ioHandle;
 
@@ -951,15 +1000,18 @@ bool CompressCapture::configureCodecInfo(){
     palParamPayload->payload_size = sizeof(pal_snd_enc_t);
     auto payloadPtr = reinterpret_cast<pal_snd_enc_t*>(dataPtr.get() + sizeof(pal_param_payload));
     *payloadPtr = mPalSndEnc;
-
-    if (int32_t ret = ::pal_stream_set_param(mCompressHandle, PAL_PARAM_ID_CODEC_CONFIGURATION,
+    if (mCompressHandle) {
+        if (int32_t ret = ::pal_stream_set_param(mCompressHandle, PAL_PARAM_ID_CODEC_CONFIGURATION,
                                              palParamPayload); ret) {
-        LOG(ERROR) << __func__ << " PAL_PARAM_ID_CODEC_CONFIGURATION failed!!! ret:" << ret;
-        return false;
-    }
+            LOG(ERROR) << __func__ << " PAL_PARAM_ID_CODEC_CONFIGURATION failed!!! ret:" << ret;
+            return false;
+        }
 
-    LOG(VERBOSE) << __func__ << " PAL_PARAM_ID_CODEC_CONFIGURATION configured";
-    return true;
+        LOG(VERBOSE) << __func__ << " PAL_PARAM_ID_CODEC_CONFIGURATION configured";
+        return true;
+    }
+    LOG(ERROR) << __func__ << " PAL stream handle is NULL!";
+    return false;
 }
 
 ndk::ScopedAStatus CompressCapture::setVendorParameters(
@@ -1010,12 +1062,16 @@ void CompressCapture::setAACDSPBitRate() {
     auto paramPayload = (pal_param_payload*)payload.get();
     paramPayload->payload_size = palSndEncSize;
     memcpy(paramPayload->payload, &mPalSndEnc, paramPayload->payload_size);
-
-    if (int32_t ret = ::pal_stream_set_param(mCompressHandle, PAL_PARAM_ID_RECONFIG_ENCODER,
+    if (mCompressHandle) {
+        if (int32_t ret = ::pal_stream_set_param(mCompressHandle, PAL_PARAM_ID_RECONFIG_ENCODER,
                                              paramPayload);
         ret) {
-        LOG(ERROR) << __func__ << "pal set param PAL_PARAM_ID_RECONFIG_ENCODER failed:" << ret;
+            LOG(ERROR) << __func__ << "pal set param PAL_PARAM_ID_RECONFIG_ENCODER failed:" << ret;
+        }
+    } else {
+        LOG(ERROR) << __func__ << "PAL stream handle is NULL!";
     }
+
 }
 
 int32_t CompressCapture::getAACMinBitrateValue() {

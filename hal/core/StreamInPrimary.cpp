@@ -140,6 +140,20 @@ ndk::ScopedAStatus StreamInPrimary::configureConnectedDevices_I() {
                 mPlatform.configurePalDevicesCustomKey(connectedPalDevices, "dual-mic");
             }
         }
+    } else if (mTag == Usecase::FAST_RECORD) {
+        auto countProxyDevices = std::count_if(mConnectedDevices.cbegin(), mConnectedDevices.cend(),
+                                               isInputAFEProxyDevice);
+        if (countProxyDevices > 0) {
+            std::get<FastRecord>(mExt).mIsWFDCapture = true;
+            LOG(INFO) << __func__ << mLogPrefix
+                      << ": ultra fast record on input AFE proxy (WFD client AHAL CAPTURE)";
+        } else {
+            std::get<FastRecord>(mExt).mIsWFDCapture = false;
+            auto channelCount = getChannelCount(mMixPortConfig.channelMask.value());
+            if (channelCount == 2) {
+                mPlatform.configurePalDevicesCustomKey(connectedPalDevices, "dual-mic");
+            }
+        }
     }
 
     if (this->mPalHandle != nullptr && connectedPalDevices.size() > 0) {
@@ -189,12 +203,9 @@ ndk::ScopedAStatus StreamInPrimary::configureMMapStream(int32_t* fd, int64_t* bu
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
     }
     attr->type = PAL_STREAM_ULTRA_LOW_LATENCY;
-    auto palDevices =
-            mPlatform.configureAndFetchPalDevices(mMixPortConfig, mTag, mConnectedDevices);
-    if (!palDevices.size()) {
-        LOG(ERROR) << __func__ << mLogPrefix << " no connected devices on stream";
-        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
-    }
+    auto palDevices = mPlatform.configureAndFetchPalDevices(mMixPortConfig, mTag, mConnectedDevices,
+                                                            true /*dummyDevice*/);
+
     uint64_t cookie = reinterpret_cast<uint64_t>(this);
     pal_stream_callback palFn = nullptr;
     attr->flags = static_cast<pal_stream_flags_t>(PAL_STREAM_FLAG_MMAP_NO_IRQ);
@@ -202,7 +213,8 @@ ndk::ScopedAStatus StreamInPrimary::configureMMapStream(int32_t* fd, int64_t* bu
     if (int32_t ret = ::pal_stream_open(attr.get(), palDevices.size(), palDevices.data(), 0,
                                         nullptr, palFn, cookie, &(this->mPalHandle));
         ret) {
-        LOG(ERROR) << __func__ << mLogPrefix << " pal_stream_open failed, ret:" << std::to_string(ret);
+        LOG(ERROR) << __func__ << mLogPrefix
+                   << " pal_stream_open failed, ret:" << std::to_string(ret);
         mPalHandle = nullptr;
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
     }
@@ -256,21 +268,17 @@ ndk::ScopedAStatus StreamInPrimary::configureMMapStream(int32_t* fd, int64_t* bu
     return ::android::OK;
 }
 
-::android::status_t StreamInPrimary::drain(
-        ::aidl::android::hardware::audio::core::StreamDescriptor::DrainMode mode) {
+::android::status_t StreamInPrimary::drain(StreamDescriptor::DrainMode mode) {
     if (!mPalHandle) {
         LOG(WARNING) << __func__ << mLogPrefix << " stream is not configured";
         return ::android::OK;
     }
-    if (mTag == Usecase::MMAP_RECORD && mIsMMapStarted) {
-        LOG(DEBUG) << __func__ << mLogPrefix << ": stopping input mmap";
-        if (int32_t ret = pal_stream_stop(mPalHandle); ret) {
-            LOG(ERROR) << __func__ << mLogPrefix
-                       << " failed to stop MMAP stream, ret:" << std::to_string(ret);
-            return -EINVAL;
-        }
-        mIsMMapStarted = false;
+
+    if (mTag == Usecase::MMAP_RECORD) {
+        // drain in MMAP is stop
+        return stopMMAP();
     }
+
     return ::android::OK;
 }
 
@@ -279,11 +287,22 @@ ndk::ScopedAStatus StreamInPrimary::configureMMapStream(int32_t* fd, int64_t* bu
         LOG(WARNING) << __func__ << mLogPrefix << " stream is not configured";
         return ::android::OK;
     }
-    // No op
+
+    if (mTag == Usecase::MMAP_RECORD) {
+        // flush in MMAP is stop
+        return stopMMAP();
+    }
+
     return ::android::OK;
 }
 
 ::android::status_t StreamInPrimary::pause() {
+
+    if (mTag == Usecase::MMAP_RECORD) {
+        // pause in MMAP is stop
+        return stopMMAP();
+    }
+
     // Todo check whether pause is possible in PAL
     shutdown_I();
     return ::android::OK;
@@ -294,21 +313,26 @@ void StreamInPrimary::resume() {
 }
 
 ::android::status_t StreamInPrimary::standby() {
+    if (!mPalHandle) {
+        LOG(WARNING) << __func__ << mLogPrefix << ": stream is not configured ";
+        return ::android::OK;
+    }
+
+    if (mTag == Usecase::MMAP_RECORD) {
+        return ::android::OK;
+    }
+
     shutdown_I();
     return ::android::OK;
 }
 
 ::android::status_t StreamInPrimary::start() {
     LOG(DEBUG) << __func__ << mLogPrefix;
-    if (mTag == Usecase::MMAP_RECORD && !mIsMMapStarted) {
-        if (int32_t ret = ::pal_stream_start(this->mPalHandle); ret) {
-            LOG(ERROR) << __func__ << mLogPrefix << " pal_stream_start failed!! ret:" << std::to_string(ret);
-            ::pal_stream_close(mPalHandle);
-            mPalHandle = nullptr;
-            return -EINVAL;
-        }
-        mIsMMapStarted = true;
+
+    if (mTag == Usecase::MMAP_RECORD) {
+        return startMMAP();
     }
+
     return ::android::OK;
 }
 
@@ -338,6 +362,11 @@ void StreamInPrimary::resume() {
         }
     }
 
+    if (frameCount == 0) {
+        *actualFrameCount = 0;
+        return burstZero();
+    }
+
     pal_buffer palBuffer{};
     palBuffer.buffer = static_cast<uint8_t*>(buffer);
     palBuffer.size = frameCount * mFrameSizeBytes;
@@ -350,7 +379,8 @@ void StreamInPrimary::resume() {
      * This results VA buffering stop in PAL. Add retry mechanism to get valid data
      * for HOTWORD read stream
      */
-    if (mTag == Usecase::HOTWORD_RECORD && bytesRead <= 0) {
+    if (mTag == Usecase::HOTWORD_RECORD &&
+        std::get<HotwordRecord>(mExt).isStRecord() && bytesRead <= 0) {
         if (bytesRead == 0) {
             int32_t retryCnt = 0;
             do {
@@ -609,6 +639,12 @@ size_t StreamInPrimary::getPlatformDelay() const noexcept {
 }
 
 void StreamInPrimary::configure() {
+
+    if(hasInputMMapFlag(mMixPortConfig.flags.value())){
+        // this API doesn't handle for MMAP
+        return;
+    }
+
     const auto startTime = std::chrono::steady_clock::now();
     auto attr = mPlatform.getPalStreamAttributes(mMixPortConfig, true);
     LOG(INFO) << __func__ << " : configure : Enter";
@@ -655,7 +691,12 @@ void StreamInPrimary::configure() {
         attr->info.voice_rec_info.record_direction =
                 std::get<VoiceCallRecord>(mExt).getRecordDirection(mMixPortConfig);
     } else if (mTag == Usecase::FAST_RECORD) {
-        attr->type = PAL_STREAM_LOW_LATENCY;
+        if (std::get<FastRecord>(mExt).mIsWFDCapture) {
+            attr->type = PAL_STREAM_PROXY;
+            attr->info.opt_stream_info.tx_proxy_type = PAL_STREAM_PROXY_TX_WFD;
+        } else {
+            attr->type = PAL_STREAM_LOW_LATENCY;
+        }
     } else if (mTag == Usecase::ULTRA_FAST_RECORD) {
         if (std::get<UltraFastRecord>(mExt).mIsWFDCapture) {
             attr->type = PAL_STREAM_PROXY;
@@ -701,6 +742,13 @@ void StreamInPrimary::configure() {
     const auto palOpenApiEndTime = std::chrono::steady_clock::now();
 
     auto bufConfig = getBufferConfig();
+    if (mTag == Usecase::ULTRA_FAST_RECORD) {
+        const size_t durationMs = 1;
+        size_t frameSizeInBytes = ::aidl::android::hardware::audio::common::getFrameSizeInBytes(
+                mMixPortConfig.format.value(), mMixPortConfig.channelMask.value());
+        bufConfig.bufferSize = durationMs *
+                    (mMixPortConfig.sampleRate.value().value /1000) * frameSizeInBytes;
+    }
     const size_t ringBufSizeInBytes = bufConfig.bufferSize;
     const size_t ringBufCount = bufConfig.bufferCount;
     auto palBufferConfig = mPlatform.getPalBufferConfig(ringBufSizeInBytes, ringBufCount);
@@ -733,7 +781,7 @@ void StreamInPrimary::configure() {
         return;
     }
 
-    if (mPlatform.getMicMuteStatus()) {
+    if (mPlatform.getMicMuteStatus() && !(mPlatform.getTranslationRecordState())) {
         setStreamMicMute(true);
     }
 
@@ -791,17 +839,52 @@ void StreamInPrimary::applyEffects() {
 
 void StreamInPrimary::shutdown_I() {
     LOG(DEBUG) << __func__ << mLogPrefix;
+
+    if (mTag == Usecase::MMAP_RECORD) {
+        std::get<MMapRecord>(mExt).setPalHandle(nullptr);
+    }
+
     mEffectsApplied = true;
     if (mPalHandle != nullptr) {
-        if (mTag == Usecase::HOTWORD_RECORD) {
+        if (mTag == Usecase::HOTWORD_RECORD && std::get<HotwordRecord>(mExt).isStRecord()) {
             ::pal_stream_set_param(mPalHandle, PAL_PARAM_ID_STOP_BUFFERING, nullptr);
         } else {
             ::pal_stream_stop(mPalHandle);
             ::pal_stream_close(mPalHandle);
         }
     }
+    if (mTag == Usecase::COMPRESS_CAPTURE) {
+        std::get<CompressCapture>(mExt).setPalHandle(nullptr);
+    }
     mPalHandle = nullptr;
-    mIsMMapStarted = false;
+    mPlatform.setMicMuteStatus(false);
+}
+
+::android::status_t StreamInPrimary::burstZero() {
+    LOG(VERBOSE) << __func__ << mLogPrefix;
+    if (mTag == Usecase::MMAP_RECORD) {
+        return startMMAP();
+    }
+
+    return ::android::OK;
+}
+
+::android::status_t StreamInPrimary::startMMAP() {
+    auto& mmap = std::get<MMapRecord>(mExt);
+    if (auto ret = mmap.start(); ret) {
+        LOG(ERROR) << __func__ << mLogPrefix << ": failed";
+        return ret;
+    }
+    return ::android::OK;
+}
+
+::android::status_t StreamInPrimary::stopMMAP() {
+    auto& mmap = std::get<MMapRecord>(mExt);
+    if (auto ret = mmap.stop(); ret) {
+        LOG(ERROR) << __func__ << mLogPrefix << ": failed";
+        return ret;
+    }
+    return ::android::OK;
 }
 
 } // namespace qti::audio::core

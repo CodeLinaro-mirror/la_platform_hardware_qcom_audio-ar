@@ -170,7 +170,6 @@ class Module : public ::aidl::android::hardware::audio::core::BnModule,
     ConnectedDevicePorts mConnectedDevicePorts;
     Streams mStreams;
     Patches mPatches;
-    bool mMicMute = false;
     bool mMasterMute = false;
     float mMasterVolume = 1.0f;
     ChildInterface<::aidl::android::hardware::audio::core::sounddose::ISoundDose> mSoundDose;
@@ -250,7 +249,6 @@ class Module : public ::aidl::android::hardware::audio::core::BnModule,
     const ConnectedDevicePorts& getConnectedDevicePorts() const { return mConnectedDevicePorts; }
     bool getMasterMute() const { return mMasterMute; }
     bool getMasterVolume() const { return mMasterVolume; }
-    bool getMicMute() const { return mMicMute; }
     const Patches& getPatches() const { return mPatches; }
     const Streams& getStreams() const { return mStreams; }
     Type getType() const { return mType; }
