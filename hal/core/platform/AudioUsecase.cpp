@@ -366,7 +366,7 @@ size_t CompressPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
     auto propPeriodSize =
             ::android::base::GetUintProperty<size_t>(kCompressPeriodSizeProp, 0) * 1024;
 
-    if (propPeriodSize > periodSize) {
+    if (propPeriodSize > 0) {
         periodSize = propPeriodSize;
     }
     return periodSize;
