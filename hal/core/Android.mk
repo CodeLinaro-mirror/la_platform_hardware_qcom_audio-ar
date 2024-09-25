@@ -20,6 +20,13 @@ LOCAL_CFLAGS := \
 # check default core HAL library VINTF Fragments
 #LOCAL_VINTF_FRAGMENTS := manifest_audiocoreservices_qti.xml
 
+# add for gcov dump
+ifeq ($(AUDIO_FEATURE_ENABLED_GCOV), true)
+LOCAL_CFLAGS += -DAUDIO_FEATURE_ENABLED_GCOV -g --coverage -fprofile-arcs -ftest-coverage
+LOCAL_CPPFLAGS += -g --coverage -fprofile-arcs -ftest-coverage
+LOCAL_LDFLAGS += -g --coverage -fprofile-arcs -ftest-coverage
+endif
+
 LOCAL_SRC_FILES := \
     CoreService.cpp \
     Bluetooth.cpp \

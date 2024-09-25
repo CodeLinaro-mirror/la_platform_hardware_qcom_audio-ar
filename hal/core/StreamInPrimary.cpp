@@ -41,6 +41,18 @@ using ::aidl::android::media::audio::common::AudioDeviceDescription;
 // uncomment this to enable logging of very verbose logs like burst commands.
 // #define VERY_VERBOSE_LOGGING 1
 
+#ifdef AUDIO_FEATURE_ENABLED_GCOV
+extern "C" void __gcov_dump(void);
+#define GCOV_DUMP() \
+    do { \
+        LOG(DEBUG) << __func__ << mLogPrefix << "start dump gcov"; \
+        __gcov_dump(); \
+        LOG(DEBUG) << __func__ << mLogPrefix << "end dump gcov";\
+    } while(0)
+#else
+#define GCOV_DUMP()
+#endif
+
 namespace qti::audio::core {
 
 #define READ_RETRY_COUNT 10
@@ -888,6 +900,7 @@ void StreamInPrimary::shutdown_I() {
         std::get<CompressCapture>(mExt).setPalHandle(nullptr);
     }
     mPalHandle = nullptr;
+    GCOV_DUMP();
 }
 
 ::android::status_t StreamInPrimary::burstZero() {
