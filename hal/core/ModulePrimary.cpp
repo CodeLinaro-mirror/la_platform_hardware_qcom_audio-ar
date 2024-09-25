@@ -419,6 +419,8 @@ ndk::ScopedAStatus ModulePrimary::setVendorParameters(
                 parms = str_parms_create_str(kvpairs.c_str());
                 mAudExt.audio_extn_set_parameters(parms);
             }
+            if (parms)
+                str_parms_destroy(parms);
 
             mPlatform.setVendorParameters(in_parameters, in_async);
         }

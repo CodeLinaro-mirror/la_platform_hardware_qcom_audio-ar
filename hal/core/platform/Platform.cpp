@@ -1117,6 +1117,8 @@ bool Platform::setBluetoothParameters(const char* kvpairs) {
         ret = pal_set_param(PAL_PARAM_ID_BT_A2DP_SUSPENDED, (void*)&param_bt_a2dp,
                             sizeof(pal_param_bta2dp_t));
     }
+    if (parms)
+        str_parms_destroy(parms);
     return true;
 }
 

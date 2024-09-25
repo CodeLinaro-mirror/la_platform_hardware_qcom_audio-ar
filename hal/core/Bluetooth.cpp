@@ -112,6 +112,8 @@ ndk::ScopedAStatus Bluetooth::setHfpConfig(const HfpConfig& in_config, HfpConfig
         mAudExt.audio_extn_set_parameters(parms);
     }
     *_aidl_return = mHfpConfig;
+    if (parms)
+        str_parms_destroy(parms);
     LOG(DEBUG) << __func__ << ": received " << in_config.toString() << ", returning "
                << _aidl_return->toString();
     return ndk::ScopedAStatus::ok();
