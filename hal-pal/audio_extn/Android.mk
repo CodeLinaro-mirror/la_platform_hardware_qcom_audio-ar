@@ -120,6 +120,7 @@ LOCAL_HEADER_LIBRARIES += libhardware_headers
 LOCAL_HEADER_LIBRARIES += libsystem_headers
 include $(BUILD_SHARED_LIBRARY)
 
+ifneq ($(TARGET_BOARD_AUTO),true)
 #-------------------------------------------
 #            Build BATTERY_LISTENER
 #-------------------------------------------
@@ -149,6 +150,8 @@ LOCAL_SHARED_LIBRARIES := \
     libutils \
 
 LOCAL_STATIC_LIBRARIES := libhealthhalutils
+endif #TARGET_BOARD_AUTO
+
 #-------------------------------------------
 #            Build AUTO HAL LIB
 #-------------------------------------------

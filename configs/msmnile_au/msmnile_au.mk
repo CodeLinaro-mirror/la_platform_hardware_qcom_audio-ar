@@ -141,6 +141,16 @@ PRODUCT_COPY_FILES += \
     vendor/qcom/opensource/agm/plugins/tinyalsa/test/backend_conf.xml:$(TARGET_COPY_OUT_VENDOR)/etc/backend_conf.xml \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/audio_effects.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects.xml
 
+ifeq ($(BOARD_SUPPORTS_RAMDISK_EARLY_INIT), true)
+ifneq ( ,$(filter T Tiramisu 13, $(PLATFORM_VERSION)))
+ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_au)
+PRODUCT_COPY_FILES += \
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/card-defs.xml:$(TARGET_COPY_OUT_VENDOR)/../vendor_ramdisk/vendor_early_services/vendor/etc/card-defs.xml \
+    vendor/qcom/opensource/agm/plugins/tinyalsa/test/backend_conf.xml:$(TARGET_COPY_OUT_VENDOR)/../vendor_ramdisk/vendor_early_services/vendor/etc/backend_conf.xml
+endif
+endif
+endif
+
 # Configuration files for msmnile_gvmq and gen4_gvm_gy only
 ifeq ($(ENABLE_HYP), true)
 ifeq ($(TARGET_GVMGH_SPECIFIC), false)
@@ -613,6 +623,7 @@ vendor.audio.feature.arpowerpolicy.enable=true
 endif # ends TARGET_USES_GY
 endif
 
+ifeq ( ,$(filter V VanillaIceCream 15, $(PLATFORM_VERSION)))
 # for HIDL related packages
 PRODUCT_PACKAGES += \
     android.hardware.audio@2.0-service \
@@ -647,7 +658,7 @@ PRODUCT_PACKAGES += \
     android.hardware.audio.effect@6.0-impl
 
 # enable audio hidl hal 7.0
-ifneq ( ,$(filter U UpsideDownCake 14 V VanillaIceCream 15, $(PLATFORM_VERSION)))
+ifneq ( ,$(filter U UpsideDownCake 14, $(PLATFORM_VERSION)))
 PRODUCT_PACKAGES += \
     android.hardware.audio@7.0 \
     android.hardware.audio.common@7.0 \
@@ -655,6 +666,7 @@ PRODUCT_PACKAGES += \
     android.hardware.audio@7.0-impl \
     android.hardware.audio.effect@7.0 \
     android.hardware.audio.effect@7.0-impl
+endif
 endif
 
 PRODUCT_PACKAGES_ENG += \
