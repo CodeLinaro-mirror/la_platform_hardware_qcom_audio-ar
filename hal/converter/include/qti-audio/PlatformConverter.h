@@ -20,7 +20,7 @@
 #include <aidl/android/media/audio/common/AudioOutputFlags.h>
 #include <aidl/android/media/audio/common/PcmType.h>
 /* PAL types */
-#include <PalDefs.h>
+#include <PalApi.h>
 
 namespace qti::audio {
 
