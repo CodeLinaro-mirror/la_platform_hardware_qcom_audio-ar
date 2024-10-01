@@ -16,7 +16,7 @@
 #include <cstdlib>
 #include <ctime>
 
-std::shared_ptr<::qti::audio::core::ModulePrimary> gModuleDefaultQti;
+static std::shared_ptr<aidl::android::hardware::audio::core::IModule> gModuleDefaultQti;
 
 auto registerBinderAsService = [](auto &&binder, const std::string &serviceName) {
     AIBinder_setMinSchedulerPolicy(binder.get(), SCHED_NORMAL, ANDROID_PRIORITY_AUDIO);
@@ -28,8 +28,14 @@ auto registerBinderAsService = [](auto &&binder, const std::string &serviceName)
     }
 };
 
+void makeIModuleDefaultQti() {
+    if (gModuleDefaultQti == nullptr) {
+        gModuleDefaultQti = ndk::SharedRefBase::make<::qti::audio::core::ModulePrimary>();
+    }
+}
+
 void registerIModuleDefaultQti() {
-    gModuleDefaultQti = ndk::SharedRefBase::make<::qti::audio::core::ModulePrimary>();
+    makeIModuleDefaultQti();
     const std::string kServiceName =
             std::string(gModuleDefaultQti->descriptor).append("/").append("default");
     registerBinderAsService(gModuleDefaultQti->asBinder(), kServiceName);
@@ -38,4 +44,9 @@ void registerIModuleDefaultQti() {
 extern "C" __attribute__((visibility("default"))) int32_t registerServices() {
     registerIModuleDefaultQti();
     return STATUS_OK;
+}
+
+extern "C" __attribute__((visibility("default"))) void* getIModuleDefaultQti() {
+    makeIModuleDefaultQti();
+    return gModuleDefaultQti.get();
 }
