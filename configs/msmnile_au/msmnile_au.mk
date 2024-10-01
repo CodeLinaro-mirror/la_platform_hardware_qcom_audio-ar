@@ -172,7 +172,7 @@ PRODUCT_COPY_FILES += \
 endif
 endif
 
-ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_au)
+ifneq (,$(filter $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)$(TARGET_BOARD_DERIVATIVE_SUFFIX), msmnile_au msmnile_tb))
 # Configuration files for msmnile_au AudioReach value added SI
 PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/car_audio_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/car_audio_configuration.xml \
@@ -184,7 +184,7 @@ PRODUCT_COPY_FILES += \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/default_volume_tables.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/default_volume_tables.xml
 endif
 
-ifneq (,$(filter $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_gvmq msmnile_au))
+ifneq (,$(filter $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)$(TARGET_BOARD_DERIVATIVE_SUFFIX), msmnile_gvmq msmnile_au msmnile_tb))
 PRODUCT_COPY_FILES += \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/modules.audio.ar.blocklist:$(TARGET_COPY_OUT_VENDOR_DLKM)/lib/modules/modules.audio.ar.blocklist \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/modules.audio.ar_vio.blocklist:$(TARGET_COPY_OUT_VENDOR_DLKM)/lib/modules/modules.audio.ar_vio.blocklist \
@@ -219,12 +219,12 @@ PRODUCT_COPY_FILES += \
 endif # Configuration files for msmnile_gvmgh only
 
 # cma memory for MDF
-ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_au)
+ifneq (,$(filter $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)$(TARGET_BOARD_DERIVATIVE_SUFFIX), msmnile_au msmnile_tb))
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.feature.dmabuf.cma.memory.enable=true
 endif
 
-ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_au)
+ifneq (,$(filter $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)$(TARGET_BOARD_DERIVATIVE_SUFFIX), msmnile_au msmnile_tb))
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.feature.agm.enable=none
 vendor.audio.feature.hostless.enable=none
@@ -516,7 +516,7 @@ PRODUCT_ODM_PROPERTIES += \
 vendor.audio.feature.snd_mon.enable=false
 endif
 endif
-ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_au)
+ifneq (,$(filter $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)$(TARGET_BOARD_DERIVATIVE_SUFFIX), msmnile_au msmnile_tb))
 ifneq ( ,$(filter T Tiramisu 13 U UpsideDownCake 14, $(PLATFORM_VERSION)))
 PRODUCT_ODM_PROPERTIES += \
 vendor.audio.feature.arpowerpolicy.enable=true
@@ -581,7 +581,7 @@ PRODUCT_ODM_PROPERTIES += \
 vendor.audio.feature.snd_mon.enable=false
 endif
 endif
-ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_au)
+ifneq (,$(filter $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)$(TARGET_BOARD_DERIVATIVE_SUFFIX), msmnile_au msmnile_tb))
 ifneq ( ,$(filter T Tiramisu 13 U UpsideDownCake 14, $(PLATFORM_VERSION)))
 PRODUCT_ODM_PROPERTIES += \
 vendor.audio.feature.arpowerpolicy.enable=true
