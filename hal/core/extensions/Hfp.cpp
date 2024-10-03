@@ -28,7 +28,7 @@
  *
  * Changes from Qualcomm Innovation Center are provided under the following license:
  *
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
 */
 
@@ -177,7 +177,7 @@ static int32_t start_hfp(struct str_parms *parms __unused) {
 
     pal_param_device_connection_t param_device_connection;
 
-    param_device_connection.id = PAL_DEVICE_IN_BLUETOOTH_SCO_HEADSET;
+    param_device_connection.id = PAL_DEVICE_IN_HFP_DOWNLINK;
     param_device_connection.connection_state = true;
     ret = pal_set_param(PAL_PARAM_ID_DEVICE_CONNECTION, (void *)&param_device_connection,
                         sizeof(pal_param_device_connection_t));
@@ -187,7 +187,7 @@ static int32_t start_hfp(struct str_parms *parms __unused) {
         return ret;
     }
 
-    param_device_connection.id = PAL_DEVICE_OUT_BLUETOOTH_SCO;
+    param_device_connection.id = PAL_DEVICE_OUT_HFP_UPLINK;
     param_device_connection.connection_state = true;
     ret = pal_set_param(PAL_PARAM_ID_DEVICE_CONNECTION, (void *)&param_device_connection,
                         sizeof(pal_param_device_connection_t));
@@ -236,7 +236,7 @@ static int32_t start_hfp(struct str_parms *parms __unused) {
     stream_attr.out_media_config.ch_info = ch_info;
     stream_attr.out_media_config.aud_fmt_id = PAL_AUDIO_FMT_PCM_S16_LE;
 
-    devices[0].id = PAL_DEVICE_IN_BLUETOOTH_SCO_HEADSET;
+    devices[0].id = PAL_DEVICE_IN_HFP_DOWNLINK;
     devices[0].config.sample_rate = hfpmod.sample_rate;
     devices[0].config.bit_width = 16;
     devices[0].config.ch_info = ch_info;
@@ -271,13 +271,13 @@ static int32_t start_hfp(struct str_parms *parms __unused) {
     stream_tx_attr.out_media_config.ch_info = ch_info;
     stream_tx_attr.out_media_config.aud_fmt_id = PAL_AUDIO_FMT_PCM_S16_LE;
 
-    devices[0].id = PAL_DEVICE_OUT_BLUETOOTH_SCO;
+    devices[0].id = PAL_DEVICE_OUT_HFP_UPLINK;
     devices[0].config.sample_rate = hfpmod.sample_rate;
     devices[0].config.bit_width = 16;
     devices[0].config.ch_info = ch_info;
     devices[0].config.aud_fmt_id = PAL_AUDIO_FMT_PCM_S16_LE;
 
-    devices[1].id = PAL_DEVICE_IN_SPEAKER_MIC;
+    devices[1].id = PAL_DEVICE_IN_HANDSET_MIC;
 
     ret = pal_stream_open(&stream_tx_attr, no_of_devices, devices, 0, NULL, NULL, 0,
                           &hfpmod.tx_stream_handle);
@@ -333,7 +333,7 @@ static int32_t stop_hfp() {
 
     pal_param_device_connection_t param_device_connection;
 
-    param_device_connection.id = PAL_DEVICE_IN_BLUETOOTH_SCO_HEADSET;
+    param_device_connection.id = PAL_DEVICE_IN_HFP_DOWNLINK;
     param_device_connection.connection_state = false;
     ret = pal_set_param(PAL_PARAM_ID_DEVICE_CONNECTION, (void *)&param_device_connection,
                         sizeof(pal_param_device_connection_t));
@@ -342,7 +342,7 @@ static int32_t stop_hfp() {
                    << param_device_connection.id << " failed";
     }
 
-    param_device_connection.id = PAL_DEVICE_OUT_BLUETOOTH_SCO;
+    param_device_connection.id = PAL_DEVICE_OUT_HFP_UPLINK;
     param_device_connection.connection_state = false;
     ret = pal_set_param(PAL_PARAM_ID_DEVICE_CONNECTION, (void *)&param_device_connection,
                         sizeof(pal_param_device_connection_t));
