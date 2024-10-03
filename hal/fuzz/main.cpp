@@ -5,18 +5,12 @@
 #include <string>
 #include <vector>
 #include <android-base/logging.h>
+#include <dlfcn.h>
 #include <fuzzer/FuzzedDataProvider.h>
 
 #include "base.h"
 #include "provider.h"
 #include "gen.h"
-
-#include <qti-audio-core/Module.h>
-#include <qti-audio-core/ModulePrimary.h>
-#include <qti-audio-core/Parameters.h>
-
-using qti::audio::core::Module;
-using qti::audio::core::ModulePrimary;
 
 // data that persists between LLVMFuzzerTestOneInput() calls
 struct AudioPersistData {
@@ -58,36 +52,11 @@ public:
     }
 
     std::string pickVendorParameter() {
-        using namespace qti::audio::core::Parameters;
         std::vector<std::string> parameters = {
-            kHdrRecord,
-            kWnr,
-            kAns,
-            kOrientation,
-            kInverted,
-            kHdrChannelCount,
-            kHdrSamplingRate,
-            kFacing,
-            kVoiceCallState,
-            kVoiceCallType,
-            kVoiceVSID,
-            kVoiceCRSCall,
-            kVoiceCRSVolume,
-            kVolumeBoost,
-            kVoiceSlowTalk,
-            kVoiceHDVoice,
-            kVoiceDeviceMute,
-            kVoiceDirection,
-            kInCallMusic,
-            kUHQA,
-            kFbspCfgWaitTime,
-            kFbspFTMWaitTime,
-            kFbspValiWaitTime,
-            kFbspValiValiTime,
-            kTriggerSpeakerCall,
-            kWfdChannelMap,
-            kHapticsVolume,
-            kHapticsIntensity
+            "parameter1",
+            "parameter2",
+            "parameter3",
+            "parameter4",
         };
         return pick(parameters);
     }
@@ -149,11 +118,16 @@ struct AudioStreamOutFuzzer : public IStreamOutFuzzer<AudioDataProvider, IStream
     }
 };
 
-struct AudioModuleFuzzer : public IModuleFuzzer<AudioDataProvider, Module> {
-    AudioModuleFuzzer(AudioDataProvider *provider, Module *mod): IModuleFuzzer(provider, mod) {}
+struct AudioModuleFuzzer
+    : public IModuleFuzzer<AudioDataProvider, ::aidl::android::hardware::audio::core::IModule> {
+    AudioModuleFuzzer(AudioDataProvider* provider,
+                      ::aidl::android::hardware::audio::core::IModule* mod)
+        : IModuleFuzzer(provider, mod) {}
 
     std::optional<IModule::OpenInputStreamReturn> fuzz_openInputStream() override {
-        auto ret = IModuleFuzzer<AudioDataProvider, Module>::fuzz_openInputStream();
+        auto ret =
+                IModuleFuzzer<AudioDataProvider, ::aidl::android::hardware::audio::core::IModule>::
+                        fuzz_openInputStream();
         if (ret) {
             provider->getPersistData()->inStreams.push_back(ret.value().stream);
         }
@@ -161,7 +135,9 @@ struct AudioModuleFuzzer : public IModuleFuzzer<AudioDataProvider, Module> {
     }
 
     std::optional<IModule::OpenOutputStreamReturn> fuzz_openOutputStream() override {
-        auto ret = IModuleFuzzer<AudioDataProvider, Module>::fuzz_openOutputStream();
+        auto ret =
+                IModuleFuzzer<AudioDataProvider, ::aidl::android::hardware::audio::core::IModule>::
+                        fuzz_openOutputStream();
         if (ret) {
             provider->getPersistData()->outStreams.push_back(ret.value().stream);
         }
@@ -286,7 +262,47 @@ void fuzzStream(AudioDataProvider *provider, std::vector<std::shared_ptr<T>> &st
     }
 }
 
-extern "C" binder_status_t registerService(void);
+static void loadAndCallToRegisterIAGMService() {
+    void* handle = dlopen("libagmipcservice", RTLD_LAZY);
+    if (!handle) {
+        LOG(ERROR) << "Cannot open library: " << dlerror();
+        return;
+    }
+
+    using RegisterService = binder_status_t (*)();
+    RegisterService registerService =
+            reinterpret_cast<RegisterService>(dlsym(handle, "registerService"));
+
+    if (registerService == nullptr) {
+        LOG(ERROR) << "Cannot load symbol 'registerService': " << dlerror();
+        dlclose(handle);
+        return;
+    }
+
+    registerService();
+
+    return;
+}
+
+static void* loadAndCallGetIModuleDefault() {
+    void* handle = dlopen("libaudiocorehal.qti.so", RTLD_LAZY);
+    if (!handle) {
+        LOG(ERROR) << "Cannot open library: " << dlerror();
+        return nullptr;
+    }
+
+    using GetIModuleDefaultQti = void* (*)();
+    GetIModuleDefaultQti getIModuleDefaultQti =
+            reinterpret_cast<GetIModuleDefaultQti>(dlsym(handle, "getIModuleDefaultQti"));
+
+    if (getIModuleDefaultQti == nullptr) {
+        LOG(ERROR) << "Cannot load symbol 'getIModuleDefaultQti': " << dlerror();
+        dlclose(handle); // Close the library if dlsym fails
+        return nullptr;
+    }
+
+    return getIModuleDefaultQti();
+}
 
 class AudioFuzzer {
 public:
@@ -295,12 +311,16 @@ public:
     }
 
     void fuzz() {
-        if (!modulePrimary) {
-            // register agm service
-            registerService();
-            modulePrimary = ndk::SharedRefBase::make<ModulePrimary>();
+        if (modulePrimary == nullptr) {
+            loadAndCallToRegisterIAGMService();
+            modulePrimary = static_cast<::aidl::android::hardware::audio::core::IModule*>(
+                    loadAndCallGetIModuleDefault());
+            if (modulePrimary == nullptr) {
+                LOG(ERROR) << __func__ << ": failed to create fetch ModulePrimary instance pointer";
+                return;
+            }
         }
-        moduleFuzzer = std::make_unique<AudioModuleFuzzer>(provider, modulePrimary.get());
+        moduleFuzzer = std::make_unique<AudioModuleFuzzer>(provider, modulePrimary);
         moduleFuzzer->fuzz();
 
         fuzzStream<IStreamIn, AudioStreamInFuzzer>(provider, provider->getPersistData()->inStreams);
@@ -309,7 +329,7 @@ public:
 
 private:
     AudioDataProvider *provider = nullptr;
-    std::shared_ptr<Module> modulePrimary = nullptr;
+    ::aidl::android::hardware::audio::core::IModule* modulePrimary = nullptr;
     std::unique_ptr<AudioModuleFuzzer> moduleFuzzer = nullptr;
 };
 
