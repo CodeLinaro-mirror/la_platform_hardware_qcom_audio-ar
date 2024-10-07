@@ -293,14 +293,17 @@ std::vector<pal_device> Platform::convertToPalDevices(
 
     size_t i = 0;
     for (auto& device : devices) {
-        const auto palDeviceId = PlatformConverter::getPalDeviceId(device.type);
+        std::string deviceAddress = device.address.get<AudioDeviceAddress::Tag::id>();
+        const auto palDeviceId = PlatformConverter::getPalDeviceId(device.type, deviceAddress);
         if (palDeviceId == PAL_DEVICE_OUT_MIN) {
             return {};
         }
         palDevices[i].id = palDeviceId;
         /* Todo map each AIDL device type to alteast one PAL device */
+
         if (palDevices[i].id == PAL_DEVICE_OUT_SPEAKER &&
             device.type.type == AudioDeviceType::OUT_DEVICE) {
+            setPalDeviceCustomKey(palDevices[i], "BUS00_MEDIA");
         } else if (palDevices[i].id == PAL_DEVICE_OUT_SPEAKER &&
                    device.type.type == AudioDeviceType::OUT_DEVICE) {
             const auto isMSPPEnabled =
