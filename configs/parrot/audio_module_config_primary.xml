@@ -72,11 +72,6 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <mixPort name="primary_in" role="sink" maxOpenCount="2" maxActiveCount="2">
             <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_FRONT_BACK" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
-        <mixPort name="compress_in" role="sink" flags="DIRECT">
-            <profile name="compress-capture-AAC-LC" samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_STEREO LAYOUT_MONO LAYOUT_FRONT_BACK" formatType="NON_PCM" encoding="audio/mp4a.40.02" />
-            <profile name="compress-capture-AAC-HE-V1" samplingRates="24000 32000 44100 48000" channelLayouts="LAYOUT_STEREO LAYOUT_MONO LAYOUT_FRONT_BACK" formatType="NON_PCM" encoding="audio/aac-adts.05" />
-            <profile name="compress-capture-AAC-HE-V2" samplingRates="24000 32000 44100 48000" channelLayouts="LAYOUT_STEREO" formatType="NON_PCM" encoding="audio/aac-adts.29" />
-        </mixPort>
         <mixPort name="fast_input" role="sink" flags="FAST">
             <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_2POINT1 LAYOUT_2POINT0POINT2 LAYOUT_3POINT0POINT2 LAYOUT_5POINT1" channelMasks="INDEX_MASK_3" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
