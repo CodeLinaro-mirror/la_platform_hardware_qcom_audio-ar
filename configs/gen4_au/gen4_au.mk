@@ -20,6 +20,13 @@ ifeq ($(TARGET_USES_GY), true)
 AUDIO_FEATURE_ENABLED_POWER_POLICY := true
 endif
 
+ifeq ($(TARGET_USES_CDC_HW), true)
+PRODUCT_ODM_PROPERTIES +=\
+    vendor.audio.feature.oemgainconversion.enable=true
+else
+PRODUCT_ODM_PROPERTIES +=\
+    vendor.audio.feature.oemgainconversion.enable=false
+endif
 ifeq ($(ENABLE_HYP), false)
 ifeq ($(TARGET_GVMGH_SPECIFIC), false)
     TARGET_USES_ION_CMA_MEMORY := true

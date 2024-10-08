@@ -116,6 +116,7 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     std::vector<float> mVolumes{};
     bool mUseCachedVolume = false;
     bool mHwVolumeSupported = false;
+    bool mVolumeGaincheck = false;
     // check validaty of mPalHandle before use
     pal_stream_handle_t* mPalHandle{nullptr};
     pal_stream_handle_t* mHapticsPalHandle{nullptr};
@@ -148,6 +149,7 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     AudioExtension& mAudExt{AudioExtension::getInstance()};
 
   private:
+    const std::string mGainVolumecheckProperty{"vendor.audio.feature.oemgainconversion.enable"};
     std::string mLogPrefix = "";
     bool mIsMMapStarted = false;
     bool isHwVolumeSupported();

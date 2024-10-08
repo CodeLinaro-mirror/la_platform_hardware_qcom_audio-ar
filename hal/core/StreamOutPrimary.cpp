@@ -107,6 +107,13 @@ bool StreamOutPrimary::isHwVolumeSupported() {
         case Usecase::PCM_OFFLOAD_PLAYBACK:
         case Usecase::MMAP_PLAYBACK:
         case Usecase::VOIP_PLAYBACK:
+        case Usecase::NAV_GUIDANCE_PLAYBACK:
+        case Usecase::MEDIA_PLAYBACK:
+        case Usecase::PRIMARY_PLAYBACK:
+        case Usecase::DEEP_BUFFER_PLAYBACK:
+        case Usecase::ALERTS_PLAYBACK:
+        case Usecase::SYS_NOTIFICATION_PLAYBACK:
+        case Usecase::PHONE_PLAYBACK:
             return true;
         default:
             break;
@@ -664,6 +671,7 @@ ndk::ScopedAStatus StreamOutPrimary::getHwVolume(std::vector<float>* _aidl_retur
 }
 
 ndk::ScopedAStatus StreamOutPrimary::setHwVolume(const std::vector<float>& in_channelVolumes) {
+    mVolumeGaincheck=property_get_bool(mGainVolumecheckProperty.c_str(),false);
     if (!mHwVolumeSupported) {
         return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
     }
@@ -673,16 +681,14 @@ ndk::ScopedAStatus StreamOutPrimary::setHwVolume(const std::vector<float>& in_ch
                    << mVolumes.size() << " got " << in_channelVolumes.size();
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
     }
-
-    auto isVolumeInRange = [](const std::vector<float>& volumes) {
-        return std::all_of(volumes.begin(), volumes.end(),
-                           [](float vol) { return (vol >= 0.0f && vol <= 1.0f); });
-    };
-
-    if (!isVolumeInRange(in_channelVolumes)) {
-        LOG(ERROR) << __func__ << mLogPrefix << " out of range volume "
-                   << ::android::internal::ToString(in_channelVolumes);
-        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
+    if (!mVolumeGaincheck) {
+        auto isVolumeInRange=[](const std::vector<float>& volumes) {
+            return std::all_of(volumes.begin(),volumes.end(),[](float vol) { return (vol >= 0.0f && vol <= 1.0f); });
+        };
+        if (!isVolumeInRange(in_channelVolumes)) {
+            LOG(DEBUG) << __func__ << mLogPrefix << "out of range volume " << ::android::internal::ToString(in_channelVolumes);
+            return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
+        }
     }
 
     if (!mPalHandle) {
@@ -692,12 +698,10 @@ ndk::ScopedAStatus StreamOutPrimary::setHwVolume(const std::vector<float>& in_ch
                    << ::android::internal::ToString(in_channelVolumes);
         return ndk::ScopedAStatus::ok();
     }
-
     if (int32_t ret = mPlatform.setVolume(mPalHandle, in_channelVolumes); ret) {
         LOG(ERROR) << __func__ << mLogPrefix << " failed to set volume";
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
     }
-
     mVolumes = in_channelVolumes;
 
     LOG(DEBUG) << __func__ << mLogPrefix << ::android::internal::ToString(mVolumes);

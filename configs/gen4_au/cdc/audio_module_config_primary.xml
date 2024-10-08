@@ -143,91 +143,91 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
             <profile samplingRates="44000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
             <gains>
                 <gain name="gain_1" mode="JOINT"
-                      minValueMB="-6000"
-                      maxValueMB="600"
-                      defaultValueMB="0"
+                      minValueMB="-9000"
+                      maxValueMB="0"
+                      defaultValueMB="-3600"
                       minRampMs="10"
                       maxRampMs="100"
                       useForVolume="true"
-                      stepValueMB="100"/>
+                      stepValueMB="225"/>
             </gains>
         </devicePort>
         <devicePort tagName="Sys Notification Bus" role="sink" attached="true" deviceType="OUT_BUS" address="BUS01_SYS_NOTIFICATION">
             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         <gains>
           <gain name="gain_1" mode="JOINT"
-                      minValueMB="-6000"
-                      maxValueMB="600"
-                      defaultValueMB="0"
+                      minValueMB="-9000"
+                      maxValueMB="0"
+                      defaultValueMB="-3600"
                       minRampMs="10"
                       maxRampMs="100"
                       useForVolume="true"
-                      stepValueMB="100"/>
+                      stepValueMB="225"/>
           </gains>
         </devicePort>
       <devicePort tagName="Nav Guidance Bus" role="sink" attached="true" deviceType="OUT_BUS" address="BUS02_NAV_GUIDANCE">
           <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
           <gains>
                 <gain name="gain_1" mode="JOINT"
-                      minValueMB="-6000"
-                      maxValueMB="600"
-                      defaultValueMB="0"
+                      minValueMB="-9000"
+                      maxValueMB="0"
+                      defaultValueMB="-3600"
                       minRampMs="10"
                       maxRampMs="100"
                       useForVolume="true"
-                      stepValueMB="100"/>
+                      stepValueMB="225"/>
             </gains>
         </devicePort>
       <devicePort tagName="Phone Bus" role="sink" attached="true" deviceType="OUT_BUS" address="BUS03_PHONE">
             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         <gains>
                 <gain name="gain_1" mode="JOINT"
-                      minValueMB="-6000"
-                      maxValueMB="600"
-                      defaultValueMB="0"
+                      minValueMB="-9000"
+                      maxValueMB="0"
+                      defaultValueMB="-3600"
                       minRampMs="10"
                       maxRampMs="100"
                       useForVolume="true"
-                      stepValueMB="100"/>
+                      stepValueMB="225"/>
             </gains>
         </devicePort>
       <devicePort tagName="Nav Guidance_2 Bus" role="sink" attached="true" deviceType="OUT_BUS" address="BUS0F_NAV_GUIDANCE2">
             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         <gains>
                 <gain name="gain_1" mode="JOINT"
-                      minValueMB="-6000"
-                      maxValueMB="600"
-                      defaultValueMB="0"
+                      minValueMB="-9000"
+                      maxValueMB="0"
+                      defaultValueMB="-3600"
                       minRampMs="10"
                       maxRampMs="100"
                       useForVolume="true"
-                      stepValueMB="100"/>
+                      stepValueMB="225"/>
           </gains>
       </devicePort>
       <devicePort tagName="Front Passenger Bus" role="sink" attached="true"  deviceType="OUT_BUS" address="BUS08_FRONT_PASSENGER">
             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
           <gains>
                 <gain name="gain_1" mode="JOINT"
-                      minValueMB="-6000"
-                      maxValueMB="600"
-                      defaultValueMB="0"
+                      minValueMB="-9000"
+                      maxValueMB="0"
+                      defaultValueMB="-3600"
                       minRampMs="10"
                       maxRampMs="100"
                       useForVolume="true"
-                      stepValueMB="100"/>
+                      stepValueMB="225"/>
             </gains>
         </devicePort>
       <devicePort tagName="Rear Seat Bus" role="sink" attached="true" deviceType="OUT_BUS" address="BUS16_REAR_SEAT">
             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         <gains>
                 <gain name="gain_1" mode="JOINT"
-                      minValueMB="-6000"
-                      maxValueMB="600"
-                      defaultValueMB="0"
+                      minValueMB="-9000"
+                      maxValueMB="0"
+                      defaultValueMB="-3600"
                       minRampMs="10"
                       maxRampMs="100"
                       useForVolume="true"
-                      stepValueMB="100"/>
+                      stepValueMB="225"/>
             </gains>
         </devicePort>
         <devicePort tagName="speaker" role="sink" deviceType="OUT_SPEAKER">
