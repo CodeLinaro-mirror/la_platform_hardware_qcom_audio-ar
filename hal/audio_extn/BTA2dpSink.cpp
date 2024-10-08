@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022, 2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -51,6 +51,7 @@ int32_t btsink_set_volume(float value)
     int32_t vol, ret = 0;
     struct pal_volume_data *pal_volume = NULL;
 
+    btsink.volume = value;
     if (value < 0.0) {
         AHAL_DBG("(%f) Under 0.0, assuming 0.0\n", value);
         value = 0.0;
@@ -59,7 +60,6 @@ int32_t btsink_set_volume(float value)
         AHAL_DBG("Volume brought with in range (%f)\n", value);
     }
     vol  = lrint((value * 0x2000) + 0.5);
-
 
     if (!btsink.running) {
         AHAL_DBG(" BT Sink not active, ignoring set_volume call");
@@ -140,6 +140,7 @@ int32_t start_btsink(std::shared_ptr<AudioDevice> adev __unused, struct str_parm
         return ret;
     }
     btsink.running = true;
+    btsink_set_volume(btsink.volume);
     return ret;
 }
 
