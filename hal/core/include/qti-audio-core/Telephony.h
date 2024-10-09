@@ -157,8 +157,8 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
     std::weak_ptr<StreamIn> mStreamInPrimary;
 
   protected:
-    void startCall();
-    void stopCall();
+    ndk::ScopedAStatus startCall();
+    ndk::ScopedAStatus stopCall();
     void VoiceStop();
     void configureVolumeBoost();
     void configureSlowTalk();

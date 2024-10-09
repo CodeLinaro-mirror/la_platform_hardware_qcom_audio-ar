@@ -466,6 +466,7 @@ void Telephony::reconfigure(const SetUpdates& newUpdates) {
 }
 
 void Telephony::updateCalls() {
+     auto status = ndk::ScopedAStatus::ok();
      auto palDevices = mPlatform.convertToPalDevices({mRxDevice, mTxDevice});
      for (int i = 0; i < MAX_VOICE_SESSIONS; i++) {
             switch (mVoiceSession.session[i].state.new_) {
@@ -479,9 +480,13 @@ void Telephony::updateCalls() {
                                 }
                                 if (!isAnyCallActive() && !mIsCRSStarted) {
                                     mSetUpdates =  mVoiceSession.session[i].CallUpdate;
-                                    startCall();
-                                    mIsVoiceStarted = true;
-                                    mVoiceSession.session[i].state.current_ = mVoiceSession.session[i].state.new_;
+                                    status = startCall();
+                                    if (!status.isOk()) {
+                                        LOG(ERROR) << __func__ << ": start call failed";
+                                    } else {
+                                        mIsVoiceStarted = true;
+                                        mVoiceSession.session[i].state.current_ = mVoiceSession.session[i].state.new_;
+                                    }
                                 } else {
                                     LOG(DEBUG) << __func__ << ": voice already started";
                                 }
@@ -500,8 +505,12 @@ void Telephony::updateCalls() {
                             case CallState::ACTIVE:
                                 LOG(DEBUG) << __func__ << " CallState: ACTIVE -> INACTIVE vsid:" << mVoiceSession.session[i].CallUpdate.mVSID;
                                 mSetUpdates =  mVoiceSession.session[i].CallUpdate;
-                                stopCall();
-                                mVoiceSession.session[i].state.current_ = mVoiceSession.session[i].state.new_;
+                                status = stopCall();
+                                if (!status.isOk()) {
+                                    LOG(ERROR) << __func__ << ": stop call failed";
+                                } else {
+                                    mVoiceSession.session[i].state.current_ = mVoiceSession.session[i].state.new_;
+                                }
                                 break;
 
                              default:
@@ -719,7 +728,7 @@ void Telephony::updateTtyMode() {
     return;
 }
 
-void Telephony::startCall() {
+ndk::ScopedAStatus Telephony::startCall() {
     LOG(DEBUG) << __func__ << ": Enter: "
                << " Rx: " << mRxDevice.toString() << " Tx: " << mTxDevice.toString();
     auto attributes = mPlatform.getDefaultTelephonyAttributes();
@@ -752,13 +761,13 @@ void Telephony::startCall() {
                 nullptr, nullptr, reinterpret_cast<uint64_t>(this), &mPalHandle);
         ret) {
         LOG(ERROR) << __func__ << ": pal stream open failed !!" << ret;
-        return;
+        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
     }
     if (int32_t ret = ::pal_stream_start(mPalHandle); ret) {
         LOG(ERROR) << __func__ << ": pal stream start failed !!" << ret;
         pal_stream_close(mPalHandle);
         mPalHandle = nullptr;
-        return;
+        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
     }
     if (mPlatform.getMicMuteStatus()) {
         mPlatform.setStreamMicMute(mPalHandle, true);
@@ -769,6 +778,7 @@ void Telephony::startCall() {
         LOG(DEBUG) << __func__ << ": CRS usecase mute TX";
     }
     LOG(DEBUG) << __func__ << ": Exit : Voice Stream";
+    return ndk::ScopedAStatus::ok();
 }
 
 void Telephony::startCrsLoopback() {
@@ -813,19 +823,24 @@ void Telephony::startCrsLoopback() {
     LOG(DEBUG) << __func__ << ": Exit";
 }
 
-void Telephony::stopCall() {
+ndk::ScopedAStatus Telephony::stopCall() {
     LOG(DEBUG) << __func__ << ": Enter";
     if (mPalHandle == nullptr) {
-        return;
+        return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
     }
+    int32_t ret = 0;
     auto palDevices = mPlatform.convertToPalDevices({mRxDevice, mTxDevice});
     if (mSetUpdates.mIsCrsCall) {
         strlcpy(palDevices[0].custom_config.custom_key, "",
                 sizeof(palDevices[0].custom_config.custom_key));
         LOG(VERBOSE) << __func__ << "setting custom key as ", palDevices[0].custom_config.custom_key;
     }
-    ::pal_stream_stop(mPalHandle);
-    ::pal_stream_close(mPalHandle);
+    if (int32_t ret = pal_stream_stop(mPalHandle); ret) {
+        LOG(ERROR) << __func__ << ": pal stream stop failed !!" << ret;
+    }
+    if (int32_t ret = pal_stream_close(mPalHandle); ret) {
+        LOG(ERROR) << __func__ << ": pal stream stop failed !!" << ret;
+    }
     if ((palDevices[0].id == PAL_DEVICE_OUT_BLUETOOTH_BLE) &&
         (palDevices[1].id == PAL_DEVICE_IN_BLUETOOTH_BLE)) {
         updateVoiceMetadataForBT(false);
@@ -836,7 +851,11 @@ void Telephony::stopCall() {
         mRxDevice = kDefaultRxDevice;
         mTxDevice = getMatchingTxDevice(mRxDevice);
     }
+    if (ret) {
+        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
+    }
     LOG(DEBUG) << __func__ << ": EXIT";
+    return ndk::ScopedAStatus::ok();
 }
 
 void Telephony::stopCrsLoopback() {
