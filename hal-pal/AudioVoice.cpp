@@ -26,6 +26,10 @@
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+/* Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
+ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
 
 #define LOG_TAG "AHAL: AudioVoice"
 #define ATRACE_TAG (ATRACE_TAG_AUDIO|ATRACE_TAG_HAL)
@@ -350,6 +354,7 @@ int AudioVoice::GetMatchingTxDevices(const std::set<audio_devices_t>& rx_devices
     for(auto rx_dev : rx_devices)
         switch(rx_dev) {
             case AUDIO_DEVICE_OUT_EARPIECE:
+            case AUDIO_DEVICE_OUT_BUS:
                 tx_devices.insert(AUDIO_DEVICE_IN_BUILTIN_MIC);
                 break;
             case AUDIO_DEVICE_OUT_SPEAKER:
