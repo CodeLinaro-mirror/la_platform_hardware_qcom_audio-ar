@@ -374,7 +374,10 @@ void StreamOutPrimary::resume() {
     // hardware is expected to up on start
     // but we are doing on first write
     LOG(DEBUG) << __func__ << mLogPrefix;
-
+    if (AudioExtension::getInstance().out_power_policy == POWER_POLICY_STATUS_OFFLINE) {
+        LOG(ERROR) << "POWER POLICY OFFLINE please try again\n";
+        return -EINVAL;
+    }
     if (mTag == Usecase::MMAP_PLAYBACK && !mIsMMapStarted) {
         if (int32_t ret = ::pal_stream_start(this->mPalHandle); ret) {
             LOG(ERROR) << __func__ << mLogPrefix
@@ -395,6 +398,10 @@ void StreamOutPrimary::resume() {
 
 ::android::status_t StreamOutPrimary::transfer(void* buffer, size_t frameCount,
                                                size_t* actualFrameCount, int32_t* latencyMs) {
+    if (AudioExtension::getInstance().out_power_policy == POWER_POLICY_STATUS_OFFLINE) {
+        LOG(ERROR) << "POWER POLICY OFFLINE please try again\n";
+        return -EINVAL;
+    }
     if (!mPalHandle) {
         // configure on first transfer or after stand by
         configure();
@@ -538,7 +545,10 @@ void StreamOutPrimary::resume() {
 }
 
 ::android::status_t StreamOutPrimary::refinePosition(StreamDescriptor::Reply* reply) {
-
+    if (AudioExtension::getInstance().out_power_policy == POWER_POLICY_STATUS_OFFLINE) {
+        LOG(ERROR) << "POWER POLICY OFFLINE please try again\n";
+        return -EINVAL;
+    }
     if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK) {
         reply->observable.frames = std::get<CompressPlayback>(mExt).getPositionInFrames(mPalHandle);
     } else if (mTag == Usecase::PCM_OFFLOAD_PLAYBACK) {
@@ -712,6 +722,10 @@ ndk::ScopedAStatus StreamOutPrimary::setHwVolume(const std::vector<float>& in_ch
 }
 
 ndk::ScopedAStatus StreamOutPrimary::getPlaybackRateParameters(AudioPlaybackRate* _aidl_return) {
+    if (AudioExtension::getInstance().out_power_policy == POWER_POLICY_STATUS_OFFLINE) {
+        LOG(ERROR) << "POWER POLICY OFFLINE please try again\n";
+       return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
+    }
     if (!mPlatform.usecaseSupportsOffloadSpeed(mTag)) {
         return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
     }

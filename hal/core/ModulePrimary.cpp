@@ -32,6 +32,7 @@
 #include <qti-audio-core/ModulePrimary.h>
 #include <qti-audio-core/Parameters.h>
 #include <qti-audio-core/PlatformUtils.h>
+#include <qti-audio-core/PowerPolicyManager.h>
 #include <qti-audio-core/StreamInPrimary.h>
 #include <qti-audio-core/StreamOutPrimary.h>
 #include <qti-audio-core/StreamStub.h>
@@ -241,9 +242,11 @@ ndk::ScopedAStatus ModulePrimary::createInputStream(StreamContext&& context,
                                                     const std::vector<MicrophoneInfo>& microphones,
                                                     std::shared_ptr<StreamIn>* result) {
     createStreamInstance<StreamInPrimary>(result, std::move(context), sinkMetadata, microphones);
+    PowerPolicyManager::getInstance().updateStreamInPrimaryList(
+        (std::static_pointer_cast<::qti::audio::core::StreamInPrimary>(*result)));
     ModulePrimary::inListMutex.lock();
     ModulePrimary::updateStreamInList(*result);
-    if (mTelephony) { 
+    if (mTelephony) {
         mTelephony->mStreamInPrimary = *result;
     }
     ModulePrimary::inListMutex.unlock();
@@ -260,10 +263,12 @@ ndk::ScopedAStatus ModulePrimary::createOutputStream(
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
     }
     createStreamInstance<StreamOutPrimary>(result, std::move(context), sourceMetadata, offloadInfo);
+    PowerPolicyManager::getInstance().updateStreamOutPrimaryList(
+        (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(*result)));
     ModulePrimary::outListMutex.lock();
     ModulePrimary::updateStreamOutList(*result);
     // save primary out stream weak ptr, as some other modules need it.
-    if (mTelephony) { 
+    if (mTelephony) {
         mTelephony->mStreamOutPrimary = *result;
     }
 
