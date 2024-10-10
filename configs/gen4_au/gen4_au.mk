@@ -148,10 +148,17 @@ endif
 #Automotive audio specific device overlays
 DEVICE_PACKAGE_OVERLAYS += vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/overlay
 
+# configuration files for CDC HW
+ifeq ($(TARGET_USES_CDC_HW), true)
+PRODUCT_COPY_FILES += \
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/card-defs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/card-defs.xml \
+    vendor/qcom/opensource/agm/plugins/tinyalsa/test/cdc/backend_conf.xml:$(TARGET_COPY_OUT_VENDOR)/etc/backend_conf.xml
+else
 # Configuration files shared between msmnile_gvmgh and others
 PRODUCT_COPY_FILES += \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/card-defs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/card-defs.xml \
     vendor/qcom/opensource/agm/plugins/tinyalsa/test/backend_conf.xml:$(TARGET_COPY_OUT_VENDOR)/etc/backend_conf.xml
+endif
 
 # Configuration files for devices inheriting from gen4_gvm
 ifeq ($(ENABLE_HYP), true)

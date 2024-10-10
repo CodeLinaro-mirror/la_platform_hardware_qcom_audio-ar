@@ -38,6 +38,12 @@ AUDIO_PAL += libhfp_ag_pal
 #PAL Service
 AUDIO_PAL += libpalclient
 
+ifeq (,$(filter $(TARGET_BUILD_VARIANT),eng userdebug))
+AUDIO_TEST += agmplay
+AUDIO_TEST += agmcap
+AUDIO_TEST += agmhostless
+endif # eng & userdebug builds
+
 # C2 Audio
 #AUDIO_C2 := libqc2audio_base
 
@@ -50,7 +56,7 @@ AUDIO_MODULES += $(AUDIO_PAL)
 AUDIO_MODULES += $(AUDIO_C2)
 AUDIO_MODULES += $(AUDIO_TEST)
 
- # sound trigger aidl library
+# sound trigger aidl library
 #AUDIO_MODULES += libsoundtriggerhal.qti
 
 # enable Listen Sound Model aidl 1.0
