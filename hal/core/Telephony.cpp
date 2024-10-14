@@ -764,6 +764,9 @@ void Telephony::startCall() {
         mPlatform.setStreamMicMute(mPalHandle, true);
     }
     updateVoiceVolume();
+    if (mIsDeviceMuted) {
+        configureDeviceMute();
+    }
     if (mSetUpdates.mIsCrsCall) {
         mPlatform.setStreamMicMute(mPalHandle, true);
         LOG(DEBUG) << __func__ << ": CRS usecase mute TX";
@@ -961,6 +964,9 @@ void Telephony::updateDevices() {
         }
     }
     updateVoiceVolume();
+    if (mIsDeviceMuted) {
+        configureDeviceMute();
+    }
     LOG(DEBUG) << __func__ << ": Exit : Rx: " << mRxDevice.toString() << " Tx: " << mTxDevice.toString();
 }
 
