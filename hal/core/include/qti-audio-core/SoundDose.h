@@ -15,8 +15,8 @@
  */
 
 /*
- * ​​​​​Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -26,8 +26,13 @@
 #include <aidl/android/media/audio/common/AudioDevice.h>
 
 #include <mutex>
+#include <map>
+#include <PalDefs.h>
 
 using aidl::android::media::audio::common::AudioDevice;
+using aidl::android::media::audio::common::AudioDeviceType;
+using aidl::android::media::audio::common::AudioDeviceDescription;
+using aidl::android::media::audio::common::AudioDeviceAddress;
 
 namespace qti::audio::core {
 
@@ -40,9 +45,13 @@ class SoundDose : public ::aidl::android::hardware::audio::core::sounddose::BnSo
     ndk::ScopedAStatus registerSoundDoseCallback(
             const std::shared_ptr<ISoundDose::IHalSoundDoseCallback>& in_callback) override;
 
+    void handleSoundDoseInfoEvent(void* const eventData);
+    void updateActiveDevicesMap(const AudioDeviceAddress& address, pal_device_id_t palDeviceId);
+
   private:
     std::shared_ptr<ISoundDose::IHalSoundDoseCallback> mCallback;
     float mRs2Value;
+    std::map<pal_device_id_t,AudioDeviceAddress> mActiveDeviceAddressMap; // Map to store device address and palDeviceId
 };
 
 } // namespace qti::audio::core

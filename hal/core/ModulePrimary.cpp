@@ -130,6 +130,7 @@ binder_status_t ModulePrimary::dump(int fd, const char** args, uint32_t numArgs)
 }
 
 ModulePrimary::ModulePrimary() : Module(Type::DEFAULT) {
+    mPlatform.registerPlatformGlobalCallBack(static_cast<PlatformGlobalCallback*>(this));
     mOffloadSpeedSupported = mPlatform.platformSupportsOffloadSpeed();
 }
 
@@ -982,5 +983,23 @@ ModulePrimary::FeatureToGetHandlerMap ModulePrimary::fillFeatureToGetHandlerMap(
 }
 
 // end of module parameters handling
+
+// start of PlatformGlobalCallback
+void ModulePrimary::onSoundDose(void* const eventData) {
+    if (!mSoundDose) {
+        mSoundDose = ndk::SharedRefBase::make<SoundDose>();
+    }
+    //mSoundDose->onSoundDose(eventData);
+    mSoundDose->handleSoundDoseInfoEvent(eventData);
+}
+
+void ModulePrimary::updateActiveDevicesMap(const AudioDeviceAddress& address, pal_device_id_t palDeviceId) {
+    if (!mSoundDose) {
+        mSoundDose = ndk::SharedRefBase::make<SoundDose>();
+    }
+    //mSoundDose->onSoundDose(eventData);
+    mSoundDose->updateActiveDevicesMap(address, palDeviceId);
+}
+// end of PlatformGlobalCallback
 
 } // namespace qti::audio::core
