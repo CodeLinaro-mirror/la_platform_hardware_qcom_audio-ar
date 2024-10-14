@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -46,6 +46,7 @@ class PlatformConverter {
             const ::aidl::android::media::audio::common::AudioDeviceDescription&
                     deviceDescription) noexcept;
     static pal_stream_type_t getPalStreamTypeId(int32_t outputFlag) noexcept;
+    static ::aidl::android::media::audio::common::AudioDeviceDescription convertPalIdToAudioDeviceDescription(pal_device_id_t palId) noexcept;
 
     static uint16_t getBitWidthForAidlPCM(
             const ::aidl::android::media::audio::common::AudioFormatDescription&) noexcept;
