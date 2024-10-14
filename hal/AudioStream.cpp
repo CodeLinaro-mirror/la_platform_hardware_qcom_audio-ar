@@ -5507,7 +5507,11 @@ StreamInPrimary::StreamInPrimary(audio_io_handle_t handle,
             if (!config->sample_rate) {
                 config->sample_rate = dynamic_media_config->sample_rate[0];
                 config->channel_mask = (audio_channel_mask_t) dynamic_media_config->mask[0];
-                config->format = (audio_format_t)dynamic_media_config->format[0];
+                if (flags == AUDIO_INPUT_FLAG_DIRECT) {
+                    config_.format = AUDIO_FORMAT_AAC_LC;
+                } else {
+                    config->format = (audio_format_t)dynamic_media_config->format[0];
+                }
                 memcpy(&config_, config, sizeof(struct audio_config));
             }
         }
