@@ -159,7 +159,9 @@ Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConf
                     tag = Usecase::VOICE_CALL_RECORD;
                 }
             }
-        } else if (inFlags == fastRecordFlags || inFlags == ullRecordFlags) {
+        } else if (inFlags == fastRecordFlags) {
+            tag = Usecase::FAST_RECORD;
+        } else if (inFlags == ullRecordFlags) {
             tag = Usecase::FAST_RECORD;
             if (streamSampleRate == UltraFastRecord::kSampleRate) {
                 tag = Usecase::ULTRA_FAST_RECORD;
@@ -876,8 +878,36 @@ size_t PcmRecord::getFrameCount(const AudioPortConfig& mixPortConfig) {
 
 // [PcmRecord End]
 
+static size_t get_sampleRate_period_size_tx(uint32_t sample_rate)
+{
+   size_t size = 0;
+   switch(sample_rate) {
+        case 48000:
+            size = 512;
+            break;
+        case 32000:
+            size = 512;
+            break;
+        case 24000:
+            size = 256;
+            break;
+        case 16000:
+            size = 256;
+            break;
+        case 8000:
+            size = 128;
+            break;
+        default:
+            size = 256;
+            break;
+   }
+   return size;
+}
 // [FastRecord Start]
 size_t FastRecord::getFrameCount(const AudioPortConfig& mixPortConfig) {
+
+    size_t kPeriodSize = get_sampleRate_period_size_tx(mixPortConfig.sampleRate.value().value);
+    LOG(DEBUG) << __func__ << "Period Szie: " << kPeriodSize;
     size_t frameSize =
             getFrameSizeInBytes(mixPortConfig.format.value(), mixPortConfig.channelMask.value());
     size_t size = kPeriodSize * frameSize;

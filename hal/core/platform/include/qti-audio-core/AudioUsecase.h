@@ -512,8 +512,7 @@ class PcmRecord : public UsecaseConfig<PcmRecord> {
 
 class FastRecord : public UsecaseConfig<FastRecord> {
   public:
-    constexpr static size_t kPeriodSize = 240;
-    constexpr static size_t kPeriodCount = 4;
+    constexpr static size_t kPeriodCount = 2;
     constexpr static size_t kPlatformDelayMs = 20;
 
     static size_t getFrameCount(

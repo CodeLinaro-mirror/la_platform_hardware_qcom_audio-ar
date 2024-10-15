@@ -95,12 +95,14 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <mixPort name="primary_in" role="sink" maxOpenCount="3" maxActiveCount="3">
             <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_FRONT_BACK" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
+        <mixPort name="fast_input" role="sink" maxOpenCount="2" maxActiveCount="2" flags="FAST">
+            <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_FRONT_BACK" channelMasks="INDEX_MASK_3" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
         <mixPort name="compress_in" role="sink" flags="DIRECT">
             <profile name="compress-capture-AAC-LC" samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_STEREO LAYOUT_MONO LAYOUT_FRONT_BACK" formatType="NON_PCM" encoding="audio/mp4a.40.02" />
         </mixPort>
         <mixPort name="voip_record" role="sink" flags="VOIP_TX">
-            <profile samplingRates="8000 16000 32000 48000" channelLayouts="LAYOUT_MONO"
-                formatType="PCM" pcmType="INT_16_BIT" />
+            <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_MONO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
         <mixPort name="mixport_tuner0" role="sink" >
             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO"
@@ -261,6 +263,7 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <route type="mix" sink="mmap_no_irq_in" sources="built_in_mic,built_in_back_mic,bt_sco_headset_mic,usb_mic,usb_headset_mic,wired_headset_mic" />
         <route type="mix" sink="voip_record" sources="built_in_mic,built_in_back_mic,wired_headset_mic,bt_sco_headset_mic,fm_tuner_mic,bt_a2dp_mic,echo_reference_mic,bt_le_mic" />
         <route type="mix" sink="mixport_tuner0" sources="fm_tuner" />
+        <route type="mix" sink="fast_input" sources="built_in_mic,built_in_back_mic"/>
     </routes>
 </module>
 </modules>
