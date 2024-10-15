@@ -16,11 +16,13 @@ using aidl::android::hardware::audio::effect::Flags;
 using aidl::android::hardware::audio::effect::Range;
 using aidl::ampere::hardware::audio::effect::Ambiance;
 using aidl::ampere::hardware::audio::effect::Sdvc;
+using aidl::ampere::hardware::audio::effect::SteadyVolume;
 
 namespace aidl::ampere::effects {
 enum class RslEffectType {
     AMBIANCE,
     SDVC,
+    STEADY_VOLUME,
 };
 
 inline std::ostream& operator<<(std::ostream& out, const RslEffectType& type) {
@@ -30,6 +32,8 @@ inline std::ostream& operator<<(std::ostream& out, const RslEffectType& type) {
             return out << "AMBIANCE";
         case RslEffectType::SDVC:
             return out << "SDVC";
+        case RslEffectType::STEADY_VOLUME:
+            return out << "STEADY_VOLUME";
     }
     return out << "EnumRslEffectTypeError";
 }
@@ -68,7 +72,20 @@ struct param_type2_t {
     int32_t value;
 };
 
+static const std::string kSteadyVolumeEffectName = "STEADY_VOLUME";
+static const Descriptor kSteadyVolumeDescriptor = {
+                .common = {.id = {.type = qti::effects::kSteadyVolumeTypeUUID,
+                        .uuid = qti::effects::kSteadyVolumeUUID,
+                        .proxy = std::nullopt},
+                        .flags = {.type = Flags::Type::POST_PROC,
+                          .hwAcceleratorMode = Flags::HardwareAccelerator::TUNNEL,
+                          .deviceIndication = true },
+                        .name = kSteadyVolumeEffectName,
+                        .implementor = "Ampere"}
+};
+
 #define PARAM_ID_AMBIANCE 0x11112550
 #define PARAM_ID_SDVC 0x11112523
+#define PARAM_ID_STEADY_VOLUME 0x11112522
 
 } // namespace aidl::ampere::effects

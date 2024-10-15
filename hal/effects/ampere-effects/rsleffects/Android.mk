@@ -13,7 +13,8 @@ LOCAL_SRC_FILES:= \
         RslAidl.cpp \
         RslContext.cpp \
         AmbianceContext.cpp \
-        SDVCContext.cpp
+        SDVCContext.cpp \
+        SteadyVolumeContext.cpp
 
 LOCAL_STATIC_LIBRARIES := libaudioeffecthal_base_impl_static \
                           libaudiocore.extension

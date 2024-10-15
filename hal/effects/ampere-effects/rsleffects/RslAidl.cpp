@@ -22,6 +22,8 @@ using aidl::ampere::effects::RslAidl;
 using aidl::qti::effects::kAmbianceUUID;
 using aidl::qti::effects::kSdvcUUID;
 using aidl::ampere::effects::kSdvcDescriptor;
+using aidl::qti::effects::kSteadyVolumeUUID;
+using aidl::ampere::effects::kSteadyVolumeDescriptor;
 
 using aidl::android::hardware::audio::effect::State;
 using aidl::android::media::audio::common::AudioUuid;
@@ -31,7 +33,7 @@ using aidl::android::hardware::audio::effect::DefaultExtension;
 
 bool isUuidSupported(const AudioUuid* uuid) {
     LOG(DEBUG) << "Enter " << __func__ << " uuid:" << aidl::qti::effects::toString(*uuid);
-    return (*uuid == kAmbianceUUID || *uuid == kSdvcUUID);
+    return (*uuid == kAmbianceUUID || *uuid == kSdvcUUID || *uuid == kSteadyVolumeUUID);
 }
 
 extern "C" binder_exception_t createEffect(
@@ -76,6 +78,8 @@ extern "C" binder_exception_t queryEffect(
         *_aidl_return = kAmbianceDescriptor;
     } else if (*in_impl_uuid == kSdvcUUID) {
         *_aidl_return = kSdvcDescriptor;
+    } else if (*in_impl_uuid == kSteadyVolumeUUID) {
+        *_aidl_return = kSteadyVolumeDescriptor;
     } else {
         LOG(ERROR) << __func__ << in_impl_uuid << " not supported!";
     }
@@ -93,6 +97,10 @@ namespace aidl::ampere::effects {
             mType = RslEffectType::SDVC;
             mDescriptor = &kSdvcDescriptor;
             mEffectName = &kSdvcEffectName;
+        } else if (uuid == kSteadyVolumeUUID) {
+            mType = RslEffectType::STEADY_VOLUME;
+            mDescriptor = &kSteadyVolumeDescriptor;
+            mEffectName = &kSteadyVolumeEffectName;
         } else {
             LOG(ERROR) << __func__ << aidl::qti::effects::toString(uuid) << " not supported!";
         }

@@ -10,6 +10,7 @@
 #include <android-base/stringprintf.h>
 #include <aidl/ampere/hardware/audio/effect/Ambiance.h>
 #include <aidl/ampere/hardware/audio/effect/Sdvc.h>
+#include <aidl/ampere/hardware/audio/effect/SteadyVolume.h>
 
 namespace aidl::qti::effects {
 
@@ -458,6 +459,20 @@ static const AudioUuid kSdvcUUID = {static_cast<int32_t>(0xcf48ca0e),
                                                             0x8b51,
                                                             {0x8f, 0xe3, 0xaf, 0x99, 0x13, 0x99}};
 
+/* SteadyVolume type uuid: f5387cca-110c-11ee-be56-0242ac120002 */
+static const AudioUuid kSteadyVolumeTypeUUID = {static_cast<int32_t>(0xf5387cca),
+                                                            0x110c,
+                                                            0x11ee,
+                                                            0xbe56,
+                                                            {0x02, 0x42, 0xac, 0x12, 0x00, 0x02}};
+
+/* SteadyVolume type uuid: f5387cca-110c-11ee-be56-0242ac120002 */
+static const AudioUuid kSteadyVolumeUUID = {static_cast<int32_t>(0xf5387cca),
+                                                            0x110c,
+                                                            0x11ee,
+                                                            0xbe56,
+                                                            {0x02, 0x42, 0xac, 0x12, 0x00, 0x02}};
+
 /**
  * @brief A map between effect name and effect type UUID.
  * All <name> attribution in effect/effectProxy of audio_effects.xml should be listed in this map.
@@ -499,6 +514,7 @@ static const std::map<const std::string /* effect type */, const AudioUuid&> kUu
 static const std::map<const std::string /* effect type */, const AudioUuid&> kAmpereUuidNameTypeMap = {
         {"ambiance", kAmbianceTypeUUID},
         {"sdvc", kSdvcTypeUUID},
+        {"steadyvolume", kSteadyVolumeTypeUUID}
 };
 
 } // namespace aidl::qti::effects
