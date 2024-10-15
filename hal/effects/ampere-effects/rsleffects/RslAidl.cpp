@@ -24,6 +24,8 @@ using aidl::qti::effects::kSdvcUUID;
 using aidl::ampere::effects::kSdvcDescriptor;
 using aidl::qti::effects::kSteadyVolumeUUID;
 using aidl::ampere::effects::kSteadyVolumeDescriptor;
+using aidl::ampere::effects::kBMTDescriptor;
+using aidl::qti::effects::kEqualizerBundleImplUUID;
 
 using aidl::android::hardware::audio::effect::State;
 using aidl::android::media::audio::common::AudioUuid;
@@ -33,7 +35,8 @@ using aidl::android::hardware::audio::effect::DefaultExtension;
 
 bool isUuidSupported(const AudioUuid* uuid) {
     LOG(DEBUG) << "Enter " << __func__ << " uuid:" << aidl::qti::effects::toString(*uuid);
-    return (*uuid == kAmbianceUUID || *uuid == kSdvcUUID || *uuid == kSteadyVolumeUUID);
+    return (*uuid == kAmbianceUUID || *uuid == kSdvcUUID || *uuid == kSteadyVolumeUUID
+             || *uuid == kEqualizerBundleImplUUID);
 }
 
 extern "C" binder_exception_t createEffect(
@@ -80,6 +83,8 @@ extern "C" binder_exception_t queryEffect(
         *_aidl_return = kSdvcDescriptor;
     } else if (*in_impl_uuid == kSteadyVolumeUUID) {
         *_aidl_return = kSteadyVolumeDescriptor;
+    } else if (*in_impl_uuid == kEqualizerBundleImplUUID) {
+        *_aidl_return = kBMTDescriptor;
     } else {
         LOG(ERROR) << __func__ << in_impl_uuid << " not supported!";
     }
@@ -101,6 +106,10 @@ namespace aidl::ampere::effects {
             mType = RslEffectType::STEADY_VOLUME;
             mDescriptor = &kSteadyVolumeDescriptor;
             mEffectName = &kSteadyVolumeEffectName;
+        } else if (uuid == kEqualizerBundleImplUUID) {
+            mType = RslEffectType::BMT;
+            mDescriptor = &kBMTDescriptor;
+            mEffectName = &kBMTEffectName;
         } else {
             LOG(ERROR) << __func__ << aidl::qti::effects::toString(uuid) << " not supported!";
         }
@@ -156,6 +165,8 @@ namespace aidl::ampere::effects {
 
         auto tag = specific.getTag();
         switch (tag) {
+            case Parameter::Specific::equalizer:
+                return setParameterBMT(specific);
             case Parameter::Specific::vendorEffect:
                 return setParameterVendorEffect(specific);
             default:
@@ -173,6 +184,8 @@ namespace aidl::ampere::effects {
         auto tag = id.getTag();
 
         switch (tag) {
+            case Parameter::Id::equalizerTag:
+                return getParameterBMT(id.get<Parameter::Id::equalizerTag>(), specific);
             case Parameter::Id::vendorEffectTag:
                 return getParameterVendorEffect(id, specific);
             default:
@@ -285,5 +298,50 @@ namespace aidl::ampere::effects {
                                             "ErrorSetSpecificParam");
         }
         LOG(DEBUG) << "Exit " << __func__;
+    }
+
+    ndk::ScopedAStatus RslAidl::setParameterBMT(const Parameter::Specific& specific) {
+        LOG(DEBUG) << "Enter " << __func__;
+        auto& eq = specific.get<Parameter::Specific::equalizer>();
+        auto eqTag = eq.getTag();
+        switch (eqTag) {
+           case Equalizer::bandLevels:
+               RETURN_IF(mContext->setBMTBandLevels(eq.get<Equalizer::bandLevels>()) !=
+                              RetCode::SUCCESS,
+                      EX_ILLEGAL_ARGUMENT, "setBandLevelsFailed");
+               return ndk::ScopedAStatus::ok();
+           default:
+               LOG(ERROR) << __func__ << " unsupported parameter " << specific.toString();
+               return ndk::ScopedAStatus::fromExceptionCodeWithMessage(EX_ILLEGAL_ARGUMENT,
+                                                                    "eqTagNotSupported");
+        }
+        LOG(DEBUG) << "Exit " << __func__;
+    }
+
+    ndk::ScopedAStatus RslAidl::getParameterBMT(const Equalizer::Id& id,
+                                                            Parameter::Specific* specific) {
+        LOG(DEBUG) << "Enter " << __func__;
+        RETURN_IF(id.getTag() != Equalizer::Id::commonTag, EX_ILLEGAL_ARGUMENT,
+              "EqualizerTagNotSupported");
+        RETURN_IF(!mContext, EX_NULL_POINTER, "nullContext");
+        Equalizer eqParam;
+
+        auto tag = id.get<Equalizer::Id::commonTag>();
+        switch (tag) {
+            case Equalizer::bandLevels: {
+                eqParam.set<Equalizer::bandLevels>(mContext->getBMTBandLevels());
+                break;
+            }
+            default: {
+                LOG(ERROR) << __func__ << " not handled tag: " << toString(tag);
+                return ndk::ScopedAStatus::fromExceptionCodeWithMessage(EX_ILLEGAL_ARGUMENT,
+                                                                    "unsupportedTag");
+            }
+        }
+
+        specific->set<Parameter::Specific::equalizer>(eqParam);
+
+        LOG(DEBUG) << "Exit " << __func__;
+        return ndk::ScopedAStatus::ok();
     }
 }

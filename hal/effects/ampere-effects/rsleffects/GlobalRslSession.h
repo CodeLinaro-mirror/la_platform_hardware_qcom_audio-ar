@@ -58,6 +58,8 @@ class GlobalRslSession {
                 return std::make_shared<SDVCContext>(common, type, processData);
             case RslEffectType::STEADY_VOLUME:
                 return std::make_shared<SteadyVolumeContext>(common, type, processData);
+            case RslEffectType::BMT:
+                return std::make_shared<BMTContext>(common, type, processData);
         }
         LOG(DEBUG) << "Exit " <<__func__;
         return nullptr;
