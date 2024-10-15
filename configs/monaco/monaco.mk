@@ -37,9 +37,9 @@ TARGET_USES_QCOM_MM_AUDIO := true
 AUDIO_FEATURE_ENABLED_SVA_MULTI_STAGE := true
 ifeq ($(TARGET_SUPPORTS_WEAR_AON),true)
 AUDIO_FEATURE_ENABLE_BT_A2DP_LPI := true
-AUDIO_FEATURE_ENABLED_MCS := true
+AUDIO_FEATURE_ENABLED_MCS := false
 endif
-TARGET_USES_QTI_TINYCOMPRESS := true
+TARGET_USES_QTI_TINYCOMPRESS := false
 
 DEVICE_SKU := $(TARGET_PRODUCT)
 
@@ -111,10 +111,9 @@ PRODUCT_COPY_FILES += \
     $(CONFIG_HAL_COMMON_SRC_DIR)/codec2/service/1.0/c2audio.vendor.base-arm64.policy:vendor/etc/seccomp_policy/c2audio.vendor.base-arm64.policy \
     $(CONFIG_HAL_COMMON_SRC_DIR)/codec2/service/1.0/c2audio.vendor.ext-arm.policy:vendor/etc/seccomp_policy/c2audio.vendor.ext-arm.policy \
     $(CONFIG_HAL_COMMON_SRC_DIR)/codec2/service/1.0/c2audio.vendor.ext-arm64.policy:vendor/etc/seccomp_policy/c2audio.vendor.ext-arm64.policy
-
-PRODUCT_COPY_FILES += \
-    $(CONFIG_HAL_SRC_DIR)/vendor_audio_interfaces.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/vendor_audio_interfaces.xml
 endif
+PRODUCT_COPY_FILES += \
+    $(CONFIG_HAL_SRC_DIR)/vendor_audio_interfaces.xml:$(CONFIG_SKU_OUT_DIR)/vendor_audio_interfaces.xml
 
 # Low latency audio buffer size in frames
 PRODUCT_PROPERTY_OVERRIDES += \
