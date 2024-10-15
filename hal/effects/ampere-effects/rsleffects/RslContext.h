@@ -77,6 +77,10 @@ class RslContext : public EffectContext {
     }
     virtual std::vector<Equalizer::BandLevel> getBMTBandLevels() const { return {}; }
 
+    // BassBoost methods, implement in BassBoostContext
+    virtual RetCode setBassBoost(int bass) { return RetCode::ERROR_ILLEGAL_PARAMETER; }
+    virtual int getBassBoost() { return 0; }
+
     virtual int updatePalParameters(struct param_type2_t *param) { return 0; }
 
     virtual bool deviceSupportsEffect(const std::vector<AudioDeviceDescription>& device) {
@@ -172,6 +176,27 @@ class BMTContext final : public RslContext {
 
   private:
     struct param_type2_t mBMTParams;
+    bool mTempDisabled = false;
+};
+
+class BassBoostContext final : public RslContext {
+  public:
+    BassBoostContext(const Parameter::Common& common, const RslEffectType& type,
+                     bool processData);
+    ~BassBoostContext() override;
+    virtual void deInit() override;
+    virtual void init() override;
+    virtual RetCode start() override;
+    virtual RetCode stop() override;
+    RetCode setParameter(uint32_t cmd, int32_t param_value) override;
+    RetCode setOutputDevice(const std::vector<AudioDeviceDescription>& device) override;
+    RetCode setBassBoost(int bass) override;
+    int getBassBoost() override;
+    int updatePalParameters(struct AmbianceParams *param);
+    RetCode getParameter(effect_param_t *param, uint32_t *size) override;
+
+  private:
+    struct AmbianceParams mBassBoostParams;
     bool mTempDisabled = false;
 };
 

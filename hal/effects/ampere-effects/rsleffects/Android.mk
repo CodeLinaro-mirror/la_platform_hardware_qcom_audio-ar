@@ -15,7 +15,8 @@ LOCAL_SRC_FILES:= \
         AmbianceContext.cpp \
         SDVCContext.cpp \
         SteadyVolumeContext.cpp \
-        BMTContext.cpp
+        BMTContext.cpp \
+        BassBoostContext.cpp
 
 LOCAL_STATIC_LIBRARIES := libaudioeffecthal_base_impl_static \
                           libaudiocore.extension
