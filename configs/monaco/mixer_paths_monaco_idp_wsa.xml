@@ -26,7 +26,7 @@
 <!-- IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                          -->
 
 <!---Changes from Qualcomm Innovation Center are provided under the following license: -->
-<!---Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.          -->
+<!---Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.     -->
 <!---SPDX-License-Identifier: BSD-3-Clause-Clear                                       -->
 
 <mixer>
@@ -51,7 +51,6 @@
     <ctl name="Voip Evrc Min Max Rate Config" id="1" value="4" />
     <ctl name="Voip Dtx Mode" value="0" />
     <ctl name="TTY Mode" value="OFF" />
-    <ctl name="TX_AIF2_CAP Mixer DEC0" value="0" />
     <ctl name="TX_CDC_DMA_TX_4 Channels" value="One" />
     <ctl name="TX_CDC_DMA_TX_3 Channels" value="One" />
     <ctl name="RX_CDC_DMA_RX_0 Channels" value="One" />
@@ -129,6 +128,10 @@
     <ctl name="TX_AIF1_CAP Mixer DEC5" value="0" />
     <ctl name="TX_AIF1_CAP Mixer DEC6" value="0" />
     <ctl name="TX_AIF1_CAP Mixer DEC7" value="0" />
+    <ctl name="TX_AIF2_CAP Mixer DEC0" value="0" />
+    <ctl name="TX_AIF2_CAP Mixer DEC1" value="0" />
+    <ctl name="TX_AIF2_CAP Mixer DEC2" value="0" />
+    <ctl name="TX_AIF2_CAP Mixer DEC3" value="0" />
     <ctl name="TX DEC0 MUX" value="MSM_DMIC" />
     <ctl name="TX DMIC MUX0" value="ZERO" />
     <ctl name="TX SMIC MUX0" value="ZERO" />
@@ -153,6 +156,8 @@
     <ctl name="TX DEC7 MUX" value="MSM_DMIC" />
     <ctl name="TX DMIC MUX7" value="ZERO" />
     <ctl name="TX SMIC MUX7" value="ZERO" />
+    <ctl name="RX SWR TX MUX0" value="ZERO" />
+    <ctl name="RX SWR TX MUX1" value="ZERO" />
 
     <!-- Voice UI controls -->
     <ctl name="VA_AIF1_CAP Mixer DEC0" value="0" />
@@ -254,18 +259,29 @@
         <ctl name="RX_MACRO RX0 MUX" value="AIF1_PB" />
         <ctl name="RX INT2_1 MIX1 INP0" value="RX0" />
         <ctl name="SpkrLeft SWR DAC_Port Switch" value="1" />
+        <ctl name="VISENSE Switch" value="1" />
+    </path>
+
+    <path name="v-sense">
+        <ctl name="TX_AIF2_CAP Mixer DEC2" value="1" />
+        <ctl name="TX DEC2 MUX" value="SWR_MIC" />
+        <ctl name="TX SMIC MUX2" value="SWR_MIC10" />
+        <ctl name="RX SWR TX MUX0" value="RX_SWR_TX_PCM_IN0" />
+    </path>
+
+    <path name="i-sense">
+        <ctl name="TX_AIF2_CAP Mixer DEC3" value="1" />
+        <ctl name="TX DEC3 MUX" value="SWR_MIC" />
+        <ctl name="TX SMIC MUX3" value="SWR_MIC11" />
+        <ctl name="RX SWR TX MUX1" value="RX_SWR_TX_PCM_IN1" />
+    </path>
+
+    <path name="vi-feedback">
+        <path name="v-sense" />
+        <path name="i-sense" />
     </path>
 
     <path name="speaker-protected">
-        <ctl name="SpkrLeft VISENSE Switch" value="1" />
-        <ctl name="TX_AIF2_CAP Mixer DEC2" value="1" />
-        <ctl name="TX_AIF2_CAP Mixer DEC3" value="1" />
-        <ctl name="TX DEC2 MUX" value="SWR_MIC" />
-        <ctl name="TX DEC3 MUX" value="SWR_MIC" />
-        <ctl name="TX SMIC MUX2" value="SWR_MIC10" />
-        <ctl name="TX SMIC MUX3" value="SWR_MIC11" />
-        <ctl name="RX SWR TX MUX0" value="RX_SWR_TX_PCM_IN0" />
-        <ctl name="RX SWR TX MUX1" value="RX_SWR_TX_PCM_IN1" />
         <path name="speaker" />
     </path>
 
@@ -301,7 +317,7 @@
     </path>
 
     <path name="speaker-mic">
-        <path name="dmic3" />
+        <path name="dmic1" />
     </path>
 
     <path name="speaker-mic-liquid">
@@ -316,7 +332,7 @@
     </path>
 
     <path name="handset-mic">
-        <path name="dmic3" />
+        <path name="dmic1" />
     </path>
 
     <path name="va-mic-dmic">
@@ -442,12 +458,12 @@
 
     <!-- Dual MIC devices -->
     <path name="handset-dmic-endfire">
-        <path name="dmic3" />
+        <path name="dmic2" />
         <path name="dmic1" />
     </path>
 
     <path name="speaker-dmic-endfire">
-        <path name="dmic3" />
+        <path name="dmic2" />
         <path name="dmic1" />
     </path>
 
@@ -514,7 +530,7 @@
     </path>
 
     <path name="speaker-dmic-broadside">
-        <path name="dmic3" />
+        <path name="dmic2" />
         <path name="dmic1" />
     </path>
 
@@ -540,7 +556,7 @@
     </path>
 
     <path name="voice-tty-vco-handset-mic">
-        <path name="dmic3" />
+        <path name="dmic1" />
     </path>
 
     <path name="unprocessed-handset-mic">

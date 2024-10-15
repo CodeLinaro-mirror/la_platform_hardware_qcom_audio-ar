@@ -56,8 +56,10 @@ AUDIO_FEATURE_ENABLED_AHAL_EXT := true
 AUDIO_FEATURE_ENABLED_EXTENDED_COMPRESS_FORMAT := true
 DOLBY_ENABLE := false
 endif
-
-AUDIO_FEATURE_ENABLED_DLKM := false
+AUDIO_FEATURE_ENABLED_DLKM := true
+ifeq ($(TARGET_USES_AGM_HIDL), true)
+AUDIO_FEATURE_ENABLED_AGM_HIDL := true
+endif
 BOARD_SUPPORTS_SOUND_TRIGGER := true
 BOARD_SUPPORTS_GCS := false
 AUDIO_FEATURE_ENABLED_INSTANCE_ID := true
@@ -100,8 +102,10 @@ TARGET_USES_QTI_TINYCOMPRESS := true
 AUDIO_AGM := libagmclient
 AUDIO_AGM += libagmservice
 AUDIO_AGM += vendor.qti.hardware.AGMIPC@1.0-impl
+ifneq ($(strip $(AUDIO_FEATURE_ENABLED_AGM_HIDL)), true)
 AUDIO_AGM += vendor.qti.hardware.AGMIPC@1.0-service
 AUDIO_AGM += vendor.qti.hardware.AGMIPC@1.0-service.rc
+endif
 AUDIO_AGM += libagm
 AUDIO_AGM += agmplay
 AUDIO_AGM += agmcap
@@ -154,13 +158,8 @@ AUDIO_C2 += libEvrcSwCodec
 AUDIO_C2 += libQcelp13SwCodec
 endif
 
-#HAL Test app
-AUDIO_HAL_TEST_APPS := hal_play_test
-AUDIO_HAL_TEST_APPS += hal_rec_test
-
 PRODUCT_PACKAGES += $(AUDIO_HARDWARE)
 PRODUCT_PACKAGES += $(AUDIO_WRAPPER)
-PRODUCT_PACKAGES += $(AUDIO_HAL_TEST_APPS)
 PRODUCT_PACKAGES += ftm_test_config
 PRODUCT_PACKAGES += ftm_test_config_monaco-idp-snd-card
 
@@ -172,6 +171,7 @@ PRODUCT_PACKAGES += IDP_acdb_cal_monaco_slate_wsa.acdb
 PRODUCT_PACKAGES += IDP_workspaceFileXml_monaco_slate_wsa.qwsp
 PRODUCT_PACKAGES += fai__2.6.0_0.0__3.0.0_0.0__eai_1.10.pmd
 PRODUCT_PACKAGES += fai__3.0.0_0.0__eai_1.10.pmd
+PRODUCT_PACKAGES += fai__3.0.0_0.0__eai_1.36_enpu2.pmd
 
 PRODUCT_PACKAGES += IDP_acdb_cal_monaco.acdb
 PRODUCT_PACKAGES += IDP_workspaceFileXml_monaco.qwsp
@@ -261,7 +261,7 @@ endif
 
 PRODUCT_PACKAGES += $(AUDIO_DLKM)
 
-DEVICE_SKU := monaco
+DEVICE_SKU := $(TARGET_PRODUCT)
 
 CONFIG_PAL_SRC_DIR := $(TOPDIR)$(BOARD_OPENSOURCE_DIR)/pal/configs/monaco
 CONFIG_HAL_SRC_DIR := $(TOPDIR)$(BOARD_OPENSOURCE_DIR)/audio-hal/primary-hal/configs/monaco
@@ -302,13 +302,15 @@ PRODUCT_COPY_FILES += \
 
 ifeq ($(AUDIO_FEATURE_ENABLED_MCS),true)
 PRODUCT_COPY_FILES += \
-    $(CONFIG_HAL_SRC_DIR)/mcs_defs_monaco_idp_slate.xml:$(CONFIG_SKU_OUT_DIR)/mcs_defs_monaco_idp_slate.xml
+    $(CONFIG_HAL_SRC_DIR)/mcs_defs_monaco_idp_slate.xml:$(CONFIG_SKU_OUT_DIR)/mcs_defs_monaco_idp_slate.xml \
+    $(CONFIG_HAL_SRC_DIR)/mcs_defs_monaco_idp.xml:$(CONFIG_SKU_OUT_DIR)/mcs_defs_monaco_idp.xml \
+    $(CONFIG_HAL_SRC_DIR)/mcs_defs_monaco_idp_wsa.xml:$(CONFIG_SKU_OUT_DIR)/mcs_defs_monaco_idp_wsa.xml
 endif
 
 #XML Audio configuration files
 ifeq ($(TARGET_SUPPORTS_WEAR_ANDROID), true)
 PRODUCT_COPY_FILES += \
-    $(CONFIG_HAL_SRC_DIR)/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/audio_policy_configuration.xml
+    $(CONFIG_HAL_SRC_DIR)/audio_policy_configuration.xml:$(CONFIG_SKU_OUT_DIR)/audio_policy_configuration.xml
 endif
 ifeq ($(TARGET_SUPPORTS_WEAR_OS), true)
 PRODUCT_COPY_FILES += \
@@ -360,19 +362,6 @@ persist.vendor.audio.fluence.tmic.enabled=false
 PRODUCT_PROPERTY_OVERRIDES += \
 persist.vendor.audio.spv3.enable=true\
 persist.vendor.audio.avs.afe_api_version=2
-
-#
-#snapdragon value add features
-#
-PRODUCT_PROPERTY_OVERRIDES += \
-ro.qc.sdk.audio.ssr=false
-
-##fluencetype can be "fluence" or "fluencepro" or "none"
-PRODUCT_PROPERTY_OVERRIDES += \
-ro.qc.sdk.audio.fluencetype=none\
-persist.audio.fluence.voicecall=true\
-persist.audio.fluence.voicerec=false\
-persist.audio.fluence.speaker=true
 
 #disable tunnel encoding
 PRODUCT_PROPERTY_OVERRIDES += \
@@ -435,10 +424,6 @@ vendor.audio.parser.ip.buffer.size=262144
 #flac sw decoder 24 bit decode capability
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.flac.sw.decoder.24bit=true
-
-#split a2dp DSP supported encoder list
-PRODUCT_PROPERTY_OVERRIDES += \
-persist.vendor.bt.a2dp_offload_cap=sbc-aptx-aptxtws-aptxhd-aac-ldac
 
 # A2DP offload support
 PRODUCT_PROPERTY_OVERRIDES += \
