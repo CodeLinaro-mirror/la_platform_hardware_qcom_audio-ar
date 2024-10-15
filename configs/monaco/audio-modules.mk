@@ -45,11 +45,11 @@ AUDIO_HARDWARE += libhfp_pal
 AUDIO_WRAPPER := libqahw
 AUDIO_WRAPPER += libqahwwrapper
 
-ifeq ($(AUDIO_FEATURE_ENABLED_CODEC_2_0), true)
 #PAL Service
 AUDIO_PAL += libpalclient
 AUDIO_PAL += libpalipcservice
 
+ifeq ($(AUDIO_FEATURE_ENABLED_CODEC_2_0), true)
 # C2 Audio
 AUDIO_C2 := libqc2audio_base
 AUDIO_C2 += libqc2audio_utils
@@ -122,6 +122,10 @@ AUDIO_MODULES += \
     audiohalservice.qti \
     libaudiocorehal.qti \
     libaudioeffecthal.qti
+
+# AIDL AHAL VENDOR EXTENSION
+AUDIO_MODULES += \
+    libaudiohalvendorextn
 
 LATEST_ANDROID_HARDWARE_AUDIO_EFFECT := android.hardware.audio.effect-V2-ndk
 LATEST_ANDROID_HARDWARE_COMMON := android.hardware.common-V2-ndk
