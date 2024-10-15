@@ -2,7 +2,7 @@
  * Copyright (c) 2013-2021, The Linux Foundation. All rights reserved.
  * Not a Contribution.
  *
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * Not a Contribution.
  *
  * Copyright (C) 2013 The Android Open Source Project
@@ -1442,7 +1442,8 @@ int AudioDevice::SetParameters(const char *kvpairs) {
         val = atoi(value);
         audio_devices_t device = (audio_devices_t)val;
 
-        if (audio_is_usb_out_device(device) || audio_is_usb_in_device(device)) {
+        if (device != AUDIO_DEVICE_OUT_USB_ACCESSORY &&
+            (audio_is_usb_out_device(device) || audio_is_usb_in_device(device))) {
             ret = str_parms_get_str(parms, "card", value, sizeof(value));
             if (ret >= 0) {
                 param_device_connection.device_config.usb_addr.card_id = atoi(value);

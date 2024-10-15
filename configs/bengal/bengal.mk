@@ -160,8 +160,13 @@ PRODUCT_PACKAGES += ftm_test_config_bengal-scubaidp-snd-card
 PRODUCT_PACKAGES += ftm_test_config_bengal-scubaqrd-snd-card
 PRODUCT_PACKAGES += audioadsprpcd
 PRODUCT_PACKAGES += vendor.qti.audio-adsprpc-service.rc
+ifneq ($(TARGET_BOARD_SUFFIX),_515_32go)
 PRODUCT_PACKAGES += android.hardware.audio.service_64
 PRODUCT_PACKAGES += android.hardware.audio.service_64.rc
+else
+PRODUCT_PACKAGES += android.hardware.audio.service
+PRODUCT_PACKAGES += android.hardware.audio.service.rc
+endif #TARGET_BOARD_SUFFIX
 PRODUCT_PACKAGES += MTP_acdb_cal.acdb
 PRODUCT_PACKAGES += MTP_workspaceFileXml.qwsp
 PRODUCT_PACKAGES += IDP_acdb_cal.acdb
@@ -500,8 +505,14 @@ vendor.audio.gsl.shmem.dmaheap.uncached=true \
 vendor.audio.feature.snd_mon.enable=true
 
 # for HIDL related packages
+ifneq ($(TARGET_BOARD_SUFFIX),_515_32go)
 PRODUCT_PACKAGES += \
-    android.hardware.audio@2.0-service_64 \
+    android.hardware.audio@2.0-service_64
+else
+PRODUCT_PACKAGES += \
+    android.hardware.audio@2.0-service
+endif# TARGET_BOARD_SUFFIX
+PRODUCT_PACKAGES += \
     android.hardware.audio@2.0-impl \
     android.hardware.audio.effect@2.0-impl \
     android.hardware.soundtrigger@2.1-impl \
