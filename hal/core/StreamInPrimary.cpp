@@ -349,6 +349,8 @@ void StreamInPrimary::resume() {
 
 ::android::status_t StreamInPrimary::transfer(void* buffer, size_t frameCount,
                                               size_t* actualFrameCount, int32_t* latencyMs) {
+    int32_t bytesRead = 0;
+
     if (!mPalHandle) {
         configure();
         if (!mPalHandle) {
@@ -370,25 +372,26 @@ void StreamInPrimary::resume() {
     LOG(VERBOSE) << __func__ << mLogPrefix << ": framecount " << frameCount << " mFrameSizeBytes "
                  << mFrameSizeBytes;
 #endif
-    int32_t bytesRead = ::pal_stream_read(mPalHandle, &palBuffer);
-    /* AudioFlinger will call Pause/flush and read again upon receiving 0 bytes.
-     * This results VA buffering stop in PAL. Add retry mechanism to get valid data
-     * for HOTWORD read stream
-     */
     if (mTag == Usecase::HOTWORD_RECORD &&
-        std::get<HotwordRecord>(mExt).isStRecord() && bytesRead <= 0) {
-        if (bytesRead == 0) {
+        std::get<HotwordRecord>(mExt).isStRecord()) {
+        if (std::get<HotwordRecord>(mExt).getPalHandle(mMixPortConfig) != mPalHandle) {
+            LOG(DEBUG) << __func__ << mLogPrefix << ": invalid sound trigger stream handle";
+        } else {
             int32_t retryCnt = 0;
             do {
                 bytesRead = ::pal_stream_read(mPalHandle, &palBuffer);
             } while (bytesRead == 0 && ++retryCnt < READ_RETRY_COUNT);
-        } else {
+        }
+
+        if (bytesRead <= 0) {
             /* Send silence buffer to let app know to stop capture session.
              * This would avoid continous read from Audioflinger to HAL.
              */
             memset(palBuffer.buffer, 0, palBuffer.size);
             bytesRead = palBuffer.size;
         }
+    } else {
+        bytesRead = ::pal_stream_read(mPalHandle, &palBuffer);
     }
 
     if (mTag == Usecase::COMPRESS_CAPTURE) {
@@ -868,7 +871,8 @@ void StreamInPrimary::shutdown_I() {
     mEffectsApplied = true;
     if (mPalHandle != nullptr) {
         if (mTag == Usecase::HOTWORD_RECORD && std::get<HotwordRecord>(mExt).isStRecord()) {
-            ::pal_stream_set_param(mPalHandle, PAL_PARAM_ID_STOP_BUFFERING, nullptr);
+            if (std::get<HotwordRecord>(mExt).getPalHandle(mMixPortConfig) == mPalHandle)
+                ::pal_stream_set_param(mPalHandle, PAL_PARAM_ID_STOP_BUFFERING, nullptr);
         } else {
             ::pal_stream_stop(mPalHandle);
             ::pal_stream_close(mPalHandle);
