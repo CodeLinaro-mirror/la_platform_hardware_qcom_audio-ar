@@ -12,7 +12,8 @@ LOCAL_C_FLAGS += -Werror -Wall -Wextr -O0
 LOCAL_SRC_FILES:= \
         RslAidl.cpp \
         RslContext.cpp \
-        AmbianceContext.cpp
+        AmbianceContext.cpp \
+        SDVCContext.cpp
 
 LOCAL_STATIC_LIBRARIES := libaudioeffecthal_base_impl_static \
                           libaudiocore.extension

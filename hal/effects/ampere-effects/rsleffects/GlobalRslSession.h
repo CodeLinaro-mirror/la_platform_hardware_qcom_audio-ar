@@ -54,6 +54,8 @@ class GlobalRslSession {
         switch (type) {
             case RslEffectType::AMBIANCE:
                 return std::make_shared<AmbianceContext>(common, type, processData);
+            case RslEffectType::SDVC:
+                return std::make_shared<SDVCContext>(common, type, processData);
         }
         LOG(DEBUG) << "Exit " <<__func__;
         return nullptr;

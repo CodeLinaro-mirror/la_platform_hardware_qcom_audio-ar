@@ -61,6 +61,12 @@ class RslContext : public EffectContext {
     virtual int getAmbianceProfile() { return 0; }
     virtual int updatePalParameters(struct AmbianceParams *param) { return 0; }
 
+    // Sdvc methods, implement in SdvcContext
+    virtual RetCode setSdvcCurrentProfile(int profile) { return RetCode::ERROR_ILLEGAL_PARAMETER; }
+    virtual int getSdvcCurrentProfile() { return 0; }
+
+    virtual int updatePalParameters(struct param_type2_t *param) { return 0; }
+
     virtual bool deviceSupportsEffect(const std::vector<AudioDeviceDescription>& device) {
         return true;
     }
@@ -90,6 +96,27 @@ class AmbianceContext final : public RslContext {
 
   private:
     struct AmbianceParams mAmbianceParams;
+    bool mTempDisabled = false;
+};
+
+class SDVCContext final : public RslContext {
+  public:
+    SDVCContext(const Parameter::Common& common, const RslEffectType& type,
+                     bool processData);
+    ~SDVCContext() override;
+    virtual void deInit() override;
+    virtual void init() override;
+    virtual RetCode start() override;
+    virtual RetCode stop() override;
+    RetCode setParameter(uint32_t cmd, int32_t param_value) override;
+    RetCode setOutputDevice(const std::vector<AudioDeviceDescription>& device) override;
+    RetCode setSdvcCurrentProfile(int profile) override;
+    int getSdvcCurrentProfile() override;
+    int updatePalParameters(struct param_type2_t *param);
+    RetCode getParameter(effect_param_t *param, uint32_t *size) override;
+
+  private:
+    struct param_type2_t mSdvcParams;
     bool mTempDisabled = false;
 };
 
