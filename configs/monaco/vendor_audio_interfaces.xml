@@ -8,8 +8,6 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
     method expected API signature
     "int32_t <function_name>()"
     -->
-    <library name = "vendorextservice" libraryName="libaudiohalvendorextn.so"
-            method="registerInterface" mandatory="true"/>
     <library name = "agmservice" libraryName="libagmipcservice.so"
             method="registerService" mandatory="true"/>
     <library name = "palservice" libraryName="libpalipcservice.so"
