@@ -235,7 +235,8 @@ StreamInWorkerLogic::Status StreamInWorkerLogic::cycle() {
                                      : StreamDescriptor::State::ACTIVE;
                 } else {
                     LOG(ERROR) << __func__ << ": start failed: " << status;
-                    mState = StreamDescriptor::State::ERROR;
+                    // uncomment below, to treat the failure as HARD error, stream not recoverable
+                    // mState = StreamDescriptor::State::ERROR;
                 }
             } else {
                 populateReplyWrongState(&reply, command);
@@ -252,7 +253,8 @@ StreamInWorkerLogic::Status StreamInWorkerLogic::cycle() {
                     mState == StreamDescriptor::State::PAUSED ||
                     mState == StreamDescriptor::State::DRAINING) {
                     if (!read(fmqByteCount, &reply)) {
-                        mState = StreamDescriptor::State::ERROR;
+                        // uncomment below, to treat the failure as HARD error, stream not recoverable
+                        // mState = StreamDescriptor::State::ERROR;
                     }
                     if (mState == StreamDescriptor::State::IDLE ||
                         mState == StreamDescriptor::State::PAUSED) {
@@ -282,7 +284,8 @@ StreamInWorkerLogic::Status StreamInWorkerLogic::cycle() {
                         mState = StreamDescriptor::State::DRAINING;
                     } else {
                         LOG(ERROR) << __func__ << ": drain failed: " << status;
-                        mState = StreamDescriptor::State::ERROR;
+                        // uncomment below, to treat the failure as HARD error, stream not recoverable
+                        // mState = StreamDescriptor::State::ERROR;
                     }
                 } else {
                     populateReplyWrongState(&reply, command);
@@ -298,7 +301,8 @@ StreamInWorkerLogic::Status StreamInWorkerLogic::cycle() {
                     mState = StreamDescriptor::State::STANDBY;
                 } else {
                     LOG(ERROR) << __func__ << ": standby failed: " << status;
-                    mState = StreamDescriptor::State::ERROR;
+                    // uncomment below, to treat the failure as HARD error, stream not recoverable
+                    // mState = StreamDescriptor::State::ERROR;
                 }
             } else {
                 populateReplyWrongState(&reply, command);
@@ -311,7 +315,8 @@ StreamInWorkerLogic::Status StreamInWorkerLogic::cycle() {
                     mState = StreamDescriptor::State::PAUSED;
                 } else {
                     LOG(ERROR) << __func__ << ": pause failed: " << status;
-                    mState = StreamDescriptor::State::ERROR;
+                    // uncomment below, to treat the failure as HARD error, stream not recoverable
+                    // mState = StreamDescriptor::State::ERROR;
                 }
             } else {
                 populateReplyWrongState(&reply, command);
@@ -324,7 +329,8 @@ StreamInWorkerLogic::Status StreamInWorkerLogic::cycle() {
                     mState = StreamDescriptor::State::STANDBY;
                 } else {
                     LOG(ERROR) << __func__ << ": flush failed: " << status;
-                    mState = StreamDescriptor::State::ERROR;
+                    // uncomment below, to treat the failure as HARD error, stream not recoverable
+                    // mState = StreamDescriptor::State::ERROR;
                 }
             } else {
                 populateReplyWrongState(&reply, command);
@@ -388,7 +394,10 @@ void StreamOutWorkerLogic::publishTransferReady() {
     if (!mContext->getAsyncCallback()) {
         return;
     }
-    std::unique_lock lock{mAsyncMutex};
+    std::unique_lock asyncLock{mAsyncMutex, std::defer_lock};
+    if(!asyncLock.try_lock()) {
+        LOG(WARNING) << __func__ << ": failed to acquire lock !!";
+    }
     mPendingCallBack = std::nullopt;
     if (mState == StreamDescriptor::State::TRANSFERRING) {
         mState = StreamDescriptor::State::ACTIVE;
@@ -406,7 +415,10 @@ void StreamOutWorkerLogic::publishDrainReady() {
     if (!mContext->getAsyncCallback()) {
         return;
     }
-    std::unique_lock lock{mAsyncMutex};
+    std::unique_lock asyncLock{mAsyncMutex, std::defer_lock};
+    if(!asyncLock.try_lock()) {
+        LOG(WARNING) << __func__ << ": failed to acquire lock !!";
+    }
     mPendingCallBack = std::nullopt;
     if (mState == StreamDescriptor::State::DRAINING) {
         mContext->getAsyncCallback()->onDrainReady();
@@ -502,7 +514,8 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
                     }
                 } else {
                     LOG(ERROR) << __func__ << ": start failed: " << status;
-                    mState = StreamDescriptor::State::ERROR;
+                    // uncomment below, to treat the failure as HARD error, stream not recoverable
+                    // mState = StreamDescriptor::State::ERROR;
                 }
             }
         } break;
@@ -564,7 +577,8 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
                         }
                     } else {
                         LOG(ERROR) << __func__ << ": drain failed: " << status;
-                        mState = StreamDescriptor::State::ERROR;
+                        // uncomment below, to treat the failure as HARD error, stream not recoverable
+                        // mState = StreamDescriptor::State::ERROR;
                     }
                 } else if (mState == StreamDescriptor::State::TRANSFER_PAUSED) {
                     mState = StreamDescriptor::State::DRAIN_PAUSED;
@@ -583,7 +597,8 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
                     mState = StreamDescriptor::State::STANDBY;
                 } else {
                     LOG(ERROR) << __func__ << ": standby failed: " << status;
-                    mState = StreamDescriptor::State::ERROR;
+                    // uncomment below, to treat the failure as HARD error, stream not recoverable
+                    // mState = StreamDescriptor::State::ERROR;
                 }
             } else {
                 populateReplyWrongState(&reply, command);
@@ -610,7 +625,8 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
                     mState = nextState.value();
                 } else {
                     LOG(ERROR) << __func__ << ": pause failed: " << status;
-                    mState = StreamDescriptor::State::ERROR;
+                    // uncomment below, to treat the failure as HARD error, stream not recoverable
+                    // mState = StreamDescriptor::State::ERROR;
                 }
             }
         } break;
@@ -623,7 +639,8 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
                     mState = StreamDescriptor::State::IDLE;
                 } else {
                     LOG(ERROR) << __func__ << ": flush failed: " << status;
-                    mState = StreamDescriptor::State::ERROR;
+                    // uncomment below, to treat the failure as HARD error, stream not recoverable
+                    // mState = StreamDescriptor::State::ERROR;
                 }
             } else {
                 populateReplyWrongState(&reply, command);

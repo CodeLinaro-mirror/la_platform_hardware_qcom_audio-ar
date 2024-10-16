@@ -23,6 +23,9 @@ vendor.audio.compress_capture.enabled=true \
 vendor.audio.compress_capture.aac=true
 # compress capture end
 
+#AIDL HAL enabled
+AUDIO_HAL_PROP += \
+vendor.audio.hal.aidl.enabled=true
 
 PRODUCT_VENDOR_PROPERTIES += \
     $(AUDIO_HAL_PROP)

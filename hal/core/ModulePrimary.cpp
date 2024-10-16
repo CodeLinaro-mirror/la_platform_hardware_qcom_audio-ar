@@ -148,7 +148,7 @@ ndk::ScopedAStatus ModulePrimary::getMicMute(bool* _aidl_return) {
         LOG(ERROR) << __func__ << ": Telephony not created ";
         return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
     }
-    *_aidl_return = mMicMute;
+    *_aidl_return = mPlatform.getMicMuteStatus();
     LOG(VERBOSE) << __func__ << ": returning " << *_aidl_return;
     return ndk::ScopedAStatus::ok();
 }
@@ -160,17 +160,16 @@ ndk::ScopedAStatus ModulePrimary::setMicMute(bool in_mute) {
     }
     LOG(DEBUG) << __func__ << ": " << in_mute;
 
-    mMicMute = in_mute;
-    mPlatform.setMicMuteStatus(mMicMute);
+    mPlatform.setMicMuteStatus(in_mute);
 
-    mTelephony->setMicMute(mMicMute);
+    mTelephony->setMicMute(in_mute);
 
-    int ret = mAudExt.mHfpExtension->audio_extn_hfp_set_mic_mute(mMicMute);
+    int ret = mAudExt.mHfpExtension->audio_extn_hfp_set_mic_mute(in_mute);
 
     for (const auto& inputMixPortConfigId :
          getActiveInputMixPortConfigIds(getConfig().portConfigs)) {
         if(!mPlatform.getTranslationRecordState()){
-            mStreams.setStreamMicMute(inputMixPortConfigId, mMicMute);
+            mStreams.setStreamMicMute(inputMixPortConfigId, in_mute);
         } else {
             // Need to keep the Audio FFECNS Record stream unmuted when Translate Record Usecase Enabled
             LOG(DEBUG) << __func__ << ": SetStreamMicMute skipped for Voice Translate Record";
@@ -377,15 +376,6 @@ int ModulePrimary::onExternalDeviceConnectionChanged(
                      << (connected ? " connect" : "disconnect") << " for " << audioPort.toString();
         return ret;
     }
-
-    if (!mTelephony) {
-        LOG(ERROR) << __func__ << ": Telephony not created ";
-        return 0;
-    }
-
-    // At this point it is safe to assume this audio port if of type audio device
-    const auto& extDevice = audioPort.ext.get<AudioPortExt::Tag::device>().device;
-    mTelephony->onExternalDeviceConnectionChanged(extDevice, connected);
 
     return 0;
 }

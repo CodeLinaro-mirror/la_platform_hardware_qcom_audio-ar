@@ -606,6 +606,11 @@ ndk::ScopedAStatus Module::connectExternalDevice(const AudioPort& in_templateIdA
             LOG(VERBOSE) << __func__ << ": over writing with dynamic profiles "
                          << connectedPort.profiles;
         }
+        // At this point it is safe to assume this audio port if of type audio device
+        if (mTelephony) {
+            const auto& extDevice = connectedPort.ext.get<AudioPortExt::Tag::device>().device;
+            mTelephony->onExternalDeviceConnectionChanged(extDevice, true);
+        }
     } else {
         auto& connectedProfiles = getConfig().connectedProfiles;
         if (auto connectedProfilesIt = connectedProfiles.find(templateId);
@@ -718,6 +723,10 @@ ndk::ScopedAStatus Module::disconnectExternalDevice(int32_t in_portId) {
     // upon this point let platform know about disconnection.
     if (int ret = onExternalDeviceConnectionChanged(*portIt, false /*connected*/); ret) {
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
+    }
+    if (mTelephony) {
+        const auto& extDevice = portIt->ext.get<AudioPortExt::Tag::device>().device;
+        mTelephony->onExternalDeviceConnectionChanged(extDevice, false);
     }
 
     LOG(DEBUG) << __func__ << ": removed device port " << portIt->toString();
