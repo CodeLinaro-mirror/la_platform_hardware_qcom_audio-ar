@@ -74,6 +74,7 @@ endif
 
 AUDIO_MODULES := ftm_test_config
 AUDIO_MODULES += ftm_test_config_monaco-idp-snd-card
+AUDIO_MODULES += audioadsprpcd
 AUDIO_MODULES += IDP_acdb_cal_monaco_slate.acdb
 AUDIO_MODULES += IDP_workspaceFileXml_monaco_slate.qwsp
 AUDIO_MODULES += IDP_acdb_cal_monaco_slate_amic.acdb
