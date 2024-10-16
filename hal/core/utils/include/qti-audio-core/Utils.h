@@ -88,11 +88,15 @@ bool isBluetoothSCODevice(const ::aidl::android::media::audio::common::AudioDevi
 
 bool isBluetoothLEDevice(const ::aidl::android::media::audio::common::AudioDevice&) noexcept;
 
+bool isBluetoothLETXDevice(const ::aidl::android::media::audio::common::AudioDevice&) noexcept;
+
 bool isBluetoothDevice(const ::aidl::android::media::audio::common::AudioDevice&) noexcept;
 
 bool hasBluetoothDevice(const std::vector<::aidl::android::media::audio::common::AudioDevice>&) noexcept;
 
 bool isBluetoothA2dpDevice(const ::aidl::android::media::audio::common::AudioDevice&) noexcept;
+
+bool isBluetoothA2dpTXDevice(const ::aidl::android::media::audio::common::AudioDevice&) noexcept;
 
 bool hasBluetoothLEDevice(const std::vector<::aidl::android::media::audio::common::AudioDevice>&) noexcept;
 
