@@ -1,18 +1,16 @@
 /*
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 #define LOG_TAG "AHAL_Effect_VisualizerQti"
 #include "VisualizerOffloadContext.h"
-#include <Utils.h>
+
 #include <android/binder_status.h>
 #include <audio_utils/primitives.h>
 #include <math.h>
 #include <system/audio.h>
 #include <time.h>
 #include <algorithm>
-
-using ::aidl::android::hardware::audio::common::getChannelCount;
 
 namespace aidl::qti::effects {
 void GlobalVisualizerSession::startEffect(int ioHandle) {

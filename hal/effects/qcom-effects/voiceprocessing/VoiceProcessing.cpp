@@ -6,7 +6,7 @@
 #define LOG_TAG "AHAL_VoiceProcessingQti"
 
 #include "VoiceProcessing.h"
-#include <Utils.h>
+
 #include <android-base/logging.h>
 
 using aidl::android::hardware::audio::effect::Descriptor;
