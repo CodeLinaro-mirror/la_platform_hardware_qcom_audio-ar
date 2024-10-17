@@ -467,9 +467,9 @@ int KarokeExtension::karaoke_open(pal_device_id_t device_out, pal_stream_callbac
                           nullptr);
             pal_devs[i].address.card_id = 0;    // adevice->usb_card_id_;
             pal_devs[i].address.device_num = 0; // adevice->usb_dev_num_;
-            pal_devs[i].config.sample_rate = dynamic_media_config.sample_rate[0];
+            pal_devs[i].config.sample_rate = dynamic_media_config.sample_rate[i];
             pal_devs[i].config.ch_info = ch_info;
-            pal_devs[i].config.aud_fmt_id = (pal_audio_fmt_t)dynamic_media_config.format[0];
+            pal_devs[i].config.aud_fmt_id = (pal_audio_fmt_t)dynamic_media_config.format[i];
             free(device_cap_query);
         } else {
             pal_devs[i].config.sample_rate = DEFAULT_OUTPUT_SAMPLING_RATE;

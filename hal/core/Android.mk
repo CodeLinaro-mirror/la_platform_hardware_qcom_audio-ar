@@ -17,12 +17,6 @@ LOCAL_CFLAGS := \
     -Werror \
     -Wthread-safety
 
-LOCAL_VINTF_FRAGMENTS   := \
-    ../../configs/common/manifest_non_qmaa.xml
-
-LOCAL_VINTF_FRAGMENTS += \
-    ../../configs/common/manifest_non_qmaa_extn.xml
-
 LOCAL_SRC_FILES := \
     CoreService.cpp \
     Bluetooth.cpp \
@@ -43,7 +37,9 @@ LOCAL_HEADER_LIBRARIES :=  \
     liberror_headers \
     libaudioclient_headers \
     libaudio_system_headers \
-    libmedia_helper_headers
+    libmedia_helper_headers \
+    libmedia_helper_headers \
+    libarpal_headers
 
 
 #    defaults: [

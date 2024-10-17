@@ -1,5 +1,5 @@
-#Audio product definitions 
-include vendor/qcom/opensource/audio-hal/primary-hal/configs/audio-generic-modules.mk
+#Audio product definitions
+include vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/audio-generic-modules.mk
 PRODUCT_PACKAGES += $(AUDIO_GENERIC_MODULES)
 
 PRODUCT_PACKAGES_DEBUG += $(MM_AUDIO_DBG)
@@ -12,14 +12,16 @@ TARGET_USES_AOSP_FOR_AUDIO := false
 
 ifeq ($(TARGET_USES_QMAA_OVERRIDE_AUDIO), false)
 ifeq ($(TARGET_USES_QMAA),true)
-AUDIO_USE_STUB_HAL := true
+#AUDIO_USE_STUB_HAL := true
 TARGET_USES_AOSP_FOR_AUDIO := true
 endif
 endif
 ifeq ($(AUDIO_USE_STUB_HAL), true)
--include $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/default.mk
+$(error AUDIO_USE_STUB_HAL is $(AUDIO_USE_STUB_HAL))
+-include $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common/default.mk
 else
--include $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/$(TARGET_BOARD_PLATFORM)/$(TARGET_BOARD_PLATFORM).mk
+#$(error TARGET_BOARD_PLATFORM is $(TARGET_BOARD_PLATFORM))
+include vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/gen4_au.mk
 endif
 
 $(warning audio check QC_HWASAN: $(QC_HWASAN) sanitize_target $(SANITIZE_TARGET))
@@ -28,7 +30,7 @@ ifneq ($(filter audio, $(QC_HWASAN)),)
 $(warning audio hwasan enabled at module level)
 AUDIO_FEATURE_USE_HWASAN_ARTIFACTS := true
 PRODUCT_HWASAN_INCLUDE_PATHS += \
-    vendor/qcom/opensource/audio-hal \
+    vendor/qcom/opensource/audio-hal-ar \
     vendor/qcom/opensource/pal \
     vendor/qcom/opensource/agm
 endif
