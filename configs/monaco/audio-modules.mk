@@ -122,6 +122,7 @@ AUDIO_MODULES += \
 AUDIO_MODULES += \
     audiohalservice.qti \
     libaudiocorehal.qti \
+    libaudiocorehal.default \
     libaudioeffecthal.qti
 
 # AIDL AHAL VENDOR EXTENSION
