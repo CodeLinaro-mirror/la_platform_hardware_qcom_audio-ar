@@ -94,6 +94,7 @@ AUDIO_FEATURE_ENABLED_HDMI_PASSTHROUGH := false
 AUDIO_FEATURE_ENABLED_DISPLAY_PORT := false
 AUDIO_FEATURE_ENABLED_DS2_DOLBY_DAP := false
 AUDIO_FEATURE_ENABLED_HFP := true
+AUDIO_FEATURE_ENABLED_ECNR_HAL := false
 AUDIO_FEATURE_ENABLED_INCALL_MUSIC := false
 AUDIO_FEATURE_ENABLED_MULTI_VOICE_SESSIONS := false
 AUDIO_FEATURE_ENABLED_KPI_OPTIMIZE := false
@@ -623,6 +624,13 @@ vendor.audio.feature.wsa.enable=false \
 vendor.audio.feature.audiozoom.enable=false \
 vendor.audio.feature.auto_hal.enable=true \
 vendor.audio.feature.auto_hal_pal.enable=true
+ifeq ($(AUDIO_FEATURE_ENABLED_ECNR_HAL), true)
+PRODUCT_ODM_PROPERTIES += \
+vendor.audio.feature.ecnr_hal.enable=true
+else
+PRODUCT_ODM_PROPERTIES += \
+vendor.audio.feature.ecnr_hal.enable=false
+endif
 ifeq ($(PRODUCT_NAME), msmnile_gvmgh)
 PRODUCT_ODM_PROPERTIES += \
 vendor.audio.feature.a2dp_offload.enable=false \
