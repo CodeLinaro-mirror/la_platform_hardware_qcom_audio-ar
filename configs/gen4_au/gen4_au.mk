@@ -1,3 +1,5 @@
+include vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio-modules.mk
+PRODUCT_PACKAGES += $(AUDIO_MODULES)
 #BOARD_USES_GENERIC_AUDIO := true
 #
 #AUDIO_FEATURE_FLAGS
@@ -246,6 +248,20 @@ PRODUCT_COPY_FILES += \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/usb_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/usb_audio_policy_configuration.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/audio_policy_volumes.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_volumes.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/default_volume_tables.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/default_volume_tables.xml
+endif
+
+ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), gen4_gvm)
+PRODUCT_COPY_FILES += \
+     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/vendor_audio_interfaces.xml:$(TARGET_COPY_OUT_VENDOR)/etc/vendor_audio_interfaces.xml \
+     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_module_config_primary.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_module_config_primary.xml \
+     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_effects_config.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects_config.xml \
+     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/microphone_characteristics.xml \
+     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/car_audio_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/car_audio_configuration.xml \
+#     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common/policy_engine/audio_policy_engine_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_engine_configuration.xml \
+#     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common/policy_engine/audio_policy_engine_product_strategies.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_engine_product_strategies.xml \
+#     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common/policy_engine/audio_policy_engine_volumes.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_engine_volumes.xml \
+#     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common/policy_engine/audio_policy_engine_criteria.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_engine_criteria.xml \
+#     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common/policy_engine/audio_policy_engine_criterion_types.xml.in:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_engine_criterion_types.xml
 endif
 
 # cma memory for MDF

@@ -81,6 +81,7 @@ DevicePairs getDevicePairs() {
             {makeAudioDeviceDescription(AudioDeviceType::OUT_SPEAKER_EARPIECE),
              PAL_DEVICE_OUT_HANDSET},
             {makeAudioDeviceDescription(AudioDeviceType::OUT_SPEAKER), PAL_DEVICE_OUT_SPEAKER},
+            {makeAudioDeviceDescription(AudioDeviceType::OUT_DEVICE), PAL_DEVICE_OUT_SPEAKER},
             {makeAudioDeviceDescription(AudioDeviceType::OUT_HEADPHONE,
                                         AudioDeviceDescription::CONNECTION_ANALOG),
              PAL_DEVICE_OUT_WIRED_HEADPHONE},
@@ -99,6 +100,7 @@ DevicePairs getDevicePairs() {
             {makeAudioDeviceDescription(AudioDeviceType::OUT_BROADCAST,
                                         AudioDeviceDescription::CONNECTION_BT_LE),
              PAL_DEVICE_OUT_BLUETOOTH_BLE_BROADCAST},
+            {makeAudioDeviceDescription(AudioDeviceType::IN_BUS), PAL_DEVICE_IN_HANDSET_MIC},
             {makeAudioDeviceDescription(AudioDeviceType::IN_DEFAULT), PAL_DEVICE_IN_HANDSET_MIC},
             {makeAudioDeviceDescription(AudioDeviceType::IN_MICROPHONE), PAL_DEVICE_IN_HANDSET_MIC},
             {makeAudioDeviceDescription(AudioDeviceType::IN_MICROPHONE_BACK),
@@ -405,10 +407,29 @@ outputFlagsStreamtypeMap populatemOutputFlagsStreamtypeMap() {
     constexpr auto flagCastToint = [](auto flag) { return static_cast<int32_t>(flag); };
     constexpr auto PrimaryPlaybackFlags =
             static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::PRIMARY));
-    result[PrimaryPlaybackFlags] = PAL_STREAM_DEEP_BUFFER;
+    result[PrimaryPlaybackFlags] = PAL_STREAM_PLAYBACK_BUS;
     constexpr auto deepBufferPlaybackFlags =
             static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DEEP_BUFFER));
     result[deepBufferPlaybackFlags] = PAL_STREAM_DEEP_BUFFER;
+//AUTO
+    constexpr auto mediaPlaybackFlags =
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::PRIMARY));
+    result[mediaPlaybackFlags] = PAL_STREAM_PLAYBACK_BUS;
+
+    constexpr auto navGuidancePlaybbackFlag =
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::FAST));
+    result[navGuidancePlaybbackFlag] = PAL_STREAM_PLAYBACK_BUS;
+    constexpr auto sysNotificationPlaybackFlag =
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::FAST));
+    result[sysNotificationPlaybackFlag] = PAL_STREAM_PLAYBACK_BUS;
+    constexpr auto alertPlaybackFlag =
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::FAST));
+    result[alertPlaybackFlag] = PAL_STREAM_PLAYBACK_BUS;
+    constexpr auto phonePlaybackFlags =
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::FAST));
+    result[phonePlaybackFlags] = PAL_STREAM_PLAYBACK_BUS;
+
+//END
     constexpr auto compressOffloadPlaybackFlags =
             static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DIRECT) |
                                  1 << flagCastToint(AudioOutputFlags::COMPRESS_OFFLOAD) |

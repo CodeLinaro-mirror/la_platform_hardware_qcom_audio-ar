@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
 SPDX-License-Identifier: BSD-3-Clause-Clear
 -->
 <xs:schema version="2.0" elementFormDefault="qualified" attributeFormDefault="unqualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
@@ -172,11 +172,13 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
             <xs:enumeration value="IN_TELEPHONY_RX" />
             <xs:enumeration value="IN_TV_TUNER" />
             <xs:enumeration value="IN_DOCK" />
+            <xs:enumeration value="IN_BUS" />
             <xs:enumeration value="OUT_DEFAULT" />
             <xs:enumeration value="OUT_ACCESSORY" />
             <xs:enumeration value="OUT_AFE_PROXY" />
             <xs:enumeration value="OUT_CARKIT" />
             <xs:enumeration value="OUT_DEVICE" />
+            <xs:enumeration value="OUT_BUS" />
             <xs:enumeration value="OUT_ECHO_CANCELLER" />
             <xs:enumeration value="OUT_FM" />
             <xs:enumeration value="OUT_HEADPHONE" />
@@ -305,6 +307,16 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
     <xs:simpleType name="audioChannelIndexMaskList">
         <xs:list itemType="audioChannelIndexMask" />
     </xs:simpleType>
+    <xs:simpleType name="audioChannelMasks">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="AUDIO_CHANNEL_OUT_STEREO" />
+            <xs:enumeration value="AUDIO_CHANNEL_OUT_MONO" />
+            <xs:enumeration value="AUDIO_CHANNEL_OUT_7POINT1" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="channelMasks">
+        <xs:list itemType="audioChannelMasks" />
+    </xs:simpleType>
     <xs:simpleType name="audioChannelLayout">
         <xs:restriction base="xs:string">
             <xs:enumeration value="LAYOUT_MONO" />
@@ -385,8 +397,8 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
     </xs:complexType>
     <xs:simpleType name="audioGainMode">
         <xs:restriction base="xs:string">
-            <xs:enumeration value="JOINT" />
             <xs:enumeration value="CHANNELS" />
+            <xs:enumeration value="JOINT" />
             <xs:enumeration value="RAMP" />
         </xs:restriction>
     </xs:simpleType>

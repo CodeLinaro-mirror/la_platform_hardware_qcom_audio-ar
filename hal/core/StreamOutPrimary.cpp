@@ -41,7 +41,7 @@ using ::aidl::android::hardware::audio::core::VendorParameter;
 using aidl::android::media::audio::common::AudioPortExt;
 
 // uncomment this to enable logging of very verbose logs like burst commands.
-// #define VERY_VERBOSE_LOGGING 1
+//#define VERY_VERBOSE_LOGGING 1
 
 static bool karaoke = false;
 
@@ -62,6 +62,16 @@ StreamOutPrimary::StreamOutPrimary(StreamContext&& context, const SourceMetadata
         mExt.emplace<PrimaryPlayback>();
     } else if (mTag == Usecase::DEEP_BUFFER_PLAYBACK) {
         mExt.emplace<DeepBufferPlayback>();
+    } else if (mTag == Usecase::MEDIA_PLAYBACK) {
+        mExt.emplace<MediaPlayback>();
+    } else if (mTag == Usecase::SYS_NOTIFICATION_PLAYBACK) {
+        mExt.emplace<SysNotificationPlayback>();
+    } else if (mTag == Usecase::NAV_GUIDANCE_PLAYBACK) {
+        mExt.emplace<NavGuidancePlayback>();
+    } else if (mTag == Usecase::PHONE_PLAYBACK) {
+        mExt.emplace<PhonePlayback>();
+    } else if (mTag == Usecase::ALERTS_PLAYBACK) {
+        mExt.emplace<AlertPlayback>();
     } else if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK) {
         mExt.emplace<CompressPlayback>(offloadInfo.value(), this,
                                        mMixPortConfig);
@@ -117,7 +127,6 @@ ndk::ScopedAStatus StreamOutPrimary::setConnectedDevices(
         const std::vector<::aidl::android::media::audio::common::AudioDevice>& devices) {
     mWorker->setIsConnected(!devices.empty());
     mConnectedDevices = devices;
-
     return configureConnectedDevices_I();
 }
 
@@ -904,18 +913,19 @@ void StreamOutPrimary::configure() {
     std::unique_ptr<pal_channel_info> palHapticChannelInfo;
     AudioChannelLayout channelLayout;
     AudioChannelLayout hapticChannelLayout;
-
     auto attr = mPlatform.getPalStreamAttributes(mMixPortConfig, false);
 
     if (!attr) {
         LOG(ERROR) << __func__ << mLogPrefix << " no pal attributes found";
         return;
     }
-
+    attr->bus_addr = "";
     if (mTag == Usecase::DEEP_BUFFER_PLAYBACK || mTag == Usecase::PRIMARY_PLAYBACK) {
-        attr->type = PAL_STREAM_DEEP_BUFFER;
+        attr->type = PAL_STREAM_PLAYBACK_BUS;
+        attr->bus_addr = "BUS00_MEDIA";
     } else if (mTag == Usecase::LOW_LATENCY_PLAYBACK) {
         attr->type = PAL_STREAM_LOW_LATENCY;
+        attr->bus_addr = "BUS01_SYS_NOTIFICATION";
 
         auto countProxyDevices = std::count_if(mConnectedDevices.cbegin(), mConnectedDevices.cend(),
                                                 isIPDevice);
@@ -926,6 +936,22 @@ void StreamOutPrimary::configure() {
         }
     } else if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK) {
         attr->type = PAL_STREAM_COMPRESSED;
+    } else if (mTag == Usecase::MEDIA_PLAYBACK) {
+         LOG(DEBUG) << __func__ << mLogPrefix << ": attr->type = PAL_STREAM_PLAYBACK_BUS";
+        attr->type = PAL_STREAM_PLAYBACK_BUS;
+        attr->bus_addr = "BUS00_MEDIA";
+    } else if (mTag == Usecase::NAV_GUIDANCE_PLAYBACK) {
+        attr->type = PAL_STREAM_LOW_LATENCY;
+        attr->bus_addr = "BUS02_NAV_GUIDANCE";
+    } else if (mTag == Usecase::SYS_NOTIFICATION_PLAYBACK) {
+        attr->type = PAL_STREAM_LOW_LATENCY;
+        attr->bus_addr = "BUS01_SYS_NOTIFICATION";
+    } else if (mTag == Usecase::ALERTS_PLAYBACK) {
+        attr->type = PAL_STREAM_LOW_LATENCY;
+        attr->bus_addr = "BUS05_ALERTS";
+    } else if (mTag == Usecase::PHONE_PLAYBACK) {
+        attr->type = PAL_STREAM_LOW_LATENCY;
+        attr->bus_addr = "BUS03_PHONE";
     } else if (mTag == Usecase::PCM_OFFLOAD_PLAYBACK) {
         attr->type = PAL_STREAM_PCM_OFFLOAD;
     } else if (mTag == Usecase::VOIP_PLAYBACK) {

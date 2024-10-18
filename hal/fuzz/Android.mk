@@ -20,7 +20,6 @@ LOCAL_C_INCLUDES := \
     system/core/libsystem/include
 
 LOCAL_SHARED_LIBRARIES := \
-    libagmipcservice \
     libaudioaidlcommon \
     libbase \
     libbinder_ndk \

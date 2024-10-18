@@ -20,6 +20,7 @@ namespace qti::audio::core {
 
 const static std::unordered_map<xsd::AudioDeviceType, AudioDeviceType> XsdToAudioDeviceType = {
         {xsd::AudioDeviceType::IN_AFE_PROXY, AudioDeviceType::IN_AFE_PROXY},
+        {xsd::AudioDeviceType::IN_BUS, AudioDeviceType::IN_BUS},
         {xsd::AudioDeviceType::IN_DEVICE, AudioDeviceType::IN_DEVICE},
         {xsd::AudioDeviceType::IN_ECHO_REFERENCE, AudioDeviceType::IN_ECHO_REFERENCE},
         {xsd::AudioDeviceType::IN_FM_TUNER, AudioDeviceType::IN_FM_TUNER},
