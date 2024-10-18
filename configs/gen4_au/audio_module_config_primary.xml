@@ -9,31 +9,31 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <!-- based on role, mixport flags are identified as either input flags or
         output flags-->
         <!-- start of source mixports-->
-	<mixPort name="media" role="source" flags="PRIMARY">
+        <mixPort name="media" role="source" flags="DEEP_BUFFER">
             <profile samplingRates="8000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
-		<mixPort name="sys_notification" role="source">
+        <mixPort name="sys_notification" role="source" flags="FAST">
             <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
-        <mixPort name="nav_guidance" role="source">
+        <mixPort name="nav_guidance" role="source"  flags="FAST">
             <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
-	<mixPort name="nav_guidance_primary" role="source" flags="PRIMARY">
+        <mixPort name="nav_guidance_primary" role="source" flags="PRIMARY">
             <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
-	<mixPort name="nav_guidance_fast" role="source" flags="FAST">
+        <mixPort name="nav_guidance_fast" role="source" flags="FAST">
             <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
-        <mixPort name="phone" role="source">
+        <mixPort name="phone" role="source" flags="FAST">
             <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
-	<mixPort name="phone_fast" role="source" flags="FAST">
+        <mixPort name="phone_fast" role="source" flags="FAST">
             <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
-        <mixPort name="alerts" role="source">
+        <mixPort name="alerts" role="source" flags="FAST">
             <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
-	<mixPort name="alerts_fast" role="source" flags="FAST">
+        <mixPort name="alerts_fast" role="source" flags="FAST">
             <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
         <mixPort name="front_passenger" role="source">
@@ -102,6 +102,10 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
             <profile samplingRates="8000 16000 32000 48000" channelLayouts="LAYOUT_MONO"
                 formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
+        <mixPort name="mixport_tuner0" role="sink" >
+            <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO"
+                formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
         <mixPort name="mmap_no_irq_in" role="sink" maxOpenCount="1" maxActiveCount="1" flags="MMAP_NOIRQ">
             <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_FRONT_BACK" channelMasks="INDEX_MASK_3" formatType="PCM" pcmType="INT_16_BIT" />
             <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_FRONT_BACK" channelMasks="INDEX_MASK_3" formatType="PCM" pcmType="INT_24_BIT" />
@@ -116,47 +120,8 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         </devicePort>
         <devicePort tagName="Media Bus" role="sink" attached="true" defaultDevice="true" deviceType="OUT_BUS" address="BUS00_MEDIA">
             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
-		<profile samplingRates="44000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
-		<gains>
-                <gain name="gain_1" mode="JOINT" 
-                      minValueMB="-6000" 
-                      maxValueMB="600" 
-                      defaultValueMB="0" 
-                      minRampMs="10" 
-                      maxRampMs="100" 
-                      useForVolume="true" 
-                      stepValueMB="100"/>
-            </gains> 
-        </devicePort>
-		<devicePort tagName="Sys Notification Bus" role="sink" attached="true" deviceType="OUT_BUS" address="BUS01_SYS_NOTIFICATION">
-            <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
-		<gains>
-                <gain name="gain_1" mode="JOINT"
-                      minValueMB="-6000"
-                      maxValueMB="600"
-                      defaultValueMB="0"
-                      minRampMs="10"
-                      maxRampMs="100"
-                      useForVolume="true"
-                      stepValueMB="100"/>
-            </gains> 
-        </devicePort>
-		<devicePort tagName="Nav Guidance Bus" role="sink" attached="true" deviceType="OUT_BUS" address="BUS02_NAV_GUIDANCE">
-            <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
-	    <gains>
-                <gain name="gain_1" mode="JOINT" 
-                      minValueMB="-6000"
-                      maxValueMB="600"
-                      defaultValueMB="0"
-                      minRampMs="10"
-                      maxRampMs="100"
-                      useForVolume="true"
-                      stepValueMB="100"/>
-            </gains> 
-        </devicePort>
-		<devicePort tagName="Phone Bus" role="sink" attached="true" deviceType="OUT_BUS" address="BUS03_PHONE">
-            <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
-		<gains>
+            <profile samplingRates="44000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+            <gains>
                 <gain name="gain_1" mode="JOINT"
                       minValueMB="-6000"
                       maxValueMB="600"
@@ -167,42 +132,81 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
                       stepValueMB="100"/>
             </gains>
         </devicePort>
-		<devicePort tagName="Alerts Bus" role="sink" attached="true" deviceType="OUT_BUS" address="BUS05_ALERTS">
+        <devicePort tagName="Sys Notification Bus" role="sink" attached="true" deviceType="OUT_BUS" address="BUS01_SYS_NOTIFICATION">
             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
-		<gains>
+        <gains>
+          <gain name="gain_1" mode="JOINT"
+                      minValueMB="-6000"
+                      maxValueMB="600"
+                      defaultValueMB="0"
+                      minRampMs="10"
+                      maxRampMs="100"
+                      useForVolume="true"
+                      stepValueMB="100"/>
+          </gains>
+        </devicePort>
+      <devicePort tagName="Nav Guidance Bus" role="sink" attached="true" deviceType="OUT_BUS" address="BUS02_NAV_GUIDANCE">
+          <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+          <gains>
                 <gain name="gain_1" mode="JOINT"
                       minValueMB="-6000"
                       maxValueMB="600"
-                      defaultValueMB="0" 
-                      minRampMs="10" 
-                      maxRampMs="100" 
-                      useForVolume="true" 
+                      defaultValueMB="0"
+                      minRampMs="10"
+                      maxRampMs="100"
+                      useForVolume="true"
                       stepValueMB="100"/>
-            </gains> 
+            </gains>
         </devicePort>
-	<devicePort tagName="Front Passenger Bus" role="sink" attached="true"  deviceType="OUT_BUS" address="BUS08_FRONT_PASSENGER">
+      <devicePort tagName="Phone Bus" role="sink" attached="true" deviceType="OUT_BUS" address="BUS03_PHONE">
             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
-		<gains>
-                <gain name="gain_1" mode="JOINT" 
-                      minValueMB="-6000"
-                      maxValueMB="600"
-                      defaultValueMB="0" 
-                      minRampMs="10" 
-                      maxRampMs="100" 
-                      useForVolume="true" 
-                      stepValueMB="100"/>
-            </gains> 
-        </devicePort>
-	<devicePort tagName="Rear Seat Bus" role="sink" attached="true" deviceType="OUT_BUS" address="BUS16_REAR_SEAT">
-            <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
-		<gains>
+        <gains>
                 <gain name="gain_1" mode="JOINT"
                       minValueMB="-6000"
                       maxValueMB="600"
-                      defaultValueMB="0" 
-                      minRampMs="10" 
-                      maxRampMs="100" 
-                      useForVolume="true" 
+                      defaultValueMB="0"
+                      minRampMs="10"
+                      maxRampMs="100"
+                      useForVolume="true"
+                      stepValueMB="100"/>
+            </gains>
+        </devicePort>
+      <devicePort tagName="Alerts Bus" role="sink" attached="true" deviceType="OUT_BUS" address="BUS05_ALERTS">
+            <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        <gains>
+                <gain name="gain_1" mode="JOINT"
+                      minValueMB="-6000"
+                      maxValueMB="600"
+                      defaultValueMB="0"
+                      minRampMs="10"
+                      maxRampMs="100"
+                      useForVolume="true"
+                      stepValueMB="100"/>
+          </gains>
+      </devicePort>
+      <devicePort tagName="Front Passenger Bus" role="sink" attached="true"  deviceType="OUT_BUS" address="BUS08_FRONT_PASSENGER">
+            <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+          <gains>
+                <gain name="gain_1" mode="JOINT"
+                      minValueMB="-6000"
+                      maxValueMB="600"
+                      defaultValueMB="0"
+                      minRampMs="10"
+                      maxRampMs="100"
+                      useForVolume="true"
+                      stepValueMB="100"/>
+            </gains>
+        </devicePort>
+      <devicePort tagName="Rear Seat Bus" role="sink" attached="true" deviceType="OUT_BUS" address="BUS16_REAR_SEAT">
+            <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        <gains>
+                <gain name="gain_1" mode="JOINT"
+                      minValueMB="-6000"
+                      maxValueMB="600"
+                      defaultValueMB="0"
+                      minRampMs="10"
+                      maxRampMs="100"
+                      useForVolume="true"
                       stepValueMB="100"/>
             </gains>
         </devicePort>
@@ -229,7 +233,7 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <devicePort tagName="built_in_back_mic" deviceType="IN_MICROPHONE_BACK" role="source" attached="true" address="back">
             <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_FRONT_BACK" formatType="PCM" pcmType="INT_16_BIT" />
         </devicePort>
-        <devicePort tagName="fm_tuner_mic" deviceType="IN_FM_TUNER" role="source" attached="true">
+        <devicePort tagName="fm_tuner" deviceType="IN_FM_TUNER" role="source" attached="true">
             <profile samplingRates="48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </devicePort>
         <devicePort tagName="wired_headset_mic" deviceType="IN_HEADSET" connection="analog" role="source">
@@ -256,6 +260,7 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <route type="mix" sink="telephony_tx_device_out" sources="built_in_mic,built_in_back_mic,wired_headset_mic,bt_sco_headset_mic,fm_tuner_mic,bt_a2dp_mic,echo_reference_mic,bt_le_mic" />
         <route type="mix" sink="mmap_no_irq_in" sources="built_in_mic,built_in_back_mic,bt_sco_headset_mic,usb_mic,usb_headset_mic,wired_headset_mic" />
         <route type="mix" sink="voip_record" sources="built_in_mic,built_in_back_mic,wired_headset_mic,bt_sco_headset_mic,fm_tuner_mic,bt_a2dp_mic,echo_reference_mic,bt_le_mic" />
+        <route type="mix" sink="mixport_tuner0" sources="fm_tuner" />
     </routes>
 </module>
 </modules>
