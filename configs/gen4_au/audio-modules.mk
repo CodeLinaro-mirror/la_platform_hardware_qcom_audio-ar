@@ -38,7 +38,7 @@ AUDIO_PAL += libhfp_ag_pal
 #PAL Service
 AUDIO_PAL += libpalclient
 
-ifeq (,$(filter $(TARGET_BUILD_VARIANT),eng userdebug))
+ifeq (,$(filter $(TARGET_BUILD_VARIANT),eng,userdebug))
 AUDIO_TEST += agmplay
 AUDIO_TEST += agmcap
 AUDIO_TEST += agmhostless
