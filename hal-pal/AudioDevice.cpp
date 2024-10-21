@@ -1243,6 +1243,7 @@ int AudioDevice::SetMicMute(bool state) {
         ret = AudioExtn::audio_extn_hfp_ag_set_mic_mute(state);
     if (voice_)
         ret = voice_->SetMicMute(state);
+    in_list_mutex.lock();
     for (int i = 0; i < stream_in_list_.size(); i++) {
          astream_in = stream_in_list_[i];
          if (astream_in) {
@@ -1250,6 +1251,7 @@ int AudioDevice::SetMicMute(bool state) {
              ret = astream_in->SetMicMute(state);
          }
     }
+    in_list_mutex.unlock();
 
     AHAL_DBG("exit: ret %d", ret);
     return 0;
@@ -3042,13 +3044,13 @@ void AudioDevice::in_set_power_policy(uint8_t enable)
 
     in_list_mutex.lock();
     adev_->in_power_policy = enable ? POWER_POLICY_STATUS_ONLINE : POWER_POLICY_STATUS_OFFLINE;
-    in_list_mutex.unlock();
 
     if (!enable) {
         for (int i = 0; i < stream_in_list_.size(); i++) {
             stream_in_list_[i]->Standby();
         }
     }
+    in_list_mutex.unlock();
 
     AHAL_DBG("%s: Exit", __func__);
 }
@@ -3059,13 +3061,13 @@ void AudioDevice::out_set_power_policy(uint8_t enable)
 
     out_list_mutex.lock();
     adev_->out_power_policy = enable ? POWER_POLICY_STATUS_ONLINE : POWER_POLICY_STATUS_OFFLINE;
-    out_list_mutex.unlock();
 
     if (!enable) {
         for (int i = 0; i < stream_out_list_.size(); i++) {
             stream_out_list_[i]->Standby();
         }
     }
+    out_list_mutex.unlock();
 
     AHAL_DBG("%s: Exit", __func__);
 }
