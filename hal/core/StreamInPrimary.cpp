@@ -432,6 +432,31 @@ void StreamInPrimary::resume() {
             return android::INVALID_OPERATION;
         }
     }
+    /* Adjustment accounts for A2dp decoder latency
+     * Note: Decoder latency is returned in ms, while platform_source_latency in us.
+     */
+    pal_param_bta2dp_t* param_bt_a2dp_ptr, param_bt_a2dp;
+    param_bt_a2dp_ptr = &param_bt_a2dp;
+    size_t size = 0;
+    int32_t ret;
+    auto countBluetoothA2dpTXDevices =
+        std::count_if(mConnectedDevices.cbegin(), mConnectedDevices.cend(),
+                        isBluetoothA2dpTXDevice);
+    auto countBluetoothLETXDevices =
+        std::count_if(mConnectedDevices.cbegin(), mConnectedDevices.cend(),
+                        isBluetoothLETXDevice);
+    if (countBluetoothA2dpTXDevices > 0) {
+        param_bt_a2dp_ptr->dev_id = PAL_DEVICE_IN_BLUETOOTH_A2DP;
+    } else if (countBluetoothLETXDevices > 0) {
+        param_bt_a2dp_ptr->dev_id = PAL_DEVICE_IN_BLUETOOTH_BLE;
+    } else {
+        return ::android::OK;
+    }
+    ret = pal_get_param(PAL_PARAM_ID_BT_A2DP_DECODER_LATENCY,
+        (void**)&param_bt_a2dp_ptr, &size, nullptr);
+    if (!ret && size && param_bt_a2dp_ptr && param_bt_a2dp_ptr->latency) {
+        reply->observable.timeNs -= param_bt_a2dp_ptr->latency * 1000000LL;
+    }
     return ::android::OK;
 }
 
