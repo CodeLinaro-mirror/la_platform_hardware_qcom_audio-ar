@@ -35,6 +35,7 @@ AUDIO_PAL += libhfp_pal
 #PAL Service
 AUDIO_PAL += libpalclient
 AUDIO_PAL += libpalipcservice
+AUDIO_PAL += libpaleventnotifier
 
 # C2 Audio
 AUDIO_C2 := libqc2audio_base

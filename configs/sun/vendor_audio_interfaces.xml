@@ -12,6 +12,8 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
             method="registerService" mandatory="true"/>
     <library name = "palservice" libraryName="libpalipcservice.so"
             method="registerService" mandatory="true"/>
+    <library name = "paleventnotifierservice" libraryName="libpaleventnotifier.so"
+            method="registerPalNotifierService" mandatory="false"/>
     <library name = "audiohal-qti" libraryName="libaudiocorehal.qti.so"
             method="registerServices" mandatory="true"/>
     <library name = "audiohal-default" libraryName="libaudiocorehal.default.so"
