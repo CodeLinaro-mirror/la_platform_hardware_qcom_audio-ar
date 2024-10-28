@@ -73,6 +73,8 @@ StreamOutPrimary::StreamOutPrimary(StreamContext&& context, const SourceMetadata
         mExt.emplace<PhonePlayback>();
     } else if (mTag == Usecase::ALERTS_PLAYBACK) {
         mExt.emplace<AlertPlayback>();
+    } else if (mTag == Usecase::NAV_GUIDANCE_2_PLAYBACK ) {
+        mExt.emplace<NavGuidance2Playback>();
     } else if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK) {
         mExt.emplace<CompressPlayback>(offloadInfo.value(), this,
                                        mMixPortConfig);
@@ -114,6 +116,7 @@ bool StreamOutPrimary::isHwVolumeSupported() {
         case Usecase::ALERTS_PLAYBACK:
         case Usecase::SYS_NOTIFICATION_PLAYBACK:
         case Usecase::PHONE_PLAYBACK:
+        case Usecase::NAV_GUIDANCE_2_PLAYBACK:
             return true;
         default:
             break;
@@ -959,7 +962,9 @@ void StreamOutPrimary::configure() {
         attr->type = PAL_STREAM_PLAYBACK_BUS;
     } else if (mTag == Usecase::PHONE_PLAYBACK) {
         attr->type = PAL_STREAM_PLAYBACK_BUS;
-    } else if (mTag == Usecase::PCM_OFFLOAD_PLAYBACK) {
+    } else if (mTag == Usecase::NAV_GUIDANCE_2_PLAYBACK) {
+        attr->type = PAL_STREAM_PLAYBACK_BUS;
+    }else if (mTag == Usecase::PCM_OFFLOAD_PLAYBACK) {
         attr->type = PAL_STREAM_PCM_OFFLOAD;
     } else if (mTag == Usecase::VOIP_PLAYBACK) {
         attr->type = PAL_STREAM_VOIP_RX;

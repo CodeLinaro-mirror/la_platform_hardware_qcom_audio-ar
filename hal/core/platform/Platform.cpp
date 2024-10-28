@@ -1347,6 +1347,7 @@ void Platform::initUsecaseOpMap() {
     mUsecaseOpMap[Usecase::SYS_NOTIFICATION_PLAYBACK] = makeUsecaseOps<SysNotificationPlayback>();
     mUsecaseOpMap[Usecase::ALERTS_PLAYBACK] = makeUsecaseOps<AlertPlayback>();
     mUsecaseOpMap[Usecase::PHONE_PLAYBACK] = makeUsecaseOps<PhonePlayback>();
+    mUsecaseOpMap[Usecase::NAV_GUIDANCE_2_PLAYBACK] = makeUsecaseOps<NavGuidance2Playback>();
 //END
     mUsecaseOpMap[Usecase::LOW_LATENCY_PLAYBACK] = makeUsecaseOps<LowLatencyPlayback>();
     mUsecaseOpMap[Usecase::DEEP_BUFFER_PLAYBACK] = makeUsecaseOps<DeepBufferPlayback>();

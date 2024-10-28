@@ -30,7 +30,7 @@
 -->
 <carAudioConfiguration version="2">
     <zones>
-        <zone name="primary zone" isPrimary="true" occupantZoneId="0">
+        <zone name="primary zone" isPrimary="true" audioZoneId="0">
             <volumeGroups>
                 <group>
                     <device address="BUS00_MEDIA">
@@ -42,6 +42,10 @@
                         <context context="alarm"/>
                         <context context="notification"/>
                         <context context="system_sound"/>
+                    </device>
+                </group>
+                <group>
+                    <device address="BUS0F_NAV_GUIDANCE2">
                         <context context="emergency"/>
                         <context context="safety"/>
                         <context context="vehicle_status"/>
