@@ -16,7 +16,7 @@
 
 /*
  * ​​​​​Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -116,6 +116,10 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
     void updateVoiceVolume();
     void setMicMute(const bool muted);
     void updateCalls();
+    bool isAnyCallActive();
+    bool isVoipActive();
+    void CallTranslationManager();
+    void updateCallTranslationParam(std::string param);
 
     // The following below API are both aimed to solve routing on telephony
     /**
@@ -171,9 +175,10 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
     void stopCrsLoopback();
     void triggerHACinVoipPlayback();
     void getPlaybackStreamDevices();
+    void startCallTranslation();
+    void stopCallTranslation();
     ::aidl::android::media::audio::common::AudioDevice getMatchingTxDevice(
             const ::aidl::android::media::audio::common::AudioDevice & rxDevice);
-    bool isAnyCallActive();
     bool isValidDevice(const ::aidl::android::media::audio::common::AudioDevice & rxDevice);
 
   protected:
@@ -198,6 +203,7 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
     bool mIsDeviceMuted{false};
     bool hasValidPlaybackStream{false};
     bool mIsVoiceStarted{false};
+    bool mIsVoipStarted{false};
     std::string mMuteDirection{""};
 
     using TtyMap = std::map<TelecomConfig::TtyMode, pal_tty_t>;
@@ -210,8 +216,11 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
 
     ::aidl::android::media::audio::common::AudioDevice mRxDevice; // speaker, earpiece
     ::aidl::android::media::audio::common::AudioDevice mTxDevice; // mic, speaker mic
+    struct call_translation_config* tx_call_translation_conf;
+    struct call_translation_config* rx_call_translation_conf;
     pal_stream_handle_t* mPalCrsHandle{nullptr};
     pal_stream_handle_t* mPalHandle{nullptr};
+    pal_stream_handle_t* mPalCallTranslationHandle{nullptr};
     // Stream Handle for VOIP Playback
     std::weak_ptr<StreamCommonInterface> mVoipStreamWptr;
     std::vector<::aidl::android::media::audio::common::AudioDevice> mPlaybackStreamDevices;
