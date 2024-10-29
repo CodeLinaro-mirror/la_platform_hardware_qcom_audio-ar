@@ -2901,6 +2901,7 @@ ssize_t StreamOutPrimary::write(const void *buffer, size_t bytes)
 
     AHAL_VERBOSE("handle_ %x bytes:(%zu)", handle_, bytes);
 
+    stream_mutex_.lock();
     ret = configurePalOutputStream();
     if (ret < 0)
         goto exit;
@@ -2909,6 +2910,7 @@ ssize_t StreamOutPrimary::write(const void *buffer, size_t bytes)
         if (bytes > fragment_size_) {
             AHAL_ERR("Error written bytes %zu > %d (fragment_size)", bytes, fragment_size_);
             ATRACE_END();
+            stream_mutex_.unlock();
             return -EINVAL;
         }
         /* prevent division-by-zero */
@@ -2918,6 +2920,7 @@ ssize_t StreamOutPrimary::write(const void *buffer, size_t bytes)
         if (inputBitWidth == 0 || outputBitWidth == 0) {
             AHAL_ERR("Error inputBitWidth %u, outputBitWidth %u", inputBitWidth, outputBitWidth);
             ATRACE_END();
+            stream_mutex_.unlock();
             return -EINVAL;
         }
 
@@ -2942,8 +2945,9 @@ exit:
     } else {
         mBytesWritten = UINT64_MAX;
     }
-    clock_gettime(CLOCK_MONOTONIC, &writeAt);
+    stream_mutex_.unlock();
 
+    clock_gettime(CLOCK_MONOTONIC, &writeAt);
     return (ret < 0 ? onWriteError(bytes) : ret);
 }
 
