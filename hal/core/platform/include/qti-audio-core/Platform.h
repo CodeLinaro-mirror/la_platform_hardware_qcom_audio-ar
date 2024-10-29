@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -188,6 +188,7 @@ class Platform {
                     bluetoothDevices);
     std::unique_ptr<pal_stream_attributes> getDefaultTelephonyAttributes() const;
     std::unique_ptr<pal_stream_attributes> getDefaultCRSTelephonyAttributes() const;
+    std::unique_ptr<pal_stream_attributes> getDefaultCallTranslationAttributes() const;
     void configurePalDevicesCustomKey(std::vector<pal_device>& palDevices,
                                       const std::string& customKey) const;
 
@@ -257,6 +258,10 @@ class Platform {
     // Set and Get Value Functions for Voice Call Volume mute during Translation Record Usecase.
     void setTranslationRxMuteState(const bool state) noexcept { mIsTranslationRxMuteEnabled = state; }
     bool getTranslationRxMuteState() noexcept { return mIsTranslationRxMuteEnabled; }
+
+    // Set and Get Value Functions for ASR and TTS call Translation.
+    void setCallTranslationState(const bool state) noexcept { mIsCallTranslationEnabled = state; }
+    bool getCallTranslationState() noexcept { return mIsCallTranslationEnabled; }
 
     void setHACEnabled(const bool& enable) noexcept { mIsHACEnabled = enable; }
 
@@ -338,6 +343,7 @@ class Platform {
     bool mInCallMusicEnabled{false};
     bool mIsTranslationRecordEnabled{false};
     bool mIsTranslationRxMuteEnabled{false};
+    bool mIsCallTranslationEnabled{false};
     bool mIsScreenTurnedOn{false};
     uint32_t mWFDProxyChannels{0};
     bool mIsUHQAEnabled{false};

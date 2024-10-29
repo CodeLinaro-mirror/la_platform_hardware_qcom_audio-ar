@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -166,6 +166,23 @@ std::unique_ptr<pal_stream_attributes> Platform::getDefaultTelephonyAttributes()
     auto outChannelInfo = PlatformConverter::getPalChannelInfoForChannelCount(2);
     attributes->type = PAL_STREAM_VOICE_CALL;
     attributes->direction = PAL_AUDIO_INPUT_OUTPUT;
+    attributes->in_media_config.sample_rate = kDefaultOutputSampleRate;
+    attributes->in_media_config.ch_info = *inChannelInfo;
+    attributes->in_media_config.bit_width = kDefaultPCMBidWidth;
+    attributes->in_media_config.aud_fmt_id = PAL_AUDIO_FMT_PCM_S16_LE;
+    attributes->out_media_config.sample_rate = kDefaultOutputSampleRate;
+    attributes->out_media_config.ch_info = *outChannelInfo;
+    attributes->out_media_config.bit_width = kDefaultPCMBidWidth;
+    attributes->out_media_config.aud_fmt_id = PAL_AUDIO_FMT_PCM_S16_LE;
+    return std::move(attributes);
+}
+
+std::unique_ptr<pal_stream_attributes> Platform::getDefaultCallTranslationAttributes() const {
+    auto attributes = std::make_unique<pal_stream_attributes>();
+    auto inChannelInfo = PlatformConverter::getPalChannelInfoForChannelCount(1);
+    auto outChannelInfo = PlatformConverter::getPalChannelInfoForChannelCount(2);
+    attributes->type = PAL_STREAM_CALL_TRANSLATION;
+    attributes->direction = PAL_AUDIO_INPUT;
     attributes->in_media_config.sample_rate = kDefaultOutputSampleRate;
     attributes->in_media_config.ch_info = *inChannelInfo;
     attributes->in_media_config.bit_width = kDefaultPCMBidWidth;

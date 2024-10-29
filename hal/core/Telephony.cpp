@@ -16,7 +16,7 @@
 
 /*
  * ​​​​​Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -115,6 +115,13 @@ ndk::ScopedAStatus Telephony::switchAudioMode(AudioMode newAudioMode) {
         }
     }
 
+    if (newAudioMode == AudioMode::IN_COMMUNICATION) {
+        mIsVoipStarted = true;
+    }
+    if (newAudioMode != AudioMode::IN_COMMUNICATION && mIsVoipStarted == true) {
+        mIsVoipStarted = false;
+    }
+
     mAudioMode = newAudioMode;
     LOG(DEBUG) << __func__ << ": switching to AudioMode:" << toString(mAudioMode);
     return ndk::ScopedAStatus::ok();
@@ -184,6 +191,10 @@ bool Telephony::isAnyCallActive() {
          }
     }
     return false;
+}
+
+bool Telephony::isVoipActive() {
+    return mIsVoipStarted;
 }
 
 bool Telephony::isValidDevice(const AudioDevice& rxDevice) {
@@ -486,6 +497,9 @@ void Telephony::updateCalls() {
                                     } else {
                                         mIsVoiceStarted = true;
                                         mVoiceSession.session[i].state.current_ = mVoiceSession.session[i].state.new_;
+                                        if(mPlatform.getCallTranslationState()) {
+                                            startCallTranslation();
+                                        }
                                     }
                                 } else {
                                     LOG(DEBUG) << __func__ << ": voice already started";
@@ -510,6 +524,9 @@ void Telephony::updateCalls() {
                                     LOG(ERROR) << __func__ << ": stop call failed";
                                 } else {
                                     mVoiceSession.session[i].state.current_ = mVoiceSession.session[i].state.new_;
+                                }
+                                if(mPalCallTranslationHandle != nullptr) {
+                                    stopCallTranslation();
                                 }
                                 break;
 
@@ -878,6 +895,78 @@ void Telephony::stopCrsLoopback() {
     ::pal_stream_close(mPalCrsHandle);
     mPalCrsHandle = nullptr;
     LOG(DEBUG) << __func__ << ": EXIT";
+}
+
+void Telephony::updateCallTranslationParam(std::string param) {
+    // Based on the param decode logic from APK assign the values to tx_call_translation_conf and rx_call_translation_conf;
+}
+
+void Telephony::CallTranslationManager() {
+
+    LOG(INFO) << __func__ << " : Enter";
+    if(mPlatform.getCallTranslationState() == false && mPalCallTranslationHandle != nullptr) {
+        // Close the call translation graph if we get disable state
+        stopCallTranslation();
+        return;
+    }
+
+    // Check for an active voice or voip
+    if((isAnyCallActive() || isVoipActive()) && mPlatform.getCallTranslationState()) {
+        LOG(INFO) << __func__ << ": Configure Call Translation Stream : Found existing Voip/Voice Call";
+        startCallTranslation();
+    } else {
+        LOG(INFO) << __func__ << ": Voice/Voip not found, will not start the call translation stream";
+    }
+    LOG(INFO) << __func__ << " : Exit";
+}
+
+void Telephony::startCallTranslation() {
+
+    LOG(INFO) << __func__ << " : Enter";
+    auto attr = mPlatform.getDefaultCallTranslationAttributes();
+    if (!attr) {
+        LOG(ERROR) << __func__ << " no pal attributes";
+        return;
+    }
+
+    auto palDevices = mPlatform.convertToPalDevices({mRxDevice, mTxDevice});
+
+    const size_t numDevices = 0;
+    if (int32_t ret = ::pal_stream_open(
+                attr.get(), numDevices, reinterpret_cast<pal_device*>(palDevices.data()), 0,
+                nullptr, nullptr, reinterpret_cast<uint64_t>(this), &mPalCallTranslationHandle);
+        ret) {
+        LOG(ERROR) << __func__ << ": pal stream open failed !!" << ret;
+        return;
+    }
+
+    if (int32_t ret = ::pal_stream_start(this->mPalCallTranslationHandle); ret) {
+        LOG(ERROR) << __func__ << " pal_stream_start failed, ret:" << ret;
+        ::pal_stream_close(mPalCallTranslationHandle);
+        mPalCallTranslationHandle = nullptr;
+        return;
+    }
+
+    LOG(INFO) << __func__ << " : Exit : Call translation Stream Start Success.";
+}
+
+void Telephony::stopCallTranslation() {
+
+    LOG(INFO) << __func__ << " : Enter.";
+    if (mPalCallTranslationHandle == nullptr) {
+        LOG(ERROR) << __func__ << " No Translation stream found";
+        return;
+    }
+
+    if (int32_t ret = pal_stream_stop(mPalCallTranslationHandle); ret) {
+        LOG(ERROR) << __func__ << ": pal stream stop failed !!" << ret;
+    }
+    if (int32_t ret = pal_stream_close(mPalCallTranslationHandle); ret) {
+        LOG(ERROR) << __func__ << ": pal stream stop failed !!" << ret;
+    }
+    mPalCallTranslationHandle = nullptr;
+    LOG(INFO) << __func__ << " : Exit.";
+    return;
 }
 
 void Telephony::updateDevices() {

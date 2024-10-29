@@ -16,7 +16,7 @@
 
 /*
  * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -474,6 +474,17 @@ void ModulePrimary::onSetGenericParameters(const std::vector<VendorParameter>& p
             const auto isOn = getBoolFromString(paramValue);
             mPlatform.setTranslationRecordState(isOn);
             LOG(INFO) << __func__ << ": PCM Record FFECNS for Translation:" << isOn;
+        } else if (Parameters::kCallTranslation == param.id) {
+            // Add Call translation param enable check and update the stream using call translation manager API
+            const auto isOn = getBoolFromString(paramValue);
+            mTelephony->updateCallTranslationParam(paramValue);
+            mPlatform.setCallTranslationState(isOn);
+            LOG(INFO) << __func__ << ": Call Translation state using ASR and TTS :" << isOn;
+            if (!mTelephony) {
+                LOG(ERROR) << __func__ << ": Telephony not created ";
+                return;
+            }
+            mTelephony->CallTranslationManager();
         }
     }
 }
@@ -678,6 +689,7 @@ ModulePrimary::SetParameterToFeatureMap ModulePrimary::fillSetParameterToFeature
                                  {Parameters::kVoiceTranslationRxMute, Feature::TELEPHONY},
                                  {Parameters::kInCallMusic, Feature::GENERIC},
                                  {Parameters::kTranslateRecord, Feature::GENERIC},
+                                 {Parameters::kCallTranslation, Feature::GENERIC},
                                  {Parameters::kUHQA, Feature::GENERIC},
                                  {Parameters::kFbspCfgWaitTime, Feature::FTM},
                                  {Parameters::kFbspFTMWaitTime, Feature::FTM},
