@@ -23,11 +23,10 @@ LOCAL_HEADER_LIBRARIES := \
     libaudio_system_headers
 
 LOCAL_SHARED_LIBRARIES := \
+    $(AHAL_DEFAULT_AIDL_INTERFACE_DEPENDENCIES) \
     libbase \
     libutils \
     libaudioutils \
-    android.media.audio.common.types-V3-ndk \
-    android.hardware.audio.core-V2-ndk \
     qti-audio-types-aidl-V1-ndk
 
 LOCAL_CFLAGS := \

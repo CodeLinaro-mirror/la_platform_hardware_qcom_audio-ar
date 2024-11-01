@@ -1,3 +1,4 @@
+
 cc_library_static {
     name: "libaudio_module_config.qti",
     vendor: true,
@@ -12,8 +13,8 @@ cc_library_static {
         "libstagefright_foundation",
         "libutils",
         "libxml2",
-        "android.media.audio.common.types-V3-ndk",
-        "android.hardware.audio.core-V2-ndk",
+        "android.media.audio.common.types-V4-ndk", // LATEST_ANDROID_MEDIA_ADUIO_COMMON_TYPES
+        "android.hardware.audio.core-V3-ndk", // LATEST_ANDROID_AUDIO_CORE
     ],
     header_libs: [
         "libxsdc-utils",

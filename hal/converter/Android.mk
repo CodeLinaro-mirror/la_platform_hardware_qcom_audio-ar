@@ -15,10 +15,9 @@ LOCAL_SRC_FILES := \
     PlatformConverter.cpp
 
 LOCAL_SHARED_LIBRARIES := \
+    $(AHAL_DEFAULT_AIDL_INTERFACE_DEPENDENCIES) \
     libbase \
     libstagefright_foundation \
-    android.hardware.audio.core-V2-ndk \
-    android.media.audio.common.types-V3-ndk \
     libar-pal
 
 include $(BUILD_SHARED_LIBRARY)
