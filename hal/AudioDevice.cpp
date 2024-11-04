@@ -1674,7 +1674,7 @@ int AudioDevice::SetParameters(const char *kvpairs) {
                          }
                      }
                  }
-	    }
+            }
             /* check if capture profile is supported or not */
            if (audio_is_usb_out_device(device) || audio_is_usb_in_device(device)) {
                 pal_param_device_capability_t *device_cap_query = (pal_param_device_capability_t *)
@@ -2295,6 +2295,30 @@ int AudioDevice::SetParameters(const char *kvpairs) {
                     if (voice_->voice_.crsCall || voice_->voice_.crsVsid)
                         voice_->RouteStream({AUDIO_DEVICE_OUT_SPEAKER});
                 }
+            }
+        }
+    }
+
+    ret = str_parms_get_str(parms, "ns_level", value, sizeof(value));
+    if (ret >= 0) {
+        pal_param_ns_level_control_t param_ns_level_control;
+        int16_t maxValue = 0x7fff;
+        float percentagevalue = atoi(value);
+        if (percentagevalue < 0 || percentagevalue > 100) {
+            AHAL_ERR("Input ns_level invalid");
+            goto exit;
+        }
+        param_ns_level_control.ns_level = maxValue * (percentagevalue / 100);
+        ret = str_parms_get_str(parms, "stream_type", value, sizeof(value));
+        if (ret >= 0) {
+            if (nsLevelStreamPalMap.find(value) != nsLevelStreamPalMap.end()) {
+                param_ns_level_control.stream_type = nsLevelStreamPalMap.at(value);
+                ret = pal_set_param(PAL_PARAM_ID_NSLEVEL_CONTROL, (void*) &param_ns_level_control,
+                                       sizeof(pal_param_ns_level_control_t));
+                AHAL_INFO("Setting NSLevelValue = %d to stream %d", param_ns_level_control.ns_level,
+                                       param_ns_level_control.stream_type);
+            } else {
+                AHAL_ERR("Input stream type invalid");
             }
         }
     }
