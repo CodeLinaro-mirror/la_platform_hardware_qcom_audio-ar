@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+SPDX-License-Identifier: BSD-3-Clause-Clear
+-->
+<modules>
+<module name="default">
+    <mixPorts>
+        <!-- based on role, mixport flags are identified as either input flags or
+        output flags-->
+        <!-- start of source mixports-->
+        <mixPort name="media" role="source" flags="DEEP_BUFFER">
+            <profile samplingRates="8000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="sys_notification" role="source" flags="DEEP_BUFFER">
+            <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="nav_guidance" role="source"  flags="DEEP_BUFFER">
+            <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="nav_guidance_primary" role="source" flags="PRIMARY">
+            <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="nav_guidance_fast" role="source" flags="FAST">
+            <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="phone" role="source" flags="DEEP_BUFFER">
+            <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="phone_fast" role="source" flags="FAST">
+            <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="alerts" role="source" flags="DEEP_BUFFER">
+            <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="alerts_fast" role="source" flags="FAST">
+            <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="nav_guidance_2" role="source" flags="DEEP_BUFFER">
+            <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="front_passenger" role="source">
+            <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="rear_seat" role="source">
+            <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="primary_out" role="source" flags="PRIMARY">
+            <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="low_latency_out" role="source" flags="FAST PRIMARY">
+            <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="low_latency_out" role="source" flags="FAST PRIMARY">
+             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="low_latency_out_8k" role="source" flags="FAST PRIMARY">
+            <profile samplingRates="8000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="low_latency_out_16k_sys" role="source" flags="FAST PRIMARY">
+            <profile samplingRates="16000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="low_latency_out_24k" role="source" flags="FAST PRIMARY">
+            <profile samplingRates="24000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="low_latency_out_32k" role="source" flags="FAST PRIMARY">
+            <profile samplingRates="32000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="deep_buffer_out" role="source" flags="DEEP_BUFFER">
+            <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+            <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="FIXED_Q_8_24" />
+            <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_24_BIT" />
+            <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_32_BIT" />
+        </mixPort>
+        <mixPort name="compress_offload_out" role="source" recommendedMuteDurationMs="190" flags="DIRECT COMPRESS_OFFLOAD NON_BLOCKING GAPLESS_OFFLOAD">
+            <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_STEREO LAYOUT_MONO" formatType="NON_PCM" encoding="audio/mpeg" />
+            <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000 64000 88200 96000 128000 176400 192000" channelLayouts="LAYOUT_STEREO LAYOUT_MONO" formatType="NON_PCM" encoding="audio/flac" />
+            <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000 64000 88200 96000 128000 176400 192000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_2POINT1 LAYOUT_QUAD LAYOUT_PENTA LAYOUT_5POINT1 LAYOUT_6POINT1 LAYOUT_7POINT1" formatType="NON_PCM" encoding="audio/alac" />
+            <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000 64000 88200 96000 128000 176400 192000" channelLayouts="LAYOUT_STEREO LAYOUT_MONO" formatType="NON_PCM" encoding="audio/x-ape" />
+            <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000 64000 88200 96000" channelLayouts="LAYOUT_STEREO LAYOUT_MONO" formatType="NON_PCM" encoding="audio/mp4a.40.02" />
+            <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000 64000 88200 96000" channelLayouts="LAYOUT_STEREO LAYOUT_MONO" formatType="NON_PCM" encoding="audio/mp4a.40.05" />
+            <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000 64000 88200 96000" channelLayouts="LAYOUT_STEREO LAYOUT_MONO" formatType="NON_PCM" encoding="audio/mp4a.40.29" />
+            <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000 64000 88200 96000 128000 176400 192000" channelLayouts="LAYOUT_STEREO LAYOUT_MONO" formatType="NON_PCM" encoding="audio/vorbis" />
+            <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_2POINT1 LAYOUT_QUAD LAYOUT_PENTA LAYOUT_5POINT1 LAYOUT_6POINT1 LAYOUT_7POINT1" formatType="NON_PCM" encoding="audio/x-ms-wma" />
+            <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000 64000 88200 96000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_2POINT1 LAYOUT_QUAD LAYOUT_PENTA LAYOUT_5POINT1 LAYOUT_6POINT1 LAYOUT_7POINT1" formatType="NON_PCM" encoding="audio/x-ms-wma.pro" />
+            <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000 64000 88200 96000" channelLayouts="LAYOUT_STEREO LAYOUT_MONO" formatType="NON_PCM" encoding="audio/aac-adts.02" />
+            <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000 64000 88200 96000" channelLayouts="LAYOUT_STEREO LAYOUT_MONO" formatType="NON_PCM" encoding="audio/aac-adts.05" />
+            <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000 64000 88200 96000" channelLayouts="LAYOUT_STEREO LAYOUT_MONO" formatType="NON_PCM" encoding="audio/aac-adts.29" />
+            <profile samplingRates="8000 12000 16000 24000 48000" channelLayouts="LAYOUT_STEREO LAYOUT_MONO" formatType="NON_PCM" encoding="audio/opus" />
+        </mixPort>
+        <mixPort name="direct_pcm_out" role="source" flags="DIRECT">
+            <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000 64000 88200 96000 128000 176400 192000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_2POINT1 LAYOUT_QUAD LAYOUT_PENTA LAYOUT_5POINT1 LAYOUT_6POINT1 LAYOUT_7POINT1" formatType="PCM" pcmType="INT_16_BIT" />
+            <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000 64000 88200 96000 128000 176400 192000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_2POINT1 LAYOUT_QUAD LAYOUT_PENTA LAYOUT_5POINT1 LAYOUT_6POINT1 LAYOUT_7POINT1" formatType="PCM" pcmType="FIXED_Q_8_24" />
+            <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000 64000 88200 96000 128000 176400 192000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_2POINT1 LAYOUT_QUAD LAYOUT_PENTA LAYOUT_5POINT1 LAYOUT_6POINT1 LAYOUT_7POINT1" formatType="PCM" pcmType="INT_24_BIT" />
+            <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000 64000 88200 96000 128000 176400 192000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_2POINT1 LAYOUT_QUAD LAYOUT_PENTA LAYOUT_5POINT1 LAYOUT_6POINT1 LAYOUT_7POINT1" formatType="PCM" pcmType="INT_32_BIT" />
+        </mixPort>
+        <mixPort name="voip_playback" role="source" flags="VOIP_RX">
+            <profile samplingRates="8000 16000 32000 48000" channelLayouts="LAYOUT_STEREO"
+                formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="raw_out" role="source" flags="FAST RAW">
+            <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="mmap_no_irq_out" role="source" flags="DIRECT MMAP_NOIRQ">
+            <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+            <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="FIXED_Q_8_24" />
+            <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_24_BIT" />
+            <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_32_BIT" />
+        </mixPort>
+        <!-- end of source mixports-->
+
+        <!-- start of sink mixports-->
+        <mixPort name="primary_in" role="sink" maxOpenCount="3" maxActiveCount="3">
+            <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_FRONT_BACK" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="fast_input" role="sink" maxOpenCount="2" maxActiveCount="2" flags="FAST">
+            <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_FRONT_BACK" channelMasks="INDEX_MASK_3" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="compress_in" role="sink" flags="DIRECT">
+            <profile name="compress-capture-AAC-LC" samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_STEREO LAYOUT_MONO LAYOUT_FRONT_BACK" formatType="NON_PCM" encoding="audio/mp4a.40.02" />
+        </mixPort>
+        <mixPort name="voip_record" role="sink" flags="VOIP_TX">
+            <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_MONO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="mixport_tuner0" role="sink" >
+            <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO"
+                formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="mmap_no_irq_in" role="sink" maxOpenCount="1" maxActiveCount="1" flags="MMAP_NOIRQ">
+            <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_FRONT_BACK" channelMasks="INDEX_MASK_3" formatType="PCM" pcmType="INT_16_BIT" />
+            <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_FRONT_BACK" channelMasks="INDEX_MASK_3" formatType="PCM" pcmType="INT_24_BIT" />
+            <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_FRONT_BACK" channelMasks="INDEX_MASK_3" formatType="PCM" pcmType="FIXED_Q_8_24" />
+        </mixPort>
+        <!-- end of sink mixports-->
+    </mixPorts>
+    <devicePorts>
+        <!-- start of sink DEVICE PORT -->
+        <devicePort tagName="earpiece" role="sink" attached="true" deviceType="OUT_SPEAKER_EARPIECE">
+            <profile samplingRates="48000" channelLayouts="LAYOUT_MONO" formatType="PCM" pcmType="INT_16_BIT" />
+        </devicePort>
+        <devicePort tagName="Media Bus" role="sink" attached="true" defaultDevice="true" deviceType="OUT_BUS" address="BUS00_MEDIA">
+            <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+            <profile samplingRates="44000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+            <gains>
+                <gain name="gain_1" mode="JOINT"
+                      minValueMB="-6000"
+                      maxValueMB="600"
+                      defaultValueMB="0"
+                      minRampMs="10"
+                      maxRampMs="100"
+                      useForVolume="true"
+                      stepValueMB="100"/>
+            </gains>
+        </devicePort>
+        <devicePort tagName="Sys Notification Bus" role="sink" attached="true" deviceType="OUT_BUS" address="BUS01_SYS_NOTIFICATION">
+            <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        <gains>
+          <gain name="gain_1" mode="JOINT"
+                      minValueMB="-6000"
+                      maxValueMB="600"
+                      defaultValueMB="0"
+                      minRampMs="10"
+                      maxRampMs="100"
+                      useForVolume="true"
+                      stepValueMB="100"/>
+          </gains>
+        </devicePort>
+      <devicePort tagName="Nav Guidance Bus" role="sink" attached="true" deviceType="OUT_BUS" address="BUS02_NAV_GUIDANCE">
+          <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+          <gains>
+                <gain name="gain_1" mode="JOINT"
+                      minValueMB="-6000"
+                      maxValueMB="600"
+                      defaultValueMB="0"
+                      minRampMs="10"
+                      maxRampMs="100"
+                      useForVolume="true"
+                      stepValueMB="100"/>
+            </gains>
+        </devicePort>
+      <devicePort tagName="Phone Bus" role="sink" attached="true" deviceType="OUT_BUS" address="BUS03_PHONE">
+            <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        <gains>
+                <gain name="gain_1" mode="JOINT"
+                      minValueMB="-6000"
+                      maxValueMB="600"
+                      defaultValueMB="0"
+                      minRampMs="10"
+                      maxRampMs="100"
+                      useForVolume="true"
+                      stepValueMB="100"/>
+            </gains>
+        </devicePort>
+      <devicePort tagName="Nav Guidance_2 Bus" role="sink" attached="true" deviceType="OUT_BUS" address="BUS0F_NAV_GUIDANCE2">
+            <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        <gains>
+                <gain name="gain_1" mode="JOINT"
+                      minValueMB="-6000"
+                      maxValueMB="600"
+                      defaultValueMB="0"
+                      minRampMs="10"
+                      maxRampMs="100"
+                      useForVolume="true"
+                      stepValueMB="100"/>
+          </gains>
+      </devicePort>
+      <devicePort tagName="Front Passenger Bus" role="sink" attached="true"  deviceType="OUT_BUS" address="BUS08_FRONT_PASSENGER">
+            <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+          <gains>
+                <gain name="gain_1" mode="JOINT"
+                      minValueMB="-6000"
+                      maxValueMB="600"
+                      defaultValueMB="0"
+                      minRampMs="10"
+                      maxRampMs="100"
+                      useForVolume="true"
+                      stepValueMB="100"/>
+            </gains>
+        </devicePort>
+      <devicePort tagName="Rear Seat Bus" role="sink" attached="true" deviceType="OUT_BUS" address="BUS16_REAR_SEAT">
+            <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        <gains>
+                <gain name="gain_1" mode="JOINT"
+                      minValueMB="-6000"
+                      maxValueMB="600"
+                      defaultValueMB="0"
+                      minRampMs="10"
+                      maxRampMs="100"
+                      useForVolume="true"
+                      stepValueMB="100"/>
+            </gains>
+        </devicePort>
+        <devicePort tagName="speaker" role="sink" deviceType="OUT_SPEAKER">
+            <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </devicePort>
+        <devicePort tagName="wired_headset" deviceType="OUT_HEADSET" role="sink" connection="analog">
+            <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </devicePort>
+        <devicePort tagName="wired_headphones" deviceType="OUT_HEADPHONE" role="sink" connection="analog">
+            <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </devicePort>
+        <!-- end of sink DEVICE PORT -->
+
+        <!-- start of source DEVICE PORT -->
+        <devicePort tagName="Primary In Bus" deviceType="IN_BUS" role="source" attached="true"  address="BUS04_INPUT">
+            <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_FRONT_BACK" formatType="PCM" pcmType="INT_16_BIT" />
+        </devicePort>
+        <devicePort tagName="Front Passenger In Bus" deviceType="IN_BUS" role="source" attached="true"  address="BUS09_INPUT_FRONT_PASSENGER">
+            <profile samplingRates="48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_FRONT_BACK" formatType="PCM" pcmType="INT_16_BIT" />
+        </devicePort>
+        <devicePort tagName="Rear Seat In Bus" deviceType="IN_BUS" role="source" attached="true"  address="BUS17_INPUT_REAR_SEAT">
+            <profile samplingRates="48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_FRONT_BACK" formatType="PCM" pcmType="INT_16_BIT" />
+        </devicePort>
+        <devicePort tagName="built_in_mic" deviceType="IN_MICROPHONE" role="source" attached="true" defaultDevice="true" address="bottom">
+            <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_FRONT_BACK" formatType="PCM" pcmType="INT_16_BIT" />
+            <!-- To support compress offload capture such that client can query -->
+            <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_FRONT_BACK" formatType="NON_PCM" encoding="audio/mp4a.40.02" />
+        </devicePort>
+        <devicePort tagName="built_in_back_mic" deviceType="IN_MICROPHONE_BACK" role="source" attached="true" address="back">
+            <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_FRONT_BACK" formatType="PCM" pcmType="INT_16_BIT" />
+        </devicePort>
+        <devicePort tagName="fm_tuner" deviceType="IN_FM_TUNER" role="source" attached="true">
+            <profile samplingRates="48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </devicePort>
+        <devicePort tagName="wired_headset_mic" deviceType="IN_HEADSET" connection="analog" role="source">
+            <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_FRONT_BACK" formatType="PCM" pcmType="INT_16_BIT" />
+        </devicePort>
+        <devicePort tagName="bt_sco_headset_mic" deviceType="IN_HEADSET" connection="bt-sco" role="source">
+            <profile samplingRates="8000 16000" channelLayouts="LAYOUT_MONO" formatType="PCM" pcmType="INT_16_BIT" />
+        </devicePort>
+    </devicePorts>
+    <routes>
+        <route type="mix" sink="Sys Notification Bus" sources="sys_notification,low_latency_out_8k,low_latency_out_16k_sys,low_latency_out_24k,low_latency_out_32k,low_latency_out" />
+        <route type="mix" sink="Nav Guidance Bus" sources="nav_guidance,low_latency_out_8k,low_latency_out_16k_sys,low_latency_out_24k,low_latency_out_32k,low_latency_out" />
+        <route type="mix" sink="Phone Bus" sources="phone,low_latency_out_8k,low_latency_out_16k_sys,low_latency_out_24k,low_latency_out_32k,low_latency_out" />
+        <route type="mix" sink="Alerts Bus" sources="alerts,low_latency_out_8k,low_latency_out_16k_sys,low_latency_out_24k,low_latency_out_32k,low_latency_out" />
+        <route type="mix" sink="Nav Guidance_2 Bus" sources="nav_guidance_2,low_latency_out_8k,low_latency_out_16k_sys,low_latency_out_24k,low_latency_out_32k,low_latency_out" />
+        <route type="mix" sink="Front Passenger Bus" sources="front_passenger" />
+        <route type="mix" sink="Rear Seat Bus" sources="rear_seat" />
+        <route type="mix" sink="earpiece" sources="primary_out,low_latency_out,deep_buffer_out,direct_pcm_out,compress_offload_out,telephony_rx_mic,voip_playback,raw_out,mmap_no_irq_out" />
+        <route type="mix" sink="speaker" sources="primary_out,low_latency_out,deep_buffer_out,direct_pcm_out,compress_offload_out,telephony_rx_mic,voip_playback,raw_out,mmap_no_irq_out" />
+        <route type="mix" sink="Media Bus" sources="media,primary_out,low_latency_out,deep_buffer_out,direct_pcm_out,mmap_no_irq_out" />
+        <route type="mix" sink="wired_headset" sources="primary_out,low_latency_out,deep_buffer_out,direct_pcm_out,compress_offload_out,telephony_rx_mic,voip_playback,raw_out,mmap_no_irq_out" />
+        <route type="mix" sink="wired_headphones" sources="primary_out,low_latency_out,deep_buffer_out,direct_pcm_out,compress_offload_out,telephony_rx_mic,voip_playback,mmap_no_irq_out" />
+        <route type="mix" sink="primary_in" sources="built_in_mic,built_in_back_mic,Primary In Bus,Front Passenger In Bus,Rear Seat In Bus" />
+        <route type="mix" sink="compress_in" sources="built_in_mic,built_in_back_mic,wired_headset_mic,bt_sco_headset_mic,fm_tuner_mic,bt_a2dp_mic,echo_reference_mic,bt_le_mic" />
+        <route type="mix" sink="telephony_tx_device_out" sources="built_in_mic,built_in_back_mic,wired_headset_mic,bt_sco_headset_mic,fm_tuner_mic,bt_a2dp_mic,echo_reference_mic,bt_le_mic" />
+        <route type="mix" sink="mmap_no_irq_in" sources="built_in_mic,built_in_back_mic,bt_sco_headset_mic,usb_mic,usb_headset_mic,wired_headset_mic" />
+        <route type="mix" sink="voip_record" sources="built_in_mic,built_in_back_mic,wired_headset_mic,bt_sco_headset_mic,fm_tuner_mic,bt_a2dp_mic,echo_reference_mic,bt_le_mic" />
+        <route type="mix" sink="mixport_tuner0" sources="fm_tuner" />
+        <route type="mix" sink="fast_input" sources="built_in_mic,built_in_back_mic"/>
+    </routes>
+</module>
+</modules>

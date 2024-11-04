@@ -62,13 +62,13 @@ Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConf
     constexpr auto mediaPlaybackFlags =
             static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DEEP_BUFFER));
     constexpr auto navGuidancePlaybackFlag =
-            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::FAST));
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DEEP_BUFFER));
     constexpr auto sysNotificationPlaybackFlag =
-            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::FAST));
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DEEP_BUFFER));
     constexpr auto alertPlaybackFlag =
-            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::FAST));
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DEEP_BUFFER));
     constexpr auto phonePlaybackFlags =
-            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::FAST));
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DEEP_BUFFER));
 
 //end
     constexpr auto deepBufferPlaybackFlags =
