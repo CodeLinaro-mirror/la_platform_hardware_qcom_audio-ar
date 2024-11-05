@@ -469,7 +469,15 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
         case Tag::halReservedExit:
             if (const int32_t cookie = command.get<Tag::halReservedExit>();
                 cookie == mContext->getInternalCommandCookie()) {
+                if (mContext->getAsyncCallback()) {
+                    // do explicit unlock, so that callback can acquire
+                    asyncLock.unlock();
+                }
                 mDriver->shutdown();
+                if (mContext->getAsyncCallback()) {
+                    // do explicit lock
+                    asyncLock.lock();
+                }
                 setClosed();
                 // This is an internal command, no need to reply.
                 return Status::EXIT;
