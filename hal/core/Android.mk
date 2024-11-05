@@ -15,8 +15,7 @@ LOCAL_CFLAGS := \
     -Wall \
     -Wextra \
     -Werror \
-    -Wthread-safety \
-    -Wno-reorder-ctor
+    -Wthread-safety
 
 LOCAL_VINTF_FRAGMENTS   := \
     ../../configs/common/manifest_non_qmaa.xml
