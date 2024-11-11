@@ -30,6 +30,9 @@ AUDIO_PAL += libaudiochargerlistener
 AUDIO_PAL += libhfp_pal
 
 AUDIO_PAL += lib_default_plugin_controls
+ifeq ($(TARGET_USES_CDC_HW), true)
+AUDIO_PAL += lib_oem_plugin_controls
+endif
 AUDIO_PAL += lib_default_set_param_plugin_controls
 AUDIO_PAL += libqtigefar
 AUDIO_PAL += libicc_pal
