@@ -390,8 +390,20 @@ pal_audio_fmt_t PlatformConverter::getPalFormatId(
 
 // static
 pal_device_id_t PlatformConverter::getPalDeviceId(
-        const ::aidl::android::media::audio::common::AudioDeviceDescription&
-                deviceDescription) noexcept {
+        const ::aidl::android::media::audio::common::AudioDeviceDescription& deviceDescription,
+                const std::optional<std::string>& deviceAddress) noexcept {
+
+    LOG(ERROR) << __func__ << "Bus Address: " << deviceAddress->c_str();
+
+    if ((std::strcmp(deviceAddress->c_str(), "BUS04_INPUT") == 0) || (std::strcmp(deviceAddress->c_str(), "bottom") == 0)) {
+        return PAL_DEVICE_IN_HANDSET_MIC;
+    }
+    else if (std::strcmp(deviceAddress->c_str(), "BUS09_INPUT_FRONT_PASSENGER") == 0) {
+        return PAL_DEVICE_IN_A2B_MIC;
+    }
+    else if (std::strcmp(deviceAddress->c_str(), "BUS17_INPUT_REAR_SEAT") == 0) {
+        return PAL_DEVICE_IN_A2B2_MIC;
+    }
     auto element = kAidlToPalDeviceMap.find(deviceDescription);
     if (element == kAidlToPalDeviceMap.cend()) {
         LOG(ERROR) << __func__ << " failed to find corressponding pal device for "
