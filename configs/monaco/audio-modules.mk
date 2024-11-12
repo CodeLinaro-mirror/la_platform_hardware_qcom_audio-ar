@@ -91,7 +91,8 @@ AUDIO_MODULES += IDP_acdb_cal_monaco_amic.acdb
 AUDIO_MODULES += IDP_workspaceFileXml_monaco_amic.qwsp
 AUDIO_MODULES += IDP_acdb_cal_monaco_wsa.acdb
 AUDIO_MODULES += IDP_workspaceFileXml_monaco_wsa.qwsp
-
+AUDIO_MODULES += libhotword_intf
+AUDIO_MODULES += libvui_intf
 AUDIO_MODULES += mm-audio-ftm
 
 ifeq ($(PRODUCT_ENABLE_QESDK),true)
