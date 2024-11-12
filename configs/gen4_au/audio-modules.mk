@@ -5,6 +5,11 @@ ifeq ($(TARGET_USES_QMAA),true)
     endif
 endif
 
+ifneq ($(filter $(TARGET_BOARD_DERIVATIVE_SUFFIX), _sdv _cdcsdv),)
+$(warning ****** DISABLING AUDIO HAL FOR RBVM ******)
+AUDIO_DISABLE_HAL = true
+endif
+
 #Packages that should not be installed in QMAA are enabled here
 ifneq ($(TARGET_IS_HEADLESS),true)
 
@@ -67,13 +72,13 @@ AUDIO_MODULES += $(AUDIO_TEST)
     liblistensoundmodelaidl
 
 # AIDL Audio modules
-
+ifneq ($(AUDIO_DISABLE_HAL),true)
 AUDIO_MODULES += \
     audiohalservice.qti \
     libaudiocorehal.qti \
     libaudiocorehal.default \
     libaudioeffecthal.qti
-
+endif
 # add modules for fuzzing
 ifneq ($(filter audio,$(QC_HWASAN))$(filter hwaddress,$(SANITIZE_TARGET)),)
 AUDIO_MODULES += fuzz-audio-hal
