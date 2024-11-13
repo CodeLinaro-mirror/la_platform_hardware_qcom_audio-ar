@@ -33,8 +33,8 @@ using ::aidl::android::hardware::audio::core::IStreamCallback;
 using ::aidl::android::hardware::audio::core::IStreamCommon;
 using ::aidl::android::hardware::audio::core::StreamDescriptor;
 using ::aidl::android::hardware::audio::core::VendorParameter;
-using ::aidl::android::hardware::audio::effect::getEffectTypeUuidAcousticEchoCanceler;
-using ::aidl::android::hardware::audio::effect::getEffectTypeUuidNoiseSuppression;
+using ::aidl::android::hardware::audio::effect::Descriptor;
+using ::aidl::android::hardware::audio::effect::IEffect;
 using ::aidl::android::media::audio::common::AudioDeviceType;
 using ::aidl::android::media::audio::common::AudioDeviceDescription;
 
@@ -569,13 +569,12 @@ ndk::ScopedAStatus StreamInPrimary::setVendorParameters(
     return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
 }
 
-ndk::ScopedAStatus StreamInPrimary::addEffect(
-        const std::shared_ptr<::aidl::android::hardware::audio::effect::IEffect>& in_effect) {
+ndk::ScopedAStatus StreamInPrimary::addEffect(const std::shared_ptr<IEffect>& in_effect) {
     if (in_effect == nullptr) {
         return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
     }
 
-    ::aidl::android::hardware::audio::effect::Descriptor desc;
+    Descriptor desc;
     auto status = in_effect->getDescriptor(&desc);
     if (!status.isOk()) {
         LOG(ERROR) << __func__ << mLogPrefix << "error fetching descriptor";
@@ -584,12 +583,12 @@ ndk::ScopedAStatus StreamInPrimary::addEffect(
 
     const auto& typeUUID = desc.common.id.type;
 
-    if (typeUUID == getEffectTypeUuidAcousticEchoCanceler()) {
+    if (typeUUID == stringToUuid(Descriptor::EFFECT_TYPE_UUID_AEC)) {
         if (!mAECEnabled) {
             mAECEnabled = true;
             applyEffects();
         }
-    } else if (typeUUID == getEffectTypeUuidNoiseSuppression()) {
+    } else if (typeUUID == stringToUuid(Descriptor::EFFECT_TYPE_UUID_NS)) {
         if (!mNSEnabled) {
             mNSEnabled = true;
             applyEffects();
@@ -599,12 +598,11 @@ ndk::ScopedAStatus StreamInPrimary::addEffect(
     return ndk::ScopedAStatus::ok();
 }
 
-ndk::ScopedAStatus StreamInPrimary::removeEffect(
-        const std::shared_ptr<::aidl::android::hardware::audio::effect::IEffect>& in_effect) {
+ndk::ScopedAStatus StreamInPrimary::removeEffect(const std::shared_ptr<IEffect>& in_effect) {
     if (in_effect == nullptr) {
         return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
     }
-    ::aidl::android::hardware::audio::effect::Descriptor desc;
+    Descriptor desc;
     auto status = in_effect->getDescriptor(&desc);
     if (!status.isOk()) {
         LOG(ERROR) << __func__ << mLogPrefix << "error fetching descriptor";
@@ -613,12 +611,12 @@ ndk::ScopedAStatus StreamInPrimary::removeEffect(
 
     const auto& typeUUID = desc.common.id.type;
 
-    if (typeUUID == getEffectTypeUuidAcousticEchoCanceler()) {
+    if (typeUUID == stringToUuid(Descriptor::EFFECT_TYPE_UUID_AEC)) {
         if (mAECEnabled) {
             mAECEnabled = false;
             applyEffects();
         }
-    } else if (typeUUID == getEffectTypeUuidNoiseSuppression()) {
+    } else if (typeUUID == stringToUuid(Descriptor::EFFECT_TYPE_UUID_NS)) {
         if (mNSEnabled) {
             mNSEnabled = false;
             applyEffects();
