@@ -48,22 +48,22 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <mixPort name="primary_out" role="source" flags="PRIMARY">
             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
-        <mixPort name="low_latency_out" role="source" flags="FAST PRIMARY">
+        <mixPort name="low_latency_out" role="source" flags="FAST">
             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
-        <mixPort name="low_latency_out" role="source" flags="FAST PRIMARY">
+        <mixPort name="low_latency_out" role="source" flags="FAST">
              <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
-        <mixPort name="low_latency_out_8k" role="source" flags="FAST PRIMARY">
+        <mixPort name="low_latency_out_8k" role="source" flags="FAST">
             <profile samplingRates="8000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
-        <mixPort name="low_latency_out_16k_sys" role="source" flags="FAST PRIMARY">
+        <mixPort name="low_latency_out_16k_sys" role="source" flags="FAST">
             <profile samplingRates="16000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
-        <mixPort name="low_latency_out_24k" role="source" flags="FAST PRIMARY">
+        <mixPort name="low_latency_out_24k" role="source" flags="FAST">
             <profile samplingRates="24000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
-        <mixPort name="low_latency_out_32k" role="source" flags="FAST PRIMARY">
+        <mixPort name="low_latency_out_32k" role="source" flags="FAST">
             <profile samplingRates="32000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
         <mixPort name="deep_buffer_out" role="source" flags="DEEP_BUFFER">
