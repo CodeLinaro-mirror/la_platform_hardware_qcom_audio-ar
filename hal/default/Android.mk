@@ -33,8 +33,6 @@ LOCAL_SHARED_LIBRARIES := \
     libxml2 \
     libaudioutils \
     libutils \
-    android.hardware.common-V2-ndk \
-    android.media.audio.common.types-V3-ndk \
     libmedia_helper \
     libstagefright_foundation \
     libhidlbase \
