@@ -28,7 +28,7 @@
  */
 
  /* Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -149,6 +149,12 @@ static int hfp_set_mic_volume(uint32_t volume_step)
 
     pal_volume = (struct pal_volume_data *)malloc(sizeof(struct pal_volume_data)
             +sizeof(struct pal_channel_vol_kv));
+
+    if (!pal_volume) {
+        AHAL_ERR("No memory: malloc failed");
+        goto exit;
+    }
+
     pal_volume->no_of_volpair = 1;
     pal_volume->volume_pair[0].channel_mask = 0x03;
     pal_volume->volume_pair[0].vol = volume_db;

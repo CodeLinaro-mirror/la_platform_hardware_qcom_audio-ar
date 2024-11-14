@@ -35,7 +35,7 @@
  * limitations under the License.
  */
 
-/* Changes from Qualcomm Innovation Center are provided under the following license:
+/* Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
  * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
@@ -62,6 +62,12 @@
 #include "battery_listener.h"
 
 #define MIC_CHARACTERISTICS_XML_FILE "/vendor/etc/microphone_characteristics.xml"
+#ifdef FORD_EXTN_AUTO
+#define PARAM_STR_SIZE 32
+#define VOLUME_GAIN_DIV 100
+#define VOLUME_GAIN_ADD 30
+static bool hfpVolumeSetBoot = false;
+#endif
 static pal_device_id_t in_snd_device = PAL_DEVICE_NONE;
 microphone_characteristics_t AudioDevice::microphones;
 snd_device_to_mic_map_t AudioDevice::microphone_maps[PAL_MAX_INPUT_DEVICES];
@@ -957,6 +963,35 @@ int adev_get_audio_port(struct audio_hw_device *dev,
     return 0;
 }
 
+#ifdef FORD_EXTN_AUTO
+static void process_hfp_volume(struct audio_hw_device *dev, int gain) {
+    if (!dev) {
+        AHAL_ERR("invalid dev object");
+        return;
+    }
+    std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance(dev);
+    if (!adevice) {
+        AHAL_ERR("invalid adevice object");
+        return;
+    }
+    if (gain < MIN_VOLUME_VALUE_MB || gain > MAX_VOLUME_VALUE_MB) {
+        AHAL_ERR("Out of range gain: %d, exptected range is from -6000 to 0.", gain);
+        return;
+    }
+    //TODO: Fine tune volume as per need
+    int hfp_volume = (gain/VOLUME_GAIN_DIV) + VOLUME_GAIN_ADD;
+    char param_str[PARAM_STR_SIZE] = {0};
+    snprintf(param_str, sizeof(param_str), "hfp_volume=%d", hfp_volume);
+    AHAL_INFO("SetParameters: %s", param_str);
+    int status = adevice->SetParameters(param_str);
+    if (status != 0) {
+        AHAL_ERR("Error in SetParameters: %d", status);
+        return;
+    }
+    hfpVolumeSetBoot = true;
+}
+#endif
+
 int adev_set_audio_port_config(struct audio_hw_device *dev,
                                const struct audio_port_config *config)
 {
@@ -972,7 +1007,11 @@ int adev_set_audio_port_config(struct audio_hw_device *dev,
         config->gain.values[0]);
         auto list = adevice->GetStreamOutList();
         for(auto iter = list.begin(); iter != list.end(); ++iter) {
-            ALOGI("%s: Stream addres: %s  config address: %s\n", __func__,(*iter)->address_, config_address);
+            ALOGI("%s: Stream address: %s  config address: %s\n", __func__,(*iter)->address_, config_address);
+#ifdef FORD_EXTN_AUTO
+            if ((strncmp(config_address, "BUS03_PHONE", AUDIO_DEVICE_MAX_ADDRESS_LEN) == 0) && !hfpVolumeSetBoot)
+                process_hfp_volume(dev, config->gain.values[0]);
+#endif
             if(strcmp((*iter)->address_, config_address) == 0) {
                 if (config->gain.values[0] <= MIN_VOLUME_VALUE_MB) {
                     volume = MIN_VOLUME_GAIN;
