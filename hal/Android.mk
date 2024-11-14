@@ -1,6 +1,8 @@
 LOCAL_PATH := $(call my-dir)
 
+ifneq ($(TARGET_BOARD_SUFFIX),_515_32go)
 LOCAL_AUDIO_SERVICE_64 := taro parrot bengal holi blair
+endif #TARGET_BOARD_SUFFIX
 
 include $(CLEAR_VARS)
 ifeq ($(call is-board-platform-in-list,$(LOCAL_AUDIO_SERVICE_64)), true)
