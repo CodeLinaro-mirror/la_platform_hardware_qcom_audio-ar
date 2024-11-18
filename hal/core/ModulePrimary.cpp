@@ -26,7 +26,6 @@
 #include <Utils.h>
 #include <android-base/logging.h>
 #include <cutils/str_parms.h>
-
 #include <aidl/qti/audio/core/VString.h>
 #include <qti-audio-core/Bluetooth.h>
 #include <qti-audio-core/ModulePrimary.h>
@@ -37,7 +36,11 @@
 #include <qti-audio-core/StreamStub.h>
 #include <qti-audio-core/Telephony.h>
 #include <qti-audio-core/Utils.h>
-
+#include <qti-audio-core/Stream.h>
+#define MIN_VOLUME_GAIN_MB -6000
+#define MAX_VOLUME_GAIN_MB 600
+#define MIN_VOLUME_GAIN 0.0f
+#define MAX_VOLUME_GAIN 1.0f
 using aidl::android::hardware::audio::common::SinkMetadata;
 using aidl::android::hardware::audio::common::SourceMetadata;
 using aidl::android::media::audio::common::AudioOffloadInfo;
@@ -72,6 +75,79 @@ std::vector<std::weak_ptr<::qti::audio::core::StreamIn>> ModulePrimary::mStreams
 
 std::mutex ModulePrimary::outListMutex;
 std::mutex ModulePrimary::inListMutex;
+ndk::ScopedAStatus qti::audio::core::ModulePrimary::setAudioPortConfig(const ::aidl::android::media::audio::common::AudioPortConfig& in_requested,::aidl::android::media::audio::common::AudioPortConfig* out_suggested,bool* _aidl_return)
+{
+    int list_id,Requsted_id;
+    LOG(DEBUG) << "setaudioportconfig module primary";
+    mVolumeGaincheck = property_get_bool(mGainVolumecheckProperty.c_str(),false);
+    Module::setAudioPortConfig(in_requested,out_suggested,_aidl_return);
+    if (in_requested.gain.has_value()) {
+        if (in_requested.gain->values.empty()) {
+            return ndk::ScopedAStatus::ok();
+        }
+        LOG(DEBUG) << __func__ << ": requested " << in_requested.toString();
+    }
+    else {
+        return ndk::ScopedAStatus::ok();
+        }
+    auto list = getOutStreams();
+    if (list.empty()) {
+        LOG(DEBUG) << "the module list is empty";
+        return ndk::ScopedAStatus::ok();
+    }
+    auto& routes = getConfig().routes;
+    auto route = routes.begin();
+    for (route;route != routes.end(); route++) {
+        if (route->sinkPortId == in_requested.portId) {
+            LOG(DEBUG) << "route port " << route->toString();
+            break;
+        }
+    }
+    LOG(DEBUG) << "the module list is not empty";
+    auto iter = list.begin();
+    auto route_portid = route->sourcePortIds.begin();
+    for (iter; (iter != list.end()&& route_portid!=route->sourcePortIds.end()); iter++) {
+       auto outIter = iter->lock();
+        if (outIter) {
+            auto &mcontext = (*outIter).getStreamContext();
+            auto &list_audioportconfig = mcontext.getMixPortConfig();
+            list_id = list_audioportconfig.portId;
+            float volume;
+            if (list_id == (*route_portid)) {
+                std::vector<float> vol;
+                LOG(DEBUG) << "Found the stream at id" << list_id;
+                if (!mVolumeGaincheck) {
+                    if (in_requested.gain->values[0] >= MAX_VOLUME_GAIN_MB) {
+                        volume = MAX_VOLUME_GAIN;
+                    }
+                    else {
+                        if (in_requested.gain->values[0] <= MIN_VOLUME_GAIN_MB) {
+                            volume = MIN_VOLUME_GAIN;
+                    }
+                        else {
+                            volume=pow(10,(((float)(in_requested.gain->values[0]))-600)/2200);
+                        }
+                    }
+                }
+                else {
+                    volume = (static_cast<float>(in_requested.gain->values[0]));
+                }
+                vol.push_back(volume);
+                vol.push_back(volume);
+                LOG(DEBUG) << "gain is:" << volume;
+                LOG(DEBUG) << "volume is:" << vol[0];
+                (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(outIter))->setHwVolume(vol);
+                LOG(DEBUG) << "volume set :" << vol[0];
+                route_portid++;
+            }
+            outIter.reset();
+        }
+        else {
+                 LOG(DEBUG) << "error in generation of shared pointer";
+        }
+    }
+    return ndk::ScopedAStatus::ok();
+}
 
 std::string ModulePrimary::toStringInternal() {
     std::ostringstream os;

@@ -33,6 +33,7 @@ class ModulePrimary final : public Module {
     ModulePrimary();
 
     // #################### start of overriding APIs from IModule ####################
+    virtual ndk::ScopedAStatus setAudioPortConfig(const ::aidl::android::media::audio::common::AudioPortConfig& in_requested, ::aidl::android::media::audio::common::AudioPortConfig* out_suggested, bool* _aidl_return) override;
     binder_status_t dump(int fd, const char** args, uint32_t numArgs) override;
     ndk::ScopedAStatus getBluetooth(
             std::shared_ptr<::aidl::android::hardware::audio::core::IBluetooth>* _aidl_return)
@@ -214,6 +215,7 @@ class ModulePrimary final : public Module {
     // end of module parameters handling
 
   protected:
+    bool mVolumeGaincheck=false;
     const SetParameterToFeatureMap mSetParameterToFeatureMap{fillSetParameterToFeatureMap()};
     const FeatureToSetHandlerMap mFeatureToSetHandlerMap{fillFeatureToSetHandlerMap()};
     const GetParameterToFeatureMap mGetParameterToFeatureMap{fillGetParameterToFeatureMap()};
@@ -225,6 +227,7 @@ class ModulePrimary final : public Module {
     AudioExtension& mAudExt{AudioExtension::getInstance()};
 
   private:
+    const std::string mGainVolumecheckProperty{"vendor.audio.feature.oemgainconversion.enable"};
     bool mOffloadSpeedSupported;
 };
 

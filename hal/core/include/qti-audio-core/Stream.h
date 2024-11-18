@@ -687,6 +687,10 @@ class StreamOut : virtual public StreamCommonInterface,
     StreamContext mContext;
     const std::optional<::aidl::android::media::audio::common::AudioOffloadInfo> mOffloadInfo;
     std::optional<::aidl::android::hardware::audio::common::AudioOffloadMetadata> mOffloadMetadata;
+  public:
+    StreamContext& getStreamContext() {
+        return mContext;
+    }
 };
 
 // The recommended way to create a stream instance.

@@ -5,6 +5,11 @@ ifeq ($(TARGET_USES_QMAA),true)
     endif
 endif
 
+ifneq ($(filter $(TARGET_BOARD_DERIVATIVE_SUFFIX), _sdv _cdcsdv),)
+$(warning ****** DISABLING AUDIO HAL FOR RBVM ******)
+AUDIO_DISABLE_HAL = true
+endif
+
 #Packages that should not be installed in QMAA are enabled here
 ifneq ($(TARGET_IS_HEADLESS),true)
 
@@ -30,6 +35,9 @@ AUDIO_PAL += libaudiochargerlistener
 AUDIO_PAL += libhfp_pal
 
 AUDIO_PAL += lib_default_plugin_controls
+ifeq ($(TARGET_USES_CDC_HW), true)
+AUDIO_PAL += lib_oem_plugin_controls
+endif
 AUDIO_PAL += lib_default_set_param_plugin_controls
 AUDIO_PAL += libqtigefar
 AUDIO_PAL += libicc_pal
@@ -64,13 +72,13 @@ AUDIO_MODULES += $(AUDIO_TEST)
     liblistensoundmodelaidl
 
 # AIDL Audio modules
-
+ifneq ($(AUDIO_DISABLE_HAL),true)
 AUDIO_MODULES += \
     audiohalservice.qti \
     libaudiocorehal.qti \
     libaudiocorehal.default \
     libaudioeffecthal.qti
-
+endif
 # add modules for fuzzing
 ifneq ($(filter audio,$(QC_HWASAN))$(filter hwaddress,$(SANITIZE_TARGET)),)
 AUDIO_MODULES += fuzz-audio-hal

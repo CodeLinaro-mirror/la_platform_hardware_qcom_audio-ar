@@ -42,9 +42,8 @@ class PlatformConverter {
     static pal_audio_fmt_t getPalFormatId(
             const ::aidl::android::media::audio::common::AudioFormatDescription&
                     formatDescription) noexcept;
-    static pal_device_id_t getPalDeviceId(
-            const ::aidl::android::media::audio::common::AudioDeviceDescription&
-                    deviceDescription) noexcept;
+    static pal_device_id_t getPalDeviceId(const ::aidl::android::media::audio::common::AudioDeviceDescription& deviceDescription,
+            const std::optional<std::string>& deviceAddress = std::nullopt) noexcept;
     static pal_stream_type_t getPalStreamTypeId(int32_t outputFlag) noexcept;
 
     static uint16_t getBitWidthForAidlPCM(

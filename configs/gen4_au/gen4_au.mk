@@ -20,6 +20,13 @@ ifeq ($(TARGET_USES_GY), true)
 AUDIO_FEATURE_ENABLED_POWER_POLICY := true
 endif
 
+ifeq ($(TARGET_USES_CDC_HW), true)
+PRODUCT_ODM_PROPERTIES +=\
+    vendor.audio.feature.oemgainconversion.enable=true
+else
+PRODUCT_ODM_PROPERTIES +=\
+    vendor.audio.feature.oemgainconversion.enable=false
+endif
 ifeq ($(ENABLE_HYP), false)
 ifeq ($(TARGET_GVMGH_SPECIFIC), false)
     TARGET_USES_ION_CMA_MEMORY := true
@@ -108,7 +115,9 @@ AUDIO_FEATURE_ENABLED_BATTERY_LISTENER := false
 
 AUDIO_FEATURE_ENABLED_AUTO_HAL := true
 AUDIO_FEATURE_ENABLED_EXT_HW_PLUGIN := true
+ifeq ($(filter $(TARGET_BOARD_DERIVATIVE_SUFFIX), _cdcsdv _sdv),)
 AUDIO_FEATURE_ENABLED_AUDIO_CONTROL_HAL := true
+endif
 AUDIO_FEATURE_ENABLED_AUDIO_PARSERS := true
 ifneq ($(ENABLE_HYP),true)
 AUDIO_FEATURE_ENABLED_AUTO_AUDIOD := true
@@ -260,7 +269,6 @@ endif
 ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), gen4_gvm)
 PRODUCT_COPY_FILES += \
      $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/vendor_audio_interfaces.xml:$(TARGET_COPY_OUT_VENDOR)/etc/vendor_audio_interfaces.xml \
-     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_module_config_primary.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_module_config_primary.xml \
      $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_effects_config.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects_config.xml \
      $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/microphone_characteristics.xml \
      $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/car_audio_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/car_audio_configuration.xml \
@@ -269,6 +277,14 @@ PRODUCT_COPY_FILES += \
 #     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common/policy_engine/audio_policy_engine_volumes.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_engine_volumes.xml \
 #     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common/policy_engine/audio_policy_engine_criteria.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_engine_criteria.xml \
 #     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common/policy_engine/audio_policy_engine_criterion_types.xml.in:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_engine_criterion_types.xml
+endif
+
+ifeq ($(TARGET_USES_CDC_HW), true)
+PRODUCT_COPY_FILES += \
+$(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/cdc/audio_module_config_primary.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_module_config_primary.xml
+else
+PRODUCT_COPY_FILES += \
+$(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_module_config_primary.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_module_config_primary.xml
 endif
 
 # cma memory for MDF
