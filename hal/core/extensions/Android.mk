@@ -20,7 +20,6 @@ LOCAL_HEADER_LIBRARIES :=  \
     libexpectedutils_headers
 
 LOCAL_SHARED_LIBRARIES := \
-    libaudioaidlcommon \
     libbase \
     libbinder_ndk \
     libcutils \

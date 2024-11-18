@@ -23,7 +23,6 @@
 #define ATRACE_TAG (ATRACE_TAG_AUDIO | ATRACE_TAG_HAL)
 
 #define LOG_TAG "AHAL_Stream_QTI"
-#include <Utils.h>
 
 #include <android-base/logging.h>
 #include <android/binder_ibinder_platform.h>
@@ -37,9 +36,6 @@
 // uncomment this to enable logging of very verbose logs like burst commands.
 // #define VERY_VERBOSE_LOGGING 1
 using aidl::android::hardware::audio::common::AudioOffloadMetadata;
-using aidl::android::hardware::audio::common::getChannelCount;
-using aidl::android::hardware::audio::common::getFrameSizeInBytes;
-using aidl::android::hardware::audio::common::isBitPositionFlagSet;
 using aidl::android::hardware::audio::common::SinkMetadata;
 using aidl::android::hardware::audio::common::SourceMetadata;
 using aidl::android::media::audio::common::AudioDevice;
@@ -53,8 +49,6 @@ using aidl::android::media::audio::common::AudioPlaybackRate;
 using aidl::android::media::audio::common::MicrophoneDynamicInfo;
 using aidl::android::media::audio::common::MicrophoneInfo;
 
-using ::aidl::android::hardware::audio::common::getChannelCount;
-using ::aidl::android::hardware::audio::common::getFrameSizeInBytes;
 using ::aidl::android::hardware::audio::core::IStreamCallback;
 using ::aidl::android::hardware::audio::core::IStreamCommon;
 using ::aidl::android::hardware::audio::core::StreamDescriptor;
@@ -469,7 +463,15 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
         case Tag::halReservedExit:
             if (const int32_t cookie = command.get<Tag::halReservedExit>();
                 cookie == mContext->getInternalCommandCookie()) {
+                if (mContext->getAsyncCallback()) {
+                    // do explicit unlock, so that callback can acquire
+                    asyncLock.unlock();
+                }
                 mDriver->shutdown();
+                if (mContext->getAsyncCallback()) {
+                    // do explicit lock
+                    asyncLock.lock();
+                }
                 setClosed();
                 // This is an internal command, no need to reply.
                 return Status::EXIT;
@@ -587,6 +589,10 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
             break;
         case Tag::standby:
             if (mState == StreamDescriptor::State::IDLE) {
+                if (mContext->getAsyncCallback()) {
+                   // do explicit unlock, so that callback can acquire
+                    asyncLock.unlock();
+                }
                 if (::android::status_t status = mDriver->standby(); status == ::android::OK) {
                     populateReply(&reply, mIsConnected);
                     mState = StreamDescriptor::State::STANDBY;
@@ -594,6 +600,10 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
                     LOG(ERROR) << __func__ << ": standby failed: " << status;
                     // uncomment below, to treat the failure as HARD error, stream not recoverable
                     // mState = StreamDescriptor::State::ERROR;
+                }
+                if (mContext->getAsyncCallback()) {
+                    // do explicit lock
+                    asyncLock.lock();
                 }
             } else {
                 populateReplyWrongState(&reply, command);
@@ -741,11 +751,14 @@ bool StreamOutWorkerLogic::write(size_t clientSize, StreamDescriptor::Reply* rep
 }
 
 StreamCommonImpl::~StreamCommonImpl() {
-    if (!isClosed()) {
-        LOG(ERROR) << __func__ << ": stream was not closed prior to destruction, resource leak";
-        stopWorker();
-        // The worker and the context should clean up by themselves via
-        // destructors.
+    // It is responsibility of the class that implements 'DriverInterface' to call 'cleanupWorker'
+    // in the destructor. Note that 'cleanupWorker' can not be properly called from this destructor
+    // because any subclasses have already been destroyed and thus the 'DriverInterface'
+    // implementation is not valid. Thus, here it can only be asserted whether the subclass has done
+    // its job.
+    if (!mWorkerStopIssued && !isClosed()) {
+        LOG(FATAL) << __func__ << ": the stream implementation must call 'cleanupWorker' "
+                   << "in order to clean up the worker thread.";
     }
     LOG(VERBOSE) << __func__ << ": destroy " << std::hex << this;
 }
@@ -829,10 +842,7 @@ ndk::ScopedAStatus StreamCommonImpl::close() {
     ModulePrimary::outListMutex.lock();
     LOG(DEBUG) << __func__;
     if (!isClosed()) {
-        stopWorker();
-        LOG(DEBUG) << __func__ << ": joining the worker thread...";
-        mWorker->join();
-        LOG(DEBUG) << __func__ << ": worker thread joined";
+        stopAndJoinWorker();
         onClose();
         mWorker->setClosed();
         ModulePrimary::outListMutex.unlock();
@@ -853,6 +863,20 @@ ndk::ScopedAStatus StreamCommonImpl::prepareToClose() {
     return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
 }
 
+void StreamCommonImpl::cleanupWorker() {
+    if (!isClosed()) {
+        LOG(ERROR) << __func__ << ": stream was not closed prior to destruction, resource leak";
+        stopAndJoinWorker();
+    }
+}
+
+void StreamCommonImpl::stopAndJoinWorker() {
+    stopWorker();
+    LOG(DEBUG) << __func__ << ": joining the worker thread...";
+    mWorker->join();
+    LOG(DEBUG) << __func__ << ": worker thread joined";
+}
+
 void StreamCommonImpl::stopWorker() {
     if (auto commandMQ = mContextRef.getCommandMQ(); commandMQ != nullptr) {
         LOG(DEBUG) << __func__ << ": asking the worker to exit...";
@@ -867,6 +891,7 @@ void StreamCommonImpl::stopWorker() {
         }
         LOG(DEBUG) << __func__ << ": done";
     }
+    mWorkerStopIssued = true;
 }
 
 ndk::ScopedAStatus StreamCommonImpl::updateMetadataCommon(const Metadata& metadata) {

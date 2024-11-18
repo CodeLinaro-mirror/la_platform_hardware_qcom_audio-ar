@@ -27,6 +27,7 @@ LOCAL_SRC_FILES := \
     ModulePrimary.cpp \
     ModuleStub.cpp \
     SoundDose.cpp \
+    StreamWorker.cpp \
     Stream.cpp \
     StreamStub.cpp \
     Telephony.cpp \
@@ -60,7 +61,6 @@ LOCAL_WHOLE_STATIC_LIBRARIES := \
     libaudioplatform.qti
 
 LOCAL_SHARED_LIBRARIES := \
-    libaudioaidlcommon \
     libbase \
     libbinder_ndk \
     libcutils \

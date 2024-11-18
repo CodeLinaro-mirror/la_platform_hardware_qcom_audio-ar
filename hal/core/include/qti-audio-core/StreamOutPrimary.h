@@ -105,7 +105,8 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     ::android::status_t startMMAP();
     ::android::status_t stopMMAP();
     size_t getPlatformDelay() const noexcept;
-    ::android::status_t onWriteError(const size_t sleepFrameCount);
+    ::android::status_t onWriteError(const size_t sleepFrameCount,
+                                     size_t* const consumedFrameCount);
 
     // This API calls startEffect/stopEffect only on offload/pcm offload outputs.
     void enableOffloadEffects(const bool enable);
@@ -133,8 +134,7 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     ::aidl::android::media::audio::common::AudioPlaybackRate mPlaybackRate;
 
     //Haptics Usecase
-    struct pal_stream_attributes mHapticsStreamAttributes;
-    struct pal_device mHapticsDevice;
+    int mHapticsChannelCount = 1;
     std::unique_ptr<uint8_t[]> mHapticsBuffer{nullptr};
     size_t mHapticsBufSize{0};
     ::android::status_t convertBufferAndWrite(const void* buffer, size_t frameCount);

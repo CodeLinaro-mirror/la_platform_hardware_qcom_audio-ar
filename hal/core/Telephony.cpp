@@ -21,7 +21,6 @@
  */
 
 #define LOG_TAG "AHAL_Telephony_QTI"
-#include <Utils.h>
 #include <android-base/logging.h>
 #include <android/binder_to_string.h>
 #include <hardware/audio.h>
@@ -31,7 +30,6 @@
 #include <qti-audio-core/Utils.h>
 #include <system/audio.h>
 
-using aidl::android::hardware::audio::common::isValidAudioMode;
 using aidl::android::media::audio::common::AudioDevice;
 using aidl::android::media::audio::common::AudioDeviceAddress;
 using aidl::android::media::audio::common::AudioDeviceDescription;
@@ -105,6 +103,7 @@ ndk::ScopedAStatus Telephony::switchAudioMode(AudioMode newAudioMode) {
         VoiceStop();
     } else if (newAudioMode == AudioMode::RINGTONE && mSetUpdates.mIsCrsCall) {
         if (!mIsCRSStarted && !isAnyCallActive()) {
+            getPlaybackStreamDevices();
             updateCrsDevice();
             startCall();
             if (mRxDevice.type.type != AudioDeviceType::OUT_SPEAKER) {
@@ -185,6 +184,13 @@ bool Telephony::isAnyCallActive() {
          }
     }
     return false;
+}
+
+bool Telephony::isValidDevice(const AudioDevice& rxDevice) {
+    if (getMatchingTxDevice(rxDevice).type.type == AudioDeviceType::NONE) {
+        return false;
+    }
+    return true;
 }
 
 void Telephony::resetDevices(const bool resetRx) {
@@ -305,17 +311,20 @@ void Telephony::onExternalDeviceConnectionChanged(const AudioDevice& extDevice,
     }
 }
 
-void Telephony::onOutputPrimaryStreamDevices(const std::vector<AudioDevice>& primaryStreamDevices) {
+void Telephony::onPlaybackStreamDevices(const std::vector<AudioDevice>& playbackStreamDevices) {
     std::scoped_lock lock{mLock};
 
     /**
      * CRS ringtone routing piggybacks on output primary stream devices
      **/
-    if (!mIsCRSStarted) {
+    if (isAnyCallActive() || mAudioMode == AudioMode::IN_CALL) {
+        LOG(VERBOSE) << __func__ << ": voice call exist";
         return;
     }
-    if (primaryStreamDevices.size() == 1) {// combo devices unsupported.
-        mRxDevice = primaryStreamDevices[0]; // expected to have 1 device.
+    if (playbackStreamDevices.size() == 1 &&
+        isValidDevice(playbackStreamDevices[0])) {// combo devices unsupported.
+        mPlaybackStreamDevices = playbackStreamDevices;
+        mRxDevice = playbackStreamDevices[0]; // expected to have 1 device.
         mTxDevice = getMatchingTxDevice(mRxDevice);
         updateDevices();
      }
@@ -418,6 +427,7 @@ void Telephony::reconfigure(const SetUpdates& newUpdates) {
         mSetUpdates.mVSID = newUpdates.mVSID;
         if (!mIsCRSStarted && !isAnyCallActive() &&
             mAudioMode == AudioMode::RINGTONE) {
+             getPlaybackStreamDevices();
              updateCrsDevice();
              startCall();
              if (mRxDevice.type.type != AudioDeviceType::OUT_SPEAKER) {
@@ -456,6 +466,7 @@ void Telephony::reconfigure(const SetUpdates& newUpdates) {
 }
 
 void Telephony::updateCalls() {
+     auto status = ndk::ScopedAStatus::ok();
      auto palDevices = mPlatform.convertToPalDevices({mRxDevice, mTxDevice});
      for (int i = 0; i < MAX_VOICE_SESSIONS; i++) {
             switch (mVoiceSession.session[i].state.new_) {
@@ -469,9 +480,13 @@ void Telephony::updateCalls() {
                                 }
                                 if (!isAnyCallActive() && !mIsCRSStarted) {
                                     mSetUpdates =  mVoiceSession.session[i].CallUpdate;
-                                    startCall();
-                                    mIsVoiceStarted = true;
-                                    mVoiceSession.session[i].state.current_ = mVoiceSession.session[i].state.new_;
+                                    status = startCall();
+                                    if (!status.isOk()) {
+                                        LOG(ERROR) << __func__ << ": start call failed";
+                                    } else {
+                                        mIsVoiceStarted = true;
+                                        mVoiceSession.session[i].state.current_ = mVoiceSession.session[i].state.new_;
+                                    }
                                 } else {
                                     LOG(DEBUG) << __func__ << ": voice already started";
                                 }
@@ -490,8 +505,12 @@ void Telephony::updateCalls() {
                             case CallState::ACTIVE:
                                 LOG(DEBUG) << __func__ << " CallState: ACTIVE -> INACTIVE vsid:" << mVoiceSession.session[i].CallUpdate.mVSID;
                                 mSetUpdates =  mVoiceSession.session[i].CallUpdate;
-                                stopCall();
-                                mVoiceSession.session[i].state.current_ = mVoiceSession.session[i].state.new_;
+                                status = stopCall();
+                                if (!status.isOk()) {
+                                    LOG(ERROR) << __func__ << ": stop call failed";
+                                } else {
+                                    mVoiceSession.session[i].state.current_ = mVoiceSession.session[i].state.new_;
+                                }
                                 break;
 
                              default:
@@ -629,12 +648,26 @@ void Telephony::triggerHACinVoipPlayback() {
     }
 }
 
-void Telephony::onPlaybackStart() {
+void Telephony::getPlaybackStreamDevices() {
+    if (hasValidPlaybackStream) {
+       mRxDevice = mPlaybackStreamDevices[0];
+       mTxDevice = getMatchingTxDevice(mRxDevice);
+   }
+}
+
+void Telephony::onPlaybackStart(const std::vector<AudioDevice>& playbackStreamDevices) {
     std::scoped_lock lock{mLock};
+
     hasValidPlaybackStream = true;
-    if (mIsCRSStarted) {
-        LOG(INFO) << __func__ << ": playback conc status changed for CRS call";
-        updateDevices();
+    if (playbackStreamDevices.size() == 1 &&
+        isValidDevice(playbackStreamDevices[0])) {
+        mPlaybackStreamDevices = playbackStreamDevices;
+        if (mIsCRSStarted) {
+            mRxDevice = playbackStreamDevices[0];
+            mTxDevice = getMatchingTxDevice(mRxDevice);
+            LOG(INFO) << __func__ << ": playback conc status change for CRS call";
+            updateDevices();
+        }
     }
 }
 
@@ -642,7 +675,7 @@ void Telephony::onPlaybackClose() {
     std::scoped_lock lock{mLock};
     hasValidPlaybackStream = false;
     if (mIsCRSStarted) {
-        LOG(INFO) << __func__ << ": playback conc status changed for CRS call";
+        LOG(INFO) << __func__ << ": playback conc status stop for CRS call";
         updateDevices();
     }
 }
@@ -695,7 +728,7 @@ void Telephony::updateTtyMode() {
     return;
 }
 
-void Telephony::startCall() {
+ndk::ScopedAStatus Telephony::startCall() {
     LOG(DEBUG) << __func__ << ": Enter: "
                << " Rx: " << mRxDevice.toString() << " Tx: " << mTxDevice.toString();
     auto attributes = mPlatform.getDefaultTelephonyAttributes();
@@ -728,23 +761,27 @@ void Telephony::startCall() {
                 nullptr, nullptr, reinterpret_cast<uint64_t>(this), &mPalHandle);
         ret) {
         LOG(ERROR) << __func__ << ": pal stream open failed !!" << ret;
-        return;
+        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
     }
     if (int32_t ret = ::pal_stream_start(mPalHandle); ret) {
         LOG(ERROR) << __func__ << ": pal stream start failed !!" << ret;
         pal_stream_close(mPalHandle);
         mPalHandle = nullptr;
-        return;
+        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
     }
     if (mPlatform.getMicMuteStatus()) {
         mPlatform.setStreamMicMute(mPalHandle, true);
     }
     updateVoiceVolume();
+    if (mIsDeviceMuted) {
+        configureDeviceMute();
+    }
     if (mSetUpdates.mIsCrsCall) {
         mPlatform.setStreamMicMute(mPalHandle, true);
         LOG(DEBUG) << __func__ << ": CRS usecase mute TX";
     }
     LOG(DEBUG) << __func__ << ": Exit : Voice Stream";
+    return ndk::ScopedAStatus::ok();
 }
 
 void Telephony::startCrsLoopback() {
@@ -789,19 +826,24 @@ void Telephony::startCrsLoopback() {
     LOG(DEBUG) << __func__ << ": Exit";
 }
 
-void Telephony::stopCall() {
+ndk::ScopedAStatus Telephony::stopCall() {
     LOG(DEBUG) << __func__ << ": Enter";
     if (mPalHandle == nullptr) {
-        return;
+        return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
     }
+    int32_t ret = 0;
     auto palDevices = mPlatform.convertToPalDevices({mRxDevice, mTxDevice});
     if (mSetUpdates.mIsCrsCall) {
         strlcpy(palDevices[0].custom_config.custom_key, "",
                 sizeof(palDevices[0].custom_config.custom_key));
         LOG(VERBOSE) << __func__ << "setting custom key as ", palDevices[0].custom_config.custom_key;
     }
-    ::pal_stream_stop(mPalHandle);
-    ::pal_stream_close(mPalHandle);
+    if (int32_t ret = pal_stream_stop(mPalHandle); ret) {
+        LOG(ERROR) << __func__ << ": pal stream stop failed !!" << ret;
+    }
+    if (int32_t ret = pal_stream_close(mPalHandle); ret) {
+        LOG(ERROR) << __func__ << ": pal stream stop failed !!" << ret;
+    }
     if ((palDevices[0].id == PAL_DEVICE_OUT_BLUETOOTH_BLE) &&
         (palDevices[1].id == PAL_DEVICE_IN_BLUETOOTH_BLE)) {
         updateVoiceMetadataForBT(false);
@@ -812,7 +854,11 @@ void Telephony::stopCall() {
         mRxDevice = kDefaultRxDevice;
         mTxDevice = getMatchingTxDevice(mRxDevice);
     }
+    if (ret) {
+        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
+    }
     LOG(DEBUG) << __func__ << ": EXIT";
+    return ndk::ScopedAStatus::ok();
 }
 
 void Telephony::stopCrsLoopback() {
@@ -931,11 +977,15 @@ void Telephony::updateDevices() {
         return;
     }
     if (mSetUpdates.mIsCrsCall) {
-        if (mRxDevice.type.type != AudioDeviceType::OUT_SPEAKER) {
+        if (mRxDevice.type.type != AudioDeviceType::OUT_SPEAKER &&
+            mRxDevice.type.type != AudioDeviceType::OUT_SPEAKER_EARPIECE) {
             startCrsLoopback();
         }
     }
     updateVoiceVolume();
+    if (mIsDeviceMuted) {
+        configureDeviceMute();
+    }
     LOG(DEBUG) << __func__ << ": Exit : Rx: " << mRxDevice.toString() << " Tx: " << mTxDevice.toString();
 }
 

@@ -20,7 +20,6 @@
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
-#include <Utils.h>
 #include <aidl/android/media/audio/common/AudioChannelLayout.h>
 #include <aidl/android/media/audio/common/AudioDeviceType.h>
 #include <aidl/android/media/audio/common/AudioFormatDescription.h>
@@ -42,7 +41,6 @@
 
 #include <qti-audio-core/ModuleConfig.h>
 
-using ::aidl::android::hardware::audio::common::makeBitPositionFlagMask;
 using ::aidl::android::hardware::audio::core::AudioPatch;
 using ::aidl::android::hardware::audio::core::AudioRoute;
 using ::aidl::android::media::audio::common::AudioChannelLayout;

@@ -17,7 +17,6 @@
 #include <qti-audio-core/Parameters.h>
 
 using aidl::android::hardware::audio::common::AudioOffloadMetadata;
-using aidl::android::hardware::audio::common::getFrameSizeInBytes;
 using aidl::android::hardware::audio::common::SinkMetadata;
 using aidl::android::hardware::audio::common::SourceMetadata;
 using aidl::android::media::audio::common::AudioDevice;
@@ -29,10 +28,7 @@ using aidl::android::media::audio::common::MicrophoneDynamicInfo;
 using aidl::android::media::audio::common::MicrophoneInfo;
 using aidl::android::media::audio::common::AudioLatencyMode;
 using aidl::android::media::audio::common::AudioChannelLayout;
-using ::aidl::android::hardware::audio::common::getChannelCount;
 
-using ::aidl::android::hardware::audio::common::getFrameSizeInBytes;
-using ::aidl::android::hardware::audio::common::getPcmSampleSizeInBytes;
 using ::aidl::android::hardware::audio::core::IStreamCallback;
 using ::aidl::android::hardware::audio::core::IStreamCommon;
 using ::aidl::android::hardware::audio::core::StreamDescriptor;
@@ -134,7 +130,7 @@ struct BufferConfig StreamOutPrimary::getBufferConfig() {
 }
 
 StreamOutPrimary::~StreamOutPrimary() {
-    shutdown_I();
+    cleanupWorker();
     LOG(DEBUG) << __func__ << mLogPrefix;
 }
 
@@ -157,9 +153,11 @@ ndk::ScopedAStatus StreamOutPrimary::configureConnectedDevices_I() {
         return ndk::ScopedAStatus::ok();
     }
 
-    if (mTag == Usecase::LOW_LATENCY_PLAYBACK) {
+    if (mTag == Usecase::LOW_LATENCY_PLAYBACK ||
+        mTag == Usecase::DEEP_BUFFER_PLAYBACK ||
+        mTag == Usecase::VOIP_PLAYBACK) {
         if (auto telephony = mContext.getTelephony().lock()) {
-            telephony->onOutputPrimaryStreamDevices(mConnectedDevices);
+            telephony->onPlaybackStreamDevices(mConnectedDevices);
         }
     }
 
@@ -254,7 +252,7 @@ ndk::ScopedAStatus StreamOutPrimary::configureMMapStream(int32_t* fd, int64_t* b
 
     std::get<MMapPlayback>(mExt).setPalHandle(mPalHandle);
 
-    const auto frameSize = ::aidl::android::hardware::audio::common::getFrameSizeInBytes(
+    const auto frameSize = getFrameSizeInBytes(
             mMixPortConfig.format.value(), mMixPortConfig.channelMask.value());
     int32_t ret = std::get<MMapPlayback>(mExt).createMMapBuffer(frameSize, fd, burstSizeFrames,
                                                                 flags, bufferSizeFrames);
@@ -388,10 +386,6 @@ void StreamOutPrimary::resume() {
         return ::android::OK;
     }
 
-    if (mTag == Usecase::MMAP_PLAYBACK) {
-        return ::android::OK;
-    }
-
     shutdown_I();
     LOG(DEBUG) << __func__ << mLogPrefix;
     return ::android::OK;
@@ -410,10 +404,14 @@ void StreamOutPrimary::resume() {
         resume();
     }
 
+    if (mConnectedDevices.empty()) {
+        LOG(DEBUG) << __func__ << mLogPrefix << ": stream is not connected";
+        return ::android::OK;
+    }
     if (hasOutputVoipRxFlag(mMixPortConfig.flags.value()) ||
         hasOutputDeepBufferFlag(mMixPortConfig.flags.value())) {
         if (auto telephony = mContext.getTelephony().lock()) {
-            telephony->onPlaybackStart();
+            telephony->onPlaybackStart(mConnectedDevices);
         }
     }
     return ::android::OK;
@@ -426,8 +424,7 @@ void StreamOutPrimary::resume() {
         configure();
         if (!mPalHandle) {
             LOG(ERROR) << __func__ << mLogPrefix << ": failed to configure";
-            *actualFrameCount = frameCount;
-            return onWriteError(frameCount);
+            return onWriteError(frameCount, actualFrameCount);
         }
     }
 
@@ -466,11 +463,7 @@ void StreamOutPrimary::resume() {
     }
     if (bytesWritten < 0) {
         LOG(ERROR) << __func__ << mLogPrefix << " write failed, ret: " << bytesWritten;
-       *actualFrameCount = frameCount;
-       if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK) {
-           *actualFrameCount = 0;
-       }
-       return onWriteError(frameCount);
+        return onWriteError(frameCount, actualFrameCount);
     }
 
     *actualFrameCount = static_cast<size_t>(bytesWritten / mFrameSizeBytes);
@@ -516,8 +509,7 @@ void StreamOutPrimary::resume() {
 
     // Calculate Haptics Buffer size
 
-    uint8_t hapticsChannelCount = mHapticsStreamAttributes.out_media_config.ch_info.channels;
-    uint32_t hapticsFrameSize = hapticsChannelCount * bytesPerSample;
+    uint32_t hapticsFrameSize = mHapticsChannelCount * bytesPerSample;
     uint32_t audioFrameSize = frameSize - hapticsFrameSize;
     uint32_t totalHapticsBufferSize = frameCount * hapticsFrameSize;
 
@@ -591,13 +583,13 @@ void StreamOutPrimary::resume() {
                      << " observable frames " << reply->observable.frames
                      << " time : " << reply->observable.timeNs;
         return ::android::OK;
-    } else {
-        int64_t totalDelayFrames = 0;
-        totalDelayFrames = mContext.getNominalLatencyMs() *
-                           mMixPortConfig.sampleRate.value().value / 1000;
-        reply->observable.frames = (reply->observable.frames > totalDelayFrames) ?
-                                   (reply->observable.frames - totalDelayFrames) : 0;
     }
+
+    int64_t totalDelayFrames =
+            mContext.getNominalLatencyMs() * mMixPortConfig.sampleRate.value().value / 1000;
+    reply->observable.frames = (reply->observable.frames > totalDelayFrames)
+                                       ? (reply->observable.frames - totalDelayFrames)
+                                       : 0;
 
     // if the stream is connected to any bluetooth device, consider bluetooth encoder latency
     if (hasBluetoothDevice(mConnectedDevices)) {
@@ -919,19 +911,22 @@ size_t StreamOutPrimary::getPlatformDelay() const noexcept {
     return 0;
 }
 
-::android::status_t StreamOutPrimary::onWriteError(const size_t sleepFrameCount) {
+::android::status_t StreamOutPrimary::onWriteError(const size_t sleepFrameCount, size_t* const consumedFrameCount) {
     shutdown_I();
     if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK) {
         // return error for offload, so that FW sends data again
         LOG(ERROR) << __func__ << mLogPrefix << ": cannot afford write failure";
+        *consumedFrameCount = 0;
         return ::android::DEAD_OBJECT;
     }
     auto& sampleRate = mMixPortConfig.sampleRate.value().value;
     if (sampleRate == 0) {
         LOG(ERROR) << __func__ << mLogPrefix << ": cannot afford write failure, sampleRate is zero";
+        *consumedFrameCount = 0;
         return ::android::UNEXPECTED_NULL;
     }
     std::this_thread::sleep_for(std::chrono::milliseconds((sleepFrameCount * 1000) / sampleRate));
+    *consumedFrameCount = sleepFrameCount;
     LOG(WARNING) << __func__ << mLogPrefix << ": ignoring this write";
     return ::android::OK;
 }
@@ -989,11 +984,13 @@ void StreamOutPrimary::configure() {
                << channelLayout.toString();
         palNonHapticChannelInfo = PlatformConverter::getPalChannelInfoForChannelCount(
           getChannelCount(channelLayout));
-        attr->out_media_config.ch_info = *(palNonHapticChannelInfo);
+
         if (palNonHapticChannelInfo == nullptr) {
             LOG(ERROR) << __func__ << " failed to find corresponding pal channel info for "
                << channelLayout.toString();
-            return ;
+            return;
+        } else {
+            attr->out_media_config.ch_info = *palNonHapticChannelInfo;
         }
     } else {
         LOG(ERROR) << __func__ << mLogPrefix << " invalid usecase to configure";
@@ -1042,7 +1039,7 @@ void StreamOutPrimary::configure() {
         hapticChannelLayout = AudioChannelLayout::make<AudioChannelLayout::Tag::layoutMask>
            (mMixPortConfig.channelMask.value().get<AudioChannelLayout::Tag::layoutMask>() & (AudioChannelLayout::LAYOUT_HAPTIC_AB));
 
-        LOG(ERROR) << __func__ << mLogPrefix << " pal channel info for haptics stream "
+        LOG(DEBUG) << __func__ << mLogPrefix << " pal channel info for haptics stream "
                << hapticChannelLayout.toString();
 
         palHapticChannelInfo = PlatformConverter::getPalChannelInfoForChannelCount(
@@ -1053,29 +1050,31 @@ void StreamOutPrimary::configure() {
                << hapticChannelLayout.toString();
             return ;
         }
-        mHapticsStreamAttributes.type = PAL_STREAM_HAPTICS;
-        mHapticsStreamAttributes.flags = static_cast<pal_stream_flags_t>(0);
-        mHapticsStreamAttributes.direction = PAL_AUDIO_OUTPUT;
-        mHapticsStreamAttributes.out_media_config.sample_rate = Platform::kDefaultOutputSampleRate;
-        mHapticsStreamAttributes.out_media_config.bit_width = Platform::kDefaultPCMBidWidth;
-        mHapticsStreamAttributes.out_media_config.aud_fmt_id = Platform::kDefaultPalPCMFormat;
-        mHapticsStreamAttributes.out_media_config.ch_info = *(palHapticChannelInfo);
-        mHapticsStreamAttributes.info.opt_stream_info.haptics_type = PAL_STREAM_HAPTICS_RINGTONE;
 
-        mHapticsDevice.id = PAL_DEVICE_OUT_HAPTICS_DEVICE;
-        mHapticsDevice.config.sample_rate = Platform::kDefaultOutputSampleRate;
-        mHapticsDevice.config.bit_width = Platform::kDefaultPCMBidWidth;
-        mHapticsDevice.config.ch_info = mHapticsStreamAttributes.out_media_config.ch_info;
-        mHapticsDevice.config.aud_fmt_id = Platform::kDefaultPalPCMFormat;
+        // set haptics stream attributes
+        struct pal_stream_attributes hapticsStreamAttributes {};
+        hapticsStreamAttributes.type = PAL_STREAM_HAPTICS;
+        hapticsStreamAttributes.flags = static_cast<pal_stream_flags_t>(0);
+        hapticsStreamAttributes.direction = PAL_AUDIO_OUTPUT;
+        hapticsStreamAttributes.out_media_config.sample_rate = Platform::kDefaultOutputSampleRate;
+        hapticsStreamAttributes.out_media_config.bit_width = Platform::kDefaultPCMBidWidth;
+        hapticsStreamAttributes.out_media_config.aud_fmt_id = Platform::kDefaultPalPCMFormat;
+        hapticsStreamAttributes.out_media_config.ch_info = *(palHapticChannelInfo);
+        hapticsStreamAttributes.info.opt_stream_info.haptics_type = PAL_STREAM_HAPTICS_RINGTONE;
+        mHapticsChannelCount = hapticsStreamAttributes.out_media_config.ch_info.channels;
 
-        int32_t ret =
-        ::pal_stream_open(&mHapticsStreamAttributes, 1, &mHapticsDevice, 0, nullptr,
-                          palFn, cookie, &(this->mHapticsPalHandle));
+        // set haptics device
+        struct pal_device hapticsDevice {};
+        hapticsDevice.id = PAL_DEVICE_OUT_HAPTICS_DEVICE;
+        hapticsDevice.config.sample_rate = Platform::kDefaultOutputSampleRate;
+        hapticsDevice.config.bit_width = Platform::kDefaultPCMBidWidth;
+        hapticsDevice.config.ch_info = hapticsStreamAttributes.out_media_config.ch_info;
+        hapticsDevice.config.aud_fmt_id = Platform::kDefaultPalPCMFormat;
 
-        if (ret) {
-                LOG(ERROR) << __func__ << mLogPrefix << " pal Haptics Stream Open Error ret:"
-                << ret;
-            }
+        if (int32_t ret = ::pal_stream_open(&hapticsStreamAttributes, 1, &hapticsDevice, 0,
+                                        nullptr, palFn, cookie, &(this->mHapticsPalHandle))) {
+            LOG(ERROR) << __func__ << mLogPrefix << " pal_stream_open failed for haptics " << ret;
+        }
     }
 
     const auto palOpenApiEndTime = std::chrono::steady_clock::now();
@@ -1089,7 +1088,7 @@ void StreamOutPrimary::configure() {
     if (mTag == Usecase::ULL_PLAYBACK) {
         //The buffer size for ULL_PLAYBACK set to PAL should not be more than 2ms
         const size_t durationMs = 1; // set to 1ms
-        size_t frameSizeInBytes = ::aidl::android::hardware::audio::common::getFrameSizeInBytes(
+        size_t frameSizeInBytes = getFrameSizeInBytes(
                 mMixPortConfig.format.value(), mMixPortConfig.channelMask.value());
         bufConfig.bufferSize = durationMs *
                     (mMixPortConfig.sampleRate.value().value /1000) * frameSizeInBytes;

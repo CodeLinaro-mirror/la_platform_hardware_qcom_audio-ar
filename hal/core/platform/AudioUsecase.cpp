@@ -20,10 +20,6 @@ using ::aidl::android::media::audio::common::AudioInputFlags;
 using ::aidl::android::media::audio::common::AudioOutputFlags;
 using ::aidl::android::media::audio::common::AudioSource;
 using ::aidl::android::media::audio::common::AudioStreamType;
-using ::aidl::android::hardware::audio::common::isBitPositionFlagSet;
-using ::aidl::android::hardware::audio::common::getChannelCount;
-using ::aidl::android::hardware::audio::common::getFrameSizeInBytes;
-using ::aidl::android::hardware::audio::common::getPcmSampleSizeInBytes;
 using ::aidl::android::media::audio::common::AudioPortConfig;
 using ::aidl::android::media::audio::common::AudioPortExt;
 using ::aidl::android::media::audio::common::AudioPortMixExtUseCase;
@@ -277,18 +273,26 @@ int32_t MmapUsecaseBase::createMMapBuffer(int64_t frameSize, int32_t* fd, int64_
 }
 
 int32_t MmapUsecaseBase::getMMapPosition(int64_t* frames, int64_t* timeNs) {
+    static int64_t sUnknown = -1;
     if (!mPalHandle) {
         LOG(ERROR) << __func__ << ": pal stream handle is null";
-        return -EINVAL;
+        *frames = *timeNs = sUnknown;
+        return 0;
+    }
+    if (!mIsStarted) {
+        LOG(ERROR) << __func__ << ": stream not started, position unknown";
+        *frames = *timeNs = sUnknown;
+        return 0;
     }
     struct pal_mmap_position pal_mmap_pos;
     if (int32_t ret = pal_stream_get_mmap_position(mPalHandle, &pal_mmap_pos); ret) {
-        LOG(ERROR) << __func__ << ": failed to get mmap positon "
-                   << "returned " << ret;
+        LOG(ERROR) << __func__ << ": error from pal_stream_get_mmap_position";
         return ret;
     }
     *timeNs = pal_mmap_pos.time_nanoseconds;
-    *frames = pal_mmap_pos.position_frames;
+    mFramesInSession = pal_mmap_pos.position_frames;
+    *frames = mTotalFrames + mFramesInSession;
+
     LOG(VERBOSE) << __func__ << ": frames:" << *frames << ", timeNs:" << *timeNs;
     return 0;
 }
@@ -331,6 +335,7 @@ int32_t MmapUsecaseBase::stop() {
         return -EINVAL;
     }
 
+    mTotalFrames = mTotalFrames + mFramesInSession;
     mIsStarted = false;
     LOG(VERBOSE) << __func__ << ": MMAP stop success";
 
@@ -357,7 +362,7 @@ size_t CompressPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
     auto propPeriodSize =
             ::android::base::GetUintProperty<size_t>(kCompressPeriodSizeProp, 0) * 1024;
 
-    if (propPeriodSize > periodSize) {
+    if (propPeriodSize > 0) {
         periodSize = propPeriodSize;
     }
     return periodSize;
@@ -897,9 +902,11 @@ pal_stream_handle_t* HotwordRecord::getPalHandle(
         return nullptr;
     }
 
-    mIsStRecord = true;
-    LOG(DEBUG) << __func__ << ": sound trigger pal handle " << stCaptureInfo.pal_handle
-               << " for IOHandle  " << ioHandle;
+    if (!mIsStRecord) {
+        mIsStRecord = true;
+        LOG(DEBUG) << __func__ << ": sound trigger pal handle " << stCaptureInfo.pal_handle
+                << " for IOHandle  " << ioHandle;
+    }
 
     return stCaptureInfo.pal_handle;
 }
@@ -1075,8 +1082,7 @@ void CompressCapture::setAACDSPBitRate() {
 }
 
 int32_t CompressCapture::getAACMinBitrateValue() {
-    const auto channelCount =
-            ::aidl::android::hardware::audio::common::getChannelCount(mChannelLayout);
+    const auto channelCount = getChannelCount(mChannelLayout);
     if (mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_LC ||
         mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_ADTS_LC) {
         if (channelCount == 1) {
@@ -1103,8 +1109,7 @@ int32_t CompressCapture::getAACMinBitrateValue() {
 }
 
 int32_t CompressCapture::getAACMaxBitrateValue() {
-    const auto channelCount =
-            ::aidl::android::hardware::audio::common::getChannelCount(mChannelLayout);
+    const auto channelCount = getChannelCount(mChannelLayout);
     if (mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_LC ||
         mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_ADTS_LC) {
         if (channelCount == 1) {

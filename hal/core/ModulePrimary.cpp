@@ -23,7 +23,6 @@
 #include <vector>
 
 #define LOG_TAG "AHAL_ModulePrimary_QTI"
-#include <Utils.h>
 #include <android-base/logging.h>
 #include <cutils/str_parms.h>
 
@@ -48,9 +47,6 @@ using aidl::android::media::audio::common::AudioPortConfig;
 using aidl::android::media::audio::common::MicrophoneInfo;
 using aidl::android::media::audio::common::Boolean;
 
-using ::aidl::android::hardware::audio::common::getFrameSizeInBytes;
-using ::aidl::android::hardware::audio::common::isBitPositionFlagSet;
-using ::aidl::android::hardware::audio::common::isValidAudioMode;
 using ::aidl::android::hardware::audio::common::SinkMetadata;
 using ::aidl::android::hardware::audio::common::SourceMetadata;
 
@@ -164,7 +160,7 @@ ndk::ScopedAStatus ModulePrimary::setMicMute(bool in_mute) {
 
     mTelephony->setMicMute(in_mute);
 
-    int ret = mAudExt.mHfpExtension->audio_extn_hfp_set_mic_mute(in_mute);
+    mAudExt.mHfpExtension->audio_extn_hfp_set_mic_mute(in_mute);
 
     for (const auto& inputMixPortConfigId :
          getActiveInputMixPortConfigIds(getConfig().portConfigs)) {
@@ -419,6 +415,8 @@ ndk::ScopedAStatus ModulePrimary::setVendorParameters(
                 parms = str_parms_create_str(kvpairs.c_str());
                 mAudExt.audio_extn_set_parameters(parms);
             }
+            if (parms)
+                str_parms_destroy(parms);
 
             mPlatform.setVendorParameters(in_parameters, in_async);
         }

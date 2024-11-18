@@ -3,10 +3,8 @@
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
-#define LOG_NDEBUG 0
 #define LOG_TAG "AHAL_Platform_QTI"
 
-#include <Utils.h>
 #include <android-base/logging.h>
 #include <android-base/properties.h>
 #include <cutils/str_parms.h>
@@ -44,9 +42,6 @@ using ::aidl::android::media::audio::common::AudioPortExt;
 using ::aidl::android::media::audio::common::AudioProfile;
 using ::aidl::android::media::audio::common::PcmType;
 
-using ::aidl::android::hardware::audio::common::getChannelCount;
-using ::aidl::android::hardware::audio::common::getFrameSizeInBytes;
-using ::aidl::android::hardware::audio::common::isBitPositionFlagSet;
 using ::aidl::android::hardware::audio::core::IModule;
 using aidl::android::media::audio::common::MicrophoneDynamicInfo;
 using aidl::android::media::audio::common::MicrophoneInfo;
@@ -72,7 +67,7 @@ size_t Platform::getFrameCount(const AudioPortConfig& mixPortConfig, Usecase con
 struct BufferConfig Platform::getBufferConfig(const AudioPortConfig& mixPortConfig,
                                               Usecase const& inTag) {
     const auto& tag = (inTag == Usecase::INVALID ? getUsecaseTag(mixPortConfig) : inTag);
-    struct BufferConfig config;
+    struct BufferConfig config {};
     if (mUsecaseOpMap.find(tag) != mUsecaseOpMap.end()) {
         config = mUsecaseOpMap[tag].getBufferConfig(mixPortConfig);
     } else {
@@ -482,6 +477,32 @@ std::vector<::aidl::android::media::audio::common::AudioProfile> Platform::getUs
         } else {
             mUSBCapEnable = true;
         }
+    } else {
+        // check if capture profile is supported or not
+        mUSBCapEnable = false;
+        size_t payloadSize = 0;
+        deviceCapability->addr.card_id = cardId;
+        deviceCapability->addr.device_num = deviceId;
+        deviceCapability->config = dynamicMediaConfig.get();
+        deviceCapability->id = PAL_DEVICE_IN_USB_HEADSET;
+        deviceCapability->is_playback = false;
+        void* deviceCapabilityPtr = deviceCapability.get();
+        if (int32_t ret = pal_get_param(PAL_PARAM_ID_DEVICE_CAPABILITY, &deviceCapabilityPtr,
+                                        &payloadSize, nullptr);
+            ret != 0) {
+            LOG(ERROR) << __func__ << " PAL get param failed for PAL_PARAM_ID_DEVICE_CAPABILITY" << ret;
+            return {};
+        }
+        if (!dynamicMediaConfig->jack_status) {
+            LOG(ERROR) << __func__ << " false usb jack status ";
+            return {};
+        }
+        if ((dynamicMediaConfig.get()->sample_rate[0] == 0 && dynamicMediaConfig.get()->format[0] == 0 &&
+             dynamicMediaConfig.get()->mask[0] == 0) || (dynamicMediaConfig->jack_status == false)) {
+             mUSBCapEnable = false;
+        } else {
+             mUSBCapEnable = true;
+        }
     }
 
     return getSupportedAudioProfiles(deviceCapability.get(), "usb");
@@ -803,7 +824,7 @@ bool Platform::setBluetoothParameters(const char* kvpairs) {
         param_bt_a2dp.reconfig = true;
 
         LOG(VERBOSE) << __func__ << " BT A2DP Reconfig command received";
-        ret = pal_set_param(PAL_PARAM_ID_BT_A2DP_RECONFIG, (void*)&param_bt_a2dp,
+        pal_set_param(PAL_PARAM_ID_BT_A2DP_RECONFIG, (void*)&param_bt_a2dp,
                             sizeof(pal_param_bta2dp_t));
     }
     ret = str_parms_get_str(parms, "A2dpSuspended", value, sizeof(value));
@@ -822,7 +843,7 @@ bool Platform::setBluetoothParameters(const char* kvpairs) {
 
         LOG(VERBOSE) << __func__ << " BT A2DP Suspended = " << value;
         std::unique_lock<std::mutex> guard(AudioExtension::reconfig_wait_mutex_);
-        ret = pal_set_param(PAL_PARAM_ID_BT_A2DP_SUSPENDED, (void*)&param_bt_a2dp,
+        pal_set_param(PAL_PARAM_ID_BT_A2DP_SUSPENDED, (void*)&param_bt_a2dp,
                             sizeof(pal_param_bta2dp_t));
     }
     ret = str_parms_get_str(parms, "TwsChannelConfig", value, sizeof(value));
@@ -834,7 +855,7 @@ bool Platform::setBluetoothParameters(const char* kvpairs) {
             param_bt_a2dp.is_tws_mono_mode_on = true;
         else if (!(strncmp(value, "dual-mono", strlen(value))))
             param_bt_a2dp.is_tws_mono_mode_on = false;
-        ret = pal_set_param(PAL_PARAM_ID_BT_A2DP_TWS_CONFIG, (void*)&param_bt_a2dp,
+        pal_set_param(PAL_PARAM_ID_BT_A2DP_TWS_CONFIG, (void*)&param_bt_a2dp,
                             sizeof(pal_param_bta2dp_t));
     }
     ret = str_parms_get_str(parms, "LEAMono", value, sizeof(value));
@@ -846,7 +867,7 @@ bool Platform::setBluetoothParameters(const char* kvpairs) {
             param_bt_a2dp.is_lc3_mono_mode_on = true;
         else
             param_bt_a2dp.is_lc3_mono_mode_on = false;
-        ret = pal_set_param(PAL_PARAM_ID_BT_A2DP_LC3_CONFIG, (void*)&param_bt_a2dp,
+        pal_set_param(PAL_PARAM_ID_BT_A2DP_LC3_CONFIG, (void*)&param_bt_a2dp,
                             sizeof(pal_param_bta2dp_t));
     }
 
@@ -862,7 +883,7 @@ bool Platform::setBluetoothParameters(const char* kvpairs) {
         }
 
         LOG(VERBOSE) << __func__ << " BTSCO on = " << param_bt_sco.bt_sco_on;
-        ret = pal_set_param(PAL_PARAM_ID_BT_SCO, (void*)&param_bt_sco, sizeof(pal_param_btsco_t));
+        pal_set_param(PAL_PARAM_ID_BT_SCO, (void*)&param_bt_sco, sizeof(pal_param_btsco_t));
 #if 0
         if (param_bt_sco.bt_sco_on == true) {
             if (crs_device.size() == 0) {
@@ -902,7 +923,7 @@ bool Platform::setBluetoothParameters(const char* kvpairs) {
             param_bt_sco.bt_wb_speech_enabled = false;
 
         LOG(VERBOSE) << __func__ << " BTSCO WB mode = " << param_bt_sco.bt_wb_speech_enabled;
-        ret = pal_set_param(PAL_PARAM_ID_BT_SCO_WB, (void*)&param_bt_sco,
+        pal_set_param(PAL_PARAM_ID_BT_SCO_WB, (void*)&param_bt_sco,
                             sizeof(pal_param_btsco_t));
     }
     ret = str_parms_get_str(parms, "bt_swb", value, sizeof(value));
@@ -912,7 +933,7 @@ bool Platform::setBluetoothParameters(const char* kvpairs) {
         val = atoi(value);
         param_bt_sco.bt_swb_speech_mode = val;
         LOG(VERBOSE) << __func__ << " BTSCO SWB mode = " << val;
-        ret = pal_set_param(PAL_PARAM_ID_BT_SCO_SWB, (void*)&param_bt_sco,
+        pal_set_param(PAL_PARAM_ID_BT_SCO_SWB, (void*)&param_bt_sco,
                             sizeof(pal_param_btsco_t));
     }
 
@@ -924,16 +945,16 @@ bool Platform::setBluetoothParameters(const char* kvpairs) {
 
             // turn off wideband, super-wideband
             param_bt_sco.bt_wb_speech_enabled = false;
-            ret = pal_set_param(PAL_PARAM_ID_BT_SCO_WB, (void*)&param_bt_sco,
+            pal_set_param(PAL_PARAM_ID_BT_SCO_WB, (void*)&param_bt_sco,
                                 sizeof(pal_param_btsco_t));
 
             param_bt_sco.bt_swb_speech_mode = 0xFFFF;
-            ret = pal_set_param(PAL_PARAM_ID_BT_SCO_SWB, (void*)&param_bt_sco,
+            pal_set_param(PAL_PARAM_ID_BT_SCO_SWB, (void*)&param_bt_sco,
                                 sizeof(pal_param_btsco_t));
         } else {
             bt_lc3_speech_enabled = false;
             param_bt_sco.bt_lc3_speech_enabled = false;
-            ret = pal_set_param(PAL_PARAM_ID_BT_SCO_LC3, (void*)&param_bt_sco,
+            pal_set_param(PAL_PARAM_ID_BT_SCO_LC3, (void*)&param_bt_sco,
                                 sizeof(pal_param_btsco_t));
 
             // clear btsco_lc3_cfg to avoid stale and partial cfg being used in next round
@@ -948,11 +969,11 @@ bool Platform::setBluetoothParameters(const char* kvpairs) {
         if (strcmp(value, AUDIO_PARAMETER_VALUE_ON) == 0) {
             // turn off wideband, super-wideband
             param_bt_sco_swb.bt_wb_speech_enabled = false;
-            ret = pal_set_param(PAL_PARAM_ID_BT_SCO_WB, (void*)&param_bt_sco_swb,
+            pal_set_param(PAL_PARAM_ID_BT_SCO_WB, (void*)&param_bt_sco_swb,
                                 sizeof(pal_param_btsco_t));
 
             param_bt_sco_swb.bt_swb_speech_mode = 0xFFFF;
-            ret = pal_set_param(PAL_PARAM_ID_BT_SCO_SWB, (void*)&param_bt_sco_swb,
+            pal_set_param(PAL_PARAM_ID_BT_SCO_SWB, (void*)&param_bt_sco_swb,
                                 sizeof(pal_param_btsco_t));
 
             char streamMap[PAL_LC3_MAX_STRING_LEN] = "(0, 0, M, 0, 1, M)";
@@ -966,15 +987,14 @@ bool Platform::setBluetoothParameters(const char* kvpairs) {
             strlcpy(param_bt_sco_swb.lc3_cfg.streamMap, streamMap, PAL_LC3_MAX_STRING_LEN);
             strlcpy(param_bt_sco_swb.lc3_cfg.vendor, vendor, PAL_LC3_MAX_STRING_LEN);
 
-            // AHAL_INFO("BTSCO LC3 SWB mode = on, sending..");
             LOG(VERBOSE) << __func__ << " BTSCO LC3 SWB mode = on, sending..";
-            ret = pal_set_param(PAL_PARAM_ID_BT_SCO_LC3, (void*)&param_bt_sco_swb,
+            pal_set_param(PAL_PARAM_ID_BT_SCO_LC3, (void*)&param_bt_sco_swb,
                                 sizeof(pal_param_btsco_t));
         } else {
             param_bt_sco_swb.bt_lc3_speech_enabled = false;
 
             LOG(VERBOSE) << __func__ << " BTSCO LC3 SWB mode = off, sending..";
-            ret = pal_set_param(PAL_PARAM_ID_BT_SCO_LC3, (void*)&param_bt_sco_swb,
+            pal_set_param(PAL_PARAM_ID_BT_SCO_LC3, (void*)&param_bt_sco_swb,
                                 sizeof(pal_param_btsco_t));
         }
     }
@@ -983,14 +1003,13 @@ bool Platform::setBluetoothParameters(const char* kvpairs) {
     if (ret >= 0) {
         pal_param_btsco_t param_bt_sco = {};
         if (strcmp(value, AUDIO_PARAMETER_VALUE_ON) == 0) {
-            // AHAL_INFO("BTSCO NREC mode = ON");
             LOG(VERBOSE) << __func__ << " BTSCO NREC mode = ON";
             param_bt_sco.bt_sco_nrec = true;
         } else {
             LOG(VERBOSE) << __func__ << " BTSCO NREC mode = OFF";
             param_bt_sco.bt_sco_nrec = false;
         }
-        ret = pal_set_param(PAL_PARAM_ID_BT_SCO_NREC, (void*)&param_bt_sco,
+        pal_set_param(PAL_PARAM_ID_BT_SCO_NREC, (void*)&param_bt_sco,
                             sizeof(pal_param_btsco_t));
     }
 
@@ -1038,7 +1057,7 @@ bool Platform::setBluetoothParameters(const char* kvpairs) {
         strlcpy(param_bt_sco.lc3_cfg.vendor, btsco_lc3_cfg.vendor, PAL_LC3_MAX_STRING_LEN);
 
         LOG(VERBOSE) << __func__ << " BTSCO LC3 mode = on, sending..";
-        ret = pal_set_param(PAL_PARAM_ID_BT_SCO_LC3, (void*)&param_bt_sco,
+        pal_set_param(PAL_PARAM_ID_BT_SCO_LC3, (void*)&param_bt_sco,
                             sizeof(pal_param_btsco_t));
 
         memset(&btsco_lc3_cfg, 0, sizeof(btsco_lc3_cfg_t));
@@ -1059,7 +1078,7 @@ bool Platform::setBluetoothParameters(const char* kvpairs) {
 
         LOG(VERBOSE) << __func__ << " BT A2DP Capture Suspended " << value << "command received";
         std::unique_lock<std::mutex> guard(AudioExtension::reconfig_wait_mutex_);
-        ret = pal_set_param(PAL_PARAM_ID_BT_A2DP_CAPTURE_SUSPENDED, (void*)&param_bt_a2dp,
+        pal_set_param(PAL_PARAM_ID_BT_A2DP_CAPTURE_SUSPENDED, (void*)&param_bt_a2dp,
                             sizeof(pal_param_bta2dp_t));
     }
     ret = str_parms_get_str(parms, "LeAudioSuspended", value, sizeof(value));
@@ -1081,16 +1100,18 @@ bool Platform::setBluetoothParameters(const char* kvpairs) {
         // Synchronize the suspend/resume calls from setparams and reconfig_cb
         std::unique_lock<std::mutex> guard(AudioExtension::reconfig_wait_mutex_);
         param_bt_a2dp.dev_id = PAL_DEVICE_OUT_BLUETOOTH_BLE;
-        ret = pal_set_param(PAL_PARAM_ID_BT_A2DP_SUSPENDED, (void*)&param_bt_a2dp,
+        pal_set_param(PAL_PARAM_ID_BT_A2DP_SUSPENDED, (void*)&param_bt_a2dp,
                             sizeof(pal_param_bta2dp_t));
 
         param_bt_a2dp.dev_id = PAL_DEVICE_IN_BLUETOOTH_BLE;
-        ret = pal_set_param(PAL_PARAM_ID_BT_A2DP_CAPTURE_SUSPENDED, (void*)&param_bt_a2dp,
+        pal_set_param(PAL_PARAM_ID_BT_A2DP_CAPTURE_SUSPENDED, (void*)&param_bt_a2dp,
                             sizeof(pal_param_bta2dp_t));
         param_bt_a2dp.dev_id = PAL_DEVICE_OUT_BLUETOOTH_BLE_BROADCAST;
-        ret = pal_set_param(PAL_PARAM_ID_BT_A2DP_SUSPENDED, (void*)&param_bt_a2dp,
+        pal_set_param(PAL_PARAM_ID_BT_A2DP_SUSPENDED, (void*)&param_bt_a2dp,
                             sizeof(pal_param_bta2dp_t));
     }
+    if (parms)
+        str_parms_destroy(parms);
     return true;
 }
 

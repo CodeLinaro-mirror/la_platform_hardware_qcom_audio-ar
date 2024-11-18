@@ -5,7 +5,6 @@
 
 #include <cstddef>
 #define LOG_TAG "BundleContext"
-#include <Utils.h>
 
 #include "OffloadBundleContext.h"
 #include "OffloadBundleTypes.h"

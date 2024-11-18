@@ -123,6 +123,104 @@ endif
 # XML config file for memory logger
 PRODUCT_COPY_FILES += $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/$(DEVICE_SKU)/mem_logger_config.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mem_logger_config.xml
 
+QCV_FAMILY_SKUS := tuna
+DEVICE_SKU := tuna
+UV_WRAPPER2 := true
+
+CONFIG_PAL_SRC_DIR := vendor/qcom/opensource/pal/configs/sun
+CONFIG_HAL_SRC_DIR := vendor/qcom/opensource/audio-hal/primary-hal/configs/sun
+CONFIG_SKU_OUT_DIR := $(TARGET_COPY_OUT_VENDOR)/etc/audio/sku_$(DEVICE_SKU)
+
+PRODUCT_COPY_FILES += \
+    $(CONFIG_HAL_SRC_DIR)/audio_effects.conf:$(CONFIG_SKU_OUT_DIR)/audio_effects.conf \
+    $(CONFIG_HAL_SRC_DIR)/audio_effects.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects.xml \
+    $(CONFIG_HAL_SRC_DIR)/audio_effects_config.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects_config.xml \
+    $(CONFIG_HAL_SRC_DIR)/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/microphone_characteristics.xml \
+    $(CONFIG_PAL_SRC_DIR)/card-defs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/card-defs.xml \
+    $(CONFIG_PAL_SRC_DIR)/mixer_paths_tuna_qrd.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_tuna_qrd.xml \
+    $(CONFIG_PAL_SRC_DIR)/mixer_paths_tuna_mtp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_tuna_mtp.xml \
+    $(CONFIG_PAL_SRC_DIR)/mixer_paths_tuna_cdp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_tuna_cdp.xml \
+    $(CONFIG_PAL_SRC_DIR)/mixer_paths_tuna7_mtp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_tuna7_mtp.xml \
+    $(CONFIG_PAL_SRC_DIR)/mixer_paths_tuna_mtp_qmp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_tuna_mtp_qmp.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_tuna_qrd.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_tuna_qrd.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_tuna_mtp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_tuna_mtp.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_tuna_cdp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_tuna_cdp.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_tuna7_mtp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_tuna7_mtp.xml \
+    $(CONFIG_PAL_SRC_DIR)/usecaseKvManager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usecaseKvManager.xml \
+    $(CONFIG_PAL_SRC_DIR)/Hapticsconfig.xml:$(TARGET_COPY_OUT_VENDOR)/etc/Hapticsconfig.xml \
+    vendor/qcom/opensource/audio-hal/primary-hal/configs/common/media_codecs_vendor_audio.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_vendor_audio.xml \
+    frameworks/native/data/etc/android.hardware.audio.pro.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.pro.xml \
+    frameworks/native/data/etc/android.hardware.audio.low_latency.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.low_latency.xml \
+    frameworks/native/data/etc/android.hardware.sensor.dynamic.head_tracker.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/sku_$(DEVICE_SKU)/android.hardware.sensor.dynamic.head_tracker.xml
+# Copy AudioEffects config
+PRODUCT_COPY_FILES += \
+    hardware/interfaces/audio/aidl/default/audio_effects_config.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects_config_stub.xml
+
+#XML Audio configuration files
+ifneq ($(TARGET_USES_AOSP_FOR_AUDIO), true)
+PRODUCT_COPY_FILES += \
+    $(CONFIG_HAL_SRC_DIR)/audio_policy_configuration.xml:$(CONFIG_SKU_OUT_DIR)/audio_policy_configuration.xml
+
+#Audio configuration xml's common to sun family
+PRODUCT_COPY_FILES += \
+    $(foreach DEVICE_SKU, $(QCV_FAMILY_SKUS), \
+    $(CONFIG_HAL_SRC_DIR)/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/sku_$(DEVICE_SKU)_qssi/audio_policy_configuration.xml)
+
+PRODUCT_COPY_FILES += \
+    $(CONFIG_HAL_SRC_DIR)/audio_module_config_primary.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/audio_module_config_primary.xml
+endif
+
+# XML config file for memory logger
+PRODUCT_COPY_FILES += $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/$(DEVICE_SKU)/mem_logger_config.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mem_logger_config.xml
+
+QCV_FAMILY_SKUS := kera
+DEVICE_SKU := kera
+UV_WRAPPER2 := true
+
+CONFIG_PAL_SRC_DIR := vendor/qcom/opensource/pal/configs/sun
+CONFIG_HAL_SRC_DIR := vendor/qcom/opensource/audio-hal/primary-hal/configs/sun
+CONFIG_SKU_OUT_DIR := $(TARGET_COPY_OUT_VENDOR)/etc/audio/sku_$(DEVICE_SKU)
+
+PRODUCT_COPY_FILES += \
+    $(CONFIG_HAL_SRC_DIR)/audio_effects.conf:$(CONFIG_SKU_OUT_DIR)/audio_effects.conf \
+    $(CONFIG_HAL_SRC_DIR)/audio_effects.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects.xml \
+    $(CONFIG_HAL_SRC_DIR)/audio_effects_config.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects_config.xml \
+    $(CONFIG_HAL_SRC_DIR)/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/microphone_characteristics.xml \
+    $(CONFIG_PAL_SRC_DIR)/card-defs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/card-defs.xml \
+    $(CONFIG_PAL_SRC_DIR)/mixer_paths_kera_qrd.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_kera_qrd.xml \
+    $(CONFIG_PAL_SRC_DIR)/mixer_paths_kera_mtp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_kera_mtp.xml \
+    $(CONFIG_PAL_SRC_DIR)/mixer_paths_kera_cdp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_kera_cdp.xml \
+    $(CONFIG_PAL_SRC_DIR)/mixer_paths_tuna_mtp_qmp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_kera_mtp_qmp.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_kera_qrd.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_kera_qrd.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_kera_mtp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_kera_mtp.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_kera_cdp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_kera_cdp.xml \
+    $(CONFIG_PAL_SRC_DIR)/usecaseKvManager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usecaseKvManager.xml \
+    $(CONFIG_PAL_SRC_DIR)/Hapticsconfig.xml:$(TARGET_COPY_OUT_VENDOR)/etc/Hapticsconfig.xml \
+    vendor/qcom/opensource/audio-hal/primary-hal/configs/common/media_codecs_vendor_audio.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_vendor_audio.xml \
+    frameworks/native/data/etc/android.hardware.audio.pro.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.pro.xml \
+    frameworks/native/data/etc/android.hardware.audio.low_latency.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.low_latency.xml \
+    frameworks/native/data/etc/android.hardware.sensor.dynamic.head_tracker.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/sku_$(DEVICE_SKU)/android.hardware.sensor.dynamic.head_tracker.xml
+# Copy AudioEffects config
+PRODUCT_COPY_FILES += \
+    hardware/interfaces/audio/aidl/default/audio_effects_config.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects_config_stub.xml
+
+#XML Audio configuration files
+ifneq ($(TARGET_USES_AOSP_FOR_AUDIO), true)
+PRODUCT_COPY_FILES += \
+    $(CONFIG_HAL_SRC_DIR)/audio_policy_configuration.xml:$(CONFIG_SKU_OUT_DIR)/audio_policy_configuration.xml
+
+#Audio configuration xml's common to sun family
+PRODUCT_COPY_FILES += \
+    $(foreach DEVICE_SKU, $(QCV_FAMILY_SKUS), \
+    $(CONFIG_HAL_SRC_DIR)/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/sku_$(DEVICE_SKU)_qssi/audio_policy_configuration.xml)
+
+PRODUCT_COPY_FILES += \
+    $(CONFIG_HAL_SRC_DIR)/audio_module_config_primary.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/audio_module_config_primary.xml
+endif
+
+# XML config file for memory logger
+PRODUCT_COPY_FILES += $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/$(DEVICE_SKU)/mem_logger_config.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mem_logger_config.xml
+
 PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_configuration.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/a2dp_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/a2dp_audio_policy_configuration.xml \

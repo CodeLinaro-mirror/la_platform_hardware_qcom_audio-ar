@@ -5,8 +5,6 @@
 
 #define LOG_TAG "AHAL_Utils_QTI"
 
-#include <aidl/android/media/audio/common/AudioInputFlags.h>
-#include <aidl/android/media/audio/common/AudioOutputFlags.h>
 #include <android-base/logging.h>
 #include <audio_utils/format.h>
 #include <qti-audio-core/Utils.h>

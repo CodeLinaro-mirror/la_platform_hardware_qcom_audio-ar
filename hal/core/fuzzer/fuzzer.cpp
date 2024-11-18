@@ -2,27 +2,53 @@
  * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
-#include <core-impl/AudioPolicyConfigXmlConverter.h>
-#include <core-impl/ChildInterface.h>
-#include <core-impl/Config.h>
-#include <qti-audio-core/Module.h>
-#include <qti-audio-core/ModulePrimary.h>
+#define LOG_TAG "AIDL_FUZZER_AUDIO_CORE_HAL"
+
+#include <dlfcn.h>
+#include <android-base/logging.h>
+
+#include <aidl/android/hardware/audio/core/IModule.h>
+#include <aidl/android/hardware/audio/core/IConfig.h>
+
 
 #include <fuzzbinder/libbinder_ndk_driver.h>
 #include <fuzzer/FuzzedDataProvider.h>
 
-#define LOG_TAG "AIDL_FUZZER_AUDIO_CORE_HAL"
+static ::aidl::android::hardware::audio::core::IConfig* gConfigDefaultAosp;
+static ::aidl::android::hardware::audio::core::IModule* gModuleDefaultQti;
 
-using aidl::android::hardware::audio::core::internal::AudioPolicyConfigXmlConverter;
+static void* loadAndGetInstance(const std::pair<std::string, std::string>& librarySymbolPair) {
+    const auto& libraryName = librarySymbolPair.first;
+    const auto& functionName = librarySymbolPair.second;
+    void* handle = dlopen(libraryName.c_str(), RTLD_LAZY);
+    if (!handle) {
+        LOG(ERROR) << "Cannot open library: " << libraryName << dlerror();
+        return nullptr;
+    }
 
-extern AudioPolicyConfigXmlConverter gAudioPolicyConverter;
-extern std::shared_ptr<::aidl::android::hardware::audio::core::Config> gConfigDefaultAosp;
-extern std::shared_ptr<::qti::audio::core::ModulePrimary> gModuleDefaultQti;
+    using GetInstance = void* (*)();
+    GetInstance getInstance = reinterpret_cast<GetInstance>(dlsym(handle, functionName.c_str()));
+
+    if (getInstance == nullptr) {
+        LOG(ERROR) << "Cannot load symbol " << functionName << dlerror();
+        dlclose(handle);  // Close the library if dlsym fails
+        return nullptr;
+    }
+
+    return getInstance();
+}
 
 // init
 extern "C" int LLVMFuzzerInitialize(int* argc, char*** argv) {
-    gConfigDefaultAosp = ndk::SharedRefBase::make<::aidl::android::hardware::audio::core::Config>(gAudioPolicyConverter);
-    gModuleDefaultQti = ndk::SharedRefBase::make<::qti::audio::core::ModulePrimary>();
+    gConfigDefaultAosp = static_cast<::aidl::android::hardware::audio::core::IConfig*>(
+            loadAndGetInstance(std::make_pair("libaudiocorehal.qti.so", "getIModuleDefaultQti")));
+    gModuleDefaultQti =
+            static_cast<::aidl::android::hardware::audio::core::IModule*>(loadAndGetInstance(
+                    std::make_pair("libaudiocorehal.default.so", "getIConfigDefaultAosp")));
+
+    if (gConfigDefaultAosp == nullptr || gModuleDefaultQti == nullptr) {
+        return -1;
+    }
 
     return 0;
 }
@@ -35,10 +61,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
 
     if (index == 2 && gModuleDefaultQti != nullptr) {
         android::fuzzService(gModuleDefaultQti->asBinder().get(), std::move(provider));
-    }
-
-    if (index == 1 && gConfigDefaultAosp != nullptr) {
-        android::fuzzService(gConfigDefaultAosp->asBinder().get(), std::move(provider));
     }
 
     return 0;

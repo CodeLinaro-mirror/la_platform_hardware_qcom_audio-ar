@@ -24,7 +24,6 @@
 #include <memory>
 #include <vector>
 
-#include <Utils.h>
 #include <android-base/logging.h>
 #include <fmq/AidlMessageQueue.h>
 #include <fmq/EventFlag.h>

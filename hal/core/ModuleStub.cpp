@@ -23,7 +23,6 @@
 #include <vector>
 
 #define LOG_TAG "AHAL_ModuleStub_QTI"
-#include <Utils.h>
 #include <android-base/logging.h>
 
 #include <qti-audio-core/Bluetooth.h>
@@ -37,9 +36,6 @@ using aidl::android::media::audio::common::AudioPort;
 using aidl::android::media::audio::common::AudioPortConfig;
 using aidl::android::media::audio::common::MicrophoneInfo;
 
-using ::aidl::android::hardware::audio::common::getFrameSizeInBytes;
-using ::aidl::android::hardware::audio::common::isBitPositionFlagSet;
-using ::aidl::android::hardware::audio::common::isValidAudioMode;
 using ::aidl::android::hardware::audio::common::SinkMetadata;
 using ::aidl::android::hardware::audio::common::SourceMetadata;
 

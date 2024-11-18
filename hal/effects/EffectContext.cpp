@@ -25,8 +25,6 @@
 #include "effect-impl/EffectContext.h"
 #include "include/effect-impl/EffectTypes.h"
 
-using aidl::android::hardware::audio::common::getChannelCount;
-using aidl::android::hardware::audio::common::getFrameSizeInBytes;
 using aidl::android::hardware::audio::effect::IEffect;
 // using aidl::android::hardware::audio::effect::kReopenSupportedVersion;
 using aidl::android::hardware::audio::effect::kEventFlagDataMqUpdate;
@@ -233,9 +231,9 @@ EventFlag* EffectContext::getStatusEventFlag() {
 RetCode EffectContext::updateIOFrameSize(const Parameter::Common& common) {
     const auto prevInputFrameSize = mInputFrameSize;
     const auto prevOutputFrameSize = mOutputFrameSize;
-    mInputFrameSize = ::aidl::android::hardware::audio::common::getFrameSizeInBytes(
+    mInputFrameSize = getFrameSizeInBytes(
             common.input.base.format, common.input.base.channelMask);
-    mOutputFrameSize = ::aidl::android::hardware::audio::common::getFrameSizeInBytes(
+    mOutputFrameSize = getFrameSizeInBytes(
             common.output.base.format, common.output.base.channelMask);
 
     if (!mProcessData) {
