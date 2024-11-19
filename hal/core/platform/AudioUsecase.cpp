@@ -91,10 +91,14 @@ Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConf
             static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DIRECT));
     constexpr auto voipPlaybackFlags =
             static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::VOIP_RX));
+    constexpr auto voipFastPlaybackFlags =
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::VOIP_RX) | 1 << flagCastToint(AudioOutputFlags::FAST));
     constexpr auto spatialPlaybackFlags =
             static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::SPATIALIZER));
     constexpr auto recordVoipFlags =
             static_cast<int32_t>(1 << flagCastToint(AudioInputFlags::VOIP_TX));
+    constexpr auto fastRecordVoipFlags =
+            static_cast<int32_t>(1 << flagCastToint(AudioInputFlags::VOIP_TX) | 1 << flagCastToint(AudioInputFlags::FAST));
     constexpr auto ullPlaybackFlags = static_cast<int32_t>(
             1 << flagCastToint(AudioOutputFlags::FAST) | 1 << flagCastToint(AudioOutputFlags::RAW));
     constexpr auto mmapPlaybackFlags =
@@ -138,7 +142,7 @@ Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConf
             tag = Usecase::COMPRESS_OFFLOAD_PLAYBACK;
         } else if (outFlags == pcmOffloadPlaybackFlags) {
             tag = Usecase::PCM_OFFLOAD_PLAYBACK;
-        } else if (outFlags == voipPlaybackFlags) {
+        } else if (outFlags == voipPlaybackFlags || outFlags == voipFastPlaybackFlags) {
             tag = Usecase::VOIP_PLAYBACK;
         } else if (outFlags == spatialPlaybackFlags) {
             tag = Usecase::SPATIAL_PLAYBACK;
@@ -170,7 +174,7 @@ Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConf
             }
         } else if (inFlags == compressCaptureFlags) {
             tag = Usecase::COMPRESS_CAPTURE;
-        } else if (inFlags == recordVoipFlags && mixUsecaseTag == AudioPortMixExtUseCase::source &&
+        } else if ((inFlags == recordVoipFlags || inFlags == fastRecordVoipFlags ) && mixUsecaseTag == AudioPortMixExtUseCase::source &&
                    mixUsecase.get<AudioPortMixExtUseCase::source>() ==
                            AudioSource::VOICE_COMMUNICATION) {
             tag = Usecase::VOIP_RECORD;
@@ -1245,6 +1249,52 @@ uint32_t CompressCapture::getAACMaxBufferSize() {
             (((((double)mPCMSamplesPerFrame) / mSampleRate) * ((uint32_t)(maxBitRate))) / 8) +
             /* Just in case; not to miss precision */ 1);
 }
+#ifdef ECNR_HAL_ENABLE
+// [VoipPlaybackECNR Start]
+size_t VoipPlaybackECNR::getFrameCount(const AudioPortConfig& mixPortConfig) {
+    kPeriodSize = UsecaseConfig::getDLECNRPeriodSize(mixPortConfig.sampleRate.value().value);
+    kPeriodDurationMs = (size_t)(kPeriodSize /(mixPortConfig.sampleRate.value().value/1000));
+//    LOG(DEBUG) << __func__ << " VoipPlaybackECNR " << kPeriodSize;
+    return kPeriodSize;
+}
+
+// [VoipPlaybackECNR End]
+// [VoipRecordECNR Start]
+size_t VoipRecordECNR::getFrameCount(const AudioPortConfig& mixPortConfig) {
+    kPeriodSize = UsecaseConfig::getULECNRPeriodSize(mixPortConfig.sampleRate.value().value);
+    kCaptureDurationMs = (size_t)((kPeriodSize+1) /(mixPortConfig.sampleRate.value().value/1000));
+//    LOG(DEBUG) << __func__ << " VoipRecordECNR " << kPeriodSize;
+    return kPeriodSize;
+}
+
+// [VoipRecordECNR End]
+
+// [PcmRecordECNR Start]
+size_t PcmRecordECNR::getFrameCount(const AudioPortConfig& mixPortConfig) {
+    size_t frameCount = UsecaseConfig::getULECNRPeriodSize(mixPortConfig.sampleRate.value().value);
+    kCaptureDurationMs = (size_t)((frameCount+1) /(mixPortConfig.sampleRate.value().value/1000)) ;
+    frameCount = getNearestMultiple(
+            frameCount, std::lcm(32, getPcmSampleSizeInBytes(mixPortConfig.format.value().pcm)));
+    // Adjusting to frameCount as atleast kFMQMinFrameSize (160).
+    // Todo check the sanity of this requirement in the VTS test.
+    kPeriodSize = std::max(frameCount, kFMQMinFrameSize);
+//    LOG(DEBUG) << __func__ << " PcmRecordECNR " << kPeriodSize;
+    return kPeriodSize;
+}
+// [PcmRecordECNR End]
+// [FastRecordECNR Start]
+size_t FastRecordECNR::getFrameCount(const AudioPortConfig& mixPortConfig) {
+    size_t frameCount = UsecaseConfig::getULECNRPeriodSize(mixPortConfig.sampleRate.value().value);
+    size_t frameSize =
+            getFrameSizeInBytes(mixPortConfig.format.value(), mixPortConfig.channelMask.value());
+    size_t size = frameCount * frameSize;
+    size = getNearestMultiple(size, std::lcm(32, frameSize));
+//    LOG(DEBUG) << __func__ << " FastRecordECNR " << frameCount;
+    return size / frameSize;
+}
+
+// [FastRecordECNR Start]
+#endif
 
 }  // namespace qti::audio::core
 

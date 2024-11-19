@@ -33,6 +33,10 @@
 #include <qti-audio-core/PlatformUtils.h>
 #include <qti-audio-core/StreamInPrimary.h>
 #include <qti-audio-core/StreamOutPrimary.h>
+#ifdef ECNR_HAL_ENABLE
+#include <qti-audio-core/StreamOutPrimaryOEM.h>
+#include <qti-audio-core/StreamInPrimaryOEM.h>
+#endif
 #include <qti-audio-core/StreamStub.h>
 #include <qti-audio-core/Telephony.h>
 #include <qti-audio-core/Utils.h>
@@ -312,7 +316,11 @@ ndk::ScopedAStatus ModulePrimary::createInputStream(StreamContext&& context,
                                                     const SinkMetadata& sinkMetadata,
                                                     const std::vector<MicrophoneInfo>& microphones,
                                                     std::shared_ptr<StreamIn>* result) {
+#ifdef ECNR_HAL_ENABLE
+    createStreamInstance<StreamInPrimaryOEM>(result, std::move(context), sinkMetadata, microphones);
+#else
     createStreamInstance<StreamInPrimary>(result, std::move(context), sinkMetadata, microphones);
+#endif
     ModulePrimary::inListMutex.lock();
     ModulePrimary::updateStreamInList(*result);
     if (mTelephony) { 
@@ -331,7 +339,11 @@ ndk::ScopedAStatus ModulePrimary::createOutputStream(
         LOG(ERROR) << __func__ << ": avoid direct or compress streams as sound card is down";
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
     }
+#ifdef ECNR_HAL_ENABLE
+    createStreamInstance<StreamOutPrimaryOEM>(result, std::move(context), sourceMetadata, offloadInfo);
+#else
     createStreamInstance<StreamOutPrimary>(result, std::move(context), sourceMetadata, offloadInfo);
+#endif
     ModulePrimary::outListMutex.lock();
     ModulePrimary::updateStreamOutList(*result);
     // save primary out stream weak ptr, as some other modules need it.
