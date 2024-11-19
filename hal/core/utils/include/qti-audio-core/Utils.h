@@ -28,6 +28,8 @@
 #include <aidl/android/media/audio/common/AudioMode.h>
 #include <aidl/android/media/audio/common/AudioInputFlags.h>
 #include <aidl/android/media/audio/common/AudioOutputFlags.h>
+#include <aidl/android/hardware/audio/effect/Descriptor.h>
+#include <aidl/android/media/audio/common/AudioUuid.h>
 #include <aidl/qti/audio/core/VString.h>
 #include <system/audio.h>
 #include <algorithm>
@@ -428,5 +430,7 @@ constexpr bool isValidAudioMode(::aidl::android::media::audio::common::AudioMode
     return std::find(kValidAudioModes.begin(), kValidAudioModes.end(), mode) !=
            kValidAudioModes.end();
 }
+
+::aidl::android::media::audio::common::AudioUuid stringToUuid(const char* str);
 
 } // namespace qti::audio::core
