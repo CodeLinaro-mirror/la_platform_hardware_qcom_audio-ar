@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -200,21 +200,21 @@ HalAdapterVendorExtension::parseBluetoothLeReconfigureOffload(
 static std::shared_ptr<::qti::audio::core::HalAdapterVendorExtension>
     gHalAdapterVendorExtension;
 
-extern "C" __attribute__((visibility("default"))) void registerInterface() {
-    gHalAdapterVendorExtension = ndk::SharedRefBase::make<
-        ::qti::audio::core::HalAdapterVendorExtension>();
+extern "C" __attribute__((visibility("default"))) binder_status_t
+createIHalAdapterVendorExtension() {
+    gHalAdapterVendorExtension = ndk::SharedRefBase::
+        make<::qti::audio::core::HalAdapterVendorExtension>();
     const auto kServiceName =
         std::string(gHalAdapterVendorExtension->descriptor)
             .append("/")
-            .append("default");
-    AIBinder_setMinSchedulerPolicy(gHalAdapterVendorExtension->asBinder().get(),
-                                   SCHED_NORMAL, ANDROID_PRIORITY_AUDIO);
-    binder_exception_t status = AServiceManager_addService(
+                .append("default");
+    binder_status_t aidl_status = AServiceManager_addService(
         gHalAdapterVendorExtension->asBinder().get(), kServiceName.c_str());
-	LOG(VERBOSE) << __func__ << " registered successfully " << kServiceName
-                  << " ret:" << status;
-    if (status != EX_NONE) {
-        LOG(ERROR) << __func__ << " failed to register " << kServiceName
-                  << " ret:" << status;
+    if(aidl_status != STATUS_OK) {
+        LOG(ERROR) << __func__ << "Could not register" << kServiceName.c_str()
+            <<"status" << aidl_status;
     }
+    LOG(INFO) << __func__ << " registered successfully " << kServiceName
+        << " ret:" << aidl_status;
+    return aidl_status;
 }
