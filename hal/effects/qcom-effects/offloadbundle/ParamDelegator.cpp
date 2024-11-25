@@ -78,7 +78,7 @@ int ParamDelegator::sendKvPayload(pal_stream_handle_t *handle, uint32_t tag,
     palKeyVector->num_tkvs = kvp->num_tkvs;
     memcpy(palKeyVector->kvp, kvp->kvp, (kvp->num_tkvs * sizeof(pal_key_value_pair_t)));
 
-    return pal_stream_set_param(handle, PAL_PARAM_ID_UIEFFECT, palPayload);
+    return pal_stream_set_custom_param(handle, PAL_CUSTOM_PARAM_AR_UI_EFFECT, palPayload, palPayload->payload_size);
 }
 
 int ParamDelegator::setCustomPayload(pal_stream_handle_t *handle, uint32_t tag,
@@ -105,7 +105,8 @@ int ParamDelegator::setCustomPayload(pal_stream_handle_t *handle, uint32_t tag,
 
     customPayload->paramId = data->paramId;
     memcpy(customPayload->data, data->data, customDataSize);
-    return pal_stream_set_param(handle, PAL_PARAM_ID_UIEFFECT, palPayload);
+
+    return pal_stream_set_custom_param(handle, PAL_CUSTOM_PARAM_AR_UI_EFFECT, palPayload, palPayload->payload_size);
 }
 
 int ParamDelegator::setCustomPayloadGeneric(pal_stream_handle_t *handle, uint32_t tag,
