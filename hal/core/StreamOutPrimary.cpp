@@ -240,9 +240,7 @@ ndk::ScopedAStatus StreamOutPrimary::configureMMapStream(int32_t* fd, int64_t* b
 
     LOG(INFO) << __func__ << mLogPrefix << ": stream is configured";
 
-    if (mUseCachedVolume) {
-        setHwVolume(mVolumes);
-    }
+    setHwVolume(mVolumes);
 
     return ndk::ScopedAStatus::ok();
 }
@@ -1029,9 +1027,7 @@ void StreamOutPrimary::configure() {
         return;
     }
 
-    if (mUseCachedVolume) {
-        setHwVolume(mVolumes);
-    }
+    setHwVolume(mVolumes);
 
     if (mTag == Usecase::HAPTICS_PLAYBACK) {
 
