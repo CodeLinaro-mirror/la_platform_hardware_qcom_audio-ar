@@ -30,6 +30,9 @@ extern "C" {
 #define AUDIO_PARAMETER_HFP_SET_SAMPLING_RATE "hfp_set_sampling_rate"
 #define AUDIO_PARAMETER_KEY_HFP_VOLUME "hfp_volume"
 #define AUDIO_PARAMETER_HFP_PCM_DEV_ID "hfp_pcm_dev_id"
+#define MIN_VOLUME_GAIN_MB -9000
+#define MAX_VOLUME_GAIN_MB 0
+#define MAX_VOLUME_RANGE 9000
 
 #define AUDIO_PARAMETER_KEY_HFP_MIC_VOLUME "hfp_mic_volume"
 
@@ -453,6 +456,8 @@ static int32_t hfp_set_volume(float value) {
     struct pal_volume_data *pal_volume = NULL;
 
     LOG(VERBOSE) << __func__ << " entry";
+    //Volume Conversion to MB, AWX module supports only MB
+    value = MIN_VOLUME_GAIN_MB + (MAX_VOLUME_RANGE * value);
 
     hfpmod.hfp_volume = value;
 
