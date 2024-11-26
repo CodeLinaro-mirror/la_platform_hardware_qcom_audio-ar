@@ -482,10 +482,6 @@ void StreamOutPrimary::resume() {
 
     // Todo findout write latency
     *latencyMs = mContext.getNominalLatencyMs();
-    if (hasBluetoothDevice(mConnectedDevices)) {
-        const auto& btlatencyMs = mPlatform.getBluetoothLatencyMs(mConnectedDevices);
-        *latencyMs += btlatencyMs;
-    }
     return ::android::OK;
 }
 
