@@ -1,3 +1,5 @@
+# Business Application definition
+BA_NAME := mobile
 # Audio product definitions
 include vendor/qcom/opensource/audio-hal/primary-hal/configs/sun/audio-modules.mk
 PRODUCT_PACKAGES += $(AUDIO_MODULES)
@@ -77,7 +79,7 @@ QCV_FAMILY_SKUS := sun
 DEVICE_SKU := sun
 UV_WRAPPER2 := true
 
-CONFIG_PAL_SRC_DIR := vendor/qcom/opensource/pal/configs/sun
+CONFIG_PAL_SRC_DIR := vendor/qcom/opensource/pal/configs/qcom/$(BA_NAME)/sun
 CONFIG_HAL_SRC_DIR := vendor/qcom/opensource/audio-hal/primary-hal/configs/sun
 CONFIG_SKU_OUT_DIR := $(TARGET_COPY_OUT_VENDOR)/etc/audio/sku_$(DEVICE_SKU)
 

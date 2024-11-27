@@ -1,3 +1,5 @@
+# Business Application definition
+BA_NAME := mobile
 # Audio product definitions
 include vendor/qcom/opensource/audio-hal/primary-hal/configs/canoe/audio-modules.mk
 PRODUCT_PACKAGES += $(AUDIO_MODULES)
@@ -77,7 +79,7 @@ QCV_FAMILY_SKUS := canoe
 DEVICE_SKU := canoe
 UV_WRAPPER2 := true
 
-CONFIG_PAL_SRC_DIR := vendor/qcom/opensource/pal/configs/canoe
+CONFIG_PAL_SRC_DIR := vendor/qcom/opensource/pal/configs/qcom/$(BA_NAME)/canoe
 CONFIG_HAL_SRC_DIR := vendor/qcom/opensource/audio-hal/primary-hal/configs/canoe
 CONFIG_SKU_OUT_DIR := $(TARGET_COPY_OUT_VENDOR)/etc/audio/sku_$(DEVICE_SKU)
 
