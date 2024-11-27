@@ -9,14 +9,13 @@ LOCAL_SRC_FILES := \
     main.cpp
 
 LOCAL_SHARED_LIBRARIES := \
+    $(AHAL_DEFAULT_AIDL_INTERFACE_DEPENDENCIES) \
     libbase \
     libbinder_ndk \
     libbinder \
     libcutils \
     libhardware \
     libutils \
-    android.media.audio.common.types-V3-ndk \
-    android.hardware.audio.core-V2-ndk \
     libclang_rt.ubsan_standalone
 
 include $(BUILD_FUZZ_TEST)
