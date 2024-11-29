@@ -26,8 +26,8 @@ LOCAL_SHARED_LIBRARIES := \
     libbase \
     libutils \
     libaudioutils \
-    android.media.audio.common.types-V3-ndk \
-    android.hardware.audio.core-V2-ndk \
+    android.media.audio.common.types-V4-ndk \
+    android.hardware.audio.core-V3-ndk \
     qti-audio-types-aidl-V1-ndk
 
 LOCAL_CFLAGS := \
