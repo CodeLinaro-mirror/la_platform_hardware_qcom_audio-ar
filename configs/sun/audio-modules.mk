@@ -79,8 +79,6 @@ AUDIO_PAL += libdev_speaker_mic
 AUDIO_PAL += libdev_ultrasound
 AUDIO_PAL += libdev_usb
 
-AUDIO_PAL += libpaleventnotifier
-
 # C2 Audio
 AUDIO_C2 := libqc2audio_base
 AUDIO_C2 += libqc2audio_utils
@@ -89,11 +87,8 @@ AUDIO_C2 += libqc2audio_core
 AUDIO_C2 += libqc2audio_basecodec
 AUDIO_C2 += libqc2audio_hooks
 AUDIO_C2 += libqc2audio_swaudiocodec
-AUDIO_C2 += libqc2audio_swaudiocodec_data_common
 AUDIO_C2 += libqc2audio_hwaudiocodec
-AUDIO_C2 += libqc2audio_hwaudiocodec_data_common
 AUDIO_C2 += vendor.qti.media.c2audio@1.0-service
-AUDIO_C2 += qc2audio_test
 AUDIO_C2 += libEvrcSwCodec
 AUDIO_C2 += libQcelp13SwCodec
 AUDIO_C2 += c2audio.vendor.base-arm.policy
