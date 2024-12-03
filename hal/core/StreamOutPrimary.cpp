@@ -583,13 +583,13 @@ void StreamOutPrimary::resume() {
                      << " observable frames " << reply->observable.frames
                      << " time : " << reply->observable.timeNs;
         return ::android::OK;
+    } else {
+        int64_t totalDelayFrames = 0;
+        totalDelayFrames = mContext.getNominalLatencyMs() *
+                           mMixPortConfig.sampleRate.value().value / 1000;
+        reply->observable.frames = (reply->observable.frames > totalDelayFrames) ?
+                                   (reply->observable.frames - totalDelayFrames) : 0;
     }
-
-    int64_t totalDelayFrames =
-            mContext.getNominalLatencyMs() * mMixPortConfig.sampleRate.value().value / 1000;
-    reply->observable.frames = (reply->observable.frames > totalDelayFrames)
-                                       ? (reply->observable.frames - totalDelayFrames)
-                                       : 0;
 
     // if the stream is connected to any bluetooth device, consider bluetooth encoder latency
     if (hasBluetoothDevice(mConnectedDevices)) {
