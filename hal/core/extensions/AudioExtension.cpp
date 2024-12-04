@@ -5,7 +5,6 @@
 
 #define LOG_TAG "AHAL_AudioExtension_QTI"
 
-#include <Utils.h>
 #include <qti-audio-core/Utils.h>
 #include <android-base/logging.h>
 #include <dlfcn.h>

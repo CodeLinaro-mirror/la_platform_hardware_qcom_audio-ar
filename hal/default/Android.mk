@@ -22,9 +22,9 @@ LOCAL_HEADER_LIBRARIES :=  \
     liberror_headers
 
 LOCAL_SHARED_LIBRARIES := \
-    libaudioaidlcommon \
+    $(AHAL_DEFAULT_AIDL_INTERFACE_DEPENDENCIES) \
     libaudioserviceexampleimpl \
-    android.hardware.audio.core-V2-ndk \
+    libaudioaidlcommon \
     libbase \
     libbinder_ndk \
     libcutils \
@@ -33,15 +33,11 @@ LOCAL_SHARED_LIBRARIES := \
     libxml2 \
     libaudioutils \
     libutils \
-    android.hardware.common-V2-ndk \
-    android.media.audio.common.types-V3-ndk \
     libmedia_helper \
     libstagefright_foundation \
     libhidlbase \
     libhardware \
-    libfmq \
-    android.hardware.common-V2-ndk \
-    android.media.audio.common.types-V3-ndk
+    libfmq
 
 include $(BUILD_SHARED_LIBRARY)
 

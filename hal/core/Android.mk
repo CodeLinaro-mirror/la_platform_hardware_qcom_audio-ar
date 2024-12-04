@@ -17,11 +17,8 @@ LOCAL_CFLAGS := \
     -Werror \
     -Wthread-safety
 
-LOCAL_VINTF_FRAGMENTS   := \
-    ../../configs/common/manifest_non_qmaa.xml
-
-LOCAL_VINTF_FRAGMENTS += \
-    ../../configs/common/manifest_non_qmaa_extn.xml
+LOCAL_VINTF_FRAGMENTS := \
+    ../../configs/$(TARGET_BOARD_PLATFORM)/manifest_audio_qti_services.xml
 
 LOCAL_SRC_FILES := \
     CoreService.cpp \
@@ -30,6 +27,7 @@ LOCAL_SRC_FILES := \
     ModulePrimary.cpp \
     ModuleStub.cpp \
     SoundDose.cpp \
+    StreamWorker.cpp \
     Stream.cpp \
     StreamStub.cpp \
     Telephony.cpp \
@@ -63,7 +61,10 @@ LOCAL_WHOLE_STATIC_LIBRARIES := \
     libaudioplatform.qti
 
 LOCAL_SHARED_LIBRARIES := \
-    libaudioaidlcommon \
+    $(AHAL_DEFAULT_AIDL_INTERFACE_DEPENDENCIES) \
+    $(LATEST_ANDROID_HARDWARE_AUDIO_EFFECT) \
+    $(LATEST_ANDROID_HARWARE_AUDIO_CORE_SOUNDDOSE) \
+    qti-audio-types-aidl-V1-ndk \
     libbase \
     libbinder_ndk \
     libcutils \
@@ -77,15 +78,8 @@ LOCAL_SHARED_LIBRARIES := \
     libutils \
     libaudioutils \
     libxml2 \
-    android.hardware.common-V2-ndk \
-    android.media.audio.common.types-V3-ndk \
-    android.hardware.audio.core-V2-ndk \
-    $(LATEST_ANDROID_HARDWARE_AUDIO_EFFECT) \
-    android.hardware.audio.core.sounddose-V1-ndk \
     libar-pal \
-    libaudioserviceexampleimpl \
-    libaudioplatformconverter.qti \
-    qti-audio-types-aidl-V1-ndk
+    libaudioplatformconverter.qti
 
 include $(BUILD_SHARED_LIBRARY)
 

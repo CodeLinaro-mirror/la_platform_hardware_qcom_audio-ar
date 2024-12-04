@@ -17,7 +17,6 @@
 #include <qti-audio-core/Parameters.h>
 
 using aidl::android::hardware::audio::common::AudioOffloadMetadata;
-using aidl::android::hardware::audio::common::getFrameSizeInBytes;
 using aidl::android::hardware::audio::common::SinkMetadata;
 using aidl::android::hardware::audio::common::SourceMetadata;
 using aidl::android::media::audio::common::AudioDevice;
@@ -29,10 +28,7 @@ using aidl::android::media::audio::common::MicrophoneDynamicInfo;
 using aidl::android::media::audio::common::MicrophoneInfo;
 using aidl::android::media::audio::common::AudioLatencyMode;
 using aidl::android::media::audio::common::AudioChannelLayout;
-using ::aidl::android::hardware::audio::common::getChannelCount;
 
-using ::aidl::android::hardware::audio::common::getFrameSizeInBytes;
-using ::aidl::android::hardware::audio::common::getPcmSampleSizeInBytes;
 using ::aidl::android::hardware::audio::core::IStreamCallback;
 using ::aidl::android::hardware::audio::core::IStreamCommon;
 using ::aidl::android::hardware::audio::core::StreamDescriptor;
@@ -134,7 +130,7 @@ struct BufferConfig StreamOutPrimary::getBufferConfig() {
 }
 
 StreamOutPrimary::~StreamOutPrimary() {
-    shutdown_I();
+    cleanupWorker();
     LOG(DEBUG) << __func__ << mLogPrefix;
 }
 
@@ -256,7 +252,7 @@ ndk::ScopedAStatus StreamOutPrimary::configureMMapStream(int32_t* fd, int64_t* b
 
     std::get<MMapPlayback>(mExt).setPalHandle(mPalHandle);
 
-    const auto frameSize = ::aidl::android::hardware::audio::common::getFrameSizeInBytes(
+    const auto frameSize = getFrameSizeInBytes(
             mMixPortConfig.format.value(), mMixPortConfig.channelMask.value());
     int32_t ret = std::get<MMapPlayback>(mExt).createMMapBuffer(frameSize, fd, burstSizeFrames,
                                                                 flags, bufferSizeFrames);
@@ -436,8 +432,7 @@ void StreamOutPrimary::resume() {
         configure();
         if (!mPalHandle) {
             LOG(ERROR) << __func__ << mLogPrefix << ": failed to configure";
-            *actualFrameCount = frameCount;
-            return onWriteError(frameCount);
+            return onWriteError(frameCount, actualFrameCount);
         }
     }
 
@@ -476,11 +471,7 @@ void StreamOutPrimary::resume() {
     }
     if (bytesWritten < 0) {
         LOG(ERROR) << __func__ << mLogPrefix << " write failed, ret: " << bytesWritten;
-       *actualFrameCount = frameCount;
-       if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK) {
-           *actualFrameCount = 0;
-       }
-       return onWriteError(frameCount);
+        return onWriteError(frameCount, actualFrameCount);
     }
 
     *actualFrameCount = static_cast<size_t>(bytesWritten / mFrameSizeBytes);
@@ -929,19 +920,22 @@ size_t StreamOutPrimary::getPlatformDelay() const noexcept {
     return 0;
 }
 
-::android::status_t StreamOutPrimary::onWriteError(const size_t sleepFrameCount) {
+::android::status_t StreamOutPrimary::onWriteError(const size_t sleepFrameCount, size_t* const consumedFrameCount) {
     shutdown_I();
     if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK) {
         // return error for offload, so that FW sends data again
         LOG(ERROR) << __func__ << mLogPrefix << ": cannot afford write failure";
+        *consumedFrameCount = 0;
         return ::android::DEAD_OBJECT;
     }
     auto& sampleRate = mMixPortConfig.sampleRate.value().value;
     if (sampleRate == 0) {
         LOG(ERROR) << __func__ << mLogPrefix << ": cannot afford write failure, sampleRate is zero";
+        *consumedFrameCount = 0;
         return ::android::UNEXPECTED_NULL;
     }
     std::this_thread::sleep_for(std::chrono::milliseconds((sleepFrameCount * 1000) / sampleRate));
+    *consumedFrameCount = sleepFrameCount;
     LOG(WARNING) << __func__ << mLogPrefix << ": ignoring this write";
     return ::android::OK;
 }
@@ -1099,7 +1093,7 @@ void StreamOutPrimary::configure() {
     if (mTag == Usecase::ULL_PLAYBACK) {
         //The buffer size for ULL_PLAYBACK set to PAL should not be more than 2ms
         const size_t durationMs = 1; // set to 1ms
-        size_t frameSizeInBytes = ::aidl::android::hardware::audio::common::getFrameSizeInBytes(
+        size_t frameSizeInBytes = getFrameSizeInBytes(
                 mMixPortConfig.format.value(), mMixPortConfig.channelMask.value());
         bufConfig.bufferSize = durationMs *
                     (mMixPortConfig.sampleRate.value().value /1000) * frameSizeInBytes;

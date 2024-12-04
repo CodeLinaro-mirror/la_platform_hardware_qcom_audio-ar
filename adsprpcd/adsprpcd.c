@@ -44,6 +44,7 @@
 #include <errno.h>
 #include "verify.h"
 #include "AEEStdErr.h"
+#include <cutils/properties.h>
 
 #ifndef ADSP_DEFAULT_LISTENER_NAME
 #define ADSP_DEFAULT_LISTENER_NAME "libadsp_default_listener.so"
@@ -80,8 +81,16 @@ int main(int argc, char *argv[]) {
     int nErr = 0;
     void *adsphandler = NULL, *libhidlbaseHandler = NULL;
     adsp_default_listener_start_t listener_start;
+    char bootmode[PROPERTY_VALUE_MAX];
 
     VERIFY_EPRINTF("audio adsp daemon starting");
+    if (property_get("ro.bootmode", bootmode, NULL)) {
+        VERIFY_EPRINTF("property ro.bootmode is %s", bootmode);
+        if (!strncmp(bootmode, "charger", 7)) {
+            VERIFY_EPRINTF("device in charging, exit daemon");
+            return nErr;
+        }
+    }
     if(NULL != (libhidlbaseHandler = dlopen(ADSP_LIBHIDL_NAME, RTLD_NOW))) {
         set_adsp_lib_path();
         while (1) {

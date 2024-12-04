@@ -27,9 +27,9 @@ using AospModule = ::aidl::android::hardware::audio::core::Module;
 using AospModuleConfig = ::aidl::android::hardware::audio::core::Module::Configuration;
 using AospModuleConfigurationPair = std::pair<std::string, std::unique_ptr<AospModuleConfig>>;
 using AospModuleConfigs = std::vector<AospModuleConfigurationPair>;
-std::unique_ptr<AospModuleConfigs> gModuleConfigs;
-std::vector<ChildInterface<AospModule>> gModuleInstances;
-std::shared_ptr<::aidl::android::hardware::audio::core::Config> gConfigDefaultAosp;
+static std::unique_ptr<AospModuleConfigs> gModuleConfigs;
+static std::vector<ChildInterface<AospModule>> gModuleInstances;
+static std::shared_ptr<::aidl::android::hardware::audio::core::IConfig> gConfigDefaultAosp;
 
 namespace {
 
@@ -61,9 +61,16 @@ ChildInterface<AospModule> createModule(const std::string &name,
 
 } // namespace
 
+void makeIConfigDefaultAosp() {
+    if (gConfigDefaultAosp == nullptr) {
+        gConfigDefaultAosp =
+                ndk::SharedRefBase::make<::aidl::android::hardware::audio::core::Config>(
+                        gAudioPolicyConverter);
+    }
+}
+
 extern "C" __attribute__((visibility("default"))) int32_t registerServices() {
-    gConfigDefaultAosp = ndk::SharedRefBase::make<::aidl::android::hardware::audio::core::Config>(
-            gAudioPolicyConverter);
+    makeIConfigDefaultAosp();
     const std::string configIntfName =
             std::string().append(gConfigDefaultAosp->descriptor).append("/default");
     binder_status_t status = AServiceManager_addService(gConfigDefaultAosp->asBinder().get(),
@@ -98,4 +105,9 @@ extern "C" __attribute__((visibility("default"))) int32_t registerServices() {
         }
     }
     return STATUS_OK;
+}
+
+extern "C" __attribute__((visibility("default"))) void* getIConfigDefaultAosp() {
+    makeIConfigDefaultAosp();
+    return gConfigDefaultAosp.get();
 }

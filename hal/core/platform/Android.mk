@@ -25,12 +25,10 @@ LOCAL_STATIC_LIBRARIES := \
     libaudiohalutils.qti
 
 LOCAL_SHARED_LIBRARIES := \
+    $(AHAL_DEFAULT_AIDL_INTERFACE_DEPENDENCIES) \
     libbinder_ndk \
     libbase \
     libstagefright_foundation \
-    android.hardware.audio.core-V2-ndk \
-    android.media.audio.common.types-V3-ndk \
-    libaudioaidlcommon \
     qti-audio-types-aidl-V1-ndk \
     libaudioplatformconverter.qti \
     libar-pal

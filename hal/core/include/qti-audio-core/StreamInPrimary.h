@@ -7,7 +7,6 @@
 
 #include <qti-audio-core/AudioUsecase.h>
 #include <qti-audio-core/Stream.h>
-#include <system/audio_effects/effect_uuid.h>
 namespace qti::audio::core {
 
 class StreamInPrimary : public StreamIn, public StreamCommonImpl {

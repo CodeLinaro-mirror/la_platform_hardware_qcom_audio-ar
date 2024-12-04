@@ -105,7 +105,8 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     ::android::status_t startMMAP();
     ::android::status_t stopMMAP();
     size_t getPlatformDelay() const noexcept;
-    ::android::status_t onWriteError(const size_t sleepFrameCount);
+    ::android::status_t onWriteError(const size_t sleepFrameCount,
+                                     size_t* const consumedFrameCount);
 
     // This API calls startEffect/stopEffect only on offload/pcm offload outputs.
     void enableOffloadEffects(const bool enable);

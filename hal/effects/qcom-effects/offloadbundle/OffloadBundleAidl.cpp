@@ -4,7 +4,7 @@
  */
 
 #define LOG_TAG "AHAL_Effect_OffloadBundleQti"
-#include <Utils.h>
+
 #include <algorithm>
 #include <unordered_set>
 

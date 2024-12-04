@@ -20,7 +20,7 @@ LOCAL_HEADER_LIBRARIES :=  \
     libexpectedutils_headers
 
 LOCAL_SHARED_LIBRARIES := \
-    libaudioaidlcommon \
+    $(AHAL_DEFAULT_AIDL_INTERFACE_DEPENDENCIES) \
     libbase \
     libbinder_ndk \
     libcutils \
@@ -30,10 +30,6 @@ LOCAL_SHARED_LIBRARIES := \
     libstagefright_foundation \
     libutils \
     libxml2 \
-    android.hardware.common-V2-ndk \
-    android.hardware.common.fmq-V1-ndk \
-    android.media.audio.common.types-V3-ndk \
-    android.hardware.audio.core-V2-ndk \
     qti-audio-types-aidl-V1-ndk \
     libar-pal
 

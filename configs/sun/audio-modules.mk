@@ -80,6 +80,8 @@ AUDIO_PAL += libdev_speaker_mic
 AUDIO_PAL += libdev_ultrasound
 AUDIO_PAL += libdev_usb
 
+AUDIO_PAL += libpaleventnotifier
+
 # C2 Audio
 AUDIO_C2 := libqc2audio_base
 AUDIO_C2 += libqc2audio_utils

@@ -18,8 +18,6 @@
 #include <system/audio.h>
 
 using aidl::android::hardware::audio::common::AudioOffloadMetadata;
-using aidl::android::hardware::audio::common::getChannelCount;
-using aidl::android::hardware::audio::common::getFrameSizeInBytes;
 using aidl::android::hardware::audio::common::SinkMetadata;
 using aidl::android::hardware::audio::common::SourceMetadata;
 using aidl::android::media::audio::common::AudioDevice;
@@ -31,14 +29,12 @@ using aidl::android::media::audio::common::AudioSource;
 using aidl::android::media::audio::common::MicrophoneDynamicInfo;
 using aidl::android::media::audio::common::MicrophoneInfo;
 
-using ::aidl::android::hardware::audio::common::getChannelCount;
-using ::aidl::android::hardware::audio::common::getFrameSizeInBytes;
 using ::aidl::android::hardware::audio::core::IStreamCallback;
 using ::aidl::android::hardware::audio::core::IStreamCommon;
 using ::aidl::android::hardware::audio::core::StreamDescriptor;
 using ::aidl::android::hardware::audio::core::VendorParameter;
-using ::aidl::android::hardware::audio::effect::getEffectTypeUuidAcousticEchoCanceler;
-using ::aidl::android::hardware::audio::effect::getEffectTypeUuidNoiseSuppression;
+using ::aidl::android::hardware::audio::effect::Descriptor;
+using ::aidl::android::hardware::audio::effect::IEffect;
 using ::aidl::android::media::audio::common::AudioDeviceType;
 using ::aidl::android::media::audio::common::AudioDeviceDescription;
 
@@ -94,7 +90,7 @@ StreamInPrimary::StreamInPrimary(StreamContext&& context, const SinkMetadata& si
 }
 
 StreamInPrimary::~StreamInPrimary() {
-    shutdown_I();
+    cleanupWorker();
     LOG(DEBUG) << __func__ << mLogPrefix;
 }
 
@@ -239,8 +235,8 @@ ndk::ScopedAStatus StreamInPrimary::configureMMapStream(int32_t* fd, int64_t* bu
 
     std::get<MMapRecord>(mExt).setPalHandle(mPalHandle);
 
-    const auto frameSize = ::aidl::android::hardware::audio::common::getFrameSizeInBytes(
-            mMixPortConfig.format.value(), mMixPortConfig.channelMask.value());
+    const auto frameSize = getFrameSizeInBytes(mMixPortConfig.format.value(),
+                                mMixPortConfig.channelMask.value());
     int32_t ret = std::get<MMapRecord>(mExt).createMMapBuffer(frameSize, fd, burstSizeFrames, flags,
                                                               bufferSizeFrames);
     if (ret != 0) {
@@ -573,13 +569,12 @@ ndk::ScopedAStatus StreamInPrimary::setVendorParameters(
     return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
 }
 
-ndk::ScopedAStatus StreamInPrimary::addEffect(
-        const std::shared_ptr<::aidl::android::hardware::audio::effect::IEffect>& in_effect) {
+ndk::ScopedAStatus StreamInPrimary::addEffect(const std::shared_ptr<IEffect>& in_effect) {
     if (in_effect == nullptr) {
         return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
     }
 
-    ::aidl::android::hardware::audio::effect::Descriptor desc;
+    Descriptor desc;
     auto status = in_effect->getDescriptor(&desc);
     if (!status.isOk()) {
         LOG(ERROR) << __func__ << mLogPrefix << "error fetching descriptor";
@@ -588,12 +583,12 @@ ndk::ScopedAStatus StreamInPrimary::addEffect(
 
     const auto& typeUUID = desc.common.id.type;
 
-    if (typeUUID == getEffectTypeUuidAcousticEchoCanceler()) {
+    if (typeUUID == stringToUuid(Descriptor::EFFECT_TYPE_UUID_AEC)) {
         if (!mAECEnabled) {
             mAECEnabled = true;
             applyEffects();
         }
-    } else if (typeUUID == getEffectTypeUuidNoiseSuppression()) {
+    } else if (typeUUID == stringToUuid(Descriptor::EFFECT_TYPE_UUID_NS)) {
         if (!mNSEnabled) {
             mNSEnabled = true;
             applyEffects();
@@ -603,12 +598,11 @@ ndk::ScopedAStatus StreamInPrimary::addEffect(
     return ndk::ScopedAStatus::ok();
 }
 
-ndk::ScopedAStatus StreamInPrimary::removeEffect(
-        const std::shared_ptr<::aidl::android::hardware::audio::effect::IEffect>& in_effect) {
+ndk::ScopedAStatus StreamInPrimary::removeEffect(const std::shared_ptr<IEffect>& in_effect) {
     if (in_effect == nullptr) {
         return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
     }
-    ::aidl::android::hardware::audio::effect::Descriptor desc;
+    Descriptor desc;
     auto status = in_effect->getDescriptor(&desc);
     if (!status.isOk()) {
         LOG(ERROR) << __func__ << mLogPrefix << "error fetching descriptor";
@@ -617,12 +611,12 @@ ndk::ScopedAStatus StreamInPrimary::removeEffect(
 
     const auto& typeUUID = desc.common.id.type;
 
-    if (typeUUID == getEffectTypeUuidAcousticEchoCanceler()) {
+    if (typeUUID == stringToUuid(Descriptor::EFFECT_TYPE_UUID_AEC)) {
         if (mAECEnabled) {
             mAECEnabled = false;
             applyEffects();
         }
-    } else if (typeUUID == getEffectTypeUuidNoiseSuppression()) {
+    } else if (typeUUID == stringToUuid(Descriptor::EFFECT_TYPE_UUID_NS)) {
         if (mNSEnabled) {
             mNSEnabled = false;
             applyEffects();
@@ -744,7 +738,7 @@ void StreamInPrimary::configure() {
     auto bufConfig = getBufferConfig();
     if (mTag == Usecase::ULTRA_FAST_RECORD) {
         const size_t durationMs = 1;
-        size_t frameSizeInBytes = ::aidl::android::hardware::audio::common::getFrameSizeInBytes(
+        size_t frameSizeInBytes = getFrameSizeInBytes(
                 mMixPortConfig.format.value(), mMixPortConfig.channelMask.value());
         bufConfig.bufferSize = durationMs *
                     (mMixPortConfig.sampleRate.value().value /1000) * frameSizeInBytes;

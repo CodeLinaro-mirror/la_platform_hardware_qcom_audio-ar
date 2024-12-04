@@ -8,7 +8,6 @@
 #include <memory>
 #define LOG_TAG "AHAL_Effect_VolumeListenerQti"
 
-#include <Utils.h>
 #include <android-base/logging.h>
 #include <unordered_set>
 
