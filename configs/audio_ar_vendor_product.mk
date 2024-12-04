@@ -25,7 +25,7 @@ ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), gen4_gvm)
 include vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/gen4_au.mk
 endif
 ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_gvmq)
-include vendor/qcom/opensource/audio-hal/primary-hal/configs/msmnile_gvmq/msmnile_gvmq.mk
+include vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_gvmq/msmnile_gvmq.mk
 endif
 endif
 
