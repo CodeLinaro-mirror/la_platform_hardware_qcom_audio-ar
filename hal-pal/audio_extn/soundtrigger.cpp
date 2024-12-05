@@ -204,14 +204,22 @@ static void get_library_path(char *lib_path)
 static void get_library_path(char *lib_path)
 {
     snprintf(lib_path, MAX_LIBRARY_PATH,
+#ifdef AUDIO_FRAMEWORK_AWE
+             "/vendor/lib64/hw/sound_trigger.%s.awe.so",
+#else
              "/vendor/lib64/hw/sound_trigger.primary.%s.ar.so",
+#endif
              XSTR(SOUND_TRIGGER_PLATFORM_NAME));
 }
 #else
 static void get_library_path(char *lib_path)
 {
     snprintf(lib_path, MAX_LIBRARY_PATH,
+#ifdef AUDIO_FRAMEWORK_AWE
+             "/vendor/lib/hw/sound_trigger.primary.%s.awe.so"
+#else
              "/vendor/lib/hw/sound_trigger.primary.%s.ar.so",
+#endif
              XSTR(SOUND_TRIGGER_PLATFORM_NAME));
 }
 #endif

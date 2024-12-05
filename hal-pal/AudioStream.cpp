@@ -3102,9 +3102,16 @@ StreamOutPrimary::StreamOutPrimary(
                                 &payload_size, nullptr);
             free(device_cap_query);
 
+#ifdef AUDIO_FRAMEWORK_AWE
+            config->sample_rate = dynamic_media_config.sample_rate[0];
+            config->channel_mask = (audio_channel_mask_t) dynamic_media_config.mask[0];
+            config->format = (audio_format_t)dynamic_media_config.format[0];
+
+#else
             config->sample_rate = dynamic_media_config.sample_rate;
             config->channel_mask = (audio_channel_mask_t) dynamic_media_config.mask;
             config->format = (audio_format_t)dynamic_media_config.format;
+#endif
             memcpy(&config_, config, sizeof(struct audio_config));
             AHAL_INFO("sample rate = %#x channel_mask=%#x fmt=%#x",
                       config->sample_rate, config->channel_mask,
@@ -4140,9 +4147,15 @@ StreamInPrimary::StreamInPrimary(audio_io_handle_t handle,
                 dynamic_media_config.sample_rate,
                 dynamic_media_config.format, dynamic_media_config.mask);
             delete device_cap_query;
+#ifdef AUDIO_FRAMEWORK_AWE
+            config->sample_rate = dynamic_media_config.sample_rate[0];
+            config->channel_mask = (audio_channel_mask_t) dynamic_media_config.mask[0];
+            config->format = (audio_format_t)dynamic_media_config.format[0];
+#else
             config->sample_rate = dynamic_media_config.sample_rate;
             config->channel_mask = (audio_channel_mask_t) dynamic_media_config.mask;
             config->format = (audio_format_t)dynamic_media_config.format;
+#endif
             memcpy(&config_, config, sizeof(struct audio_config));
         }
     }
