@@ -14,6 +14,18 @@ LOCAL_CFLAGS := -Wall -Wextra -Werror -Wthread-safety
 LOCAL_SRC_FILES := \
     AudioExtension.cpp
 
+ifeq ($(AUDIO_FEATURE_ENABLED_ECNR_HAL),true)
+LOCAL_CFLAGS += -DECNR_HAL_ENABLE
+LOCAL_SRC_FILES += hal_ecnr.cpp
+
+ifneq (,$(filter userdebug eng,$(TARGET_BUILD_VARIANT)))
+LOCAL_SRC_FILES += hal_ecnr_tune.cpp
+LOCAL_CPPFLAGS += -DECNR_HAL_TUNE
+LOCAL_CPPFLAGS += -DECNR_HAL_DUMP_ENABLE
+endif
+
+endif
+
 LOCAL_HEADER_LIBRARIES :=  \
     libaudioclient_headers \
     libmedia_helper_headers \
@@ -40,6 +52,7 @@ LOCAL_SHARED_LIBRARIES := \
 
 include $(BUILD_STATIC_LIBRARY)
 
+ifneq ($(AUDIO_FEATURE_ENABLED_ECNR_HAL),true)
 #-------------------------------------------
 #              Build HFP LIB
 #-------------------------------------------
@@ -83,6 +96,63 @@ LOCAL_C_INCLUDES := \
 LOCAL_HEADER_LIBRARIES += libhardware_headers
 LOCAL_HEADER_LIBRARIES += libsystem_headers
 include $(BUILD_SHARED_LIBRARY)
+
+else
+#-------------------------------------------
+#            Build HFP Sse LIB
+#-------------------------------------------
+
+include $(CLEAR_VARS)
+
+LOCAL_MODULE := libhfp_pal
+LOCAL_VENDOR_MODULE := true
+
+ifeq ($(TARGET_BOARD_AUTO),true)
+  LOCAL_CFLAGS += -DPLATFORM_AUTO
+endif
+
+LOCAL_CFLAGS += -DECNR_HAL_ENABLE
+
+LOCAL_SRC_FILES:= HfpECNR.cpp
+LOCAL_SRC_FILES += hal_ecnr.cpp
+
+ifneq (,$(filter userdebug eng,$(TARGET_BUILD_VARIANT)))
+LOCAL_SRC_FILES += hal_ecnr_tune.cpp
+LOCAL_CPPFLAGS += -DECNR_HAL_TUNE
+LOCAL_CPPFLAGS += -DECNR_HAL_DUMP_ENABLE
+endif
+
+LOCAL_CFLAGS += \
+    -Wall \
+    -Werror \
+    -Wno-unused-function \
+    -Wno-unused-variable
+
+LOCAL_CPPFLAGS += -fexceptions
+
+LOCAL_SHARED_LIBRARIES := \
+    libaudioroute \
+    libbase \
+    liblog \
+    libaudioutils \
+    libcutils \
+    libdl \
+    libexpat \
+    liblog \
+    libar-pal
+
+
+LOCAL_C_INCLUDES := \
+    $(LOCAL_PATH)/include \
+    $(TOP)/vendor/qcom/opensource/pal \
+    $(TOP)/external/expat/lib \
+    $(TOP)/system/media/audio_utils/include \
+    $(call include-path-for, audio-route) \
+
+LOCAL_HEADER_LIBRARIES += libhardware_headers
+LOCAL_HEADER_LIBRARIES += libsystem_headers
+include $(BUILD_SHARED_LIBRARY)
+endif
 
 #-------------------------------------------
 #            Build FM LIB

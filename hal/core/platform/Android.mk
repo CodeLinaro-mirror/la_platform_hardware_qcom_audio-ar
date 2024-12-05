@@ -19,6 +19,16 @@ LOCAL_SRC_FILES := \
     AudioUsecase.cpp \
     PlatformUtils.cpp
 
+ifeq ($(AUDIO_FEATURE_ENABLED_ECNR_HAL),true)
+LOCAL_CFLAGS += -DECNR_HAL_ENABLE
+
+ifneq (,$(filter userdebug eng,$(TARGET_BUILD_VARIANT)))
+LOCAL_CPPFLAGS += -DECNR_HAL_TUNE
+LOCAL_CPPFLAGS += -DECNR_HAL_DUMP_ENABLE
+endif
+
+endif
+
 LOCAL_WHOLE_STATIC_LIBRARIES := libaudio_microphoneinfo_parser
 
 LOCAL_HEADER_LIBRARIES := \

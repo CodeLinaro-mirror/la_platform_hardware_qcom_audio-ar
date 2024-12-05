@@ -69,7 +69,8 @@ Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConf
             static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DEEP_BUFFER));
     constexpr auto phonePlaybackFlags =
             static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DEEP_BUFFER));
-
+    constexpr auto navGuidance_2PlaybackFlag =
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DEEP_BUFFER));
 //end
     constexpr auto deepBufferPlaybackFlags =
             static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DEEP_BUFFER));
@@ -85,8 +86,7 @@ Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConf
     constexpr auto compressCaptureFlags =
             static_cast<int32_t>(1 << flagCastToint(AudioInputFlags::DIRECT));
     constexpr auto lowLatencyPlaybackFlags =
-            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::PRIMARY) |
-                                 1 << flagCastToint(AudioOutputFlags::FAST));
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::FAST));
     constexpr auto pcmOffloadPlaybackFlags =
             static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DIRECT));
     constexpr auto voipPlaybackFlags =
@@ -124,6 +124,8 @@ Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConf
             tag = Usecase::ALERTS_PLAYBACK;
         } else if (outFlags == phonePlaybackFlags) {
             tag = Usecase::PHONE_PLAYBACK;
+        } else if (outFlags == navGuidance_2PlaybackFlag) {
+            tag = Usecase::NAV_GUIDANCE_2_PLAYBACK;
 //end
         } else if (outFlags == primaryPlaybackFlags) {
             tag = Usecase::PRIMARY_PLAYBACK;
@@ -199,6 +201,8 @@ std::string getName(const Usecase tag) {
             return "PHONE_PLAYBACK";
         case Usecase::ALERTS_PLAYBACK:
             return "ALERTS_PLAYBACK";
+       case Usecase::NAV_GUIDANCE_2_PLAYBACK:
+            return "NAV_GUIDANCE_2_PLAYBACK";
         case Usecase::DEEP_BUFFER_PLAYBACK:
             return "DEEP_BUFFER_PLAYBACK";
         case Usecase::LOW_LATENCY_PLAYBACK:
@@ -255,16 +259,35 @@ auto getIntValueFromVString = [](
 };
 
 // [LowLatencyPlayback Start]
-std::unordered_set<size_t> LowLatencyPlayback::kSupportedFrameSizes = {160, 192, 240, 320, 480};
+static size_t get_kperiod_size(uint32_t sample_rate) {
+    size_t size=0;
+    switch(sample_rate) {
+        case 48000:
+            size = 512;
+            break;
+        case 32000:
+            size = 256;
+            break;
+        case 24000:
+            size = 256;
+            break;
+        case 16000:
+            size = 128;
+            break;
+        case 8000:
+            size = 64;
+            break;
+        default:
+            size = 256;
+            break;
+    }
+    return size;
+}
 
 size_t LowLatencyPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
-    const std::string kPeriodSizeProp = "vendor.audio_hal.period_size";
-    auto frameSize = ::android::base::GetUintProperty<size_t>(kPeriodSizeProp,
-                                                              LowLatencyPlayback::kPeriodSize);
-    if (kSupportedFrameSizes.count(frameSize)) {
-        return frameSize;
-    }
-    return LowLatencyPlayback::kPeriodSize;
+    ssize_t kPeriodSize = get_kperiod_size(mixPortConfig.sampleRate.value().value);
+    LOG(DEBUG) << "Period Size" << kPeriodSize;
+    return kPeriodSize;
 }
 
 // [LowLatencyPlayback End]
@@ -331,6 +354,19 @@ size_t PhonePlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
 }
 // [PhonePlayback End]
 
+// [NAV_GUIDANCE_2_PLAYBACK  Start]
+std::unordered_set<size_t> NavGuidance2Playback::kSupportedFrameSizes = {160, 192, 240, 320, 480};
+
+size_t NavGuidance2Playback::getFrameCount(const AudioPortConfig& mixPortConfig) {
+    const std::string kPeriodSizeProp = "vendor.audio_hal.period_size";
+    auto frameSize = ::android::base::GetUintProperty<size_t>(kPeriodSizeProp,
+                                                              NavGuidance2Playback::kPeriodSize);
+    if (kSupportedFrameSizes.count(frameSize)) {
+        return frameSize;
+    }
+    return NavGuidance2Playback::kPeriodSize;
+}
+// [NavGuidance2Playback End]
 
 // [Deep Buffer Start]
 

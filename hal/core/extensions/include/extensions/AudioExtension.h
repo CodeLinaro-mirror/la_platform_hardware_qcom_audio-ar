@@ -13,6 +13,9 @@
 #include <string>
 #include <aidl/android/media/audio/common/AudioDevice.h>
 #include <qti-audio-core/Platform.h>
+#ifdef ECNR_HAL_ENABLE
+#include <extensions/hal_ecnr.h>
+#endif
 #include "extensions/battery_listener.h"
 
 typedef enum {
@@ -230,6 +233,9 @@ class AudioExtension {
     std::unique_ptr<BatteryListenerExtension> mBatteryListenerExtension =
             std::make_unique<BatteryListenerExtension>();
     std::unique_ptr<A2dpExtension> mA2dpExtension = std::make_unique<A2dpExtension>();
+#ifdef ECNR_HAL_ENABLE
+    std::unique_ptr<HalECNRExtension> mHalExtension = std::make_unique<HalECNRExtension>();
+#endif
     std::unique_ptr<HfpExtension> mHfpExtension = std::make_unique<HfpExtension>();
     std::unique_ptr<FmExtension> mFmExtension = std::make_unique<FmExtension>();
     std::unique_ptr<KarokeExtension> mKarokeExtension = std::make_unique<KarokeExtension>();

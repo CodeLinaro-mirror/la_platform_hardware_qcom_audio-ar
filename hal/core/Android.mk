@@ -41,6 +41,16 @@ LOCAL_HEADER_LIBRARIES :=  \
     libmedia_helper_headers \
     libarpal_headers
 
+ifeq ($(AUDIO_FEATURE_ENABLED_ECNR_HAL),true)
+LOCAL_CFLAGS += -DECNR_HAL_ENABLE
+
+ifneq (,$(filter userdebug eng,$(TARGET_BUILD_VARIANT)))
+LOCAL_CPPFLAGS += -DECNR_HAL_TUNE
+LOCAL_CPPFLAGS += -DECNR_HAL_DUMP_ENABLE
+endif
+
+endif
+
 
 #    defaults: [
 #        "latest_android_media_audio_common_types_ndk_shared",

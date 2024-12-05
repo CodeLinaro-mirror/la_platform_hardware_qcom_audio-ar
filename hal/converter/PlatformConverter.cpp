@@ -440,6 +440,9 @@ outputFlagsStreamtypeMap populatemOutputFlagsStreamtypeMap() {
     constexpr auto phonePlaybackFlags =
             static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::FAST));
     result[phonePlaybackFlags] = PAL_STREAM_PLAYBACK_BUS;
+    constexpr auto navGuidance_2PlaybackFlag =
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::FAST));
+    result[navGuidance_2PlaybackFlag] = PAL_STREAM_PLAYBACK_BUS;
 
 //END
     constexpr auto compressOffloadPlaybackFlags =

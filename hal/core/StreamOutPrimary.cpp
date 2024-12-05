@@ -73,6 +73,8 @@ StreamOutPrimary::StreamOutPrimary(StreamContext&& context, const SourceMetadata
         mExt.emplace<PhonePlayback>();
     } else if (mTag == Usecase::ALERTS_PLAYBACK) {
         mExt.emplace<AlertPlayback>();
+    } else if (mTag == Usecase::NAV_GUIDANCE_2_PLAYBACK ) {
+        mExt.emplace<NavGuidance2Playback>();
     } else if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK) {
         mExt.emplace<CompressPlayback>(offloadInfo.value(), this,
                                        mMixPortConfig);
@@ -90,6 +92,8 @@ StreamOutPrimary::StreamOutPrimary(StreamContext&& context, const SourceMetadata
         mExt.emplace<InCallMusic>();
     } else if (mTag == Usecase::HAPTICS_PLAYBACK) {
         mExt.emplace<HapticsPlayback>();
+    } else if (mTag == Usecase::LOW_LATENCY_PLAYBACK) {
+        mExt.emplace<LowLatencyPlayback>();
     }
 
     mHwVolumeSupported = isHwVolumeSupported();
@@ -114,6 +118,8 @@ bool StreamOutPrimary::isHwVolumeSupported() {
         case Usecase::ALERTS_PLAYBACK:
         case Usecase::SYS_NOTIFICATION_PLAYBACK:
         case Usecase::PHONE_PLAYBACK:
+        case Usecase::NAV_GUIDANCE_2_PLAYBACK:
+        case Usecase::LOW_LATENCY_PLAYBACK:
             return true;
         default:
             break;
@@ -237,9 +243,7 @@ ndk::ScopedAStatus StreamOutPrimary::configureMMapStream(int32_t* fd, int64_t* b
 
     LOG(INFO) << __func__ << mLogPrefix << ": stream is configured";
 
-    if (mUseCachedVolume) {
-        setHwVolume(mVolumes);
-    }
+    setHwVolume(mVolumes);
 
     return ndk::ScopedAStatus::ok();
 }
@@ -939,7 +943,7 @@ void StreamOutPrimary::configure() {
     if (mTag == Usecase::DEEP_BUFFER_PLAYBACK || mTag == Usecase::PRIMARY_PLAYBACK) {
         attr->type = PAL_STREAM_DEEP_BUFFER;
     } else if (mTag == Usecase::LOW_LATENCY_PLAYBACK) {
-        attr->type = PAL_STREAM_LOW_LATENCY;
+        attr->type = PAL_STREAM_PLAYBACK_BUS;
         auto countProxyDevices = std::count_if(mConnectedDevices.cbegin(), mConnectedDevices.cend(),
                                                 isIPDevice);
         if (countProxyDevices > 0) {
@@ -959,7 +963,9 @@ void StreamOutPrimary::configure() {
         attr->type = PAL_STREAM_PLAYBACK_BUS;
     } else if (mTag == Usecase::PHONE_PLAYBACK) {
         attr->type = PAL_STREAM_PLAYBACK_BUS;
-    } else if (mTag == Usecase::PCM_OFFLOAD_PLAYBACK) {
+    } else if (mTag == Usecase::NAV_GUIDANCE_2_PLAYBACK) {
+        attr->type = PAL_STREAM_PLAYBACK_BUS;
+    }else if (mTag == Usecase::PCM_OFFLOAD_PLAYBACK) {
         attr->type = PAL_STREAM_PCM_OFFLOAD;
     } else if (mTag == Usecase::VOIP_PLAYBACK) {
         attr->type = PAL_STREAM_VOIP_RX;
@@ -1024,9 +1030,7 @@ void StreamOutPrimary::configure() {
         return;
     }
 
-    if (mUseCachedVolume) {
-        setHwVolume(mVolumes);
-    }
+    setHwVolume(mVolumes);
 
     if (mTag == Usecase::HAPTICS_PLAYBACK) {
 
