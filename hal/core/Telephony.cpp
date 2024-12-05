@@ -85,6 +85,7 @@ void Telephony::VoiceStop() {
 
 ndk::ScopedAStatus Telephony::switchAudioMode(AudioMode newAudioMode) {
     std::scoped_lock lock{mLock};
+    auto status = ndk::ScopedAStatus::ok();
 
     if (std::find(mSupportedAudioModes.begin(), mSupportedAudioModes.end(), newAudioMode) ==
         mSupportedAudioModes.end()) {
@@ -105,13 +106,22 @@ ndk::ScopedAStatus Telephony::switchAudioMode(AudioMode newAudioMode) {
         if (!mIsCRSStarted && !isAnyCallActive()) {
             getPlaybackStreamDevices();
             updateCrsDevice();
-            startCall();
-            if (mRxDevice.type.type != AudioDeviceType::OUT_SPEAKER) {
-                startCrsLoopback();
+            auto palDevices = mPlatform.convertToPalDevices({mRxDevice, mTxDevice});
+            if ((palDevices[0].id == PAL_DEVICE_OUT_BLUETOOTH_BLE) &&
+                (palDevices[1].id == PAL_DEVICE_IN_BLUETOOTH_BLE)) {
+                updateVoiceMetadataForBT(true);
             }
-            mIsCRSStarted = true;
-            mCRSVSID = mSetUpdates.mVSID;
-            LOG(DEBUG) << __func__ << " start CRS call";
+            status = startCall();
+            if (!status.isOk()) {
+                LOG(ERROR) << __func__ << ": start crs call failed";
+            } else {
+                if (mRxDevice.type.type != AudioDeviceType::OUT_SPEAKER) {
+                   startCrsLoopback();
+                }
+                mIsCRSStarted = true;
+                mCRSVSID = mSetUpdates.mVSID;
+                LOG(DEBUG) << __func__ << " start CRS call";
+            }
         }
     }
 
@@ -416,6 +426,7 @@ AudioDevice Telephony::getMatchingTxDevice(const AudioDevice& rxDevice) {
 
 void Telephony::reconfigure(const SetUpdates& newUpdates) {
     std::scoped_lock lock{mLock};
+    auto status = ndk::ScopedAStatus::ok();
     auto palDevices = mPlatform.convertToPalDevices({mRxDevice, mTxDevice});
     LOG(DEBUG) << __func__ << " : Enter : current setUpdates" << mSetUpdates.toString() << " new setUpdates"
                  << newUpdates.toString();
@@ -429,24 +440,36 @@ void Telephony::reconfigure(const SetUpdates& newUpdates) {
             mAudioMode == AudioMode::RINGTONE) {
              getPlaybackStreamDevices();
              updateCrsDevice();
-             startCall();
-             if (mRxDevice.type.type != AudioDeviceType::OUT_SPEAKER) {
-                 startCrsLoopback();
+             if ((palDevices[0].id == PAL_DEVICE_OUT_BLUETOOTH_BLE) &&
+                 (palDevices[1].id == PAL_DEVICE_IN_BLUETOOTH_BLE)) {
+                 updateVoiceMetadataForBT(true);
              }
-             mIsCRSStarted  = true;
-             mCRSVSID = newUpdates.mVSID;
-             LOG(DEBUG) << __func__ << ": start CRS call";
+             status = startCall();
+             if (!status.isOk()) {
+                 LOG(ERROR) << __func__ << ": start crs call failed";
+             } else {
+                 if (mRxDevice.type.type != AudioDeviceType::OUT_SPEAKER) {
+                     startCrsLoopback();
+                 }
+                 mIsCRSStarted  = true;
+                 mCRSVSID = newUpdates.mVSID;
+                 LOG(DEBUG) << __func__ << ": start CRS call";
+             }
              return;
          }
     } else {
          if (mIsCRSStarted && mCRSVSID == newUpdates.mVSID) {
-             stopCall();
-             if (mPalCrsHandle != nullptr) {
-                 stopCrsLoopback();
+             status = stopCall();
+             if (!status.isOk()) {
+                 LOG(ERROR) << __func__ << ": stop crs call failed";
+             } else {
+                 if (mPalCrsHandle != nullptr) {
+                     stopCrsLoopback();
+                 }
+                 mSetUpdates.mIsCrsCall = newUpdates.mIsCrsCall;
+                 mIsCRSStarted  = false;
+                 LOG(DEBUG) << __func__ << ": stop CRS call";
              }
-             mSetUpdates.mIsCrsCall = newUpdates.mIsCrsCall;
-             mIsCRSStarted  = false;
-             LOG(DEBUG) << __func__ << ": stop CRS call";
          }
     }
 
