@@ -372,7 +372,7 @@ CompressPlayback::CompressPlayback(
         const ::aidl::android::media::audio::common::AudioOffloadInfo& offloadInfo,
         PlatformStreamCallback* const callback,
         const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig)
-    : mOffloadInfo(offloadInfo), mPlatformStreamCallback(callback), mMixPortConfig(mixPortConfig) {
+    : mOffloadInfo(offloadInfo), mMixPortConfig(mixPortConfig), mPlatformStreamCallback(callback) {
     configureDefault();
 }
 
@@ -712,10 +712,10 @@ int64_t CompressPlayback::getPositionInFrames(pal_stream_handle_t* palHandle) {
     uint64_t sessionTimeUs =
             ((static_cast<decltype(sessionTimeUs)>(tstamp.session_time.value_msw)) << 32 |
              tstamp.session_time.value_lsw);
-    const auto& sampleRate = getSampleRate(mMixPortConfig).value();
     // sessionTimeUs to frames
     // try to convert the session to frames without loss of precision.
-    mPrevFrames = static_cast<int64_t>((sessionTimeUs / 1000) * sampleRate / 1000);
+    mPrevFrames = static_cast<int64_t>((sessionTimeUs / 1000) *
+            getSampleRate(mMixPortConfig).value() / 1000);
     LOG(VERBOSE) << __func__ << " dsp frames consumed: (" << mTotalDSPFrames << "+" << mPrevFrames
                  << ") = " << mTotalDSPFrames + mPrevFrames;
     return mTotalDSPFrames + mPrevFrames;
@@ -778,10 +778,10 @@ int64_t PcmOffloadPlayback::getPositionInFrames(pal_stream_handle_t* palHandle) 
     uint64_t sessionTimeUs =
             ((static_cast<decltype(sessionTimeUs)>(tstamp.session_time.value_msw)) << 32 |
              tstamp.session_time.value_lsw);
-    const auto& sampleRate = getSampleRate(mMixPortConfig).value();
     // sessionTimeUs to frames
     // try to convert the session to frames without loss of precision.
-    mPrevFrames = static_cast<int64_t>((sessionTimeUs / 1000) * sampleRate / 1000);
+    mPrevFrames = static_cast<int64_t>((sessionTimeUs / 1000) *
+            getSampleRate(mMixPortConfig).value() / 1000);
     LOG(VERBOSE) << __func__ << " dsp frames consumed: (" << mTotalDSPFrames << "+" << mPrevFrames
                  << ") = " << mTotalDSPFrames + mPrevFrames;
     return mTotalDSPFrames + mPrevFrames;
@@ -955,7 +955,7 @@ CompressCapture::CompressCapture(
         const ::aidl::android::media::audio::common::AudioFormatDescription& format,
         const int32_t sampleRate,
         const ::aidl::android::media::audio::common::AudioChannelLayout& channelLayout)
-    : mCompressFormat(format), mSampleRate(sampleRate), mChannelLayout(channelLayout) {
+    : mCompressFormat(format), mChannelLayout(channelLayout), mSampleRate(sampleRate) {
     if (mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_LC ||
         mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_ADTS_LC) {
         mPalSndEnc.aac_enc.enc_cfg.aac_enc_mode = Aac::EncodingMode::LC;
