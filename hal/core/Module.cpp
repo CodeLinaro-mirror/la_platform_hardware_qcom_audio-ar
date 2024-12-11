@@ -449,13 +449,32 @@ ndk::ScopedAStatus Module::updateStreamsConnectedState(const AudioPatch& oldPatc
         }
     });
     if (!maybeFailure.isOk()) {
-        LOG(WARNING) << __func__ << ": Due to a failure, disconnecting streams on port config ids "
-                     << ::android::internal::ToString(idsToDisconnectOnFailure);
+         LOG(WARNING) << __func__ << ": Due to a failure, disconnecting streams on port config ids "
+                      << ::android::internal::ToString(idsToDisconnectOnFailure);
         std::for_each(idsToDisconnectOnFailure.begin(), idsToDisconnectOnFailure.end(),
-                      [&](const auto& portConfigId) {
-                          auto status = mStreams.setStreamConnectedDevices(portConfigId, {});
-                          (void)status.isOk(); // Can't do much about a failure here.
-                      });
+                       [&](const auto& portConfigId) {
+            auto& ports = getConfig().ports;
+            std::vector<AudioDevice> prevDev;
+            if (auto it = oldConnections.find(portConfigId); it != oldConnections.end()) {
+                auto portIds = portIdsFromPortConfigIds((std::set<int32_t>) it->second);
+                for (auto it = portIds.cbegin(); it != portIds.cend(); ++it) {
+                    auto portIt = findById<AudioPort>(ports, *it);
+                    if (portIt != ports.end() &&
+                        portIt->ext.getTag() == AudioPortExt::Tag::device) {
+                        prevDev.push_back(portIt->ext.get<AudioPortExt::Tag::device>().device);
+                        if (auto status =
+                            mStreams.setStreamConnectedDevices(portConfigId, prevDev);
+                            status.isOk()) {
+                            LOG(DEBUG) << "updateStreamsConnectedState: The stream on port "
+                                           "config id "
+                                       << portConfigId
+                                       << " has been connected to previous device: "
+                                       << ::android::internal::ToString(prevDev);
+                        }
+                    }
+                }
+            }
+        });
         return maybeFailure;
     }
     return ndk::ScopedAStatus::ok();

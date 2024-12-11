@@ -171,6 +171,7 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
     void stopCrsLoopback();
     void triggerHACinVoipPlayback();
     void getPlaybackStreamDevices();
+    void updateTTYPalDevices(std::vector<pal_device>& palDevices);
     ::aidl::android::media::audio::common::AudioDevice getMatchingTxDevice(
             const ::aidl::android::media::audio::common::AudioDevice & rxDevice);
     bool isAnyCallActive();

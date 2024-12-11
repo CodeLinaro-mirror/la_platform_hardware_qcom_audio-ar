@@ -142,6 +142,10 @@ ndk::ScopedAStatus Telephony::setTelecomConfig(const TelecomConfig& in_config,
         mTelecomConfig.ttyMode = in_config.ttyMode;
         // safe to update when there is ttymode is provided
         updateTtyMode();
+        if (mTelecomConfig.ttyMode == TelecomConfig::TtyMode::HCO ||
+            mTelecomConfig.ttyMode == TelecomConfig::TtyMode::VCO) {
+            updateDevices();
+        }
     }
     if (in_config.isHacEnabled.has_value()) {
         mTelecomConfig.isHacEnabled = in_config.isHacEnabled;
@@ -216,6 +220,42 @@ void Telephony::setDevices(const std::vector<AudioDevice>& devices, const bool u
         // /* update the voice call devices only on TX devices update. Because Rx
         //  * devices patch is followed by Tx Devices patch */
         // updateDevices();
+    }
+}
+
+void Telephony::updateTTYPalDevices(std::vector<pal_device>& palDevices) {
+    if (!palDevices.size()) {
+        LOG(ERROR) << __func__ << " no connected devices";
+         return;
+    }
+
+    if(mTelecomConfig.ttyMode == TelecomConfig::TtyMode::HCO) {
+      /**  device pairs for HCO usecase
+        *  <handset, headset-mic>
+        *  <speaker, headset-mic>
+        *  override devices accordingly.
+        */
+       if (palDevices[0].id == PAL_DEVICE_OUT_WIRED_HEADSET) {
+             palDevices[0].id = PAL_DEVICE_OUT_HANDSET;
+       } else if ( palDevices[0].id== PAL_DEVICE_OUT_SPEAKER) {
+            palDevices[1].id = PAL_DEVICE_IN_WIRED_HEADSET;
+       } else {
+           LOG(DEBUG) << __func__ << ": invalid device pair for TTY HCO usecase";
+       }
+    } else if (mTelecomConfig.ttyMode == TelecomConfig::TtyMode::VCO) {
+        /**  device pairs for VCO usecase
+          *  <headphones, handset-mic>
+          *  <headphones, speaker-mic>
+          *  override devices accordingly.
+          */
+       if (palDevices[0].id == PAL_DEVICE_OUT_WIRED_HEADSET ||
+           palDevices[0].id == PAL_DEVICE_OUT_WIRED_HEADPHONE) {
+           palDevices[1].id = PAL_DEVICE_IN_HANDSET_MIC;
+       } else if (palDevices[0].id == PAL_DEVICE_OUT_SPEAKER) {
+           palDevices[0].id = PAL_DEVICE_OUT_WIRED_HEADSET;
+       } else {
+           LOG(DEBUG) << __func__ << ": invalid device pair for TTY VCO usecase";
+       }
     }
 }
 
@@ -741,6 +781,8 @@ ndk::ScopedAStatus Telephony::startCall() {
         attributes->info.voice_call_info.tty_mode =
                 ttyMode != mTtyMap.cend() ? ttyMode->second : PAL_TTY_OFF;
     }
+    //override device pairs of HCO and VCO usecase
+    updateTTYPalDevices(palDevices);
 
     const size_t numDevices = 2;
     //set custom key for hac mode
@@ -947,6 +989,9 @@ void Telephony::updateDevices() {
                       << "and a2dp_capture_suspended status: " << a2dp_capture_suspended;
         }
     }
+
+    //override device pairs of HCO and VCO usecase
+    updateTTYPalDevices(palDevices);
 
     //set or remove custom key for hac mode
     if (mTelecomConfig.isHacEnabled.has_value() && mTelecomConfig.isHacEnabled.value().value &&
