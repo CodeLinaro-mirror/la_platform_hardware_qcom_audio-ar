@@ -21,6 +21,7 @@ using aidl::android::hardware::audio::common::getFrameSizeInBytes;
 using aidl::android::hardware::audio::common::SinkMetadata;
 using aidl::android::hardware::audio::common::SourceMetadata;
 using aidl::android::media::audio::common::AudioDevice;
+using aidl::android::media::audio::common::AudioDeviceAddress;
 using aidl::android::media::audio::common::AudioDualMonoMode;
 using aidl::android::media::audio::common::AudioLatencyMode;
 using aidl::android::media::audio::common::AudioOffloadInfo;
@@ -920,13 +921,21 @@ void StreamOutPrimary::configure() {
         return;
     }
     attr->bus_addr = "";
+    if (!mConnectedDevices.empty()) {
+         std::string deviceAddress =  mConnectedDevices[0].address.get<AudioDeviceAddress::Tag::id>();
+         LOG(INFO) << __func__ << "configure(): deviceAddress " << deviceAddress;
+         bool isBusType = (std::string::npos != deviceAddress.find("BUS")) ? true : false;
+         if (isBusType){
+             attr->bus_addr = new char[deviceAddress.length() + 1];
+             strlcpy(attr->bus_addr,deviceAddress.c_str(),deviceAddress.length() + 1);
+         }
+    } else {
+         LOG(DEBUG) << __func__ << mLogPrefix << ": connected device empty";
+    }
     if (mTag == Usecase::DEEP_BUFFER_PLAYBACK || mTag == Usecase::PRIMARY_PLAYBACK) {
-        attr->type = PAL_STREAM_PLAYBACK_BUS;
-        attr->bus_addr = "BUS00_MEDIA";
+        attr->type = PAL_STREAM_DEEP_BUFFER;
     } else if (mTag == Usecase::LOW_LATENCY_PLAYBACK) {
         attr->type = PAL_STREAM_LOW_LATENCY;
-        attr->bus_addr = "BUS01_SYS_NOTIFICATION";
-
         auto countProxyDevices = std::count_if(mConnectedDevices.cbegin(), mConnectedDevices.cend(),
                                                 isIPDevice);
         if (countProxyDevices > 0) {
@@ -937,21 +946,15 @@ void StreamOutPrimary::configure() {
     } else if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK) {
         attr->type = PAL_STREAM_COMPRESSED;
     } else if (mTag == Usecase::MEDIA_PLAYBACK) {
-         LOG(DEBUG) << __func__ << mLogPrefix << ": attr->type = PAL_STREAM_PLAYBACK_BUS";
         attr->type = PAL_STREAM_PLAYBACK_BUS;
-        attr->bus_addr = "BUS00_MEDIA";
     } else if (mTag == Usecase::NAV_GUIDANCE_PLAYBACK) {
-        attr->type = PAL_STREAM_LOW_LATENCY;
-        attr->bus_addr = "BUS02_NAV_GUIDANCE";
+        attr->type = PAL_STREAM_PLAYBACK_BUS;
     } else if (mTag == Usecase::SYS_NOTIFICATION_PLAYBACK) {
-        attr->type = PAL_STREAM_LOW_LATENCY;
-        attr->bus_addr = "BUS01_SYS_NOTIFICATION";
+        attr->type = PAL_STREAM_PLAYBACK_BUS;
     } else if (mTag == Usecase::ALERTS_PLAYBACK) {
-        attr->type = PAL_STREAM_LOW_LATENCY;
-        attr->bus_addr = "BUS05_ALERTS";
+        attr->type = PAL_STREAM_PLAYBACK_BUS;
     } else if (mTag == Usecase::PHONE_PLAYBACK) {
-        attr->type = PAL_STREAM_LOW_LATENCY;
-        attr->bus_addr = "BUS03_PHONE";
+        attr->type = PAL_STREAM_PLAYBACK_BUS;
     } else if (mTag == Usecase::PCM_OFFLOAD_PLAYBACK) {
         attr->type = PAL_STREAM_PCM_OFFLOAD;
     } else if (mTag == Usecase::VOIP_PLAYBACK) {

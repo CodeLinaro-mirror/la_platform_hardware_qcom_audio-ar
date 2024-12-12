@@ -299,10 +299,8 @@ std::vector<pal_device> Platform::convertToPalDevices(
         }
         palDevices[i].id = palDeviceId;
         /* Todo map each AIDL device type to alteast one PAL device */
-        
         if (palDevices[i].id == PAL_DEVICE_OUT_SPEAKER &&
             device.type.type == AudioDeviceType::OUT_DEVICE) {
-            setPalDeviceCustomKey(palDevices[i], "BUS00_MEDIA");
         } else if (palDevices[i].id == PAL_DEVICE_OUT_SPEAKER &&
                    device.type.type == AudioDeviceType::OUT_DEVICE) {
             const auto isMSPPEnabled =

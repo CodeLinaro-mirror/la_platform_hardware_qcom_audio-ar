@@ -60,15 +60,15 @@ Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConf
             static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::PRIMARY));
 //Auto specific
     constexpr auto mediaPlaybackFlags =
-            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::PRIMARY));
-    constexpr auto navGuidancePlaybbackFlag =
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DEEP_BUFFER));
+    constexpr auto navGuidancePlaybackFlag =
             static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::FAST));
     constexpr auto sysNotificationPlaybackFlag =
-            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::PRIMARY));
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::FAST));
     constexpr auto alertPlaybackFlag =
-            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::PRIMARY));
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::FAST));
     constexpr auto phonePlaybackFlags =
-            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::PRIMARY));
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::FAST));
 
 //end
     constexpr auto deepBufferPlaybackFlags =
@@ -116,7 +116,7 @@ Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConf
 //Auto specific
         } else if (outFlags == mediaPlaybackFlags) {
             tag = Usecase::MEDIA_PLAYBACK;
-        } else if (outFlags == navGuidancePlaybbackFlag) {
+        } else if (outFlags == navGuidancePlaybackFlag) {
             tag = Usecase::NAV_GUIDANCE_PLAYBACK;
         } else if (outFlags == sysNotificationPlaybackFlag) {
             tag = Usecase::SYS_NOTIFICATION_PLAYBACK;
