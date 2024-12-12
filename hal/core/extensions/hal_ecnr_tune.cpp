@@ -142,14 +142,14 @@ int HalECNRExtension::audio_extn_setupECNR_TuneIF(tECNR_TuneIFData* pECNR_TuneIF
         pECNR_TuneIFData->pWaitSemaTx = NULL;
         pECNR_TuneIFData->rxRingbuffer = NULL;
         pECNR_TuneIFData->txRingbuffer = NULL;
-        pECNR_TuneIFData->rxRingbuffer = new(std::nothrow) TuneRingBuffer(RX_RINGBUFFER_SIZE);
+        pECNR_TuneIFData->rxRingbuffer = new(std::nothrow) HalRingBuffer<char>(RX_RINGBUFFER_SIZE);
         if (NULL == pECNR_TuneIFData->rxRingbuffer)
         {
             LOG(ERROR) << __func__ << " failed to create rxRingbuffer";
             ret = ENOMEM_BUFFER;
             goto destroy_ring_buffer;
         }
-         pECNR_TuneIFData->txRingbuffer = new(std::nothrow) TuneRingBuffer(TX_RINGBUFFER_SIZE);
+         pECNR_TuneIFData->txRingbuffer = new(std::nothrow) HalRingBuffer<char>(TX_RINGBUFFER_SIZE);
         if (NULL == pECNR_TuneIFData->txRingbuffer)
         {
             LOG(ERROR) << __func__ << " failed to create txRingbuffer";
@@ -301,14 +301,16 @@ int HalECNRExtension::audio_extn_close_TuneIF(tECNR_TuneIFData* pECNR_TuneIFData
 int HalECNRExtension::audio_extn_get_TuneIO_buffer(tECNR_TuneIFData* pECNR_TuneIFData, tECNR_TuneIO* pECNR_TuneIO)
 {
    int ret_getTuneIObuffer = -1;
-   int nTuneInBytes =0;
+   int nTuneInBytes = 0;
    if(pECNR_TuneIFData == NULL || pECNR_TuneIO == NULL) {
          LOG(ERROR) << __func__ << " invalied input parameters ";
            return ret_getTuneIObuffer;
    }
    if(pECNR_TuneIFData->enabled){
         if ( pECNR_TuneIFData->tuneIntefaceConnection ) {
-            nTuneInBytes = pECNR_TuneIFData->rxRingbuffer->read(pECNR_TuneIFData->pECNRTuneBufferIn, TUNE_BUFFER_RX_SIZE);
+            nTuneInBytes = pECNR_TuneIFData->rxRingbuffer->avaiableWrittenBufferSize();
+            if ( nTuneInBytes > 0 )
+                nTuneInBytes = pECNR_TuneIFData->rxRingbuffer->read(pECNR_TuneIFData->pECNRTuneBufferIn, TUNE_BUFFER_RX_SIZE);
             //LOG(INFO) << __func__ << " read from rxRingbuffer " << nTuneInBytes << "bytes";
             if ( nTuneInBytes >= 0 ) {
                 pECNR_TuneIO->InBuffer = pECNR_TuneIFData->pECNRTuneBufferIn;
