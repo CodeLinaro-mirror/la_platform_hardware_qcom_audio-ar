@@ -47,6 +47,7 @@ using aidl::android::media::audio::common::AudioPortExt;
 
 namespace qti::audio::core {
 
+int VoipPlaybackECNR::kSampleRate = 48000;
 
 StreamOutPrimaryOEM::StreamOutPrimaryOEM(StreamContext&& context, const SourceMetadata& sourceMetadata,
                                    const std::optional<AudioOffloadInfo>& offloadInfo)
@@ -128,9 +129,20 @@ void StreamOutPrimaryOEM::shutdown() {
             return ::android::OK;
         }
         ssize_t bytesWritten;
-//            LOG(INFO) << __func__ << " processing with " << bECNR_Enable;
+#ifdef ECNR_HAL_SRC_CP
+        uint32_t rbWritten = 0;
+        uint32_t rbRead = 0;
+        int processItr = 1;
+#endif
         int16_t *deint_in_buffer = reinterpret_cast<int16_t*>(ecnr_in_buffer.get());
         int16_t *deint_out_buffer = reinterpret_cast<int16_t*>(ecnr_out_buffer.get());
+#ifdef ECNR_HAL_SRC_CP
+        int16_t *rsp_in_buffer = reinterpret_cast<int16_t*>(buffer);
+        if (resampler != NULL && ecnr_src_buffer && ecnr_src_buffer_size > 0) {
+            palBuffer.buffer = reinterpret_cast<uint8_t*>(ecnr_src_buffer.get());
+            palBuffer.size = std::min(ecnr_out_buffer_size, ecnr_src_buffer_size);
+        }
+#endif
         int16_t *src_buffer = reinterpret_cast<int16_t*>(palBuffer.buffer);
         int16_t *dst_buffer = reinterpret_cast<int16_t*>(palBuffer.buffer);
 #ifdef ECNR_HAL_TUNE
@@ -139,11 +151,38 @@ void StreamOutPrimaryOEM::shutdown() {
 #ifdef PCM_DUMP_HAL_ENABLE
         if (pcm_dump) {
             if (fp_in_dump) {
-                fwrite(palBuffer.buffer,sizeof(char),palBuffer.size ,fp_in_dump);
+                fwrite(buffer,sizeof(char), frameCount * mFrameSizeBytes ,fp_in_dump);
             }
         }
 #endif
-        if (palBuffer.size == ecnr_in_buffer_size) {
+#ifdef ECNR_HAL_SRC_CP
+        if ((resampler != NULL) && (rsp_in_buffer != src_buffer)) {
+            size_t inFrameCount = (size_t)frameCount;
+            size_t outFrameCount = (size_t)(frameCount*ecnrSampleRate/mMixPortConfig.sampleRate.value().value);
+            resampler->resample_from_input(resampler, rsp_in_buffer,
+                                                 &inFrameCount, src_buffer,
+                                                 &outFrameCount);
+//            LOG(DEBUG) << __func__ << mLogPrefixOEM << " inFrameCount " << inFrameCount << " frameCount " << frameCount;
+//            LOG(DEBUG) << __func__ << mLogPrefixOEM << " outFrameCount " << outFrameCount << " ecnrPeriodSize " << ecnrPeriodSize;
+            rbWritten = mOutHalRingBuffer->get()->write(src_buffer, outFrameCount*mChannels);
+            if (outFrameCount*mChannels != rbWritten ) {
+               LOG(DEBUG) << __func__ << mLogPrefixOEM << " Dropping samples : " << (rbWritten - outFrameCount*mChannels );
+            }
+            processItr = mOutHalRingBuffer->get()->avaiableWrittenBufferSize()/(ecnrPeriodSize*mChannels);
+        } else {
+            processItr = 1;
+        }
+
+        while (processItr > 0) {
+            processItr--;
+            if ((resampler != NULL) && (rsp_in_buffer != src_buffer)) {
+                rbRead = mOutHalRingBuffer->get()->read(src_buffer, ecnrPeriodSize*mChannels);
+                if (rbRead == 0) {
+                    LOG(DEBUG) << __func__ << mLogPrefixOEM << " couldn't get data from ringbuffer";
+                    goto skip_write;
+                }
+            }
+#endif
             if (pECNR_ProcessData.audioIO.RcvInBufferCnt== 1) {
 //                    LOG(DEBUG) << __func__ << "channel size 1, just copy";
                 memcpy(deint_in_buffer, src_buffer, ecnr_in_buffer_size);
@@ -151,73 +190,71 @@ void StreamOutPrimaryOEM::shutdown() {
 //                    LOG(DEBUG) << __func__ << " change format";
                 mAudExt.mHalExtension->audio_extn_cvtformat16_lnterleave_to_deinterleave(src_buffer,deint_in_buffer,ecnrPeriodSize,pECNR_ProcessData.audioIO.RcvInBufferCnt);
             }
-        } else {
-            goto write_without_process;
-        }
-#ifdef ECNR_HAL_DUMP_ENABLE
-        if (property_get_bool("vendor.audio.feature.ecnr.dump", false)) {
-//                LOG(DEBUG) << __func__ << "DUMP enabled for ecnr deinterleaved data of ecnr input";
-            char dump_file[128];
-            FILE *fp_pcm_dump = NULL;
-            for (unsigned int i =0 ; i < pECNR_ProcessData.audioIO.RcvInBufferCnt; i++) {
-                snprintf(dump_file, sizeof(dump_file), "%s/%s_ecnr_test_deinterleave_%d_in.raw",AUDIO_HAL_DUMP_PATH,mTagName.c_str(),i);
-                fp_pcm_dump=fopen(dump_file,"a+");
-                if (fp_pcm_dump) {
-                    fwrite(deint_in_buffer + i*ecnrPeriodSize,sizeof(char),ecnrPeriodSize*getPcmSampleSizeInBytes(mMixPortConfig.format.value().pcm),fp_pcm_dump);
-                    fclose(fp_pcm_dump);
-                } else {
-                    LOG(ERROR) << __func__ << " error in opening dump file " << dump_file;
-                }
-            }
-        }
-#endif
-#ifdef ECNR_HAL_TUNE
-        getTuneIOBuffer = mAudExt.mHalExtension->audio_extn_get_TuneIO_buffer(&pECNR_TuneIFData, &(pECNR_ProcessData.sECNRTuneIO));
-        if (getTuneIOBuffer >= 0)
-            ret = mAudExt.mHalExtension->audio_extn_ecnrProcess(pECNR_ProcessData.pMain, pECNR_ProcessData.audioIO, &(pECNR_ProcessData.sECNRTuneIO));
-        else
-#endif
-            ret = mAudExt.mHalExtension->audio_extn_ecnrProcess(pECNR_ProcessData.pMain, pECNR_ProcessData.audioIO, NULL);
-#ifdef ECNR_HAL_TUNE
-        mAudExt.mHalExtension->audio_extn_feedback_TuneIO_buffer(&pECNR_TuneIFData, &(pECNR_ProcessData.sECNRTuneIO));
-#endif
-        if (!ret) {
 #ifdef ECNR_HAL_DUMP_ENABLE
             if (property_get_bool("vendor.audio.feature.ecnr.dump", false)) {
-//                    LOG(DEBUG) << __func__ << "DUMP enabled for ecnr deinterleaved data of ecnr output";
+//                LOG(DEBUG) << __func__ << "DUMP enabled for ecnr deinterleaved data of ecnr input";
                 char dump_file[128];
                 FILE *fp_pcm_dump = NULL;
-                for (unsigned int i =0 ; i < pECNR_ProcessData.audioIO.RcvProcBufferCnt; i++) {
-                    snprintf(dump_file, sizeof(dump_file), "%s/%s_ecnr_test_deinterleave_%d_out.raw",AUDIO_HAL_DUMP_PATH,mTagName.c_str(),i);
+                for (unsigned int i =0 ; i < pECNR_ProcessData.audioIO.RcvInBufferCnt; i++) {
+                    snprintf(dump_file, sizeof(dump_file), "%s/%s_ecnr_test_deinterleave_%d_in.raw",AUDIO_HAL_DUMP_PATH,mTagName.c_str(),i);
                     fp_pcm_dump=fopen(dump_file,"a+");
                     if (fp_pcm_dump) {
-                        fwrite(deint_out_buffer + i*ecnrPeriodSize,sizeof(char),ecnrPeriodSize*getPcmSampleSizeInBytes(mMixPortConfig.format.value().pcm),fp_pcm_dump);
+                        fwrite(deint_in_buffer + i*ecnrPeriodSize,sizeof(char),ecnrPeriodSize*getPcmSampleSizeInBytes(mMixPortConfig.format.value().pcm),fp_pcm_dump);
                         fclose(fp_pcm_dump);
                     } else {
-                        LOG(ERROR) << __func__ << mLogPrefixOEM << " error in opening dump file " << dump_file;
+                        LOG(ERROR) << __func__ << " error in opening dump file " << dump_file;
                     }
                 }
             }
 #endif
-            if (palBuffer.size == ecnr_out_buffer_size) {
+#ifdef ECNR_HAL_TUNE
+            getTuneIOBuffer = mAudExt.mHalExtension->audio_extn_get_TuneIO_buffer(&pECNR_TuneIFData, &(pECNR_ProcessData.sECNRTuneIO));
+            if (getTuneIOBuffer >= 0)
+                ret = mAudExt.mHalExtension->audio_extn_ecnrProcess(pECNR_ProcessData.pMain, pECNR_ProcessData.audioIO, &(pECNR_ProcessData.sECNRTuneIO));
+            else
+#endif
+            ret = mAudExt.mHalExtension->audio_extn_ecnrProcess(pECNR_ProcessData.pMain, pECNR_ProcessData.audioIO, NULL);
+#ifdef ECNR_HAL_TUNE
+            mAudExt.mHalExtension->audio_extn_feedback_TuneIO_buffer(&pECNR_TuneIFData, &(pECNR_ProcessData.sECNRTuneIO));
+#endif
+#ifdef ECNR_HAL_SRC_CP
+            if (property_get_bool("vendor.audio.feature.ecnr.force_error", false)) {
+                ret = -1;
+            }
+#endif
+            if (!ret) {
+#ifdef ECNR_HAL_DUMP_ENABLE
+                 if (property_get_bool("vendor.audio.feature.ecnr.dump", false)) {
+//                    LOG(DEBUG) << __func__ << "DUMP enabled for ecnr deinterleaved data of ecnr output";
+                    char dump_file[128];
+                    FILE *fp_pcm_dump = NULL;
+                    for (unsigned int i =0 ; i < pECNR_ProcessData.audioIO.RcvProcBufferCnt; i++) {
+                        snprintf(dump_file, sizeof(dump_file), "%s/%s_ecnr_test_deinterleave_%d_out.raw",AUDIO_HAL_DUMP_PATH,mTagName.c_str(),i);
+                        fp_pcm_dump=fopen(dump_file,"a+");
+                        if (fp_pcm_dump) {
+                            fwrite(deint_out_buffer + i*ecnrPeriodSize,sizeof(char),ecnrPeriodSize*getPcmSampleSizeInBytes(mMixPortConfig.format.value().pcm),fp_pcm_dump);
+                            fclose(fp_pcm_dump);
+                        } else {
+                            LOG(ERROR) << __func__ << mLogPrefixOEM << " error in opening dump file " << dump_file;
+                        }
+                    }
+                }
+#endif
                 if (pECNR_ProcessData.audioIO.RcvProcBufferCnt== 1) {
 //                        LOG(DEBUG) << __func__ << "channel size 1, just copy";
-                        memcpy(dst_buffer, deint_out_buffer, ecnr_out_buffer_size);
+                    memcpy(dst_buffer, deint_out_buffer, ecnr_out_buffer_size);
                 } else if (pECNR_ProcessData.audioIO.RcvProcBufferCnt > 1) {
 //                        LOG(DEBUG) << __func__ << " change format";
                     mAudExt.mHalExtension->audio_extn_cvtformat16_delnterleave_to_interleave(deint_out_buffer,dst_buffer,ecnrPeriodSize,pECNR_ProcessData.audioIO.RcvProcBufferCnt);
                 }
-            } else {
-                    LOG(ERROR) << __func__ << mLogPrefixOEM << " buffer size mistmatch, write data without processing";
             }
-        }
 write_without_process:
-        bytesWritten = ::pal_stream_write(mPalHandle, &palBuffer);
-        if (bytesWritten < 0) {
-            LOG(ERROR) << __func__ << mLogPrefixOEM << " write failed, ret: " << bytesWritten;
-            *actualFrameCount = frameCount;
-            return onWriteError(frameCount);
-        }
+            bytesWritten = ::pal_stream_write(mPalHandle, &palBuffer);
+            if (bytesWritten < 0) {
+                LOG(ERROR) << __func__ << mLogPrefixOEM << " write failed, ret: " << bytesWritten;
+                *actualFrameCount = frameCount;
+                return onWriteError(frameCount);
+            }
 #ifdef PCM_DUMP_HAL_ENABLE
             if (pcm_dump) {
                 if (fp_out_dump) {
@@ -225,7 +262,11 @@ write_without_process:
                 }
             }
 #endif
-        *actualFrameCount = static_cast<size_t>(bytesWritten / mFrameSizeBytes);
+#ifdef ECNR_HAL_SRC_CP
+        }
+skip_write :
+#endif
+        *actualFrameCount = frameCount;
 #ifdef VERY_VERBOSE_LOGGING
         LOG(VERBOSE) << __func__ << mLogPrefixOEM << ": byteswritten: " << bytesWritten;
 #endif
@@ -276,6 +317,19 @@ void StreamOutPrimaryOEM::configure() {
         bECNR_Enable = true;
         LOG(INFO) << __func__ << mLogPrefixOEM << " : bECNR_Enable " << bECNR_Enable;
         attr->type = PAL_STREAM_VOIP_RX;
+
+#ifdef ECNR_HAL_SRC_CP
+        if((vocoder_rate == 8000) || (vocoder_rate == 16000) || (vocoder_rate == 24000)) {
+            ecnrSampleRate = 24000;
+        } else if(vocoder_rate == 32000) {
+            ecnrSampleRate = 32000;
+        } else if(vocoder_rate == 48000) {
+            ecnrSampleRate = 48000;
+        }
+        VoipPlaybackECNR::kSampleRate = ecnrSampleRate;
+        ecnrPeriodSize = UsecaseConfig<VoipPlaybackECNR>::getDLECNRPeriodSize(VoipPlaybackECNR::kSampleRate);
+        LOG(INFO) << __func__ << mLogPrefixOEM << " ecnrSampleRate:  " << ecnrSampleRate << " encrPeriodSize: "<< ecnrPeriodSize;
+#endif
         pECNR_ProcessData.scd_type = mAudExt.mHalExtension->audio_extn_getSCDtype( ecnrSampleRate, vocoder_rate, ECNR_TYPE_TEL, conn_type, DIR_DL);
         if (mAudExt.mHalExtension->audio_extn_getSCDdata(&pECNR_ProcessData)) {
             LOG(ERROR) << __func__ << mLogPrefixOEM << " failed to get scd information, disabling ecnr processing";
@@ -309,6 +363,46 @@ void StreamOutPrimaryOEM::configure() {
         }
 #ifdef ECNR_HAL_TUNE
         mAudExt.mHalExtension->audio_extn_setupECNR_TuneIF(&pECNR_TuneIFData, ECNR_PORT_ID_VOIP_RX_2015);
+#endif
+#ifdef ECNR_HAL_SRC_CP
+        if (mMixPortConfig.sampleRate.value().value != ecnrSampleRate) {
+            ret = create_resampler(mMixPortConfig.sampleRate.value().value,
+                                   ecnrSampleRate,
+                                   mChannels,
+                                   RESAMPLER_QUALITY_DEFAULT,
+                                   NULL,
+                                   &resampler);
+            if (ret != 0) {
+                resampler = NULL;
+                LOG(ERROR) << __func__ << " failure to create resampler " << ret;
+                bECNR_Enable = false;
+                goto skip_ecnr_configuration;
+            }
+        } else {
+            resampler = NULL;
+            LOG(ERROR) << __func__ << " resampler is not required";
+        }
+        if (resampler) {
+            ecnr_src_buffer_size = (mPlatform.getFrameCount(mMixPortConfig, mTag)*ecnrSampleRate)/mMixPortConfig.sampleRate.value().value * mFrameSizeBytes;
+            LOG(INFO) << __func__ << mLogPrefixOEM << " ecnr_src_buffer_size alloc " << ecnr_src_buffer_size;
+            ecnr_src_buffer = std::make_unique<uint8_t[]>(ecnr_src_buffer_size);
+            if (!ecnr_src_buffer) {
+                LOG(ERROR) << __func__ << mLogPrefixOEM << " failed to allocate ecnr_src_buffer";
+                bECNR_Enable = false;
+                goto skip_ecnr_configuration;
+            }
+
+            mOutHalRingBuffer = std::make_unique<HalRingBuffer<int16_t>>(ecnrPeriodSize*3*mChannels);
+            if (!mOutHalRingBuffer)
+            {
+                LOG(ERROR) << __func__ << " Pointer is null after allocation attempt";
+                ret = ENOMEM_BUFFER;
+                bECNR_Enable = false;
+                goto skip_ecnr_configuration;
+            }
+        }
+        attr->out_media_config.sample_rate = ecnrSampleRate;
+        LOG(ERROR) << __func__ << " sample rate attr : " << attr->out_media_config.sample_rate;
 #endif
     }
 skip_ecnr_configuration :
@@ -434,6 +528,16 @@ void StreamOutPrimaryOEM::shutdown_I() {
     }
     ecnr_in_buffer_size = 0;
 
+#ifdef ECNR_HAL_SRC_CP
+    if (ecnr_src_buffer) {
+        ecnr_src_buffer.reset();
+    }
+    ecnr_src_buffer_size = 0;
+
+    if (mOutHalRingBuffer) {
+        mOutHalRingBuffer.reset();
+    }
+#endif
     if (pECNR_ProcessData.scd_buffer[0]) {
         LOG(INFO) << __func__ << mLogPrefixOEM << " free scd_buffer[0]";
         free(pECNR_ProcessData.scd_buffer[0]);
@@ -455,6 +559,12 @@ void StreamOutPrimaryOEM::shutdown_I() {
     memset(&(pECNR_ProcessData.sECNRTuneIO), 0, sizeof(tECNR_TuneIO));
     mAudExt.mHalExtension->audio_extn_ecnrDestroy(&(pECNR_ProcessData.pMain));
     pECNR_ProcessData.pMain = NULL;
+#ifdef ECNR_HAL_SRC_CP
+    if (resampler != NULL) {
+        release_resampler(resampler);
+    }
+    resampler = NULL;
+#endif
 #ifdef PCM_DUMP_HAL_ENABLE
     pcm_dump = false;
     if (fp_in_dump)

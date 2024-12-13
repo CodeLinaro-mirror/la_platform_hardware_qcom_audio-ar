@@ -9,6 +9,10 @@
 #include <qti-audio-core/Stream.h>
 #include <system/audio_effects/effect_uuid.h>
 #include <qti-audio-core/StreamInPrimary.h>
+#ifdef ECNR_HAL_SRC_CP
+#include <audio_utils/resampler.h>
+#include "extensions/hal_ringbuffer.h"
+#endif
 
 namespace qti::audio::core {
 
@@ -64,6 +68,10 @@ class StreamInPrimaryOEM : public StreamInPrimary{
     size_t ecnr_in_buffer_size{0};
     std::unique_ptr<uint8_t[]> ecnr_ecmx_buffer{nullptr};
     size_t ecnr_ecmx_buffer_size{0};
+#ifdef ECNR_HAL_SRC_CP
+    std::optional<std::unique_ptr<HalRingBuffer<int16_t>>> mInHalRingBuffer;
+    struct resampler_itfe *resampler{NULL};
+#endif
     tECNR_ProcessData pECNR_ProcessData;
     int mChannels{0};
     int ecnrPeriodSize{512};

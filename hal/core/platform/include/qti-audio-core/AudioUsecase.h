@@ -738,7 +738,7 @@ class VoipPlaybackECNR : public UsecaseConfig<VoipPlaybackECNR> {
     inline static size_t kPeriodDurationMs = 8;
     constexpr static size_t kPeriodCount = 4;
     constexpr static size_t kPlatformDelayMs = 13;
-
+    static int kSampleRate;
     static size_t getFrameCount(
             const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig);
 
@@ -751,6 +751,7 @@ class VoipRecordECNR : public UsecaseConfig<VoipRecordECNR> {
     inline static size_t kCaptureDurationMs = 8;
     constexpr static size_t kPeriodCount = 4;
     constexpr static size_t kPlatformDelayMs = 13;
+    static int kSampleRate;
 
     static size_t getFrameCount(
             const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig);
