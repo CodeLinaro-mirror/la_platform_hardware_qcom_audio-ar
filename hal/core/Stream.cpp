@@ -550,12 +550,14 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
             }
             break;
         case Tag::drain:
-            if (mRecentDrainMode = command.get<Tag::drain>();
-                mRecentDrainMode == StreamDescriptor::DrainMode::DRAIN_ALL ||
-                mRecentDrainMode == StreamDescriptor::DrainMode::DRAIN_EARLY_NOTIFY) {
+            if (auto currentMode = command.get<Tag::drain>();
+                currentMode == StreamDescriptor::DrainMode::DRAIN_ALL ||
+                currentMode == StreamDescriptor::DrainMode::DRAIN_EARLY_NOTIFY) {
                 if (mState == StreamDescriptor::State::ACTIVE ||
-                    mState == StreamDescriptor::State::TRANSFERRING) {
-                    if (::android::status_t status = mDriver->drain(mRecentDrainMode);
+                    mState == StreamDescriptor::State::TRANSFERRING ||
+                    (mContext->getAsyncCallback() && mState == StreamDescriptor::State::DRAINING)) {
+                    mRecentDrainMode = currentMode;
+                    if (::android::status_t status = mDriver->drain(currentMode);
                         status == ::android::OK) {
                         populateReply(&reply, mIsConnected);
                         if (mState == StreamDescriptor::State::ACTIVE &&
@@ -576,7 +578,7 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
                     populateReplyWrongState(&reply, command);
                 }
             } else {
-                LOG(WARNING) << __func__ << ": invalid drain mode: " << toString(mRecentDrainMode);
+                LOG(WARNING) << __func__ << ": invalid drain mode: " << toString(currentMode);
             }
             break;
         case Tag::standby:
