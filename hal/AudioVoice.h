@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022, 2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -97,6 +97,7 @@ public:
     void VoiceGetParameters(struct str_parms *query, struct str_parms *reply);
     int RouteStream(const std::set<audio_devices_t>&);
     bool is_valid_call_state(int call_state);
+    bool get_voice_call_state(audio_mode_t *mode);
     bool is_valid_vsid(uint32_t vsid);
     int max_voice_sessions_;
     std::mutex voice_mutex_;
@@ -113,10 +114,12 @@ public:
                              std::set<audio_devices_t>& tx_devs);
     bool IsCallActive(voice_session_t *pSession);
     bool IsAnyCallActive();
+    void updateVoiceMetadataForBT(bool call_active);
     int StopCall();
     AudioVoice();
     ~AudioVoice();
     pal_device_id_t pal_voice_tx_device_id_;
     pal_device_id_t pal_voice_rx_device_id_;
+    std::shared_ptr<StreamInPrimary> stream_in_primary_;
 };
 #endif  // ANDROID_HARDWARE_AHAL_VOICE_H_
