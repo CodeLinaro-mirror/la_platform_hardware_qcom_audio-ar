@@ -475,7 +475,9 @@ ndk::ScopedAStatus StreamInPrimary::updateMetadataCommon(const Metadata& metadat
         if (metadata.index() != mMetadata.index()) {
             LOG(FATAL) << __func__ << mLogPrefix << ": changing metadata variant is not allowed";
         }
+        StreamInPrimary::sinkMetadata_mutex_.lock();
         mMetadata = metadata;
+        StreamInPrimary::sinkMetadata_mutex_.unlock();
     }
     int callState = mPlatform.getCallState();
     int callMode = mPlatform.getCallMode();
@@ -526,7 +528,7 @@ int32_t StreamInPrimary::setAggregateSinkMetadata(bool voiceActive) {
         }
     }
     LOG(VERBOSE) << __func__ << mLogPrefix << " trackCount " << track_count_total <<
-                " streamSize " << inStreams.size();
+                " IN streams size " << inStreams.size();
     if (track_count_total == 0) {
         ModulePrimary::inListMutex.unlock();
         return 0;
