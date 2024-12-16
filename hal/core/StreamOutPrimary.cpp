@@ -766,6 +766,7 @@ ndk::ScopedAStatus StreamOutPrimary::updateMetadataCommon(const Metadata& metada
     if (metadata.index() != mMetadata.index()) {
         LOG(FATAL) << __func__ << mLogPrefix << ": changing metadata variant is not allowed";
     }
+    StreamOutPrimary::sourceMetadata_mutex_.lock();
     mMetadata = metadata;
 
     if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK) {
@@ -776,7 +777,6 @@ ndk::ScopedAStatus StreamOutPrimary::updateMetadataCommon(const Metadata& metada
     int callMode = mPlatform.getCallMode();
     bool voiceActive = ((callState == 2) || (callMode == 2));
 
-    StreamOutPrimary::sourceMetadata_mutex_.lock();
     setAggregateSourceMetadata(voiceActive);
     StreamOutPrimary::sourceMetadata_mutex_.unlock();
 
