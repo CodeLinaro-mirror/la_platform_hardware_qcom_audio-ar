@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -311,6 +311,8 @@ class Platform {
     bool isHDRARMenabled();
     bool isHDRSPFEnabled();
     bool getUSBCapEnable() { return mUSBCapEnable; }
+    void updateHotwordPortConfig(
+        ::aidl::android::media::audio::common::AudioPortConfig& portConfig);
   private:
     void customizePalDevices(
             const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig,
