@@ -64,10 +64,18 @@ using android::OK;
 #endif
 
 #define BATTERY_LISTENER_LIB_PATH LIBS"libbatterylistener.so"
+
+#ifdef AUDIO_FRAMEWORK_AWE
+#define HFP_LIB_PATH LIBS"libhfp_pal_awe.so"
+#define HFP_AG_LIB_PATH LIBS"libhfp_ag_pal_awe.so"
+#define FM_LIB_PATH LIBS"libfmpal_awe.so"
+#define ICC_LIB_PATH LIBS"libicc_pal_awe.so"
+#else
 #define HFP_LIB_PATH LIBS"libhfp_pal.so"
 #define HFP_AG_LIB_PATH LIBS"libhfp_ag_pal.so"
 #define FM_LIB_PATH LIBS"libfmpal.so"
 #define ICC_LIB_PATH LIBS"libicc_pal.so"
+#endif
 
 #define BT_IPC_SOURCE_LIB_NAME LIBS"btaudio_offload_if.so"
 #define POWER_POLICY_LIB_PATH LIBS"libarpowerpolicy.so"
@@ -933,9 +941,17 @@ void AudioExtn::audio_extn_perf_lock_release(int *handle)
 
 // START: AUTO HAL ======================================================================
 #ifdef __LP64__
+#ifdef AUDIO_FRAMEWORK_AWE
+#define AUTOHAL_LIB_PATH "/vendor/lib64/libautohal_pal_awe.so"
+#else
 #define AUTOHAL_LIB_PATH "/vendor/lib64/libautohal_pal.so"
+#endif
+#else
+#ifdef AUDIO_FRAMEWORK_AWE
+#define AUTOHAL_LIB_PATH "/vendor/lib/libautohal_pal_awe.so"
 #else
 #define AUTOHAL_LIB_PATH "/vendor/lib/libautohal_pal.so"
+#endif
 #endif
 
 static void *autohal_lib_handle = NULL;
