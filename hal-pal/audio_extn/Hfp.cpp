@@ -262,6 +262,14 @@ static int32_t start_hfp(std::shared_ptr<AudioDevice> adev __unused,
 
     devices[1].id = PAL_DEVICE_OUT_SPEAKER;
 
+    if (devices[0].config.sample_rate == 16000) {
+        memset(devices[0].custom_config.custom_key, '\0', PAL_MAX_CUSTOM_KEY_SIZE);
+        memcpy(devices[0].custom_config.custom_key, "WB", strlen("WB"));
+    } else {
+        memset(devices[0].custom_config.custom_key, '\0', PAL_MAX_CUSTOM_KEY_SIZE);
+        memcpy(devices[0].custom_config.custom_key, "NB", strlen("NB"));
+    }
+
     ret = pal_stream_open(&stream_attr,
             no_of_devices, devices,
             0,
@@ -301,6 +309,14 @@ static int32_t start_hfp(std::shared_ptr<AudioDevice> adev __unused,
     devices[0].config.aud_fmt_id = PAL_AUDIO_FMT_PCM_S16_LE;
 
     devices[1].id = PAL_DEVICE_IN_HANDSET_MIC;
+
+    if (devices[0].config.sample_rate == 16000) {
+        memset(devices[0].custom_config.custom_key, '\0', PAL_MAX_CUSTOM_KEY_SIZE);
+        memcpy(devices[0].custom_config.custom_key, "WB", strlen("WB"));
+    } else {
+        memset(devices[0].custom_config.custom_key, '\0', PAL_MAX_CUSTOM_KEY_SIZE);
+        memcpy(devices[0].custom_config.custom_key, "NB", strlen("NB"));
+    }
 
     ret = pal_stream_open(&stream_tx_attr,
             no_of_devices, devices,
