@@ -401,6 +401,8 @@ void StreamInPrimary::resume() {
 
     if (bytesRead < 0) {
         LOG(ERROR) << __func__ << mLogPrefix << " read failed, ret:" << std::to_string(bytesRead);
+        //reset the palBuffer if read error happened to avoid unexpectced noise.
+        memset(palBuffer.buffer, 0, palBuffer.size);
         *actualFrameCount = frameCount;
          return onReadError(frameCount);
     }
