@@ -414,8 +414,9 @@ ndk::ScopedAStatus Module::updateStreamsConnectedState(const AudioPatch& oldPatc
     std::for_each(oldConnections.begin(), oldConnections.end(), [&](const auto& connectionPair) {
         const int32_t mixPortConfigId = connectionPair.first;
         if (auto it = newConnections.find(mixPortConfigId);
-            it == newConnections.end() || it->second != connectionPair.second) {
-            if (auto status = mStreams.setStreamConnectedDevices(mixPortConfigId, {});
+            it == newConnections.end()) {
+            ::aidl::android::media::audio::common::AudioDevice noneDevice;
+            if (auto status = mStreams.setStreamConnectedDevices(mixPortConfigId, {noneDevice});
                 status.isOk()) {
                 LOG(DEBUG) << "updateStreamsConnectedState: The "
                               "stream on port config id "
