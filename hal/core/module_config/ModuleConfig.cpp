@@ -20,6 +20,7 @@
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
+#define LOG_TAG "AHAL_ModuleConfig_QTI"
 #include <aidl/android/media/audio/common/AudioChannelLayout.h>
 #include <aidl/android/media/audio/common/AudioDeviceType.h>
 #include <aidl/android/media/audio/common/AudioFormatDescription.h>
@@ -33,7 +34,7 @@
 #include <libxml/parser.h>
 #include <libxml/xinclude.h>
 #include <media/stagefright/foundation/MediaDefs.h>
-
+#include <cutils/properties.h>
 #include <map>
 #include <memory>
 #include <unordered_map>
@@ -180,11 +181,28 @@ static int32_t findPortIdByTagName(const std::vector<AudioPort>& ports, std::str
     return (*portItr).id;
 }
 
+/*
+* Search order for audio_module_config_primary.xml
+* odm/etc/
+* vendor/etc/audio/sku_<> if sku is defined / sku specific file is needed
+* vendor/etc/audio
+* vendor/etc
+*/
+
 static std::vector<std::string> getAudioHalConfigurationPaths() {
-    static const std::vector<std::string> paths = []() {
-        return std::vector<std::string>({"/vendor/etc/audio"});
-    }();
-    return paths;
+     static const std::vector<std::string> paths = []() {
+         char value[PROPERTY_VALUE_MAX] = {};
+         if (property_get("ro.boot.product.vendor.sku", value, "") <= 0) {
+             return std::vector<std::string>({"/odm/etc", "/vendor/etc/audio",
+                     "/vendor/etc"});
+         } else {
+             return std::vector<std::string>({
+                     "/odm/etc",
+                     std::string("/vendor/etc/audio/sku_") + value,
+                     "/vendor/etc/audio", "/vendor/etc"});
+         }
+     }();
+     return paths;
 }
 
 static std::string getReadAbleConfigurationFile(const char* fileName) {
@@ -676,8 +694,9 @@ static std::unique_ptr<ModuleConfig> getModuleConfig(const xsd::Modules::Module&
 
 // static
 std::unique_ptr<ModuleConfig> ModuleConfig::getPrimaryConfiguration() {
-    auto xsdConfig =
-            xsd::read(getReadAbleConfigurationFile(kPrimaryModuleConfigFileName.c_str()).c_str());
+    auto filePath = getReadAbleConfigurationFile(kPrimaryModuleConfigFileName.c_str());
+    LOG(INFO) << __func__ << ": parse " << filePath;
+    auto xsdConfig = xsd::read(filePath.c_str());
     if (!xsdConfig.has_value()) {
         LOG(WARNING) << __func__ << ": primary config retrieval failed, setting defaults";
         return nullptr;
