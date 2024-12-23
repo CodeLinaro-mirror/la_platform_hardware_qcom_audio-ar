@@ -73,6 +73,9 @@ AUDIO_PAL += libdev_speaker
 AUDIO_PAL += libdev_speaker_mic
 AUDIO_PAL += libdev_ultrasound
 AUDIO_PAL += libdev_usb
+#HFP
+AUDIO_PAL += libdev_hfpuplink
+AUDIO_PAL += libdev_hfpdownlink
 
 AUDIO_ACDB := workspaceFileXml.qwsp
 AUDIO_ACDB += acdb_cal.acdb
