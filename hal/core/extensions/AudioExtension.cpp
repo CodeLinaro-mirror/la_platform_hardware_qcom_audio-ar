@@ -47,14 +47,17 @@ AudioExtensionBase::~AudioExtensionBase() {
     cleanUp();
 }
 
-void AudioExtension::audio_extn_get_parameters(struct str_parms *query, struct str_parms *reply) {
-    char *kv_pairs = NULL;
-    char value[32] = {0};
-    int ret, val = 0;
+int AudioExtension::audio_extn_get_parameters(const std::string& id) {
+    LOG(DEBUG) << __func__ << ": Enter";
+    int ret = 0;
+    ret =  mAutoOemExtension->audio_extn_autooem_get_parameters(id);
+    LOG(DEBUG) << __func__ << ": get param return value : " << ret;
+    return ret;
 }
 void AudioExtension::audio_extn_set_parameters(struct str_parms *params) {
     mHfpExtension->audio_extn_hfp_set_parameters(params);
     mFmExtension->audio_extn_fm_set_parameters(params);
+    mAutoOemExtension->audio_extn_autooem_set_parameters(params);
     audio_feature_stats_set_parameters(params);
 }
 
@@ -534,4 +537,95 @@ feature_disabled:
     gef_init = NULL;
     gef_deinit = NULL;
 }
+
+
+
+AutoOemExtension::AutoOemExtension():AudioExtensionBase(kAutoOemLibrary, isExtensionEnabled(kAutoOemProperty))
+{
+    oem_set_parameters = NULL;
+    LOG(INFO) << __func__ << " Enter";
+    if (mHandle != nullptr) {
+        if (!(oem_set_parameters = (oem_set_parameters_t)dlsym(mHandle, "oem_set_parameters")))
+        {
+            LOG(ERROR) << __func__ << "dlsym failed";
+            if (mHandle) {
+                dlclose(mHandle);
+                mHandle = NULL;
+            }
+            oem_set_parameters = NULL;
+        }
+
+        if (!(oem_get_parameters = (oem_get_parameters_t)dlsym(mHandle, "oem_get_parameters")))
+        {
+            LOG(ERROR) << __func__ << "dlsym failed";
+            if (mHandle) {
+                dlclose(mHandle);
+                mHandle = NULL;
+            }
+            oem_get_parameters = NULL;
+        }
+
+        if (!(oem_init = (oem_init_t)dlsym(mHandle, "oem_init")))
+        {
+            LOG(ERROR) << __func__ << "dlsym failed";
+            if (mHandle) {
+                dlclose(mHandle);
+                mHandle = NULL;
+            }
+            oem_init = NULL;
+        }
+        else {
+            LOG(INFO) << __func__ << "oem_init dlsym successful";
+        }
+
+        if (oem_init)
+        {
+            LOG(INFO) << __func__ << "OEM Init call";
+            oem_init();
+        }
+    }
+    else {
+        LOG(INFO) << __func__ << "mHandle not NULL";
+    }
+
+}
+
+int AutoOemExtension::audio_extn_autooem_get_parameters(const std::string& id)
+{
+    int ret =0;
+    LOG(INFO) << __func__ << " Enter";
+    if (!(oem_get_parameters))
+    {
+        LOG(ERROR) << __func__ << ": Error";
+        ret = -1;
+    } else {
+        ret = oem_get_parameters(id);
+    }
+    return ret;
+}
+
+AutoOemExtension::~AutoOemExtension()
+{
+   LOG(INFO) << __func__ << " Enter";
+     if (mHandle) {
+        dlclose(mHandle);
+        mHandle = NULL;
+    }
+  oem_set_parameters = NULL;
+  oem_get_parameters = NULL;
+  oem_init = NULL;
+}
+
+void AutoOemExtension::audio_extn_autooem_set_parameters(struct str_parms* params)
+{
+    LOG(INFO) << __func__ << ": Enter";
+    if (oem_set_parameters)
+    {
+        LOG(INFO) << __func__ << ": oem set parameters available ";
+        if (mHandle != nullptr) {
+          oem_set_parameters(params);
+        }
+    }
+}
+
 } // namespace qti::audio::core

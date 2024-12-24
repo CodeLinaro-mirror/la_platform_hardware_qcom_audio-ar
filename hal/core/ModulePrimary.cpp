@@ -45,6 +45,9 @@
 #define MAX_VOLUME_GAIN_MB 600
 #define MIN_VOLUME_GAIN 0.0f
 #define MAX_VOLUME_GAIN 1.0f
+#define AUDIO_PARAMETER_KEY_BALANCE "Balance"
+#define AUDIO_PARAMETER_KEY_FADER "Fader"
+#define AUDIO_PARAMETER_KEY_ISFADERAVAILABLE "isFaderAvailable"
 using aidl::android::hardware::audio::common::SinkMetadata;
 using aidl::android::hardware::audio::common::SourceMetadata;
 using aidl::android::media::audio::common::AudioOffloadInfo;
@@ -515,6 +518,9 @@ ndk::ScopedAStatus ModulePrimary::setVendorParameters(
             std::string kvpairs = getkvPairsForVendorParameter(in_parameters);
             if (!kvpairs.empty()) {
                 parms = str_parms_create_str(kvpairs.c_str());
+                if (!parms) {
+                    return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
+                }
                 mAudExt.audio_extn_set_parameters(parms);
             }
 
@@ -809,6 +815,7 @@ ndk::ScopedAStatus ModulePrimary::getVendorParameters(
         const std::vector<std::string>& in_ids,
         std::vector<::aidl::android::hardware::audio::core::VendorParameter>* _aidl_return) {
     LOG(DEBUG) << __func__ << ": id count: " << in_ids.size();
+    std::vector<VendorParameter> result{};
     for (const auto& id : in_ids) {
         if (id == VendorDebug::kForceTransientBurstName) {
             VendorParameter forceTransientBurst{.id = id};
@@ -818,6 +825,24 @@ ndk::ScopedAStatus ModulePrimary::getVendorParameters(
             VendorParameter forceSynchronousDrain{.id = id};
             forceSynchronousDrain.ext.setParcelable(Boolean{mVendorDebug.forceSynchronousDrain});
             _aidl_return->push_back(std::move(forceSynchronousDrain));
+        } else if ((id == AUDIO_PARAMETER_KEY_BALANCE) || (id == AUDIO_PARAMETER_KEY_FADER)) {
+            LOG(DEBUG) << __func__ << ": " << id;
+            auto value = mAudExt.audio_extn_get_parameters(id);
+            result.emplace_back(makeVendorParameter(id, std::to_string(value)));
+            *_aidl_return = result;
+            return ndk::ScopedAStatus::ok();
+        } else if (id == AUDIO_PARAMETER_KEY_ISFADERAVAILABLE) {
+            LOG(DEBUG) << __func__ << ": " << id;
+            std::string enablevalue{};
+            auto istrue = mAudExt.audio_extn_get_parameters(id);
+            if (istrue) {
+                enablevalue = "true";
+            } else {
+                enablevalue = "false";
+            }
+            result.emplace_back(makeVendorParameter(id, enablevalue));
+            *_aidl_return = result;
+            return ndk::ScopedAStatus::ok();
         }
     }
 
