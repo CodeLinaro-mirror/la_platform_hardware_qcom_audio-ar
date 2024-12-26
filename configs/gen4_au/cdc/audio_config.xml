@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!--Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.   -->
+<!--SPDX-License-Identifier: BSD-3-Clause-Clear                                -->
+<configurations>
+    <config>
+        <name>ESE-EV_Feature</name>
+        <type>int</type>
+		<min>0</min>
+		<max>1</max>
+        <defaultvalue>0</defaultvalue>
+    </config>
+	<config>
+        <name>Output_information</name>
+        <type>int</type>
+		<min>0</min>
+		<max>4</max>
+        <defaultvalue>0</defaultvalue>
+    </config>
+	<config>
+        <name>maxVolumeStartup</name>
+        <type>int</type>
+		<min>0</min>
+		<max>40</max>
+        <defaultvalue>16</defaultvalue>
+    </config>
+	<config>
+        <name>AttenuationTarget</name>
+        <type>int</type>
+		<min>-9000</min>
+		<max>0</max>
+        <defaultvalue>-4000</defaultvalue>
+    </config>
+	<config>
+        <name>Fader</name>
+        <type>int</type>
+		<min>0</min>
+		<max>1</max>
+        <defaultvalue>1</defaultvalue>
+    </config>
+	<config>
+        <name>Tone_controller_bands</name>
+        <type>int</type>
+		<min>3</min>
+		<max>8</max>
+        <defaultvalue>3</defaultvalue>
+    </config>
+	<config>
+        <name>SoundStage</name>
+        <type>int</type>
+		<min>0</min>
+		<max>4</max>
+        <defaultvalue>1</defaultvalue>
+    </config>
+	<config>
+        <name>DefaultAmbiance</name>
+        <type>int</type>
+		<min>1</min>
+		<max>5</max>
+        <defaultvalue>1</defaultvalue>
+    </config>
+	<config>
+        <name>DefaultAGCState</name>
+        <type>int</type>
+		<min>0</min>
+		<max>1</max>
+        <defaultvalue>1</defaultvalue>
+    </config>
+    <config>
+        <name>R-ANC_Feature</name>
+        <type>int</type>
+		<min>0</min>
+		<max>1</max>
+        <defaultvalue>1</defaultvalue>
+    </config>
+</configurations>
+

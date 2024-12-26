@@ -181,6 +181,7 @@ PRODUCT_COPY_FILES += \
     vendor/qcom/opensource/agm/plugins/tinyalsa/test/cdc/backend_conf.xml:$(TARGET_COPY_OUT_VENDOR)/etc/backend_conf.xml
 PRODUCT_ODM_PROPERTIES += \
 vendor.audio.feature.oem_extension.enable=true
+
 else
 # Configuration files shared between msmnile_gvmgh and others
 PRODUCT_COPY_FILES += \
@@ -774,4 +775,9 @@ persist.vendor.audio.calfile6=/vendor/etc/acdbdata/ADP/Hdmi_cal.acdb\
 persist.vendor.audio.calfile7=/vendor/etc/acdbdata/ADP/Headset_cal.acdb\
 persist.vendor.audio.calfile8=/vendor/etc/acdbdata/ADP/Speaker_cal.acdb
 endif
+
+ifeq ($(TARGET_USES_CDC_HW), true)
+include vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/cdc/audio_cdc_modules.mk
+endif
+
 endif # AUDIO_FRAMEWORK_AUDIOREACH
