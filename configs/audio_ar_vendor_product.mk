@@ -39,27 +39,28 @@ endif
 PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.audio.pro.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.pro.xml
 
-SOONG_CONFIG_qtiaudio_var00 := false
-SOONG_CONFIG_qtiaudio_var11 := false
-SOONG_CONFIG_qtiaudio_var22 := false
-SOONG_CONFIG_qtiaudio_hwasan := false
+$(call soong_config_set, qtiaudio, var00, false)
+$(call soong_config_set, qtiaudio, var11, false)
+$(call soong_config_set, qtiaudio, var22, false)
+$(call soong_config_set, qtiaudio, hwasan, false)
+
 
 ifneq ($(BUILD_AUDIO_TECHPACK_SOURCE), true)
-    SOONG_CONFIG_qtiaudio_var00 := true
-    SOONG_CONFIG_qtiaudio_var11 := true
-    SOONG_CONFIG_qtiaudio_var22 := true
+    $(call soong_config_set, qtiaudio, var00, true)
+    $(call soong_config_set, qtiaudio, var11, true)
+    $(call soong_config_set, qtiaudio, var22, true)
 endif
 ifeq (,$(wildcard $(QCPATH)/mm-audio-noship))
-    SOONG_CONFIG_qtiaudio_var11 := true
+    $(call soong_config_set, qtiaudio, var11, true)
 endif
 ifeq (,$(wildcard $(QCPATH)/mm-audio))
-    SOONG_CONFIG_qtiaudio_var22 := true
+    $(call soong_config_set, qtiaudio, var22, true)
 endif
 
 ifneq ($(filter hwaddress,$(SANITIZE_TARGET)),)
 $(warning audio hwasan enabled at target level)
 AUDIO_FEATURE_USE_HWASAN_ARTIFACTS := true
-SOONG_CONFIG_qtiaudio_hwasan := true
+$(call soong_config_set, qtiaudio, hwasan, true)
 endif
 
 # this feature flag is only set when hwasan is enabled (local or global)
