@@ -102,7 +102,7 @@ AUDIO_AGM += libagmmixer
 AUDIO_AGM += agmcompressplay
 AUDIO_AGM += libagm_mixer_plugin
 AUDIO_AGM += libagm_pcm_plugin
-AUDIO_AGM += libagm_compress_plugin
+AUDIO_AGM += libtinycompress_module_agm
 
 #PAL Module
 AUDIO_PAL := libar-pal
