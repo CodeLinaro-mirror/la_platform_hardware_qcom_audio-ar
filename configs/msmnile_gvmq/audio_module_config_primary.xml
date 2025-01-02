@@ -128,7 +128,6 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
                       defaultValueMB="0"
                       minRampMs="10"
                       maxRampMs="100"
-                      useForVolume="true"
                       stepValueMB="100"/>
             </gains>
         </devicePort>
@@ -141,7 +140,6 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
                       defaultValueMB="0"
                       minRampMs="10"
                       maxRampMs="100"
-                      useForVolume="true"
                       stepValueMB="100"/>
           </gains>
         </devicePort>
@@ -154,7 +152,6 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
                       defaultValueMB="0"
                       minRampMs="10"
                       maxRampMs="100"
-                      useForVolume="true"
                       stepValueMB="100"/>
             </gains>
         </devicePort>
@@ -167,7 +164,6 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
                       defaultValueMB="0"
                       minRampMs="10"
                       maxRampMs="100"
-                      useForVolume="true"
                       stepValueMB="100"/>
             </gains>
         </devicePort>
@@ -180,7 +176,6 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
                       defaultValueMB="0"
                       minRampMs="10"
                       maxRampMs="100"
-                      useForVolume="true"
                       stepValueMB="100"/>
           </gains>
       </devicePort>
@@ -193,7 +188,6 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
                       defaultValueMB="0"
                       minRampMs="10"
                       maxRampMs="100"
-                      useForVolume="true"
                       stepValueMB="100"/>
             </gains>
         </devicePort>
@@ -206,7 +200,6 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
                       defaultValueMB="0"
                       minRampMs="10"
                       maxRampMs="100"
-                      useForVolume="true"
                       stepValueMB="100"/>
             </gains>
         </devicePort>

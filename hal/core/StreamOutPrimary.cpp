@@ -107,6 +107,13 @@ bool StreamOutPrimary::isHwVolumeSupported() {
         case Usecase::PCM_OFFLOAD_PLAYBACK:
         case Usecase::MMAP_PLAYBACK:
         case Usecase::VOIP_PLAYBACK:
+        case Usecase::NAV_GUIDANCE_PLAYBACK:
+        case Usecase::MEDIA_PLAYBACK:
+        case Usecase::PRIMARY_PLAYBACK:
+        case Usecase::DEEP_BUFFER_PLAYBACK:
+        case Usecase::ALERTS_PLAYBACK:
+        case Usecase::SYS_NOTIFICATION_PLAYBACK:
+        case Usecase::PHONE_PLAYBACK:
             return true;
         default:
             break;
