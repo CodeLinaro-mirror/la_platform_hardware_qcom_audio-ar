@@ -71,6 +71,10 @@ AUDIO_PAL += libdev_headset_va
 AUDIO_PAL += libdev_proxy
 AUDIO_PAL += libdev_speaker
 AUDIO_PAL += libdev_speaker_mic
+AUDIO_PAL += libdev_a2bmic
+AUDIO_PAL += libdev_a2bspeaker
+AUDIO_PAL += libdev_a2b2mic
+AUDIO_PAL += libdev_a2b2speaker
 AUDIO_PAL += libdev_ultrasound
 AUDIO_PAL += libdev_usb
 #HFP
