@@ -620,11 +620,15 @@ ndk::ScopedAStatus StreamInPrimary::addEffect(const std::shared_ptr<IEffect>& in
             mAECEnabled = true;
             applyEffects();
         }
+        isECEnabledCount++;
+        LOG(VERBOSE) << __func__ << mLogPrefix << " isECEnabledCount:" << isECEnabledCount;
     } else if (typeUUID == stringToUuid(Descriptor::EFFECT_TYPE_UUID_NS)) {
         if (!mNSEnabled) {
             mNSEnabled = true;
             applyEffects();
         }
+        isNSEnabledCount++;
+        LOG(VERBOSE) << __func__ << mLogPrefix << " isNSEnabledCount:" << isNSEnabledCount;
     }
 
     return ndk::ScopedAStatus::ok();
@@ -644,12 +648,18 @@ ndk::ScopedAStatus StreamInPrimary::removeEffect(const std::shared_ptr<IEffect>&
     const auto& typeUUID = desc.common.id.type;
 
     if (typeUUID == stringToUuid(Descriptor::EFFECT_TYPE_UUID_AEC)) {
-        if (mAECEnabled) {
+        isECEnabledCount--;
+        LOG(VERBOSE) << __func__ << mLogPrefix << " isECEnabledCount:" << isECEnabledCount;
+        if (mAECEnabled && !isECEnabledCount) {
+            LOG(VERBOSE) << __func__ << mLogPrefix << " removing EC effect";
             mAECEnabled = false;
             applyEffects();
         }
     } else if (typeUUID == stringToUuid(Descriptor::EFFECT_TYPE_UUID_NS)) {
-        if (mNSEnabled) {
+        isNSEnabledCount--;
+        LOG(VERBOSE) << __func__ << mLogPrefix << " isNSEnabledCount:" << isNSEnabledCount;
+        if (mNSEnabled && !isNSEnabledCount) {
+            LOG(VERBOSE) << __func__ << mLogPrefix << " removing NS effect";
             mNSEnabled = false;
             applyEffects();
         }
