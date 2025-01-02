@@ -79,7 +79,9 @@ LOCAL_SHARED_LIBRARIES := \
     libaudioutils \
     libxml2 \
     libar-pal \
-    libaudioplatformconverter.qti
+    libaudioplatformconverter.qti \
+    libmemunreachable \
+    libmediautils_vendor
 
 include $(BUILD_SHARED_LIBRARY)
 
