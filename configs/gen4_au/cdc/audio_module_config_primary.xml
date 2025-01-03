@@ -94,8 +94,24 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
             <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000 64000 88200 96000 128000 176400 192000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_2POINT1 LAYOUT_QUAD LAYOUT_PENTA LAYOUT_5POINT1 LAYOUT_6POINT1 LAYOUT_7POINT1" formatType="PCM" pcmType="INT_24_BIT" />
             <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000 64000 88200 96000 128000 176400 192000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_2POINT1 LAYOUT_QUAD LAYOUT_PENTA LAYOUT_5POINT1 LAYOUT_6POINT1 LAYOUT_7POINT1" formatType="PCM" pcmType="INT_32_BIT" />
         </mixPort>
-        <mixPort name="voip_playback" role="source" flags="VOIP_RX">
-            <profile samplingRates="8000 16000 32000 48000" channelLayouts="LAYOUT_STEREO"
+        <mixPort name="voip_playback" role="source" flags="FAST VOIP_RX">
+            <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO"
+                formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="voip_playback_32k" role="source" flags="FAST VOIP_RX">
+            <profile samplingRates="32000" channelLayouts="LAYOUT_STEREO"
+                formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="voip_playback_24k" role="source" flags="FAST VOIP_RX">
+            <profile samplingRates="24000" channelLayouts="LAYOUT_STEREO"
+                formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="voip_playback_16k" role="source" flags="FAST VOIP_RX">
+            <profile samplingRates="16000" channelLayouts="LAYOUT_STEREO"
+                formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="voip_playback_8k" role="source" flags="FAST VOIP_RX">
+            <profile samplingRates="8000" channelLayouts="LAYOUT_STEREO"
                 formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
         <mixPort name="raw_out" role="source" flags="FAST RAW">
@@ -119,8 +135,17 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <mixPort name="compress_in" role="sink" flags="DIRECT">
             <profile name="compress-capture-AAC-LC" samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_STEREO LAYOUT_MONO LAYOUT_FRONT_BACK" formatType="NON_PCM" encoding="audio/mp4a.40.02" />
         </mixPort>
+        <mixPort name="voip_record_fast" role="sink" flags="FAST VOIP_TX">
+            <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_MONO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
         <mixPort name="voip_record" role="sink" flags="VOIP_TX">
             <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_MONO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="vr_in_fast" role="sink" flags="FAST">
+            <profile samplingRates="16000" channelLayouts="LAYOUT_5POINT1" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="vr_in" role="sink">
+            <profile samplingRates="16000" channelLayouts="LAYOUT_5POINT1" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
         <mixPort name="mixport_tuner0" role="sink" >
             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO"
@@ -244,6 +269,9 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <devicePort tagName="Rear Seat In Bus" deviceType="IN_BUS" role="source" attached="true"  address="BUS17_INPUT_REAR_SEAT">
             <profile samplingRates="48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_FRONT_BACK" formatType="PCM" pcmType="INT_16_BIT" />
         </devicePort>
+        <devicePort tagName="VR In Bus" deviceType="IN_BUS" role="source" attached="true"  address="BUS_INPUT_3rdpartyvr0">
+            <profile samplingRates="16000" channelLayouts="LAYOUT_5POINT1" formatType="PCM" pcmType="INT_16_BIT" />
+        </devicePort>
         <devicePort tagName="built_in_mic" deviceType="IN_MICROPHONE" role="source" attached="true" defaultDevice="true" address="bottom">
             <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_FRONT_BACK" formatType="PCM" pcmType="INT_16_BIT" />
             <!-- To support compress offload capture such that client can query -->
@@ -265,7 +293,7 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
     <routes>
         <route type="mix" sink="Sys Notification Bus" sources="sys_notification,low_latency_out_8k,low_latency_out_16k_sys,low_latency_out_24k,low_latency_out_32k,low_latency_out" />
         <route type="mix" sink="Nav Guidance Bus" sources="nav_guidance,low_latency_out_8k,low_latency_out_16k_sys,low_latency_out_24k,low_latency_out_32k,low_latency_out" />
-        <route type="mix" sink="Phone Bus" sources="phone,low_latency_out_8k,low_latency_out_16k_sys,low_latency_out_24k,low_latency_out_32k,low_latency_out" />
+        <route type="mix" sink="Phone Bus" sources="phone,low_latency_out_8k,low_latency_out_16k_sys,low_latency_out_24k,low_latency_out_32k,low_latency_out,voip_playback,voip_playback_32k,voip_playback_24k,voip_playback_16k,voip_playback_8k" />
         <route type="mix" sink="Alerts Bus" sources="alerts,low_latency_out_8k,low_latency_out_16k_sys,low_latency_out_24k,low_latency_out_32k,low_latency_out" />
         <route type="mix" sink="Nav Guidance_2 Bus" sources="nav_guidance_2,low_latency_out_8k,low_latency_out_16k_sys,low_latency_out_24k,low_latency_out_32k,low_latency_out" />
         <route type="mix" sink="Front Passenger Bus" sources="front_passenger" />
@@ -276,9 +304,12 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <route type="mix" sink="wired_headset" sources="primary_out,low_latency_out,deep_buffer_out,direct_pcm_out,compress_offload_out,telephony_rx_mic,voip_playback,raw_out,mmap_no_irq_out" />
         <route type="mix" sink="wired_headphones" sources="primary_out,low_latency_out,deep_buffer_out,direct_pcm_out,compress_offload_out,telephony_rx_mic,voip_playback,mmap_no_irq_out" />
         <route type="mix" sink="primary_in" sources="built_in_mic,built_in_back_mic,Primary In Bus,Front Passenger In Bus,Rear Seat In Bus" />
+        <route type="mix" sink="vr_in_fast" sources="VR In Bus"/>
+        <route type="mix" sink="vr_in" sources="VR In Bus" />
         <route type="mix" sink="compress_in" sources="built_in_mic,built_in_back_mic,wired_headset_mic,bt_sco_headset_mic,fm_tuner_mic,bt_a2dp_mic,echo_reference_mic,bt_le_mic" />
         <route type="mix" sink="telephony_tx_device_out" sources="built_in_mic,built_in_back_mic,wired_headset_mic,bt_sco_headset_mic,fm_tuner_mic,bt_a2dp_mic,echo_reference_mic,bt_le_mic" />
         <route type="mix" sink="mmap_no_irq_in" sources="built_in_mic,built_in_back_mic,bt_sco_headset_mic,usb_mic,usb_headset_mic,wired_headset_mic" />
+        <route type="mix" sink="voip_record_fast" sources="built_in_mic,built_in_back_mic" />
         <route type="mix" sink="voip_record" sources="built_in_mic,built_in_back_mic,wired_headset_mic,bt_sco_headset_mic,fm_tuner_mic,bt_a2dp_mic,echo_reference_mic,bt_le_mic" />
         <route type="mix" sink="mixport_tuner0" sources="fm_tuner" />
         <route type="mix" sink="fast_input" sources="built_in_mic,built_in_back_mic"/>
