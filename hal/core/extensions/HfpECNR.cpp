@@ -314,10 +314,8 @@ static void *hfp_ul_thread(void *__unused){
                 hfpmod.mHalExtension->audio_extn_feedback_TuneIO_buffer(&(hfpmod.p_UL_ECNR_TuneIFData), &(hfpmod.p_UL_ECNR_ProcessData.sECNRTuneIO));
 #endif
 
-                if (!ret) {
-                    for (int i = 0; i < period_size; i++){
-                        dst_buffer[i] = src_buffer[(i * ECNR_MIC_EC_CH)];
-                    }
+                if (ret) {
+                    memcpy(dst_buffer,deint_buffer,period_size*HFP_16_BIT_FORMAT_BYTES);
                 }
                 palBuffer.buffer = (uint8_t *)hfpmod.UL_RX_stream_buffer;
                 palBuffer.size = hfpmod.UL_RX_stream_buffer_size;
