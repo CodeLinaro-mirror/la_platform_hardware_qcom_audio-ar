@@ -16,7 +16,7 @@
 
 /*
  * Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -159,6 +159,33 @@ const static std::unordered_map<xsd::AudioChannelLayout, int32_t> XsdToAudioChan
         {xsd::AudioChannelLayout::LAYOUT_FRONT_BACK, AudioChannelLayout::LAYOUT_FRONT_BACK},
 };
 
+const static std::unordered_map<xsd::AudioChannelIndexMask, int32_t> XsdToAudioChannelIndexMask = {
+        {xsd::AudioChannelIndexMask::INDEX_MASK_1, AudioChannelLayout::INDEX_MASK_1},
+        {xsd::AudioChannelIndexMask::INDEX_MASK_2, AudioChannelLayout::INDEX_MASK_2},
+        {xsd::AudioChannelIndexMask::INDEX_MASK_3, AudioChannelLayout::INDEX_MASK_3},
+        {xsd::AudioChannelIndexMask::INDEX_MASK_4, AudioChannelLayout::INDEX_MASK_4},
+        {xsd::AudioChannelIndexMask::INDEX_MASK_5, AudioChannelLayout::INDEX_MASK_5},
+        {xsd::AudioChannelIndexMask::INDEX_MASK_6, AudioChannelLayout::INDEX_MASK_6},
+        {xsd::AudioChannelIndexMask::INDEX_MASK_7, AudioChannelLayout::INDEX_MASK_7},
+        {xsd::AudioChannelIndexMask::INDEX_MASK_8, AudioChannelLayout::INDEX_MASK_8},
+        {xsd::AudioChannelIndexMask::INDEX_MASK_9, AudioChannelLayout::INDEX_MASK_9},
+        {xsd::AudioChannelIndexMask::INDEX_MASK_10, AudioChannelLayout::INDEX_MASK_10},
+        {xsd::AudioChannelIndexMask::INDEX_MASK_11, AudioChannelLayout::INDEX_MASK_11},
+        {xsd::AudioChannelIndexMask::INDEX_MASK_12, AudioChannelLayout::INDEX_MASK_12},
+        {xsd::AudioChannelIndexMask::INDEX_MASK_13, AudioChannelLayout::INDEX_MASK_13},
+        {xsd::AudioChannelIndexMask::INDEX_MASK_14, AudioChannelLayout::INDEX_MASK_14},
+        {xsd::AudioChannelIndexMask::INDEX_MASK_15, AudioChannelLayout::INDEX_MASK_15},
+        {xsd::AudioChannelIndexMask::INDEX_MASK_16, AudioChannelLayout::INDEX_MASK_16},
+        {xsd::AudioChannelIndexMask::INDEX_MASK_17, AudioChannelLayout::INDEX_MASK_17},
+        {xsd::AudioChannelIndexMask::INDEX_MASK_18, AudioChannelLayout::INDEX_MASK_18},
+        {xsd::AudioChannelIndexMask::INDEX_MASK_19, AudioChannelLayout::INDEX_MASK_19},
+        {xsd::AudioChannelIndexMask::INDEX_MASK_20, AudioChannelLayout::INDEX_MASK_20},
+        {xsd::AudioChannelIndexMask::INDEX_MASK_21, AudioChannelLayout::INDEX_MASK_21},
+        {xsd::AudioChannelIndexMask::INDEX_MASK_22, AudioChannelLayout::INDEX_MASK_22},
+        {xsd::AudioChannelIndexMask::INDEX_MASK_23, AudioChannelLayout::INDEX_MASK_23},
+        {xsd::AudioChannelIndexMask::INDEX_MASK_24, AudioChannelLayout::INDEX_MASK_24},
+};
+
 template <class... Ts>
 struct overloaded : Ts... {
     using Ts::operator()...;
@@ -211,6 +238,10 @@ static void fillProfile(AudioProfile* profile, const std::string& name,
     for (auto layout : channelLayouts) {
         profile->channelMasks.push_back(
                 AudioChannelLayout::make<AudioChannelLayout::layoutMask>(layout));
+    }
+    for (auto chmask : channelLayouts) {
+        profile->channelMasks.push_back(
+                AudioChannelLayout::make<AudioChannelLayout::indexMask>(chmask));
     }
     profile->sampleRates.insert(profile->sampleRates.end(), sampleRates.begin(), sampleRates.end());
     profile->encapsulationType = encapsulationType;
@@ -429,6 +460,12 @@ static std::vector<AudioProfile> populateProfiles(
                       [&](const auto& chLayout) {
                           channels.push_back(XsdToAudioChannelLayout.at(chLayout));
                       });
+        if (profile.hasChannelMasks()) {
+        std::for_each(profile.getChannelMasks().begin(), profile.getChannelMasks().end(),
+                       [&](const auto& chMask) {
+                          channels.push_back(XsdToAudioChannelIndexMask.at(chMask));
+                      });
+        }
         return channels;
     };
 

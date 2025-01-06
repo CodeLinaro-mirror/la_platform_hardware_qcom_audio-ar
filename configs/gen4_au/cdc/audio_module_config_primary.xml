@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <!--
-Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+Copyright (c) 2024-2025 Qualcomm Innovation Center, Inc. All rights reserved.
 SPDX-License-Identifier: BSD-3-Clause-Clear
 -->
 <modules>
@@ -142,10 +142,10 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
             <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_MONO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
         <mixPort name="vr_in_fast" role="sink" flags="FAST">
-            <profile samplingRates="16000" channelLayouts="LAYOUT_5POINT1" formatType="PCM" pcmType="INT_16_BIT" />
+            <profile samplingRates="16000" channelLayouts="LAYOUT_5POINT1" channelMasks="INDEX_MASK_6" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
         <mixPort name="vr_in" role="sink">
-            <profile samplingRates="16000" channelLayouts="LAYOUT_5POINT1" formatType="PCM" pcmType="INT_16_BIT" />
+            <profile samplingRates="16000" channelLayouts="LAYOUT_5POINT1" channelMasks="INDEX_MASK_6" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
         <mixPort name="mixport_tuner0" role="sink" >
             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO"
