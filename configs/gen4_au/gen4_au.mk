@@ -695,6 +695,11 @@ PRODUCT_PACKAGES += \
     audio.primary.gen4.ar
 endif
 
+ifeq ($(TARGET_USES_GY), true)
+PRODUCT_PACKAGES += \
+    audio.primary.$(TARGET_BOARD_PLATFORM).awe
+endif
+
 ifeq ($(ENABLE_HYP),true)
 PRODUCT_PROPERTY_OVERRIDES += \
 persist.vendor.audio.calfile0=/vendor/etc/acdbdata/adsp_avs_config.acdb\
