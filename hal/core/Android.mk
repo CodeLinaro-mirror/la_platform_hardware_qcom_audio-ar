@@ -17,6 +17,8 @@ LOCAL_CFLAGS := \
     -Werror \
     -Wthread-safety
 
+LOCAL_CFLAGS += -Wno-writable-strings
+
 LOCAL_VINTF_FRAGMENTS   := \
     ../../configs/common/manifest_non_qmaa.xml
 
