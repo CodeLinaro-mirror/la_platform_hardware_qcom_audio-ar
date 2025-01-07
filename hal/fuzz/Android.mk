@@ -1,3 +1,4 @@
+ifeq ($(AUDIO_AIDL_FUZZ),true)
 LOCAL_PATH := $(call my-dir)
 
 
@@ -55,3 +56,5 @@ LOCAL_HEADER_LIBRARIES :=  \
     libmedia_helper_headers
 
 include $(BUILD_FUZZ_TEST)
+
+endif #AUDIO_AIDL_FUZZ
