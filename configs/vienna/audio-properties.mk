@@ -9,6 +9,10 @@ PRODUCT_PROPERTY_OVERRIDES += aaudio.hw_burst_min_usec=2000
 AUDIO_HAL_PROP += \
 vendor.audio.hdr.spf.record.enable=false
 
+# ihaladaptervendorextension_enable for the framework to bind to this service
+AUDIO_HAL_PROP += \
+ro.audio.ihaladaptervendorextension_enable=true
+
 # spf hdr record either true or false
 AUDIO_HAL_PROP += \
 vendor.audio.hdr.record.enable=false

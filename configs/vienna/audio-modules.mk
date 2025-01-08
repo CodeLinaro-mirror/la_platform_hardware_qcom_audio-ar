@@ -194,6 +194,10 @@ AUDIO_MODULES += \
     libaudiocorehal.default \
     libaudioeffecthal.qti
 
+# AIDL AHAL VENDOR EXTENSION
+AUDIO_MODULES += \
+    libaudiohalvendorextn
+
 # add modules for fuzzing
 ifneq ($(filter audio,$(QC_HWASAN))$(filter hwaddress,$(SANITIZE_TARGET)),)
 AUDIO_MODULES += fuzz-audio-hal

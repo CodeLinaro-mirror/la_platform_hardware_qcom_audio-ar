@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
 SPDX-License-Identifier: BSD-3-Clause-Clear
 -->
 <libraries>
@@ -8,6 +8,8 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
     method expected API signature
     "int32_t <function_name>()"
     -->
+    <library name = "vendorextservice" libraryName="libaudiohalvendorextn.so"
+            method="registerInterface" mandatory="true"/>
     <library name = "agmservice" libraryName="libagmipcservice.so"
             method="registerService" mandatory="true"/>
     <library name = "palservice" libraryName="libpalipcservice.so"
