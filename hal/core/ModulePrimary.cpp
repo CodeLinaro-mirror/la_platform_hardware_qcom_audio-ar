@@ -16,7 +16,7 @@
 
 /*
  * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -48,6 +48,9 @@
 #define AUDIO_PARAMETER_KEY_BALANCE "Balance"
 #define AUDIO_PARAMETER_KEY_FADER "Fader"
 #define AUDIO_PARAMETER_KEY_ISFADERAVAILABLE "isFaderAvailable"
+
+#include <android/binder_manager.h>
+#include <android/binder_process.h>
 using aidl::android::hardware::audio::common::SinkMetadata;
 using aidl::android::hardware::audio::common::SourceMetadata;
 using aidl::android::media::audio::common::AudioOffloadInfo;
@@ -74,6 +77,7 @@ using ::aidl::qti::audio::core::VString;
 using ::aidl::android::hardware::audio::core::IBluetooth;
 using ::aidl::android::hardware::audio::core::IBluetoothA2dp;
 using ::aidl::android::hardware::audio::core::IBluetoothLe;
+
 
 namespace qti::audio::core {
 
@@ -216,9 +220,43 @@ binder_status_t ModulePrimary::dump(int fd, const char** args, uint32_t numArgs)
     return 0;
 }
 
+
 ModulePrimary::ModulePrimary() : Module(Type::DEFAULT) {
     mOffloadSpeedSupported = mPlatform.platformSupportsOffloadSpeed();
 }
+#ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
+
+std::shared_ptr<IAudioFocusService>  ModulePrimary::mHalFocusService;
+
+std::shared_ptr<IAudioFocusService> ModulePrimary::getHalFocusService() {
+
+    if (mHalFocusService == nullptr) {
+        std::string serviceName =
+                std::string().append(IAudioFocusService::descriptor).append("/default");
+
+        if (!AServiceManager_isDeclared(serviceName.c_str())) {
+            LOG(ERROR) <<"IAudioFocusService not declared, exiting";
+            return nullptr;
+        }
+
+        AIBinder* binder = AServiceManager_waitForService(serviceName.c_str());
+        if (binder != nullptr) {
+            ndk::SpAIBinder spBinder(binder);
+            std::shared_ptr<IAudioFocusService> service =
+                                IAudioFocusService::fromBinder(spBinder);
+            if (service != nullptr) {
+                mHalFocusService = service;
+                LOG(INFO) << "Connected to IAudioFocusService service";
+            } else {
+                LOG(INFO) << "Can't connect to IAudioFocusService service";
+            }
+        } else {
+            LOG(ERROR) << "Failed to get service handle for " << serviceName;
+        }
+    }
+    return mHalFocusService;
+}
+#endif
 
 ndk::ScopedAStatus ModulePrimary::getMicrophones(std::vector<MicrophoneInfo>* _aidl_return) {
     *_aidl_return = mPlatform.getMicrophoneInfo();
