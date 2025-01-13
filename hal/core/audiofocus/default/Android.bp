@@ -1,0 +1,49 @@
+
+cc_defaults {
+    name: "android.hardware.audio.focus-service.defaults",
+    defaults: [
+        "latest_android_hardware_audio_common_ndk_shared",
+        "latest_android_hardware_audio_core_ndk_shared",
+        "latest_android_media_audio_common_types_ndk_shared",
+        "latest_android_hardware_audio_focus_ndk_shared",
+        "latest_android_hardware_automotive_audiocontrol_ndk_shared"
+    ],
+    relative_install_path: "hw",
+    vintf_fragments: [
+        "audiohalfocus.xml",
+    ],
+    shared_libs: [
+        "libbase",
+        "libbinder_ndk",
+        "libcutils",
+        "libutils",
+        "liblog",
+        "libexpat",
+        "alliance.hardware.automotive.audiocontrol.internal-V2-ndk",
+
+    ],
+    cflags: [
+        "-Wno-macro-redefined",
+        "-Wno-sign-compare",
+    ],
+    vendor: true,
+}
+
+cc_binary {
+    name: "android.hardware.audio.focus-service",
+    srcs: [
+        "main.cpp",
+        "AudioHalFocusManager.cpp",
+        "BusDuckConfig.cpp",
+    ],
+    cflags: [
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+    ],
+    defaults: [
+        "android.hardware.audio.focus-service.defaults",
+    ],
+    init_rc: ["audiohalfocus.rc"],
+}
+
