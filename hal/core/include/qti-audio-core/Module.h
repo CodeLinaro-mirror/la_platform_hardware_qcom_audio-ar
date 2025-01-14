@@ -247,6 +247,8 @@ class Module : public ::aidl::android::hardware::audio::core::BnModule,
             int32_t in_portConfigId, ::aidl::android::media::audio::common::AudioPort** port);
     ModuleConfig& getConfig();
     const ConnectedDevicePorts& getConnectedDevicePorts() const { return mConnectedDevicePorts; }
+    std::vector<::aidl::android::media::audio::common::AudioDevice>
+    getDevicesFromDevicePortConfigIds(const std::set<int32_t>& devicePortConfigIds);
     bool getMasterMute() const { return mMasterMute; }
     bool getMasterVolume() const { return mMasterVolume; }
     const Patches& getPatches() const { return mPatches; }

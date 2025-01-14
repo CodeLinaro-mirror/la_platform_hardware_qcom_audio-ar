@@ -55,6 +55,10 @@ AUDIO_PAL += libsession_agm
 AUDIO_PAL += libsession_pcm
 AUDIO_PAL += libsession_compress
 AUDIO_PAL += libsession_voice
+AUDIO_PAL += libsession_compress_config
+AUDIO_PAL += libsession_pcm_config
+AUDIO_PAL += libsession_voice_config
+AUDIO_PAL += libsession_config_utils
 #PAL Device Modules
 AUDIO_PAL += libdev_bt
 AUDIO_PAL += libdev_display

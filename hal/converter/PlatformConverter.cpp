@@ -76,7 +76,7 @@ using outputFlagsStreamtypeMap =
 DevicePairs getDevicePairs() {
     // No dupicates on first entry
     DevicePairs pairs = {
-            {AudioDeviceDescription{}, PAL_DEVICE_NONE},
+            {AudioDeviceDescription{AudioDeviceType::NONE}, PAL_DEVICE_NONE},
             {makeAudioDeviceDescription(AudioDeviceType::OUT_DEFAULT), PAL_DEVICE_OUT_SPEAKER},
             {makeAudioDeviceDescription(AudioDeviceType::OUT_SPEAKER_EARPIECE),
              PAL_DEVICE_OUT_HANDSET},

@@ -108,11 +108,15 @@ bool isBluetoothSCODevice(const ::aidl::android::media::audio::common::AudioDevi
 
 bool isBluetoothLEDevice(const ::aidl::android::media::audio::common::AudioDevice&) noexcept;
 
+bool isBluetoothLETXDevice(const ::aidl::android::media::audio::common::AudioDevice&) noexcept;
+
 bool isBluetoothDevice(const ::aidl::android::media::audio::common::AudioDevice&) noexcept;
 
 bool hasBluetoothDevice(const std::vector<::aidl::android::media::audio::common::AudioDevice>&) noexcept;
 
 bool isBluetoothA2dpDevice(const ::aidl::android::media::audio::common::AudioDevice&) noexcept;
+
+bool isBluetoothA2dpTXDevice(const ::aidl::android::media::audio::common::AudioDevice&) noexcept;
 
 bool hasBluetoothLEDevice(const std::vector<::aidl::android::media::audio::common::AudioDevice>&) noexcept;
 
@@ -350,8 +354,8 @@ constexpr size_t getFrameSizeInBytes(
         const ::aidl::android::media::audio::common::AudioFormatDescription& format,
         const ::aidl::android::media::audio::common::AudioChannelLayout& layout) {
     if (format == ::aidl::android::media::audio::common::AudioFormatDescription{}) {
-        // Unspecified format.
-        return 0;
+        // Unspecified format. Return default value of pcm_16bit.
+        return getPcmSampleSizeInBytes(::aidl::android::media::audio::common::PcmType::INT_16_BIT);
     }
     using ::aidl::android::media::audio::common::AudioFormatType;
     if (format.type == AudioFormatType::PCM) {
@@ -361,8 +365,8 @@ constexpr size_t getFrameSizeInBytes(
         // PCM is "UINT_8_BIT", thus non-encapsulated streams have the frame size of 1.
         return getPcmSampleSizeInBytes(format.pcm);
     }
-    // Something unexpected.
-    return 0;
+    // Something unexpected. Return default value of pcm_16bit.
+    return getPcmSampleSizeInBytes(::aidl::android::media::audio::common::PcmType::INT_16_BIT);
 }
 
 constexpr bool isDefaultAudioFormat(
