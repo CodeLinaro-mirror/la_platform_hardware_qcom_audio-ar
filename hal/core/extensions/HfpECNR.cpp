@@ -18,7 +18,6 @@
 #include <sys/stat.h>
 #include "PalApi.h"
 
-#include <cutils/properties.h>
 #include <pthread.h>
 #include <extensions/hal_ecnr.h>
 

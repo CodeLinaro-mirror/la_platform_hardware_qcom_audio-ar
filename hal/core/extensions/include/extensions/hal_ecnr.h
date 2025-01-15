@@ -26,6 +26,10 @@
 #define ECNR_TYPE_TEL 1
 #define CP_CONNECTION_USB 0
 #define CP_CONNECTION_WIFI 1
+#define CP_SAMPLERATE "cp_sample"
+#define CP_TYPE "cp_type"
+#define CP_VOCODER_SAMPLERATE "vocoder_sampler"
+#define CP_TRANSPORT "cp_connection"
 
 
 #ifdef __LP64__
@@ -73,15 +77,6 @@ typedef enum {
     VR_16K,        //22
     SCD_TYPE_MAX,
 } scd_type_t;
-
-typedef enum {
-    VOC_RATE_NB = 0,
-    VOC_RATE_WB,
-    VOC_RATE_SWB,
-    VOC_RATE_FT,
-    VOC_RATE_FB,
-    VOC_TYPE_MAX,
-} voc_rate_t;
 
 typedef struct ecnrMainStruct tECNR_Main;
 
@@ -205,6 +200,7 @@ class HalECNRExtension {
     int audio_extn_ecnrProcess( tECNR_Main*      pMain,
                         tECNR_AudioIO  AudioIO,
                         tECNR_TuneIO*  pTuneIO );
+    void carplay_set_parameters(struct str_parms *params);
 #ifdef ECNR_HAL_HIRES
     int audio_extn_ecnrProcessHiRes(  tECNR_Main*        pMain,
                               tECNR_AudioIOHiRes AudioIO,
@@ -240,7 +236,7 @@ class HalECNRExtension {
 
     void audio_extn_ecnrGetVersion();
     int audio_extn_ecnrSetConfigData(tECNR_Main*   pMain, const void* const pCfgData, const unsigned int uCfgDataSize);
-    int audio_extn_getSCDtype(uint32_t sample_Rate, uint32_t vocoder_rate, uint32_t ecnr_type, uint32_t conneection_type, uint32_t dir);
+    int audio_extn_getSCDtype(uint32_t sample_Rate, uint32_t vocoder_rate, uint32_t ecnr_type, uint32_t connection_type, uint32_t dir);
     int audio_extn_fillSCDbuffer(char * scd_file_name, uint32_t** scd_buffer, uint32_t* scd_buffer_size);
     int audio_extn_getSCDdata(tECNR_ProcessData* pECNR_ProcessData);
     int audio_extn_setupECNR( tECNR_ProcessData* pECNR_ProcessData);
@@ -248,6 +244,10 @@ class HalECNRExtension {
     int audio_extn_resetIOBuffer(tECNR_ProcessData* pECNR_ProcessData);
     int audio_extn_cvtformat16_lnterleave_to_deinterleave(void* int_buffer, void* deint_buffer,int frameSz, int numchannel);
     int audio_extn_cvtformat16_delnterleave_to_interleave(void* deint_buffer, void* int_buffer, int frameSz, int numchannel);
+    int get_vocoder_rate() const;
+    int get_conn_type() const;
+    void set_vocoder_rate(int data);
+    void set_conn_type(int data);
 #ifdef ECNR_HAL_TUNE
     int audio_extn_setupECNR_TuneIF(tECNR_TuneIFData* pECNR_TuneIFData, int portid);
     int audio_extn_close_TuneIF(tECNR_TuneIFData* pECNR_TuneIFData);
@@ -278,4 +278,8 @@ class HalECNRExtension {
     ecnrGetErrorMessage_t ecnrGetErrorMessage;
     ecnrGetVersion_t ecnrGetVersion;
     ecnrSetConfigData_t ecnrSetConfigData;
+    int carplay_sample_rate;
+    int carplay_type;
+    int vocoder_sample_rate;
+    int connect_type;
 };

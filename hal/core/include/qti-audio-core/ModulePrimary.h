@@ -26,6 +26,10 @@
 #include <qti-audio-core/Module.h>
 #include <qti-audio-core/Platform.h>
 
+#ifdef ENABLE_QCOM_AMPERE_AUDIO
+#include <aidl/ampere/hardware/interfaces/automotive/audioparameterparser/RadioVendorParameterExt.h>
+#include <aidl/ampere/hardware/interfaces/automotive/audioparameterparser/CarPlayVendorParameterExt.h>
+#endif
 
 #ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
 #include <aidl/android/hardware/audio/focus/IAudioFocusService.h>
@@ -206,6 +210,11 @@ class ModulePrimary final : public Module {
     // SetHandler For Haptics
     void onSetHapticsParameters(
             const std::vector<::aidl::android::hardware::audio::core::VendorParameter>&);
+#ifdef ENABLE_QCOM_AMPERE_AUDIO
+    // SetHandler For Carplay
+    void onSetCarplayParameters(
+            const std::vector<::aidl::android::hardware::audio::core::VendorParameter>&);
+#endif
 
     std::vector<::aidl::android::hardware::audio::core::VendorParameter> processGetVendorParameters(
             const std::vector<std::string>&);
@@ -231,6 +240,10 @@ class ModulePrimary final : public Module {
 #ifdef ENABLE_QCOM_AMPERE_AUDIO
     void onsetRadioVendorParameter(const std::vector<::aidl::android::hardware::audio::core::VendorParameter>& params);
     ::android::status_t setRadioVendorParameter(const ::aidl::android::hardware::audio::core::VendorParameter& param);
+    // GetHandler for Carplay
+    std::vector<::aidl::android::hardware::audio::core::VendorParameter> onGetCarplayParams(
+            const std::vector<std::string>&);
+    std::string carplayParamConverter(::aidl::ampere::hardware::interfaces::automotive::audioparameterparser::CarPlayVendorParameterExt::Rate carplayparams);
 #endif
   protected:
     bool mVolumeGaincheck=false;
@@ -245,6 +258,10 @@ class ModulePrimary final : public Module {
     AudioExtension& mAudExt{AudioExtension::getInstance()};
 
   private:
+#ifdef ENABLE_QCOM_AMPERE_AUDIO
+    ::android::status_t setCarPlayParameter(
+            const ::aidl::android::hardware::audio::core::VendorParameter&);
+#endif
     const std::string mGainVolumecheckProperty{"vendor.audio.feature.oemgainconversion.enable"};
     bool mOffloadSpeedSupported;
 };

@@ -79,6 +79,9 @@ void AudioExtension::audio_extn_set_parameters(struct str_parms *params) {
     mFmExtension->audio_extn_fm_set_parameters(params);
     mAutoOemExtension->audio_extn_autooem_set_parameters(params);
     audio_feature_stats_set_parameters(params);
+#ifdef ECNR_HAL_ENABLE
+    mHalExtension->carplay_set_parameters(params);
+#endif
 }
 
 void AudioExtension::audio_feature_stats_set_parameters(struct str_parms *params) {
