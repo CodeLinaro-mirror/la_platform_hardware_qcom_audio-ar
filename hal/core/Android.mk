@@ -8,7 +8,8 @@ LOCAL_MODULE            := libaudiocorehal.qti
 LOCAL_VENDOR_MODULE     := true
 LOCAL_MODULE_RELATIVE_PATH := hw
 
-LOCAL_C_INCLUDES    :=  $(LOCAL_PATH)/include
+LOCAL_C_INCLUDES    :=  $(LOCAL_PATH)/include \
+                        $(LOCAL_PATH)/extensions/include
 
 LOCAL_CFLAGS := \
     -DBACKEND_NDK \
@@ -29,7 +30,9 @@ LOCAL_SRC_FILES := \
     Telephony.cpp \
     StreamInPrimary.cpp \
     StreamOutPrimary.cpp \
-    HalOffloadEffects.cpp
+    HalOffloadEffects.cpp \
+    extensions/AudioExtension.cpp \
+    extensions/auto_hal.cpp
 
 LOCAL_HEADER_LIBRARIES :=  \
     libxsdc-utils \
@@ -104,7 +107,7 @@ LOCAL_SHARED_LIBRARIES := \
     libar-pal \
     libaudioserviceexampleimpl \
     libaudioplatformconverter.qti \
-    qti-audio-types-aidl-V1-ndk \
+    qti-audio-types-aidl-V1-ndk
 
 ifeq ($(ENABLE_QCOM_HAL_AUDIO_FOCUS),true)
 LOCAL_SHARED_LIBRARIES += \

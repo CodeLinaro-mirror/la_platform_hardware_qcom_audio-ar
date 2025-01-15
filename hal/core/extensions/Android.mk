@@ -3,8 +3,11 @@ include $(CLEAR_VARS)
 LOCAL_MODULE            := libaudiocore.extension
 LOCAL_VENDOR_MODULE     := true
 
-LOCAL_C_INCLUDES            := $(LOCAL_PATH)/include \
+LOCAL_C_INCLUDES            := $(LOCAL_PATH)/.. \
+                               $(LOCAL_PATH)/include \
                                $(LOCAL_PATH)/../platform/include \
+                               $(LOCAL_PATH)/../include \
+                               $(LOCAL_PATH)/../module_config/include \
                                $(LOCAL_PATH)/../utils/include
 
 LOCAL_EXPORT_C_INCLUDE_DIRS   := $(LOCAL_PATH)/include
@@ -12,7 +15,8 @@ LOCAL_EXPORT_C_INCLUDE_DIRS   := $(LOCAL_PATH)/include
 LOCAL_CFLAGS := -Wall -Wextra -Werror -Wthread-safety
 
 LOCAL_SRC_FILES := \
-    AudioExtension.cpp
+    AudioExtension.cpp \
+    auto_hal.cpp
 
 ifeq ($(AUDIO_FEATURE_ENABLED_ECNR_HAL),true)
 LOCAL_CFLAGS += -DECNR_HAL_ENABLE
@@ -30,6 +34,10 @@ LOCAL_HEADER_LIBRARIES :=  \
     libaudioclient_headers \
     libmedia_helper_headers \
     libexpectedutils_headers \
+    libxsdc-utils \
+    libaudioeffects \
+    liberror_headers \
+    libaudio_system_headers \
     libarpal_headers
 
 LOCAL_SHARED_LIBRARIES := \
@@ -192,6 +200,66 @@ LOCAL_C_INCLUDES := \
 LOCAL_HEADER_LIBRARIES += libhardware_headers
 LOCAL_HEADER_LIBRARIES += libsystem_headers
 include $(BUILD_SHARED_LIBRARY)
+
+#-------------------------------------------
+#            Build AUTO HAL LIB
+#-------------------------------------------
+include $(CLEAR_VARS)
+
+LOCAL_MODULE := libautohal_pal
+LOCAL_VENDOR_MODULE := true
+
+ifeq ($(TARGET_BOARD_AUTO),true)
+   LOCAL_CFLAGS += -DPLATFORM_AUTO
+endif
+
+LOCAL_SRC_FILES:= auto_hal.cpp
+
+LOCAL_CFLAGS += \
+    -Wall \
+    -Werror \
+    -Wno-unused-function \
+    -Wno-unused-variable
+
+ LOCAL_SHARED_LIBRARIES := \
+    libaudioaidlcommon \
+    libaudioroute \
+    libaudioutils \
+    libcutils \
+    libdl \
+    libexpat \
+    liblog \
+    libar-pal \
+    qti-audio-types-aidl-V1-ndk \
+    $(LATEST_ANDROID_MEDIA_AUDIO_COMMON_TYPES) \
+    libbase \
+    libbinder_ndk \
+    libfmq \
+    libmedia_helper \
+    libutils \
+    libxml2 \
+    $(LATEST_ANDROID_HARDWARE_AUDIO_COMMON) \
+    $(LATEST_ANDROID_HARDWARE_COMMON_FMQ) \
+    $(LATEST_ANDROID_HARDWARE_AUDIO_CORE)
+
+
+ LOCAL_C_INCLUDES := \
+     vendor/qcom/opensource/pal \
+     $(LOCAL_PATH)/../include \
+     $(LOCAL_PATH)/../../hal/core/extensions/ \
+     external/expat/lib \
+     system/media/audio_utils/include \
+         $(LOCAL_PATH)/include \
+         $(LOCAL_PATH)/../module_config/include \
+         $(LOCAL_PATH)/../platform/include \
+         $(LOCAL_PATH)/../utils/include \
+         $(LOCAL_PATH)/.. \
+     $(call include-path-for, audio-route) \
+
+LOCAL_HEADER_LIBRARIES += libhardware_headers
+LOCAL_HEADER_LIBRARIES += libsystem_headers
+include $(BUILD_SHARED_LIBRARY)
+
 
 #-------------------------------------------
 #            Build BATTERY_LISTENER

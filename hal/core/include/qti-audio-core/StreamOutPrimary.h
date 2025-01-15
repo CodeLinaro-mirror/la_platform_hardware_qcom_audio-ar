@@ -29,6 +29,7 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
 
     virtual ~StreamOutPrimary() override;
     int32_t setAggregateSourceMetadata(bool voiceActive) override;
+    std::string getAddress() const;
 
     // Methods of 'DriverInterface'.
     ::android::status_t init() override;
@@ -164,6 +165,7 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     bool mIsMMapStarted = false;
     bool isHwVolumeSupported();
     struct BufferConfig getBufferConfig();
+    std::string busAddr = "";
 
     // optional buffer format converter, if stream input and output formats are different
     std::optional<std::unique_ptr<BufferFormatConverter>> mBufferFormatConverter;

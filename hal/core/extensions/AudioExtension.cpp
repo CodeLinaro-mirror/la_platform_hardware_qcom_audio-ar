@@ -1,5 +1,5 @@
- /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+/*
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -11,7 +11,9 @@
 #include <dlfcn.h>
 #include <extensions/AudioExtension.h>
 #include <log/log.h>
+#include <pthread.h>
 #include "PalApi.h"
+#include <qti-audio-core/ModulePrimary.h>
 
 #define DEFAULT_OUTPUT_SAMPLING_RATE 48000
 #define CODEC_BACKEND_DEFAULT_BIT_WIDTH 16
@@ -54,7 +56,22 @@ int AudioExtension::audio_extn_get_parameters(const std::string& id) {
     LOG(DEBUG) << __func__ << ": get param return value : " << ret;
     return ret;
 }
+
+int AutohalExtension::audio_extn_autohal_set_parameters(struct str_parms *parms)
+{
+    int ret = 0;
+    if (parms !=NULL){
+        LOG(DEBUG) << __func__ << " calling autohal_setParameters ";
+        ret = autohal_setParameters(parms);
+        if (ret != 0) {
+            LOG(ERROR) << __func__ << " autohal_setParameters failed with error code " << ret;
+        }
+    }
+    return ret;
+}
+
 void AudioExtension::audio_extn_set_parameters(struct str_parms *params) {
+    mAutohalExtension->audio_extn_autohal_set_parameters(params);
     mHfpExtension->audio_extn_hfp_set_parameters(params);
     mFmExtension->audio_extn_fm_set_parameters(params);
     mAutoOemExtension->audio_extn_autooem_set_parameters(params);
@@ -85,6 +102,42 @@ void AudioExtensionBase::cleanUp() {
     if (mHandle != nullptr) {
         dlclose(mHandle);
     }
+}
+
+AutohalExtension::~AutohalExtension() {}
+AutohalExtension::AutohalExtension() : AudioExtensionBase(kAutohalLibrary, isExtensionEnabled(kAutoHalProperty)) {
+    LOG(DEBUG) << __func__ << " Enter";
+    if (!mHandle) {
+            LOG(ERROR)<< __func__ << " dlopen failed \n";
+            goto feature_disabled;
+        }
+    if (mHandle != nullptr) {
+        if (!(autohal_init = (autohal_init_t)dlsym(
+            mHandle, "autohal_init")) ||
+            !(autohal_SetParameters = (set_parameters_t)dlsym(
+                mHandle, "autohal_setParameters"))) {
+            LOG(ERROR)<< __func__ <<  "dlsym failed \n";
+            goto feature_disabled;
+        }
+        init_config.fp_set_mute_config_for_address = extn_set_mute_config_for_address;
+        LOG(DEBUG) << __func__ << "fp log: %s" << init_config.fp_set_mute_config_for_address;
+        autohal_init(init_config);
+
+        LOG(DEBUG)<< __func__ <<  ":: ---- Feature AUTO HAL is Enabled ----";
+
+        return;
+    }
+    feature_disabled:
+    if (mHandle) {
+        dlclose(mHandle);
+        mHandle = NULL;
+        LOG(DEBUG)<< __func__ <<  ":: ---- Feature AUTO HAL is Not Enabled ----";
+    }
+
+    autohal_init = NULL;
+    autohal_SetParameters = NULL;
+
+    LOG(DEBUG) << __func__ << ":: ---- Feature AUTO HAL is disabled ----";
 }
 
 void BatteryListenerExtension::setChargingMode(bool is_charging) {

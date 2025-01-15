@@ -969,6 +969,7 @@ void StreamOutPrimary::configure() {
     if (!mConnectedDevices.empty()) {
          std::string deviceAddress =  mConnectedDevices[0].address.get<AudioDeviceAddress::Tag::id>();
          LOG(INFO) << __func__ << "configure(): deviceAddress " << deviceAddress;
+         busAddr = deviceAddress;
          bool isBusType = (std::string::npos != deviceAddress.find("BUS")) ? true : false;
          if (isBusType){
              attr->bus_addr = new char[deviceAddress.length() + 1];
@@ -1217,6 +1218,12 @@ void StreamOutPrimary::configure() {
     LOG(INFO) << __func__ << mLogPrefix << ": completed in " << timeTaken
               << " ms [pal_stream_open: " << palStreamOpenTimeTaken
               << ", ms pal_stream_start: " << palStreamStartTimeTaken << " ms]";
+}
+
+std::string StreamOutPrimary::getAddress()const
+{
+    LOG(DEBUG) << __func__ << "busAddr: " << busAddr;
+    return busAddr;
 }
 
 void StreamOutPrimary::enableOffloadEffects(const bool enable) {
