@@ -1357,7 +1357,9 @@ void Platform::setHdrOnPalDevice(pal_device* palDeviceIn) {
 
     LOG(ERROR) << __func__ << " platform.getOrientation():" << std::string(platform.getOrientation());
 
-    if (isOrientationLandscape && !isInverted) {
+    if (palDeviceIn->id == PAL_DEVICE_IN_WIRED_HEADSET) {
+        setPalDeviceCustomKey(*palDeviceIn, "headset-single-amic-dual-adc-hdr");
+    } else if (isOrientationLandscape && !isInverted) {
         setPalDeviceCustomKey(*palDeviceIn, "unprocessed-hdr-mic-landscape");
     } else if (!isOrientationLandscape && !isInverted) {
         setPalDeviceCustomKey(*palDeviceIn, "unprocessed-hdr-mic-portrait");
