@@ -54,10 +54,13 @@ static std::string kHfpLibrary = "libhfp_pal.so";
 static std::string kFmLibrary = "libfmpal.so";
 static std::string kKarokeLibrary = "dummy.so"; // TODO
 static std::string kGefLibrary = "libqtigefar.so";
+static std::string kAutoOemLibrary = "libautooemextension.so";
+
 
 static std::string kBatteryListenerProperty = "vendor.audio.feature.battery_listener.enable";
 static std::string kHfpProperty = "vendor.audio.feature.hfp.enable";
 static std::string kBluetoothProperty = "vendor.audio.feature.a2dp_offload.enable";
+static std::string kAutoOemProperty = "vendor.audio.feature.oem_extension.enable";
 
 const std::map<tSESSION_TYPE, pal_device_id_t> SessionTypePalDevMap{
         {A2DP_HARDWARE_OFFLOAD_DATAPATH, PAL_DEVICE_OUT_BLUETOOTH_A2DP},
@@ -106,6 +109,10 @@ typedef void (*register_reconfig_cb_t)(int (*reconfig_cb)(tSESSION_TYPE, int));
 
 typedef void (*gef_init_t)(void);
 typedef void (*gef_deinit_t)(void);
+
+typedef void (*oem_set_parameters_t)(struct str_parms*);
+typedef int (*oem_get_parameters_t)(const std::string&);
+typedef int (*oem_init_t)(void);
 
 static bool isExtensionEnabled(std::string property) {
     return property_get_bool(property.c_str(), false);
@@ -184,6 +191,20 @@ class FmExtension : public AudioExtensionBase {
     bool audio_extn_fm_get_status();
 };
 
+class AutoOemExtension : public AudioExtensionBase {
+  public:
+    AutoOemExtension();
+    ~AutoOemExtension();
+    void audio_extn_autooem_set_parameters(struct str_parms* params);
+    int audio_extn_autooem_get_parameters(const std::string&);
+  private:
+  oem_set_parameters_t oem_set_parameters;
+  oem_get_parameters_t oem_get_parameters;
+  oem_init_t oem_init;
+};
+
+
+
 class KarokeExtension : public AudioExtensionBase {
   public:
     KarokeExtension();
@@ -222,7 +243,7 @@ class AudioExtension {
         return *(kAudioExtension.get());
     }
     void audio_extn_set_parameters(struct str_parms* params);
-    void audio_extn_get_parameters(struct str_parms* params, struct str_parms* reply);
+    int audio_extn_get_parameters(const std::string&);
     void audio_feature_stats_set_parameters(struct str_parms* params);
     explicit AudioExtension() = default;
     AudioExtension(const AudioExtension&) = delete;
@@ -238,6 +259,7 @@ class AudioExtension {
 #endif
     std::unique_ptr<HfpExtension> mHfpExtension = std::make_unique<HfpExtension>();
     std::unique_ptr<FmExtension> mFmExtension = std::make_unique<FmExtension>();
+    std::unique_ptr<AutoOemExtension> mAutoOemExtension = std::make_unique<AutoOemExtension>();
     std::unique_ptr<KarokeExtension> mKarokeExtension = std::make_unique<KarokeExtension>();
     std::unique_ptr<GefExtension> mGefExtension = std::make_unique<GefExtension>();
     static std::mutex reconfig_wait_mutex_;
