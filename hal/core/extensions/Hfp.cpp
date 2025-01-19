@@ -59,6 +59,19 @@ extern "C" {
 
 #define AUDIO_PARAMETER_KEY_HFP_MIC_VOLUME "hfp_mic_volume"
 
+enum direction {
+     RX = 0,
+     TX,
+};
+
+#ifdef HFP_SERVER_CLIENT_ENABLED
+    pal_device_id_t hfp_dev_in = PAL_DEVICE_IN_BLUETOOTH_HFP;
+    pal_device_id_t hfp_dev_out = PAL_DEVICE_OUT_BLUETOOTH_HFP;
+#else
+    pal_device_id_t hfp_dev_in = PAL_DEVICE_IN_BLUETOOTH_SCO_HEADSET;
+    pal_device_id_t hfp_dev_out = PAL_DEVICE_OUT_BLUETOOTH_SCO;
+#endif
+
 struct hfp_module {
     bool is_hfp_running;
     float hfp_volume;
@@ -67,6 +80,7 @@ struct hfp_module {
     uint32_t sample_rate;
     pal_stream_handle_t *rx_stream_handle;
     pal_stream_handle_t *tx_stream_handle;
+    pal_device_id_t preferred_dev_id[2] = {PAL_DEVICE_OUT_MIN, PAL_DEVICE_IN_MIN};
 };
 
 #define PLAYBACK_VOLUME_MAX 0x2000
@@ -78,6 +92,36 @@ static struct hfp_module hfpmod = {
         .mic_mute = 0,
         .sample_rate = 16000,
 };
+
+
+bool is_valid_out_device(pal_device_id_t id) {
+    switch (id) {
+        case PAL_DEVICE_OUT_HANDSET:
+        case PAL_DEVICE_OUT_SPEAKER:
+        case PAL_DEVICE_OUT_WIRED_HEADSET:
+        case PAL_DEVICE_OUT_WIRED_HEADPHONE:
+        case PAL_DEVICE_OUT_USB_DEVICE:
+        case PAL_DEVICE_OUT_USB_HEADSET:
+        case PAL_DEVICE_OUT_BLUETOOTH_SCO:
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool is_valid_in_device(pal_device_id_t id) {
+    switch (id) {
+        case PAL_DEVICE_IN_HANDSET_MIC:
+        case PAL_DEVICE_IN_SPEAKER_MIC:
+        case PAL_DEVICE_IN_WIRED_HEADSET:
+        case PAL_DEVICE_IN_USB_DEVICE:
+        case PAL_DEVICE_IN_USB_HEADSET:
+        case PAL_DEVICE_IN_BLUETOOTH_SCO_HEADSET:
+            return true;
+        default:
+            return false;
+    }
+}
 
 static int32_t hfp_set_volume(float value) {
     int32_t vol, ret = 0;
@@ -176,8 +220,7 @@ static int32_t start_hfp(struct str_parms *parms __unused) {
     if (hfpmod.rx_stream_handle || hfpmod.tx_stream_handle) return 0; // hfp already running;
 
     pal_param_device_connection_t param_device_connection;
-
-    param_device_connection.id = PAL_DEVICE_IN_BLUETOOTH_SCO_HEADSET;
+    param_device_connection.id = hfp_dev_in;
     param_device_connection.connection_state = true;
     ret = pal_set_param(PAL_PARAM_ID_DEVICE_CONNECTION, (void *)&param_device_connection,
                         sizeof(pal_param_device_connection_t));
@@ -186,8 +229,7 @@ static int32_t start_hfp(struct str_parms *parms __unused) {
                    << param_device_connection.id << " failed";
         return ret;
     }
-
-    param_device_connection.id = PAL_DEVICE_OUT_BLUETOOTH_SCO;
+    param_device_connection.id = hfp_dev_out;
     param_device_connection.connection_state = true;
     ret = pal_set_param(PAL_PARAM_ID_DEVICE_CONNECTION, (void *)&param_device_connection,
                         sizeof(pal_param_device_connection_t));
@@ -235,14 +277,17 @@ static int32_t start_hfp(struct str_parms *parms __unused) {
     stream_attr.out_media_config.bit_width = 16;
     stream_attr.out_media_config.ch_info = ch_info;
     stream_attr.out_media_config.aud_fmt_id = PAL_AUDIO_FMT_PCM_S16_LE;
-
-    devices[0].id = PAL_DEVICE_IN_BLUETOOTH_SCO_HEADSET;
+    devices[0].id = hfp_dev_in;
     devices[0].config.sample_rate = hfpmod.sample_rate;
     devices[0].config.bit_width = 16;
     devices[0].config.ch_info = ch_info;
     devices[0].config.aud_fmt_id = PAL_AUDIO_FMT_PCM_S16_LE;
 
-    devices[1].id = PAL_DEVICE_OUT_SPEAKER;
+    if (is_valid_out_device(hfpmod.preferred_dev_id[RX])) {
+        devices[1].id = hfpmod.preferred_dev_id[RX];
+    } else {
+        devices[1].id = PAL_DEVICE_OUT_SPEAKER;
+    }
 
     ret = pal_stream_open(&stream_attr, no_of_devices, devices, 0, NULL, NULL, 0,
                           &hfpmod.rx_stream_handle);
@@ -271,13 +316,17 @@ static int32_t start_hfp(struct str_parms *parms __unused) {
     stream_tx_attr.out_media_config.ch_info = ch_info;
     stream_tx_attr.out_media_config.aud_fmt_id = PAL_AUDIO_FMT_PCM_S16_LE;
 
-    devices[0].id = PAL_DEVICE_OUT_BLUETOOTH_SCO;
+    devices[0].id = hfp_dev_out;
     devices[0].config.sample_rate = hfpmod.sample_rate;
     devices[0].config.bit_width = 16;
     devices[0].config.ch_info = ch_info;
     devices[0].config.aud_fmt_id = PAL_AUDIO_FMT_PCM_S16_LE;
 
-    devices[1].id = PAL_DEVICE_IN_SPEAKER_MIC;
+    if (is_valid_in_device(hfpmod.preferred_dev_id[TX])) {
+        devices[1].id = hfpmod.preferred_dev_id[TX];
+    } else {
+        devices[1].id = PAL_DEVICE_IN_SPEAKER_MIC;
+    }
 
     ret = pal_stream_open(&stream_tx_attr, no_of_devices, devices, 0, NULL, NULL, 0,
                           &hfpmod.tx_stream_handle);
@@ -350,7 +399,8 @@ static int32_t stop_hfp() {
         LOG(ERROR) << __func__ << " Set PAL_PARAM_ID_DEVICE_DISCONNECTION for  "
                    << param_device_connection.id << " failed";
     }
-
+    hfpmod.preferred_dev_id[RX] = PAL_DEVICE_OUT_MIN;
+    hfpmod.preferred_dev_id[TX] = PAL_DEVICE_IN_MIN;
     LOG(DEBUG) << __func__ << "HFP stop end";
     return ret;
 }
@@ -363,33 +413,6 @@ bool hfp_is_active() {
     return hfpmod.is_hfp_running;
 }
 
-bool is_valid_out_device(pal_device_id_t id) {
-    switch (id) {
-        case PAL_DEVICE_OUT_HANDSET:
-        case PAL_DEVICE_OUT_SPEAKER:
-        case PAL_DEVICE_OUT_WIRED_HEADSET:
-        case PAL_DEVICE_OUT_WIRED_HEADPHONE:
-        case PAL_DEVICE_OUT_USB_DEVICE:
-        case PAL_DEVICE_OUT_USB_HEADSET:
-            return true;
-        default:
-            return false;
-    }
-}
-
-bool is_valid_in_device(pal_device_id_t id) {
-    switch (id) {
-        case PAL_DEVICE_IN_HANDSET_MIC:
-        case PAL_DEVICE_IN_SPEAKER_MIC:
-        case PAL_DEVICE_IN_WIRED_HEADSET:
-        case PAL_DEVICE_IN_USB_DEVICE:
-        case PAL_DEVICE_IN_USB_HEADSET:
-            return true;
-        default:
-            return false;
-    }
-}
-  
 bool has_valid_stream_handle() {
     return (hfpmod.rx_stream_handle && hfpmod.tx_stream_handle);
 }
@@ -398,12 +421,14 @@ void hfp_set_device(struct pal_device *devices) {
     int rc = 0;
 
     if (hfpmod.is_hfp_running && has_valid_stream_handle() &&
-        is_valid_out_device(devices[0].id) && is_valid_in_device(devices[1].id)) {
-        rc = pal_stream_set_device(hfpmod.rx_stream_handle, 1, &devices[0]);
+        is_valid_out_device(devices[RX].id) && is_valid_in_device(devices[TX].id)) {
+        rc = pal_stream_set_device(hfpmod.rx_stream_handle, 1, &devices[RX]);
         if (!rc) {
-            rc = pal_stream_set_device(hfpmod.tx_stream_handle, 1, &devices[1]);
+            rc = pal_stream_set_device(hfpmod.tx_stream_handle, 1, &devices[TX]);
         }
     }
+    hfpmod.preferred_dev_id[RX] = devices[RX].id;
+    hfpmod.preferred_dev_id[TX] = devices[TX].id;
 
     if (rc) {
         LOG(ERROR) << __func__ << ": failed to set devices for hfp";

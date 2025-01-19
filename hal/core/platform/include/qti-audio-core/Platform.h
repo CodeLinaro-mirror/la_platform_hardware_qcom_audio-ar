@@ -72,7 +72,7 @@ class Platform {
     bool bt_lc3_speech_enabled;
     static btsco_lc3_cfg_t btsco_lc3_cfg;
 
-    mutable bool mUSBCapEnable;
+    mutable bool mUSBCapEnable{false};
     int mCallState;
     int mCallMode;
     static Platform& getInstance();

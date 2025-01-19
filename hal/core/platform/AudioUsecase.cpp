@@ -452,57 +452,74 @@ ndk::ScopedAStatus CompressPlayback::setVendorParameters(
         bool in_async) {
     LOG(VERBOSE) << __func__ << ": parameter count:" << in_parameters.size() << " parsing for "
                  << mCompressFormat.encoding;
+    bool isCompressMetadataAvail = false;
     if (mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_FLAC) {
         if (auto value = getIntValueFromVString(in_parameters, Flac::kMinBlockSize); value) {
             mPalSndDec.flac_dec.min_blk_size = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Flac::kMaxBlockSize); value) {
             mPalSndDec.flac_dec.max_blk_size = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Flac::kMinFrameSize); value) {
             mPalSndDec.flac_dec.min_frame_size = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Flac::kMaxFrameSize); value) {
             mPalSndDec.flac_dec.max_frame_size = value.value();
+            isCompressMetadataAvail = true;
         }
         // exception
         mPalSndDec.flac_dec.sample_size = (mBitWidth == 32) ? 24 : mBitWidth;
     } else if (mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_ALAC) {
         if (auto value = getIntValueFromVString(in_parameters, Alac::kFrameLength); value) {
             mPalSndDec.alac_dec.frame_length = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Alac::kCompatVer); value) {
             mPalSndDec.alac_dec.compatible_version = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Alac::kBitDepth); value) {
             mPalSndDec.alac_dec.bit_depth = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Alac::kPb); value) {
             mPalSndDec.alac_dec.pb = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Alac::kMb); value) {
             mPalSndDec.alac_dec.mb = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Alac::kKb); value) {
             mPalSndDec.alac_dec.kb = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Alac::kNumChannels); value) {
             mPalSndDec.alac_dec.num_channels = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Alac::kMaxRun); value) {
             mPalSndDec.alac_dec.max_run = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Alac::kMaxFrameBytes); value) {
             mPalSndDec.alac_dec.max_frame_bytes = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Alac::kBitRate); value) {
             mPalSndDec.alac_dec.avg_bit_rate = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Alac::kSamplingRate); value) {
             mPalSndDec.alac_dec.sample_rate = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Alac::kChannelLayoutTag); value) {
             mPalSndDec.alac_dec.channel_layout_tag = value.value();
+            isCompressMetadataAvail = true;
         }
     } else if (mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_MP4 ||
                mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_ADIF ||
@@ -510,45 +527,58 @@ ndk::ScopedAStatus CompressPlayback::setVendorParameters(
                mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC) {
         mPalSndDec.aac_dec.audio_obj_type = 29;
         mPalSndDec.aac_dec.pce_bits_size = 0;
+        isCompressMetadataAvail = true;
     } else if (mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_VORBIS) {
         if (auto value = getIntValueFromVString(in_parameters, Vorbis::kBitStreamFormat); value) {
             mPalSndDec.vorbis_dec.bit_stream_fmt = value.value();
+            isCompressMetadataAvail = true;
         }
     } else if (mCompressFormat.encoding == "audio/x-ape") {
         if (auto value = getIntValueFromVString(in_parameters, Ape::kCompatibleVersion); value) {
             mPalSndDec.ape_dec.compatible_version = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Ape::kCompressionLevel); value) {
             mPalSndDec.ape_dec.compression_level = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Ape::kFormatFlags); value) {
             mPalSndDec.ape_dec.format_flags = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Ape::kBlocksPerFrame); value) {
             mPalSndDec.ape_dec.blocks_per_frame = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Ape::kFinalFrameBlocks); value) {
             mPalSndDec.ape_dec.final_frame_blocks = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Ape::kTotalFrames); value) {
             mPalSndDec.ape_dec.total_frames = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Ape::kBitsPerSample); value) {
             mPalSndDec.ape_dec.bits_per_sample = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Ape::kNumChannels); value) {
             mPalSndDec.ape_dec.num_channels = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Ape::kSampleRate); value) {
             mPalSndDec.ape_dec.sample_rate = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Ape::kSeekTablePresent); value) {
             mPalSndDec.ape_dec.seek_table_present = value.value();
+            isCompressMetadataAvail = true;
         }
     } else if (mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_WMA ||
                mCompressFormat.encoding == "audio/x-ms-wma.pro") {
         if (auto value = getIntValueFromVString(in_parameters, Wma::kFormatTag); value) {
             mPalSndDec.wma_dec.fmt_tag = value.value();
+            isCompressMetadataAvail = true;
         }
         mPalSndDec.wma_dec.avg_bit_rate = mOffloadMetadata.averageBitRatePerSecond;
 
@@ -556,73 +586,96 @@ ndk::ScopedAStatus CompressPlayback::setVendorParameters(
                                  << mOffloadMetadata.averageBitRatePerSecond;
         if (auto value = getIntValueFromVString(in_parameters, Wma::kBlockAlign); value) {
             mPalSndDec.wma_dec.super_block_align = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Wma::kBitPerSample); value) {
             mPalSndDec.wma_dec.bits_per_sample = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Wma::kChannelMask); value) {
             mPalSndDec.wma_dec.channelmask = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Wma::kEncodeOption); value) {
             mPalSndDec.wma_dec.encodeopt = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Wma::kEncodeOption1); value) {
             mPalSndDec.wma_dec.encodeopt1 = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Wma::kEncodeOption2); value) {
             mPalSndDec.wma_dec.encodeopt2 = value.value();
+            isCompressMetadataAvail = true;
         }
     } else if (mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_OPUS) {
         if (auto value = getIntValueFromVString(in_parameters, Opus::kBitStreamFormat); value) {
             mPalSndDec.opus_dec.bitstream_format = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Opus::kPayloadType); value) {
             mPalSndDec.opus_dec.payload_type = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Opus::kVersion); value) {
             mPalSndDec.opus_dec.version = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Opus::kNumChannels); value) {
             mPalSndDec.opus_dec.num_channels = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Opus::kPreSkip); value) {
             mPalSndDec.opus_dec.pre_skip = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Opus::kOutputGain); value) {
             mPalSndDec.opus_dec.output_gain = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Opus::kMappingFamily); value) {
             mPalSndDec.opus_dec.mapping_family = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Opus::kStreamCount); value) {
             mPalSndDec.opus_dec.stream_count = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Opus::kCoupledCount); value) {
             mPalSndDec.opus_dec.coupled_count = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Opus::kChannelMap0); value) {
             mPalSndDec.opus_dec.channel_map[0] = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Opus::kChannelMap1); value) {
             mPalSndDec.opus_dec.channel_map[1] = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Opus::kChannelMap2); value) {
             mPalSndDec.opus_dec.channel_map[2] = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Opus::kChannelMap3); value) {
             mPalSndDec.opus_dec.channel_map[3] = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Opus::kChannelMap4); value) {
             mPalSndDec.opus_dec.channel_map[4] = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Opus::kChannelMap5); value) {
             mPalSndDec.opus_dec.channel_map[5] = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Opus::kChannelMap6); value) {
             mPalSndDec.opus_dec.channel_map[6] = value.value();
+            isCompressMetadataAvail = true;
         }
         if (auto value = getIntValueFromVString(in_parameters, Opus::kChannelMap7); value) {
             mPalSndDec.opus_dec.channel_map[7] = value.value();
+            isCompressMetadataAvail = true;
         }
         mPalSndDec.opus_dec.sample_rate = mSampleRate;
     }
@@ -630,7 +683,8 @@ ndk::ScopedAStatus CompressPlayback::setVendorParameters(
         return ndk::ScopedAStatus::ok();
     }
     LOG(VERBOSE) << __func__ << ": trying for on-the-fly codec configuration";
-    configureCodecInfo();
+    if (isCompressMetadataAvail)
+        configureCodecInfo();
     return ndk::ScopedAStatus::ok();
 }
 
@@ -921,7 +975,7 @@ size_t VoipRecord::getFrameCount(const AudioPortConfig& mixPortConfig) {
 
 // [VoiceCallRecord Start]
 size_t VoiceCallRecord::getFrameCount(const AudioPortConfig& mixPortConfig) {
-    return (kCaptureDurationMs * mixPortConfig.sampleRate.value().value) / 1000;
+    return kCaptureDurationMs * (mixPortConfig.sampleRate.value().value / 1000);
 }
 
 pal_incall_record_direction VoiceCallRecord::getRecordDirection(
