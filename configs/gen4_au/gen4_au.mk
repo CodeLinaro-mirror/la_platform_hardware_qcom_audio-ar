@@ -133,7 +133,21 @@ ifeq ($(ENABLE_HYP),true)
 AUDIO_FEATURE_ENABLED_POWER_POLICY := true
 AUDIO_FEATURE_ENABLED_AUDIO_PARSERS := true
 AUDIO_FEATURE_ENABLED_AUDIO_CONTROL_HAL_AIDL := true
+
+ENABLE_QCOM_HAL_AUDIO_FOCUS := false
+ifeq ($(ENABLE_QCOM_HAL_AUDIO_FOCUS), true)
+PRODUCT_PACKAGES += \
+    android.hardware.automotive.audiocontrol-service.configurable \
+    android.hardware.audio.focus-service
+$(warning ENABLE_QCOM_HAL_AUDIO_FOCUS is $(ENABLE_QCOM_HAL_AUDIO_FOCUS))
+endif
+
+ifneq ($(ENABLE_QCOM_HAL_AUDIO_FOCUS), true)
 PRODUCT_PACKAGES += vendor.qti.hardware.automotive.audiocontrol-service
+endif
+# PRODUCT_PACKAGES += \
+    # android.hardware.automotive.audiocontrol-service.configurable \
+    # android.hardware.audio.focus-service
 PRODUCT_PACKAGES += libqtiautobundle
 ifeq ($(TARGET_BOARD_AUTO), true)
 ifeq ($(TARGET_USES_RRO), true)

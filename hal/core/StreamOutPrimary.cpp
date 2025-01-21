@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -749,8 +749,45 @@ ndk::ScopedAStatus StreamOutPrimary::updateMetadataCommon(const Metadata& metada
     if (metadata.index() != mMetadata.index()) {
         LOG(FATAL) << __func__ << mLogPrefix << ": changing metadata variant is not allowed";
     }
-    mMetadata = metadata;
 
+#ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
+    auto mHalFocusService = ModulePrimary::getHalFocusService();
+    auto sourceMetadata = std::get<SourceMetadata>(metadata);
+    auto sourcemMetadata = std::get<SourceMetadata>(mMetadata);
+    if (!sourceMetadata.tracks.empty()) {
+        mMetadata = metadata;
+
+        //get usage
+        auto tracks = sourceMetadata.tracks;
+        if (tracks.empty()) {
+            LOG(ERROR) << __LINE__ << __func__ << " No tracks in metadata";
+            return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
+        }
+        auto curStreamUsage =
+                static_cast<::aidl::android::media::audio::common::AudioUsage>(tracks[0].usage);
+        const std::shared_ptr<::qti::audio::core::FocusStreamUpdateCallback> focusCallback =
+                    ndk::SharedRefBase::make<::qti::audio::core::FocusStreamUpdateCallback>(this);
+
+        if (!focusSessionInfo.FocusId ) {
+            mHalFocusService->requestFocus(focusCallback, curStreamUsage, mConnectedDevices[0],
+                                                mVolumes[0], &focusSessionInfo);
+            LOG(INFO) << "Requesting audio focus, focusId: " << focusSessionInfo.FocusId;
+        } else {
+            //TODO: handle the calls seen due to focus action from framework
+            LOG(INFO) << "Focus Id already exists " <<
+                focusSessionInfo.FocusId << ", ignoring the call";
+        }
+
+    } else if (sourceMetadata.tracks.empty() && !sourcemMetadata.tracks.empty() &&
+        sourcemMetadata.tracks[0].usage !=
+                    ::aidl::android::media::audio::common::AudioUsage::UNKNOWN) {
+        // request new audio focus with updated metadata
+        LOG(DEBUG) << __func__ << ": Releasing audio focus: " << focusSessionInfo.FocusId;
+        mHalFocusService->abandonFocus(focusSessionInfo);
+        focusSessionInfo.FocusId = 0;
+    }
+#endif
+    mMetadata = metadata;
     if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK) {
         auto& compressPlayback = std::get<CompressPlayback>(mExt);
         compressPlayback.updateSourceMetadata(std::get<SourceMetadata>(mMetadata));

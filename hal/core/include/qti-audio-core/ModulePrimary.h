@@ -16,7 +16,7 @@
 
 /*
  * ​​​​​Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -25,6 +25,11 @@
 #include <qti-audio-core/Bluetooth.h>
 #include <qti-audio-core/Module.h>
 #include <qti-audio-core/Platform.h>
+
+#ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
+#include <aidl/android/hardware/audio/focus/IAudioFocusService.h>
+using ::aidl::android::hardware::audio::focus::IAudioFocusService;
+#endif
 
 namespace qti::audio::core {
 
@@ -66,7 +71,10 @@ class ModulePrimary final : public Module {
     ndk::ScopedAStatus getSupportedPlaybackRateFactors(
             SupportedPlaybackRateFactors* _aidl_return) override;
     // #################### end of overriding APIs from IModule ####################
-
+#ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
+    static std::shared_ptr<IAudioFocusService>  mHalFocusService;
+    static std::shared_ptr<IAudioFocusService> getHalFocusService();
+#endif
     // Mutex for stream lists protection
     static std::mutex outListMutex;
     static std::mutex inListMutex;

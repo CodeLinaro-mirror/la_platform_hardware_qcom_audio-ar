@@ -1,15 +1,22 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
 #pragma once
 
+#include <memory>
 #include <qti-audio-core/AudioUsecase.h>
 #include <qti-audio-core/HalOffloadEffects.h>
 #include <qti-audio-core/Stream.h>
 #include <qti-audio-core/PlatformStreamCallback.h>
+#include <android-base/logging.h>
 
+#ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
+#include <aidl/android/hardware/audio/focus/BnStreamUpdateCallback.h>
+#include <aidl/android/hardware/audio/focus/IStreamUpdateCallback.h>
+#include <aidl/android/hardware/audio/focus/IFocusSession.h>
+#endif
 namespace qti::audio::core {
 
 class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public PlatformStreamCallback {
@@ -92,6 +99,9 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     void onTransferReady() override;
     void onDrainReady() override;
     void onError() override;
+#ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
+    ::aidl::android::hardware::audio::focus::IFocusSession focusSessionInfo;
+#endif
 
   protected:
     /*
@@ -158,5 +168,26 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     // optional buffer format converter, if stream input and output formats are different
     std::optional<std::unique_ptr<BufferFormatConverter>> mBufferFormatConverter;
 };
+
+#ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
+class FocusStreamUpdateCallback :
+        public ::aidl::android::hardware::audio::focus::BnStreamUpdateCallback {
+
+    StreamOutPrimary *stream;
+    public:
+
+        FocusStreamUpdateCallback(StreamOutPrimary* stream){
+            this->stream = stream;
+        }
+
+        ndk::ScopedAStatus onMetadataUpdated(bool doDuck, float gain){
+            LOG(INFO) << "onMetaupdated : gain " << gain;
+            //TODO: check if doDuck needed
+            std::vector<float> Vol = {gain, gain};
+            this->stream->setHwVolume(Vol);
+            return ndk::ScopedAStatus::ok();
+        }
+};
+#endif
 
 } // namespace qti::audio::core
