@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -91,13 +91,11 @@ struct BufferConfig {
 * UsecaseConfig template is helpful to declare getBufferConfig and getBufferSize for
 * each usecase, each new usecase can extend UsecaseConfig.
 * As stated before, framesizes are different for pcm and compress types.
-* UsecaseConfig by default uses pcm config, to use a pcm usecase extend like this
-* class PcmUsecase : public UsecaseConfig <PcmUsecase>
-* To define a compress usecase 1 can use as below:
-* class CompressUsecase : public UsecaseConfig <CompressUsecase, false >
+* getFrameSizeInBytes API should return frame size of PCM type when format is PCM,
+* otherwise for non-pcm formats it should return 1.
 */
 
-template <typename Usecase, bool IsPcm = true>
+template <typename Usecase>
 class UsecaseConfig {
   public:
     /*
@@ -121,11 +119,8 @@ class UsecaseConfig {
     static size_t getBufferSize(
             const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig) {
         size_t frameCount = Usecase::getFrameCount(mixPortConfig);
-        size_t frameSizeInBytes = 1;
-        if (IsPcm) {
-            frameSizeInBytes = getFrameSizeInBytes(
+        size_t frameSizeInBytes = getFrameSizeInBytes(
                     mixPortConfig.format.value(), mixPortConfig.channelMask.value());
-        }
         return frameCount * frameSizeInBytes;
     }
 };
@@ -213,7 +208,7 @@ class MMapPlayback : public MmapUsecaseBase, public UsecaseConfig<MMapPlayback> 
     static int32_t getLatency() { return kPeriodDurationMs + kPlatformDelayMs; }
 };
 
-class CompressPlayback : public UsecaseConfig<CompressPlayback, false /*IsPcm*/> {
+class CompressPlayback : public UsecaseConfig<CompressPlayback> {
   public:
     static constexpr size_t kPeriodSize = 32 * 1024;
     static constexpr size_t kPeriodCount = 4;
@@ -321,6 +316,8 @@ class CompressPlayback : public UsecaseConfig<CompressPlayback, false /*IsPcm*/>
     void onFlush();
     bool isGaplessConfigured() const noexcept { return mIsGaplessConfigured; }
 
+   int getBitWidth() { return mBitWidth ;}
+   bool isPcmOffload() { return mPcmOffload; }
   protected:
     void configureDefault();
     // configure the codec info which is cached already
@@ -338,7 +335,7 @@ class CompressPlayback : public UsecaseConfig<CompressPlayback, false /*IsPcm*/>
     pal_stream_handle_t* mCompressPlaybackHandle{nullptr};
     pal_snd_dec_t mPalSndDec{};
     int32_t mSampleRate;
-    ::aidl::android::media::audio::common::AudioFormatDescription mCompressFormat;
+    ::aidl::android::media::audio::common::AudioFormatDescription mFormat;
     ::aidl::android::media::audio::common::AudioChannelLayout mChannelLayout;
     int32_t mBitWidth;
     int64_t mTotalDSPFrames{0};
@@ -346,6 +343,7 @@ class CompressPlayback : public UsecaseConfig<CompressPlayback, false /*IsPcm*/>
     const ::aidl::android::media::audio::common::AudioPortConfig& mMixPortConfig;
     PlatformStreamCallback * const mPlatformStreamCallback;
     std::atomic<bool> mIsGaplessConfigured = false;
+    bool mPcmOffload = false;
 };
 
 class PcmOffloadPlayback : public UsecaseConfig<PcmOffloadPlayback> {
@@ -516,7 +514,7 @@ class VoiceCallRecord : public UsecaseConfig<VoiceCallRecord> {
     static int32_t getLatency() { return PcmRecord::getLatency(); }
 };
 
-class CompressCapture : public UsecaseConfig<CompressCapture, false /*IsPcm*/> {
+class CompressCapture : public UsecaseConfig<CompressCapture> {
   public:
     constexpr static size_t kPlatformDelayMs = 20;
 
