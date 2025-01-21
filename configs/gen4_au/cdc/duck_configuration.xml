@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
+SPDX-License-Identifier: BSD-3-Clause-Clear
+-->
+<CarAudioDuckingConfiguration version="1">
+    <priorities>
+        <!-- Define a rule where the media bus is ducked when nav2 is incoming -->
+        <priority in_src="ASSISTANCE_NAVIGATION_GUIDANCE" running_src="MEDIA" duck="true" Gain="-9000"/>
+    </priorities>
+</CarAudioDuckingConfiguration>
