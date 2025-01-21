@@ -24,7 +24,6 @@ LOCAL_HEADER_LIBRARIES :=  \
 LOCAL_SHARED_LIBRARIES := \
     libaudioaidlcommon \
     libaudioserviceexampleimpl \
-    android.hardware.audio.core-V2-ndk \
     libbase \
     libbinder_ndk \
     libcutils \
@@ -34,14 +33,13 @@ LOCAL_SHARED_LIBRARIES := \
     libaudioutils \
     libutils \
     android.hardware.common-V2-ndk \
-    android.media.audio.common.types-V3-ndk \
     libmedia_helper \
     libstagefright_foundation \
     libhidlbase \
     libhardware \
     libfmq \
-    android.hardware.common-V2-ndk \
-    android.media.audio.common.types-V3-ndk
+    $(LATEST_ANDROID_MEDIA_AUDIO_COMMON_TYPES) \
+    $(LATEST_ANDROID_HARDWARE_AUDIO_CORE)
 
 include $(BUILD_SHARED_LIBRARY)
 
