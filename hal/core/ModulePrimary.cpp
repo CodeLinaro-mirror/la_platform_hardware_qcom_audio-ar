@@ -26,6 +26,10 @@
 #include <Utils.h>
 #include <android-base/logging.h>
 #include <cutils/str_parms.h>
+
+#ifdef ENABLE_QCOM_AMPERE_AUDIO
+#include <aidl/ampere/hardware/interfaces/automotive/audioparameterparser/RadioVendorParameterExt.h>
+#endif
 #include <aidl/qti/audio/core/VString.h>
 #include <qti-audio-core/Bluetooth.h>
 #include <qti-audio-core/ModulePrimary.h>
@@ -80,6 +84,10 @@ using ::aidl::android::hardware::audio::core::IBluetooth;
 using ::aidl::android::hardware::audio::core::IBluetoothA2dp;
 using ::aidl::android::hardware::audio::core::IBluetoothLe;
 
+#ifdef ENABLE_QCOM_AMPERE_AUDIO
+using aidl::ampere::hardware::interfaces::automotive::audioparameterparser::RadioVendorParameterExt;
+#endif
+
 #ifdef __cplusplus
  extern "C" {
 #endif
@@ -88,6 +96,7 @@ namespace qti::audio::core {
 
 std::vector<std::weak_ptr<::qti::audio::core::StreamOut>> ModulePrimary::mStreamsOut;
 std::vector<std::weak_ptr<::qti::audio::core::StreamIn>> ModulePrimary::mStreamsIn;
+std::string qti::audio::core::ModulePrimary::globalAudioSource;
 
 std::vector<float> qti::audio::core::MuteConfig::getVol = {-3600.0f, -3600.0f};
 
@@ -543,6 +552,63 @@ ndk::ScopedAStatus ModulePrimary::getSupportedPlaybackRateFactors(
     return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
 }
 // start of module parameters handling
+#ifdef ENABLE_QCOM_AMPERE_AUDIO
+namespace {
+
+template <typename T>
+using ConversionResult = ::android::error::Result<T>;
+
+#define GENERATE_EXTRACT_PARAMETER_LIST_DEF(V)      \
+    V(Radio)
+
+#define GENERATE_EXTRACT_PARAMETER_TEMPLATES(symbol)                                            \
+    template <typename W, symbol##VendorParameterExt::Parameter::Tag _tag, typename V>          \
+    ConversionResult<V> extractParameter(const VendorParameter& p)  {                           \
+        std::optional<W> value;                                                                 \
+        binder_status_t result = p.ext.getParcelable(&value);                                   \
+        if (result == STATUS_OK && value.has_value()) {                                         \
+            if (value.value().value.getTag() != _tag) {                                         \
+                return ::android::base::unexpected(::android::BAD_VALUE);                       \
+            }                                                                                   \
+            return value.value().value.template get<_tag>();                                    \
+        }                                                                                       \
+        LOG(ERROR) << __func__ << ": failed to read the value of the parameter \"" << p.id      \
+                   << "\": " << result;                                                         \
+        return ::android::base::unexpected(::android::BAD_VALUE);                               \
+    }
+
+GENERATE_EXTRACT_PARAMETER_LIST_DEF(GENERATE_EXTRACT_PARAMETER_TEMPLATES)
+
+}  // namespace
+
+void ModulePrimary::onsetRadioVendorParameter(const std::vector<::aidl::android::hardware::audio::core::VendorParameter>& params) {
+    for (const auto& param : params) {
+        if (setRadioVendorParameter(param) != ::android::OK) {
+            LOG(ERROR) << __func__ << ": FAILED to extract value from " << param.id.c_str();
+        }
+    }
+}
+
+
+::android::status_t ModulePrimary::setRadioVendorParameter(const ::aidl::android::hardware::audio::core::VendorParameter& param) {
+    using Tag = RadioVendorParameterExt::Parameter::Tag;
+    if (param.id == RadioVendorParameterExt::AUDIO_SOURCE) {
+        auto p = extractParameter<RadioVendorParameterExt, Tag::audioSource,
+                RadioVendorParameterExt::AudioSource>(param);
+        if (!p.has_value()) {
+            LOG(ERROR) << __func__ << ": Failed to extract parameter";
+            return p.error();
+        }
+        RadioVendorParameterExt::AudioSource aidlAudioSource = p.value();
+        globalAudioSource = toString(aidlAudioSource);
+        LOG(DEBUG) << __func__ << " AUDIO_SOURCE: " << globalAudioSource;
+    } else {
+        LOG(ERROR) << __func__ << ": Unknown parameter id " << param.id.c_str();
+        return ::android::BAD_VALUE;
+    }
+    return ::android::OK;
+}
+#endif
 
 ndk::ScopedAStatus ModulePrimary::setVendorParameters(
         const std::vector<::aidl::android::hardware::audio::core::VendorParameter>& in_parameters,
@@ -888,7 +954,12 @@ ModulePrimary::SetParameterToFeatureMap ModulePrimary::fillSetParameterToFeature
                                  {Parameters::kWfdIPAsProxyDevConnected, Feature::WFD},
                                  {Parameters::kProxyRecordFMQSize, Feature::WFD},
                                  {Parameters::kHapticsVolume, Feature::HAPTICS},
-                                 {Parameters::kHapticsIntensity, Feature::HAPTICS}};
+                                 {Parameters::kHapticsIntensity, Feature::HAPTICS},
+#ifdef ENABLE_QCOM_AMPERE_AUDIO
+
+                                 {RadioVendorParameterExt::AUDIO_SOURCE, Feature::AUDIOSOURCE},
+#endif
+    };
     return map;
 }
 
@@ -901,6 +972,10 @@ ModulePrimary::FeatureToSetHandlerMap ModulePrimary::fillFeatureToSetHandlerMap(
             {Feature::WFD, &ModulePrimary::onSetWFDParameters},
             {Feature::FTM, &ModulePrimary::onSetFTMParameters},
             {Feature::HAPTICS, &ModulePrimary::onSetHapticsParameters},
+#ifdef ENABLE_QCOM_AMPERE_AUDIO
+            {Feature::AUDIOSOURCE, &ModulePrimary::onsetRadioVendorParameter},
+
+#endif
     };
     return map;
 }
@@ -1184,7 +1259,11 @@ ModulePrimary::GetParameterToFeatureMap ModulePrimary::fillGetParameterToFeature
                                  {Parameters::kWfdIPAsProxyDevConnected, Feature::WFD},
                                  {Parameters::kFTMParam, Feature::FTM},
                                  {Parameters::kFTMSPKRParam, Feature::FTM},
-                                 {Parameters::kFMStatus, Feature::AUDIOEXTENSION}};
+                                 {Parameters::kFMStatus, Feature::AUDIOEXTENSION},
+#ifdef ENABLE_QCOM_AMPERE_AUDIO
+                                 {RadioVendorParameterExt::AUDIO_SOURCE, Feature::AUDIOSOURCE},
+#endif
+    };
     return map;
 }
 

@@ -114,6 +114,10 @@ LOCAL_SHARED_LIBRARIES += \
     android.hardware.audio.focus-V1-ndk
 endif
 
+ifeq ($(ENABLE_QCOM_AMPERE_AUDIO), true)
+LOCAL_SHARED_LIBRARIES += ampere.hardware.interfaces.automotive.audioparameterparser-V1-ndk
+endif
+
 include $(BUILD_SHARED_LIBRARY)
 
 include $(CURRENT_PATH)/fuzzer/Android.mk

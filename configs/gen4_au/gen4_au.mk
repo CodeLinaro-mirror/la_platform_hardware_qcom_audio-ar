@@ -155,6 +155,8 @@ PRODUCT_PACKAGES += CarServiceResAutoTarget_Vendor
 endif
 endif
 endif
+ENABLE_QCOM_AMPERE_AUDIO := false
+$(call soong_config_set_bool,qcom_audio_hal,use_ampere_audio,true)
 
 ifneq (,$(filter U UpsideDownCake 14 V VanillaIceCream 15, $(PLATFORM_VERSION)))
 AUDIO_FEATURE_ENABLED_HAL_V7 := true

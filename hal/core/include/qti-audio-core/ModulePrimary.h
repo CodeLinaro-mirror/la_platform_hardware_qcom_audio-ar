@@ -85,6 +85,7 @@ class ModulePrimary final : public Module {
 
     static std::vector<std::weak_ptr<StreamOut>>& getOutStreams() { return mStreamsOut; }
     static std::vector<std::weak_ptr<StreamIn>>& getInStreams() { return mStreamsIn; }
+    static std::string globalAudioSource;
 
   protected:
     // #################### start of overriding APIs from Module ####################
@@ -148,6 +149,8 @@ class ModulePrimary final : public Module {
         FTM, // Factory Test Mode
         AUDIOEXTENSION,
         HAPTICS,
+        CARPLAY,
+        AUDIOSOURCE,
     };
 
     // For set parameters
@@ -225,7 +228,10 @@ class ModulePrimary final : public Module {
     std::vector<::aidl::android::hardware::audio::core::VendorParameter> onGetGenericParams(
             const std::vector<std::string>&);
     // end of module parameters handling
-
+#ifdef ENABLE_QCOM_AMPERE_AUDIO
+    void onsetRadioVendorParameter(const std::vector<::aidl::android::hardware::audio::core::VendorParameter>& params);
+    ::android::status_t setRadioVendorParameter(const ::aidl::android::hardware::audio::core::VendorParameter& param);
+#endif
   protected:
     bool mVolumeGaincheck=false;
     const SetParameterToFeatureMap mSetParameterToFeatureMap{fillSetParameterToFeatureMap()};
