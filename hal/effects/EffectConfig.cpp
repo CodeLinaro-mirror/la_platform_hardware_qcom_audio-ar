@@ -16,7 +16,7 @@
 
 /*
  * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-24 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -315,6 +315,14 @@ bool EffectConfig::findUuid(const std::pair<std::string, struct EffectLibraries>
         LOG(VERBOSE) << __func__ << " " << xmlEffectName << " found in QTI effects";
         return true;
     }
+
+    // find in Ampere specific effects
+    if (auto it = kAmpereUuidNameTypeMap.find(xmlEffectName); it != kAmpereUuidNameTypeMap.end()) {
+        *uuid = (it->second);
+        LOG(VERBOSE) << __func__ << " " << xmlEffectName << " found in Ampere effects uuid "<< toString(it->second);
+        return true;
+    }
+
     return false;
 }
 

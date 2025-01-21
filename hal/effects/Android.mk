@@ -2,6 +2,8 @@ CURRENT_PATH := $(call my-dir)
 
 LOCAL_PATH:= $(call my-dir)
 
+EFFECT_LOCAL_PATH:= $(call my-dir)
+
 # Build Header library to expose effect headers
 include $(CLEAR_VARS)
 LOCAL_MODULE := libaudioeffectsaidlqti_headers
@@ -57,3 +59,5 @@ LOCAL_HEADER_LIBRARIES:= $(EFFECTS_DEFAULTS_HEADERS_LIBRARIES)
 include $(BUILD_SHARED_LIBRARY)
 
 include $(CURRENT_PATH)/qcom-effects/Android.mk
+
+include $(EFFECT_LOCAL_PATH)/ampere-effects/Android.mk
