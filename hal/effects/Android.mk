@@ -61,5 +61,7 @@ include $(BUILD_SHARED_LIBRARY)
 include $(CURRENT_PATH)/qcom-effects/Android.mk
 
 ifeq ($(TARGET_USES_CDC_HW), true)
+ifeq ($(AUDIO_AMPERE_EFFECTS),true)
 include $(EFFECT_LOCAL_PATH)/ampere-effects/Android.mk
+endif
 endif
