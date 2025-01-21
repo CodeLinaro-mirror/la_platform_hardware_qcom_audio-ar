@@ -1,6 +1,5 @@
-/*
- * Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ /*
+ * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 #pragma once
@@ -17,6 +16,21 @@
 #include <extensions/hal_ecnr.h>
 #endif
 #include "extensions/battery_listener.h"
+
+#define PADDING_8BYTE_ALIGN(x)  ((((x) + 7) & 7) ^ 7)
+
+typedef struct {
+    uint32_t param_id;
+    uint32_t param_size;
+    void* data;
+} pal_awx_param_t;
+
+typedef enum {
+    SYNC_WITH_AUDIO_BUS,
+    SYNC_WITHOUT_AUDIO_BUS,
+    ASYNC,
+    OTHER
+} effect_type;
 
 typedef enum {
     SESSION_UNKNOWN,
@@ -87,6 +101,14 @@ const std::map<int32_t, std::string> reconfigStateName{
         {CHANNEL_MONO, std::string{"CHANNEL_MONO"}},
         {CHANNEL_STEREO, std::string{"CHANNEL_STEREO"}},
 };
+
+void AWX_set_param(pal_awx_param_t *parms, effect_type effect);
+int AWX_get_param(pal_awx_param_t *parms, effect_type effect);
+int handleEffectASYNC(int status, pal_param_payload* pal_payload, uint32_t payload_size,
+                    pal_device_id_t aud_source_effect_device, pal_effect_custom_payload_t* customPayload);
+void createPayload(uint8_t* payloadInfo, pal_param_payload** pal_payload,
+                       effect_pal_payload_t** effect_payload, pal_effect_custom_payload_t** customPayload,
+                       uint32_t param_id, uint32_t pal_param_size);
 
 typedef void (*batt_listener_init_t)(battery_status_change_fn_t);
 typedef void (*batt_listener_deinit_t)();
