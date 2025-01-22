@@ -64,6 +64,11 @@ MM_AUDIO += libvolumelistener
 MM_AUDIO += libqcompostprocbundle
 MM_AUDIO += libqcomvisualizer
 MM_AUDIO += libqcomvoiceprocessing
+
+ifeq ($(TARGET_USES_CDC_HW), true)
+MM_AUDIO += libampereeffects
+endif
+
 #KERNEL_TESTS
 #KERNEL_TESTS := mm-audio-native-test
 
