@@ -85,7 +85,8 @@ StreamOutPrimary::StreamOutPrimary(StreamContext&& context, const SourceMetadata
     }
     std::ostringstream os;
     os << " : usecase: " << mTagName;
-    os << " IoHandle: " << mMixPortConfig.ext.get<AudioPortExt::Tag::mix>().handle << " ";
+    os << ", mix port config id:" << mMixPortConfig.id;
+    os << ", IoHandle:" << mMixPortConfig.ext.get<AudioPortExt::Tag::mix>().handle << " ";
     mLogPrefix = os.str();
     LOG(DEBUG) << __func__ << mLogPrefix;
 }
