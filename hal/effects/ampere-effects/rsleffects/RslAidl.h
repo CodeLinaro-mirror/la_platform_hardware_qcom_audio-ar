@@ -63,6 +63,17 @@ namespace aidl::ampere::effects {
             ndk::ScopedAStatus getParameterVendorEffect(
             const aidl::android::hardware::audio::effect::Parameter::Id& id,
             aidl::android::hardware::audio::effect::Parameter::Specific* specific);
+            ndk::ScopedAStatus setParameterBMT(
+            const aidl::android::hardware::audio::effect::Parameter::Specific& specific);
+            ndk::ScopedAStatus getParameterBMT(
+            const aidl::android::hardware::audio::effect::Equalizer::Id& id,
+            aidl::android::hardware::audio::effect::Parameter::Specific* specific);
+
+            ndk::ScopedAStatus setParameterBassBoost(
+            const aidl::android::hardware::audio::effect::Parameter::Specific& specific);
+            ndk::ScopedAStatus getParameterBassBoost(
+            const aidl::android::hardware::audio::effect::BassBoost::Id& id,
+            aidl::android::hardware::audio::effect::Parameter::Specific* specific);
 
     };
 } // namespace aidl::ampere::effects
