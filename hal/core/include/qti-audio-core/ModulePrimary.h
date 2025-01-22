@@ -26,10 +26,14 @@
 #include <qti-audio-core/Module.h>
 #include <qti-audio-core/Platform.h>
 
+
 #ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
 #include <aidl/android/hardware/audio/focus/IAudioFocusService.h>
 using ::aidl::android::hardware::audio::focus::IAudioFocusService;
 #endif
+
+extern "C" void extn_set_mute_config_for_address(char* address, bool muted, float volume);
+
 
 namespace qti::audio::core {
 
@@ -237,6 +241,23 @@ class ModulePrimary final : public Module {
   private:
     const std::string mGainVolumecheckProperty{"vendor.audio.feature.oemgainconversion.enable"};
     bool mOffloadSpeedSupported;
+};
+
+class MuteConfig {
+public:
+    static MuteConfig& GetInstance() {
+        static MuteConfig instance;
+        return instance;
+    }
+    ModuleConfig& getConfig();
+    static void set_mute_config_for_address(char* address, bool muted, float volume);
+
+private:
+    MuteConfig() {
+        std::cout << "MuteConfig Instance Created" << std::endl;
+    }
+    ~MuteConfig() {}
+    static std::vector<float> getVol;
 };
 
 } // namespace qti::audio::core

@@ -1,5 +1,5 @@
- /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+/*
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 #pragma once
@@ -32,6 +32,18 @@ typedef enum {
     OTHER
 } effect_type;
 
+#ifdef __cplusplus
+ extern "C" {
+#endif
+
+typedef void (*fp_set_mute_config_for_address_t) (char*, bool, float);
+typedef struct auto_hal_init_config {
+      fp_set_mute_config_for_address_t     fp_set_mute_config_for_address;
+  } auto_hal_init_config_t;
+typedef void(*autohal_init_t)(auto_hal_init_config_t);
+
+extern auto_hal_init_config_t init_config;
+
 typedef enum {
     SESSION_UNKNOWN,
     /** A2DP legacy that AVDTP media is encoded by Bluetooth Stack */
@@ -60,8 +72,10 @@ namespace qti::audio::core {
 
 #ifdef __LP64__
 static std::string kBluetoothIpcLibrary = "/vendor/lib64/btaudio_offload_if.so";
+static std::string kAutohalLibrary = "/vendor/lib64/libautohal_pal.so";
 #else
 static std::string kBluetoothIpcLibrary = "/vendor/lib/btaudio_offload_if.so";
+static std::string kAutohalLibrary = "/vendor/lib/libautohal_pal.so";
 #endif
 static std::string kBatteryListenerLibrary = std::string("libbatterylistener.so");
 static std::string kHfpLibrary = "libhfp_pal.so";
@@ -75,6 +89,7 @@ static std::string kBatteryListenerProperty = "vendor.audio.feature.battery_list
 static std::string kHfpProperty = "vendor.audio.feature.hfp.enable";
 static std::string kBluetoothProperty = "vendor.audio.feature.a2dp_offload.enable";
 static std::string kAutoOemProperty = "vendor.audio.feature.oem_extension.enable";
+static std::string kAutoHalProperty = "vendor.audio.feature.auto_hal_pal.enable";
 
 const std::map<tSESSION_TYPE, pal_device_id_t> SessionTypePalDevMap{
         {A2DP_HARDWARE_OFFLOAD_DATAPATH, PAL_DEVICE_OUT_BLUETOOTH_A2DP},
@@ -131,10 +146,10 @@ typedef void (*register_reconfig_cb_t)(int (*reconfig_cb)(tSESSION_TYPE, int));
 
 typedef void (*gef_init_t)(void);
 typedef void (*gef_deinit_t)(void);
-
 typedef void (*oem_set_parameters_t)(struct str_parms*);
 typedef int (*oem_get_parameters_t)(const std::string&);
 typedef int (*oem_init_t)(void);
+extern "C" int autohal_setParameters(struct str_parms *parms);
 
 static bool isExtensionEnabled(std::string property) {
     return property_get_bool(property.c_str(), false);
@@ -203,6 +218,17 @@ class HfpExtension : public AudioExtensionBase {
     bool micMute;
 };
 
+class AutohalExtension : public AudioExtensionBase {
+  public:
+    AutohalExtension();
+    ~AutohalExtension();
+    int audio_extn_autohal_set_parameters(struct str_parms *parms);
+
+  private:
+     autohal_init_t autohal_init;
+     qti::audio::core::set_parameters_t autohal_SetParameters;
+};
+
 class FmExtension : public AudioExtensionBase {
   public:
     FmExtension();
@@ -264,6 +290,7 @@ class AudioExtension {
         }();
         return *(kAudioExtension.get());
     }
+    int audio_extn_autohal_set_parameters(struct str_parms *params);
     void audio_extn_set_parameters(struct str_parms* params);
     int audio_extn_get_parameters(const std::string&);
     void audio_feature_stats_set_parameters(struct str_parms* params);
@@ -284,6 +311,13 @@ class AudioExtension {
     std::unique_ptr<AutoOemExtension> mAutoOemExtension = std::make_unique<AutoOemExtension>();
     std::unique_ptr<KarokeExtension> mKarokeExtension = std::make_unique<KarokeExtension>();
     std::unique_ptr<GefExtension> mGefExtension = std::make_unique<GefExtension>();
+    std::unique_ptr<AutohalExtension> mAutohalExtension = std::make_unique<AutohalExtension>();
+
     static std::mutex reconfig_wait_mutex_;
 };
 } // namespace qti::audio::core
+
+
+#ifdef __cplusplus
+}
+#endif
