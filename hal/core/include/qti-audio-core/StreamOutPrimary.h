@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -22,6 +22,7 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
 
     virtual ~StreamOutPrimary() override;
     int32_t setAggregateSourceMetadata(bool voiceActive) override;
+    std::string getAddress() const;
 
     // Methods of 'DriverInterface'.
     ::android::status_t init() override;
@@ -152,6 +153,7 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     bool mIsMMapStarted = false;
     bool isHwVolumeSupported();
     struct BufferConfig getBufferConfig();
+    std::string busAddr = "";
 
     // optional buffer format converter, if stream input and output formats are different
     std::optional<std::unique_ptr<BufferFormatConverter>> mBufferFormatConverter;

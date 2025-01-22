@@ -15,8 +15,8 @@
  */
 
 /*
- * ​​​​​Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -33,6 +33,7 @@ typedef enum power_policy_status_t {
 
 extern "C" void extn_out_set_power_policy(uint8_t enable);
 extern "C" void extn_in_set_power_policy(uint8_t enable);
+extern "C" void extn_set_mute_config_for_address(char* address, bool muted, float volume);
 
 namespace qti::audio::core {
 
@@ -235,6 +236,24 @@ class ModulePrimary final : public Module {
 
   private:
     bool mOffloadSpeedSupported;
+};
+
+
+class MuteConfig {
+public:
+    static MuteConfig& GetInstance() {
+        static MuteConfig instance;
+        return instance;
+    }
+    ModuleConfig& getConfig();
+    static void set_mute_config_for_address(char* address, bool muted, float volume);
+
+private:
+    MuteConfig() {
+        std::cout << "MuteConfig Instance Created" << std::endl;
+    }
+    ~MuteConfig() {}
+    static std::vector<float> getVol;
 };
 
 } // namespace qti::audio::core

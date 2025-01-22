@@ -38,6 +38,18 @@ typedef enum {
     MAX,
 } tSESSION_TYPE;
 
+#ifdef __cplusplus
+ extern "C" {
+#endif
+
+typedef void (*fp_set_mute_config_for_address_t) (char*, bool, float);
+typedef struct auto_hal_init_config {
+      fp_set_mute_config_for_address_t     fp_set_mute_config_for_address;
+  } auto_hal_init_config_t;
+typedef void(*autohal_init_t)(auto_hal_init_config_t);
+
+extern auto_hal_init_config_t init_config;
+
 namespace qti::audio::core {
 // RAII based classes to dlopen/dysym on init and dlclose on dest.
 
@@ -51,8 +63,10 @@ extern "C" void extn_in_set_power_policy(uint8_t enable);
 
 #ifdef __LP64__
 static std::string kBluetoothIpcLibrary = "/vendor/lib64/btaudio_offload_if.so";
+static std::string kAutohalLibrary = "/vendor/lib64/libautohal_pal.so";
 #else
 static std::string kBluetoothIpcLibrary = "/vendor/lib/btaudio_offload_if.so";
+static std::string kAutohalLibrary = "/vendor/lib/libautohal_pal.so";
 #endif
 static std::string kBatteryListenerLibrary = std::string("libbatterylistener.so");
 static std::string kHfpLibrary = "libhfp_pal.so";
@@ -63,6 +77,7 @@ static std::string kGefLibrary = "libqtigefar.so";
 static std::string kBatteryListenerProperty = "vendor.audio.feature.battery_listener.enable";
 static std::string kHfpProperty = "vendor.audio.feature.hfp.enable";
 static std::string kBluetoothProperty = "vendor.audio.feature.a2dp_offload.enable";
+static std::string kAutoHalProperty = "vendor.audio.feature.auto_hal_pal.enable";
 
 const std::map<tSESSION_TYPE, pal_device_id_t> SessionTypePalDevMap{
         {A2DP_HARDWARE_OFFLOAD_DATAPATH, PAL_DEVICE_OUT_BLUETOOTH_A2DP},
@@ -120,6 +135,8 @@ typedef struct power_policy_init_config {
     fp_in_set_power_policy_t     fp_in_set_power_policy;
     fp_out_set_power_policy_t    fp_out_set_power_policy;
 } power_policy_init_config_t;
+
+extern "C" int autohal_setParameters(struct str_parms *parms);
 
 static bool isExtensionEnabled(std::string property) {
     return property_get_bool(property.c_str(), false);
@@ -188,6 +205,17 @@ class HfpExtension : public AudioExtensionBase {
     bool micMute;
 };
 
+class AutohalExtension : public AudioExtensionBase {
+  public:
+    AutohalExtension();
+    ~AutohalExtension();
+    int audio_extn_autohal_set_parameters(struct str_parms *parms);
+
+  private:
+     autohal_init_t autohal_init;
+     qti::audio::core::set_parameters_t autohal_SetParameters;
+};
+
 class FmExtension : public AudioExtensionBase {
   public:
     FmExtension();
@@ -241,6 +269,7 @@ class AudioExtension {
     power_policy_status_t in_power_policy = POWER_POLICY_STATUS_ONLINE;
     void in_set_power_policy(uint8_t enable);
     void out_set_power_policy(uint8_t enable);
+    int audio_extn_autohal_set_parameters(struct str_parms *params);
     void audio_extn_set_parameters(struct str_parms* params);
     void audio_extn_get_parameters(struct str_parms* params, struct str_parms* reply);
     void audio_feature_stats_set_parameters(struct str_parms* params);
@@ -257,6 +286,12 @@ class AudioExtension {
     std::unique_ptr<FmExtension> mFmExtension = std::make_unique<FmExtension>();
     std::unique_ptr<KarokeExtension> mKarokeExtension = std::make_unique<KarokeExtension>();
     std::unique_ptr<GefExtension> mGefExtension = std::make_unique<GefExtension>();
+    std::unique_ptr<AutohalExtension> mAutohalExtension = std::make_unique<AutohalExtension>();
     static std::mutex reconfig_wait_mutex_;
-};
+
+    }; //class AudioExtension()
 } // namespace qti::audio::core
+
+#ifdef __cplusplus
+}
+#endif

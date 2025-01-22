@@ -8,7 +8,8 @@ LOCAL_MODULE            := libaudiocorehal.qti
 LOCAL_VENDOR_MODULE     := true
 LOCAL_MODULE_RELATIVE_PATH := hw
 
-LOCAL_C_INCLUDES    :=  $(LOCAL_PATH)/include
+LOCAL_C_INCLUDES    :=  $(LOCAL_PATH)/include\
+                        $(LOCAL_PATH)/extensions/include
 
 LOCAL_CFLAGS := \
     -DBACKEND_NDK \
@@ -34,7 +35,9 @@ LOCAL_SRC_FILES := \
     Telephony.cpp \
     StreamInPrimary.cpp \
     StreamOutPrimary.cpp \
-    HalOffloadEffects.cpp
+    HalOffloadEffects.cpp \
+    extensions/AudioExtension.cpp \
+    extensions/auto_hal.cpp
 
 LOCAL_HEADER_LIBRARIES :=  \
     libxsdc-utils \
@@ -45,7 +48,6 @@ LOCAL_HEADER_LIBRARIES :=  \
     libmedia_helper_headers \
     libmedia_helper_headers \
     libarpal_headers
-
 
 #    defaults: [
 #        "latest_android_media_audio_common_types_ndk_shared",
