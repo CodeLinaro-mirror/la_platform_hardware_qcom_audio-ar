@@ -48,7 +48,7 @@ AUDIO_PAL += libstream_haptics
 AUDIO_PAL += libstream_acd
 AUDIO_PAL += libstream_nontunnel
 AUDIO_PAL += libstream_soundtrigger
-AUDIO_PAL += libstream_acdb
+AUDIO_PAL += libstream_dummy
 AUDIO_PAL += libstream_asr
 #PAL Sessions Modules
 AUDIO_PAL += libsession_agm
