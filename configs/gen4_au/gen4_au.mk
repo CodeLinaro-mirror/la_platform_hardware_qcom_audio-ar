@@ -308,7 +308,8 @@ endif
 
 ifeq ($(TARGET_USES_CDC_HW), true)
 PRODUCT_COPY_FILES += \
-$(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/cdc/audio_module_config_primary.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_module_config_primary.xml
+$(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/cdc/audio_module_config_primary.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_module_config_primary.xml \
+$(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/cdc/duck_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/duck_configuration.xml
 else
 PRODUCT_COPY_FILES += \
 $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_module_config_primary.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_module_config_primary.xml
