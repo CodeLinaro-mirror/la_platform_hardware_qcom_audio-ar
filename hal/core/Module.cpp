@@ -412,9 +412,11 @@ ndk::ScopedAStatus Module::updateStreamsConnectedState(const AudioPatch& oldPatc
         for (const auto mixPort : mixPortIds) {
             if (auto it = oldConnections.find(mixPort);
                 continueWithEmptyDevices || it != oldConnections.end()) {
+                AudioDevice noneDevice;
                 const std::vector<AudioDevice> d =
-                        it != oldConnections.end() ? getDevicesFromDevicePortConfigIds(it->second)
-                                                   : std::vector<AudioDevice>();
+                        it != oldConnections.end()
+                                ? getDevicesFromDevicePortConfigIds(it->second)
+                                : std::vector<AudioDevice>({noneDevice}) /*None Device Fail-Safe*/;
                 if (auto status = mStreams.setStreamConnectedDevices(mixPort, d); status.isOk()) {
                     LOG(WARNING) << ":updateStreamsConnectedState: rollback: mix port config:"
                                  << mixPort
@@ -482,7 +484,21 @@ ndk::ScopedAStatus Module::updateStreamsConnectedState(const AudioPatch& oldPatc
     for (const auto& [oldMixPortConfigId, oldDevicePortConfigIds] : oldConnections) {
         if (auto it = newConnections.find(oldMixPortConfigId); it == newConnections.end()) {
             idsToConnectBackOnFailure.insert(oldMixPortConfigId);
-            if (auto status = mStreams.setStreamConnectedDevices(oldMixPortConfigId, {});
+            /**
+             * None Device Fail-Safe
+             *
+             * Although setting empty devices on stream is allowed momentarily.
+             * But read's or write's to stream when empty devices leads to failures.
+             *
+             * Configure stream devices to the NONE device as a fail-safe mechanism.
+             * This ensures that any attempts to read from or write to the stream when no device is
+             * connected are handled gracefully.
+             *
+             * Note: This scenario is not expected to occur. The HAL client (i.e., framework) must
+             * ensure that this situation does not arise.
+             */
+            AudioDevice noneDevice;
+            if (auto status = mStreams.setStreamConnectedDevices(oldMixPortConfigId, {noneDevice});
                 status.isOk()) {
                 LOG(DEBUG) << __func__ << ": The stream on port config id " << oldMixPortConfigId
                            << " has been disconnected";
