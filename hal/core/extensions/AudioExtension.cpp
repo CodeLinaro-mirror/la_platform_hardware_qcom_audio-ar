@@ -31,7 +31,7 @@ bool BatteryListenerExtension::isCharging;
 
 AudioExtensionBase::AudioExtensionBase(std::string library, bool enabled)
     : mLibraryName(library), mEnabled(enabled) {
-    LOG(INFO) << __func__ << " opening " << mLibraryName.c_str() << " enabled " << enabled;
+    LOG(DEBUG) << __func__ << " opening " << mLibraryName.c_str() << " enabled " << enabled;
     if (mEnabled) {
         mHandle = dlopen(mLibraryName.c_str(), RTLD_LAZY);
         if (mHandle == nullptr) {
@@ -95,7 +95,7 @@ void BatteryListenerExtension::setChargingMode(bool is_charging) {
                            sizeof(pal_param_charging_state_t));
     if (result) LOG(DEBUG) << __func__ << " error while handling charging event result " << result;
 
-    LOG(DEBUG) << __func__ << " exit";
+    LOG(VERBOSE) << __func__ << " exit";
 }
 
 void on_battery_status_changed(bool charging) {
@@ -121,7 +121,7 @@ void BatteryListenerExtension::battery_properties_listener_init() {
 
 BatteryListenerExtension::BatteryListenerExtension()
     : AudioExtensionBase(kBatteryListenerLibrary, isExtensionEnabled(kBatteryListenerProperty)) {
-    LOG(INFO) << __func__ << " Enter";
+    LOG(VERBOSE) << __func__ << " Enter";
     if (mHandle != nullptr) {
         if (!(batt_listener_init =
                       (batt_listener_init_t)dlsym(mHandle, "battery_properties_listener_init")) ||
@@ -132,7 +132,7 @@ BatteryListenerExtension::BatteryListenerExtension()
             LOG(ERROR) << __func__ << "dlsym failed";
             goto feature_disabled;
         }
-        LOG(INFO) << __func__ << "----- Feature BATTERY_LISTENER is enabled ----";
+        LOG(VERBOSE) << __func__ << "----- Feature BATTERY_LISTENER is enabled ----";
         battery_properties_listener_init();
         setChargingMode(battery_properties_is_charging());
         return;
@@ -147,7 +147,7 @@ feature_disabled:
     batt_listener_init = NULL;
     batt_listener_deinit = NULL;
     batt_prop_is_charging = NULL;
-    LOG(INFO) << __func__ << "----- Feature BATTERY_LISTENER is disabled ----";
+    LOG(VERBOSE) << __func__ << "----- Feature BATTERY_LISTENER is disabled ----";
 }
 
 static int reconfig_cb(tSESSION_TYPE session_type, int state) {
@@ -235,7 +235,7 @@ static int reconfig_cb(tSESSION_TYPE session_type, int state) {
 A2dpExtension::~A2dpExtension() {}
 A2dpExtension::A2dpExtension()
     : AudioExtensionBase(kBluetoothIpcLibrary, isExtensionEnabled(kBluetoothProperty)) {
-    LOG(INFO) << __func__ << " Enter";
+    LOG(VERBOSE) << __func__ << " Enter";
     if (mHandle != nullptr) {
         if (!(a2dp_bt_audio_pre_init =
                       (a2dp_bt_audio_pre_init_t)dlsym(mHandle, "bt_audio_pre_init"))) {
@@ -353,7 +353,7 @@ bool HfpExtension::audio_extn_hfp_is_active() {
 
 HfpExtension::~HfpExtension() {}
 HfpExtension::HfpExtension() : AudioExtensionBase(kHfpLibrary, isExtensionEnabled(kHfpProperty)) {
-    LOG(INFO) << __func__ << " Enter";
+    LOG(VERBOSE) << __func__ << " Enter";
     if (mHandle != nullptr) {
         if (!(hfp_init = (hfp_init_t)dlsym(mHandle, "hfp_init")) ||
             !(hfp_is_active = (hfp_is_active_t)dlsym(mHandle, "hfp_is_active")) ||
@@ -364,7 +364,7 @@ HfpExtension::HfpExtension() : AudioExtensionBase(kHfpLibrary, isExtensionEnable
             LOG(ERROR) << __func__ << " dlsym failed";
             goto feature_disabled;
         }
-        LOG(DEBUG) << __func__ << "---- Feature HFP is Enabled ----";
+        LOG(VERBOSE) << __func__ << "---- Feature HFP is Enabled ----";
         return;
     }
 
@@ -394,7 +394,7 @@ void FmExtension::audio_extn_fm_set_parameters(struct str_parms *params) {
     if (fm_set_params) fm_set_params(params);
 }
 FmExtension::FmExtension() : AudioExtensionBase(kFmLibrary) {
-    LOG(INFO) << __func__ << " Enter";
+    LOG(VERBOSE) << __func__ << " Enter";
     if (mHandle != nullptr) {
         fm_set_params = (set_parameters_t)dlsym(mHandle, "fm_set_parameters");
         fm_running_status = (fm_running_status_t)dlsym(mHandle, "fm_get_running_status");
@@ -512,14 +512,14 @@ GefExtension::~GefExtension() {
 }
 
 GefExtension::GefExtension() : AudioExtensionBase(kGefLibrary, true) {
-    LOG(INFO) << __func__ << " Enter";
+    LOG(VERBOSE) << __func__ << " Enter";
     if (mHandle != nullptr) {
         if (!(gef_init = (gef_init_t)dlsym(mHandle, "gef_interface_init")) ||
             !(gef_deinit = (gef_deinit_t)dlsym(mHandle, "gef_interface_deinit"))) {
             LOG(ERROR) << __func__ << "dlsym failed";
             goto feature_disabled;
         }
-        LOG(INFO) << __func__ << "----- GEF interface is initialized ----";
+        LOG(VERBOSE) << __func__ << "----- GEF interface is initialized ----";
         gef_interface_init();
         return;
     }
