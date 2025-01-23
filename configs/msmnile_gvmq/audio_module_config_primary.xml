@@ -84,7 +84,7 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
         <mixPort name="mmap_no_irq_out" role="source" flags="DIRECT MMAP_NOIRQ">
-            <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+            <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="FIXED_Q_8_24" />
             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_24_BIT" />
             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_32_BIT" />
@@ -226,9 +226,9 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
     </devicePorts>
     <routes>
         <route type="mix" sink="Media Bus" sources="media,primary_out,low_latency_out,deep_buffer_out,mmap_no_irq_out" />
-        <route type="mix" sink="Sys Notification Bus" sources="sys_notification" />
-        <route type="mix" sink="Nav Guidance Bus" sources="nav_guidance" />
-        <route type="mix" sink="Phone Bus" sources="phone,phone_fast" />
+        <route type="mix" sink="Sys Notification Bus" sources="sys_notification,mmap_no_irq_out" />
+        <route type="mix" sink="Nav Guidance Bus" sources="nav_guidance,mmap_no_irq_out" />
+        <route type="mix" sink="Phone Bus" sources="phone,phone_fast,mmap_no_irq_out" />
         <route type="mix" sink="Alerts Bus" sources="alerts,alerts_fast" />
         <route type="mix" sink="Front Passenger Bus" sources="front_passenger" />
         <route type="mix" sink="Rear Seat Bus" sources="rear_seat" />
