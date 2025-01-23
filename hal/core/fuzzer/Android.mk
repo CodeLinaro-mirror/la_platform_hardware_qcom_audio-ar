@@ -45,10 +45,10 @@ LOCAL_SHARED_LIBRARIES := \
     libaudioutils \
     libxml2 \
     android.hardware.common-V2-ndk \
-    android.media.audio.common.types-V3-ndk \
-    android.hardware.audio.core-V2-ndk \
+    $(LATEST_ANDROID_MEDIA_AUDIO_COMMON_TYPES) \
+    $(LATEST_ANDROID_HARDWARE_AUDIO_CORE) \
     $(LATEST_ANDROID_HARDWARE_AUDIO_EFFECT) \
-    android.hardware.audio.core.sounddose-V1-ndk \
+    $(LATEST_ANDROID_HARDWARE_AUDIO_CORE_SOUNDDOSE) \
     libar-pal \
     libaudioserviceexampleimpl \
     libaudioplatformconverter.qti \

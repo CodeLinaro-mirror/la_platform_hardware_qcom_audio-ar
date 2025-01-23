@@ -144,68 +144,68 @@ static int hfp_get_sampleRate_period_size_DL_processing(uint32_t sample_rate)
    return size;
 }
 #ifdef ECNR_HAL_DUMP_ENABLE
-static void open_hfp_pcm_dump(){
+static void open_hfp_pcm_dump() {
 
-        if(fp_dl_tx != NULL){
+        if (fp_dl_tx != NULL) {
             fclose(fp_dl_tx);
             fp_dl_tx = NULL;
         }
         LOG(INFO) << __func__ << " opening FN_HFP_DL_TX";
         fp_dl_tx= fopen(FN_HFP_DL_TX, "wb+");
-        if(!fp_dl_tx){
+        if (!fp_dl_tx) {
             LOG(INFO) << __func__ << " error opening FN_HFP_DL_TX";
         }
-        if(fp_dl_rx != NULL){
+        if (fp_dl_rx != NULL) {
             fclose(fp_dl_rx);
             fp_dl_rx = NULL;
         }
         LOG(INFO) << __func__ << " opening FN_HFP_DL_RX";
         fp_dl_rx= fopen(FN_HFP_DL_RX, "wb+");
-        if(!fp_dl_rx){
+        if (!fp_dl_rx) {
             LOG(INFO) << __func__ << " error opening FN_HFP_DL_RX";
         }
-        if(fp_ul_tx != NULL){
+        if (fp_ul_tx != NULL) {
             fclose(fp_ul_tx);
             fp_ul_tx = NULL;
         }
         LOG(INFO) << __func__ << " opening FN_HFP_UL_TX";
         fp_ul_tx= fopen(FN_HFP_UL_TX, "wb+");
-        if(!fp_ul_tx){
+        if (!fp_ul_tx) {
             LOG(INFO) << __func__ << " error opening FN_HFP_UL_TX";
         }
-        if(fp_ul_rx != NULL){
+        if (fp_ul_rx != NULL) {
             fclose(fp_ul_rx);
             fp_ul_rx = NULL;
         }
         LOG(INFO) << __func__ << " opening FN_HFP_UL_RX";
         fp_ul_rx= fopen(FN_HFP_UL_RX, "wb+");
-        if(!fp_ul_rx){
+        if (!fp_ul_rx) {
             LOG(INFO) << __func__ << " error opening FN_HFP_UL_RX";
         }
 }
-static void close_hfp_pcm_dump(){
+static void close_hfp_pcm_dump() {
 
-    if(fp_dl_tx != NULL){
+    if (fp_dl_tx != NULL) {
         fclose(fp_dl_tx);
         fp_dl_tx = NULL;
     }
 
-    if(fp_dl_rx != NULL){
+    if (fp_dl_rx != NULL) {
         fclose(fp_dl_rx);
         fp_dl_rx = NULL;
     }
-    if(fp_ul_tx != NULL){
+    if (fp_ul_tx != NULL) {
         fclose(fp_ul_tx);
         fp_ul_tx = NULL;
     }
 
-    if(fp_ul_rx != NULL){
+    if (fp_ul_rx != NULL) {
         fclose(fp_ul_rx);
         fp_ul_rx = NULL;
     }
 }
 #endif
-static void *hfp_dl_thread(void *__unused){
+static void *hfp_dl_thread(void *__unused) {
     int ret = 0;
     struct pal_buffer palBuffer;
     int16_t *src_buffer = (int16_t *)hfpmod.DL_TX_stream_buffer;
@@ -214,24 +214,24 @@ static void *hfp_dl_thread(void *__unused){
     palBuffer.size = hfpmod.DL_RX_stream_buffer_size;
     palBuffer.offset = 0;
 
-    while (hfpmod.dl_thread_running){
-        if (hfpmod.bECNR_DL_Enable){
+    while (hfpmod.dl_thread_running) {
+        if (hfpmod.bECNR_DL_Enable) {
             palBuffer.buffer = (uint8_t *)hfpmod.DL_TX_stream_buffer;
             palBuffer.size = hfpmod.DL_TX_stream_buffer_size;
         }
-        if(hfpmod.tx_dl_stream_handle && hfpmod.rx_stream_handle){
+        if (hfpmod.tx_dl_stream_handle && hfpmod.rx_stream_handle) {
             ret = pal_stream_read(hfpmod.tx_dl_stream_handle, &palBuffer);
-            if(ret < 0) {
+            if (ret < 0) {
                 LOG(ERROR) << __func__ << " error: pal_stream_read, do not add bytes when read fails";
             }
 #ifdef ECNR_HAL_DUMP_ENABLE
-            if(hfpmod.hfp_pcm_dump){
-                    if(fp_dl_tx){
+            if (hfpmod.hfp_pcm_dump) {
+                    if (fp_dl_tx) {
                         fwrite(palBuffer.buffer,sizeof(char),palBuffer.size,fp_dl_tx);
                     }
             }
 #endif
-            if (hfpmod.bECNR_DL_Enable){
+            if (hfpmod.bECNR_DL_Enable) {
                 //changing format is not required because the number of channel for input and output is 1
 #ifdef ECNR_HAL_TUNE
                 ret = hfpmod.mHalExtension->audio_extn_get_TuneIO_buffer(&(hfpmod.p_DL_ECNR_TuneIFData), &(hfpmod.p_DL_ECNR_ProcessData.sECNRTuneIO));
@@ -249,14 +249,14 @@ static void *hfp_dl_thread(void *__unused){
                 }
             }
 #ifdef ECNR_HAL_DUMP_ENABLE
-            if(hfpmod.hfp_pcm_dump){
-                if(fp_dl_rx){
+            if (hfpmod.hfp_pcm_dump) {
+                if (fp_dl_rx) {
                     fwrite(palBuffer.buffer,sizeof(char),palBuffer.size,fp_dl_rx);
                 }
             }
 #endif
             ret = pal_stream_write(hfpmod.rx_stream_handle, &palBuffer);
-           if(ret < 0) {
+           if (ret < 0) {
                 LOG(ERROR) << __func__ << " error: pal_stream_write failed";
             }
         } else {
@@ -269,7 +269,7 @@ static void *hfp_dl_thread(void *__unused){
     LOG(DEBUG) <<  __func__ << "End";
     return (void*)0;
 }
-static void *hfp_ul_thread(void *__unused){
+static void *hfp_ul_thread(void *__unused) {
 
     int ret = 0;
     struct pal_buffer palBuffer;
@@ -284,24 +284,24 @@ static void *hfp_ul_thread(void *__unused){
     int channels =1;
     int period_size = hfp_get_sampleRate_period_size_UL_processing(hfpmod.sample_rate);
 
-    while (hfpmod.ul_thread_running){
-        if (hfpmod.bECNR_UL_Enable){
+    while (hfpmod.ul_thread_running) {
+        if (hfpmod.bECNR_UL_Enable) {
             palBuffer.buffer = (uint8_t *)hfpmod.UL_ECMX_stream_buffer;
             palBuffer.size = hfpmod.UL_ECMX_stream_buffer_size;
         }
-        if(hfpmod.tx_stream_handle && hfpmod.rx_ul_stream_handle) {
+        if (hfpmod.tx_stream_handle && hfpmod.rx_ul_stream_handle) {
             ret = pal_stream_read(hfpmod.tx_stream_handle, &palBuffer);
-           if(ret < 0) {
+           if (ret < 0) {
                 LOG(ERROR) << __func__ << " error: pal_stream_read failed";
             }
 #ifdef ECNR_HAL_DUMP_ENABLE
-            if(hfpmod.hfp_pcm_dump){
-                if(fp_ul_tx){
+            if (hfpmod.hfp_pcm_dump) {
+                if (fp_ul_tx) {
                     fwrite(palBuffer.buffer,sizeof(char),palBuffer.size,fp_ul_tx);
                 }
             }
 #endif
-            if (hfpmod.bECNR_UL_Enable){
+            if (hfpmod.bECNR_UL_Enable) {
                 hfpmod.mHalExtension->audio_extn_cvtformat16_lnterleave_to_deinterleave(src_buffer,deint_buffer,period_size,ECNR_MIC_EC_CH);
 #ifdef ECNR_HAL_TUNE
                 ret = hfpmod.mHalExtension->audio_extn_get_TuneIO_buffer(&(hfpmod.p_UL_ECNR_TuneIFData), &(hfpmod.p_UL_ECNR_ProcessData.sECNRTuneIO));
@@ -314,25 +314,23 @@ static void *hfp_ul_thread(void *__unused){
                 hfpmod.mHalExtension->audio_extn_feedback_TuneIO_buffer(&(hfpmod.p_UL_ECNR_TuneIFData), &(hfpmod.p_UL_ECNR_ProcessData.sECNRTuneIO));
 #endif
 
-                if (!ret) {
-                    for (int i = 0; i < period_size; i++){
-                        dst_buffer[i] = src_buffer[(i * ECNR_MIC_EC_CH)];
-                    }
+                if (ret) {
+                    memcpy(dst_buffer,deint_buffer,period_size*HFP_16_BIT_FORMAT_BYTES);
                 }
                 palBuffer.buffer = (uint8_t *)hfpmod.UL_RX_stream_buffer;
                 palBuffer.size = hfpmod.UL_RX_stream_buffer_size;
 #ifdef ECNR_HAL_DUMP_ENABLE
-                if(property_get_bool("vendor.audio.feature.ecnr.dump", false)){
+                if (property_get_bool("vendor.audio.feature.ecnr.dump", false)) {
                     //dumping capture data from HAL
                     char dump_file[128];
                     FILE *fp_pcm_dump = NULL;
-                    for(int i =0 ; i < ECNR_MIC_EC_CH; i++){
+                    for(int i =0 ; i < ECNR_MIC_EC_CH; i++) {
                         snprintf(dump_file, sizeof(dump_file), "%s/HFP_UL_TX_deinterleave_%d_in.raw",AUDIO_HAL_DUMP_PATH,i);
                         fp_pcm_dump=fopen(dump_file,"a+");
-                        if(fp_pcm_dump){
+                        if (fp_pcm_dump) {
                             fwrite(deint_buffer + i*period_size,sizeof(char),period_size*HFP_16_BIT_FORMAT_BYTES,fp_pcm_dump);
                             fclose(fp_pcm_dump);
-                        }else{
+                        } else {
                             LOG(ERROR) << __func__ << " error in opening dump file " << dump_file;
                         }
                     }
@@ -342,13 +340,13 @@ static void *hfp_ul_thread(void *__unused){
 
             ret = pal_stream_write(hfpmod.rx_ul_stream_handle, &palBuffer);
 #ifdef ECNR_HAL_DUMP_ENABLE
-            if(hfpmod.hfp_pcm_dump){
-                    if(fp_ul_rx){
+            if (hfpmod.hfp_pcm_dump) {
+                    if (fp_ul_rx) {
                         fwrite(palBuffer.buffer,sizeof(char),palBuffer.size,fp_ul_rx);
                     }
             }
 #endif
-           if(ret < 0) {
+           if (ret < 0) {
                 LOG(ERROR) << __func__ << " error: pal_stream_write failed";
             }
         } else {
@@ -361,8 +359,7 @@ static void *hfp_ul_thread(void *__unused){
     LOG(DEBUG) << __func__ << " End";
     return (void*)0;
  }
-static void start_hfp_threads()
-{
+static void start_hfp_threads() {
     int err = 0;
 
     LOG(DEBUG) << __func__ << " Enter";
@@ -375,7 +372,7 @@ static void start_hfp_threads()
                     hfp_dl_thread,
                     NULL);
     LOG(DEBUG) << __func__ << " pthread_create loopback_dl_thread = "<< hfpmod.loopback_dl_thread;
-    if(err) {
+    if (err) {
         LOG(ERROR) << __func__ << " error: failed to start DL thread";
         goto dl_thread_start_fail;
     }
@@ -389,7 +386,7 @@ static void start_hfp_threads()
                     hfp_ul_thread,
                     NULL);
     LOG(DEBUG) << __func__ << " pthread_create loopback_ul_thread = "<< hfpmod.loopback_ul_thread;
-    if(err) {
+    if (err) {
         LOG(ERROR) << __func__ << " error: failed to start UL thread";
         goto ul_thread_start_fail;
     }
@@ -401,34 +398,34 @@ ul_thread_start_fail :
     hfpmod.ul_thread_running = 0;
     pthread_mutex_unlock(&hfpmod.ul_thread_lock);
     err = pthread_join(hfpmod.loopback_ul_thread, NULL);
-    if(err) {
+    if (err) {
         LOG(ERROR) << __func__ << " error: failed to ternimal UL thread";
     }
 dl_thread_start_fail :
     hfpmod.ul_thread_running = 0;
     pthread_mutex_unlock(&hfpmod.dl_thread_lock);
     err = pthread_join(hfpmod.loopback_dl_thread, NULL);
-    if(err) {
+    if (err) {
         LOG(ERROR) << __func__ << " error: failed to ternimal DL thread";
     }
     LOG(DEBUG) << __func__ << " End with error";
     return;
 
 }
-void stop_hfp_thread(){
+void stop_hfp_thread() {
 
     LOG(DEBUG) << __func__ << " Enter";
 int err = 0;
     pthread_mutex_lock(&hfpmod.dl_thread_lock);
     if (hfpmod.dl_thread_running) {
         hfpmod.dl_thread_running = 0;
-        if (hfpmod.loopback_dl_thread){
+        if (hfpmod.loopback_dl_thread) {
             LOG(DEBUG) << __func__ << " pthread_join loopback_dl_thread = " << hfpmod.loopback_dl_thread;
             err = pthread_join(hfpmod.loopback_dl_thread, NULL);
         } else {
             LOG(ERROR) << __func__ << " loopback_dl_thread is already false";
         }
-        if(err){
+        if (err) {
             LOG(ERROR) << __func__ << " failed pthread_join loopback_dl_thread = " << hfpmod.loopback_dl_thread;
         }
     }
@@ -443,7 +440,7 @@ int err = 0;
         } else {
             LOG(ERROR) << __func__ << " loopback_ul_thread is already false";
         }
-        if(err){
+        if (err) {
             LOG(ERROR) << __func__ << " failed pthread_join loopback_ul_thread = " << hfpmod.loopback_ul_thread;
         }
     }
@@ -614,7 +611,7 @@ static int32_t start_hfp(struct str_parms *parms __unused) {
     hfpmod.DL_RX_stream_buffer_size= dl_period_size*HFP_16_BIT_FORMAT_BYTES*ch_info.channels;
     hfpmod.DL_RX_stream_buffer = realloc(hfpmod.DL_RX_stream_buffer, hfpmod.DL_RX_stream_buffer_size);
     LOG(DEBUG) << __func__ << " HFP DL RX stream (BT SCO -> Spkr) buffer size " << hfpmod.DL_RX_stream_buffer_size;
-    if (!hfpmod.DL_RX_stream_buffer){
+    if (!hfpmod.DL_RX_stream_buffer) {
         LOG(ERROR) << __func__ << " failed to allocate DL_TX_stream_buffer";
         hfpmod.DL_RX_stream_buffer_size= 0;
         ret = -EINVAL;
@@ -623,7 +620,7 @@ static int32_t start_hfp(struct str_parms *parms __unused) {
     hfpmod.UL_RX_stream_buffer_size= ul_period_size*HFP_16_BIT_FORMAT_BYTES*ch_info.channels;
     hfpmod.UL_RX_stream_buffer = realloc(hfpmod.UL_RX_stream_buffer, hfpmod.UL_RX_stream_buffer_size);
     LOG(DEBUG) << __func__ << " HFP UL RX stream (Mic -> BT SCO) buffer size " << hfpmod.UL_RX_stream_buffer_size;
-    if (!hfpmod.UL_RX_stream_buffer){
+    if (!hfpmod.UL_RX_stream_buffer) {
         LOG(ERROR) << __func__ << " failed to allocate UL_RX_stream_buffer";
         hfpmod.UL_RX_stream_buffer_size = 0;
         free(hfpmod.DL_RX_stream_buffer);
@@ -632,9 +629,9 @@ static int32_t start_hfp(struct str_parms *parms __unused) {
         ret = -EINVAL;
         return ret;
     }
-    if (hfpmod.bECNR_DL_Enable && hfpmod.bECNR_UL_Enable){
+    if (hfpmod.bECNR_DL_Enable && hfpmod.bECNR_UL_Enable) {
         int scd_ret = 0;
-        if(hfpmod.sample_rate == 8000) {
+        if (hfpmod.sample_rate == 8000) {
             hfpmod.p_DL_ECNR_ProcessData.scd_type = TEL_BT_NB_DL;
             scd_ret = hfpmod.mHalExtension->audio_extn_getSCDdata(&(hfpmod.p_DL_ECNR_ProcessData));
         } else {
@@ -647,13 +644,13 @@ static int32_t start_hfp(struct str_parms *parms __unused) {
             hfpmod.DL_TX_stream_buffer_size= hfpmod.DL_RX_stream_buffer_size;
             hfpmod.DL_TX_stream_buffer = realloc(hfpmod.DL_TX_stream_buffer, hfpmod.DL_TX_stream_buffer_size);
             LOG(DEBUG) << __func__ << " HFP DL TX stream (BT SCO -> Spkr) buffer size " << hfpmod.DL_TX_stream_buffer_size;
-            if (!hfpmod.DL_TX_stream_buffer){
+            if (!hfpmod.DL_TX_stream_buffer) {
                 LOG(ERROR) << __func__ << " failed to allocate DL_TX_stream_buffer";
                 hfpmod.bECNR_DL_Enable = false;
                 hfpmod.DL_TX_stream_buffer_size = 0;
             }
         }
-        if(hfpmod.sample_rate == 8000) {
+        if (hfpmod.sample_rate == 8000) {
             hfpmod.p_UL_ECNR_ProcessData.scd_type = TEL_BT_NB_UL;
             scd_ret = hfpmod.mHalExtension->audio_extn_getSCDdata(&(hfpmod.p_UL_ECNR_ProcessData));
         } else {
@@ -666,7 +663,7 @@ static int32_t start_hfp(struct str_parms *parms __unused) {
             hfpmod.UL_TX_stream_buffer_size= ul_period_size*HFP_16_BIT_FORMAT_BYTES*ECNR_MIC_EC_CH;
             hfpmod.UL_TX_stream_buffer = realloc(hfpmod.UL_TX_stream_buffer, hfpmod.UL_TX_stream_buffer_size);
             LOG(DEBUG) << __func__ << " HFP UL TX stream (Mic -> BT SCO) buffer size " << hfpmod.UL_TX_stream_buffer_size;
-            if (!hfpmod.UL_TX_stream_buffer){
+            if (!hfpmod.UL_TX_stream_buffer) {
                 LOG(ERROR) << __func__ << " failed to allocate UL_TX_stream_buffer";
                 hfpmod.bECNR_UL_Enable = false;
                 hfpmod.UL_TX_stream_buffer_size =0;
@@ -675,7 +672,7 @@ static int32_t start_hfp(struct str_parms *parms __unused) {
             hfpmod.UL_ECMX_stream_buffer_size= hfpmod.UL_TX_stream_buffer_size;
             hfpmod.UL_ECMX_stream_buffer = realloc(hfpmod.UL_ECMX_stream_buffer, hfpmod.UL_ECMX_stream_buffer_size);
             LOG(DEBUG) << __func__ << " HFP UL ECMX stream (Mic -> BT SCO) buffer size " << hfpmod.UL_ECMX_stream_buffer_size;
-            if (!hfpmod.UL_ECMX_stream_buffer){
+            if (!hfpmod.UL_ECMX_stream_buffer) {
                 LOG(ERROR) << __func__ << " failed to allocate UL_ECMX_stream_buffer";
                 hfpmod.bECNR_UL_Enable = false;
                 hfpmod.UL_ECMX_stream_buffer_size = 0;
@@ -687,7 +684,7 @@ static int32_t start_hfp(struct str_parms *parms __unused) {
         }
     }
 start_setup_paths:
-    if (hfpmod.bECNR_DL_Enable){
+    if (hfpmod.bECNR_DL_Enable) {
         hfpmod.mHalExtension->audio_extn_setupIOBuffer(&(hfpmod.p_DL_ECNR_ProcessData),DIR_DL,ECNR_IN_DL_CH,ECNR_OUT_DL_CH,dl_period_size,hfpmod.DL_TX_stream_buffer,hfpmod.DL_RX_stream_buffer);
         ret = hfpmod.mHalExtension->audio_extn_setupECNR(&(hfpmod.p_DL_ECNR_ProcessData));
         if (ret) {
@@ -698,7 +695,7 @@ start_setup_paths:
         hfpmod.mHalExtension->audio_extn_setupECNR_TuneIF(&(hfpmod.p_DL_ECNR_TuneIFData), ECNR_PORT_ID_HFP_DL_2012);
 #endif
     }
-    if (hfpmod.bECNR_UL_Enable){
+    if (hfpmod.bECNR_UL_Enable) {
         hfpmod.mHalExtension->audio_extn_setupIOBuffer(&(hfpmod.p_UL_ECNR_ProcessData),DIR_UL,ECNR_MIC_EC_CH,ECNR_OUT_UL_CH,ul_period_size,hfpmod.UL_TX_stream_buffer,hfpmod.UL_RX_stream_buffer);
         ret = hfpmod.mHalExtension->audio_extn_setupECNR(&(hfpmod.p_UL_ECNR_ProcessData));
         if (ret) {
@@ -841,7 +838,7 @@ start_setup_paths:
         hfpmod.rx_stream_handle = NULL;
         return ret;
     }
-    if (hfpmod.bECNR_UL_Enable){
+    if (hfpmod.bECNR_UL_Enable) {
         inBufCfg.buf_size = hfpmod.UL_ECMX_stream_buffer_size;
     } else {
         inBufCfg.buf_size = hfpmod.UL_RX_stream_buffer_size;
@@ -931,7 +928,7 @@ start_setup_paths:
     hfpmod.is_hfp_running = true;
     hfp_set_volume(hfpmod.hfp_volume);
 #ifdef ECNR_HAL_DUMP_ENABLE
-    if (hfpmod.hfp_pcm_dump){
+    if (hfpmod.hfp_pcm_dump) {
         open_hfp_pcm_dump();
     }
 #endif
@@ -1000,50 +997,50 @@ static int32_t stop_hfp() {
     hfpmod.mHalExtension->audio_extn_close_TuneIF(&(hfpmod.p_UL_ECNR_TuneIFData));
     hfpmod.mHalExtension->audio_extn_close_TuneIF(&(hfpmod.p_DL_ECNR_TuneIFData));
 #endif
-    if(hfpmod.UL_TX_stream_buffer)
+    if (hfpmod.UL_TX_stream_buffer)
         free(hfpmod.UL_TX_stream_buffer);
     hfpmod.UL_TX_stream_buffer = NULL;
     hfpmod.UL_TX_stream_buffer_size = 0;
 
-    if(hfpmod.UL_RX_stream_buffer)
+    if (hfpmod.UL_RX_stream_buffer)
         free(hfpmod.UL_RX_stream_buffer);
     hfpmod.UL_RX_stream_buffer = NULL;
     hfpmod.UL_RX_stream_buffer_size = 0;
 
-    if(hfpmod.UL_ECMX_stream_buffer)
+    if (hfpmod.UL_ECMX_stream_buffer)
         free(hfpmod.UL_ECMX_stream_buffer);
     hfpmod.UL_ECMX_stream_buffer = NULL;
     hfpmod.UL_ECMX_stream_buffer_size = 0;
 
-    if(hfpmod.DL_TX_stream_buffer)
+    if (hfpmod.DL_TX_stream_buffer)
         free(hfpmod.DL_TX_stream_buffer);
     hfpmod.DL_TX_stream_buffer = NULL;
     hfpmod.DL_TX_stream_buffer_size = 0;
 
-    if(hfpmod.DL_RX_stream_buffer)
+    if (hfpmod.DL_RX_stream_buffer)
         free(hfpmod.DL_RX_stream_buffer);
     hfpmod.DL_RX_stream_buffer = NULL;
     hfpmod.DL_RX_stream_buffer_size = 0;
 
-    if (hfpmod.p_UL_ECNR_ProcessData.scd_buffer[0]){
+    if (hfpmod.p_UL_ECNR_ProcessData.scd_buffer[0]) {
         free(hfpmod.p_UL_ECNR_ProcessData.scd_buffer[0]);
         hfpmod.p_UL_ECNR_ProcessData.scd_buffer[0] = NULL;
     }
     hfpmod.p_UL_ECNR_ProcessData.scd_buffer_size[0] = 0;
 
-    if (hfpmod.p_UL_ECNR_ProcessData.scd_buffer[1]){
+    if (hfpmod.p_UL_ECNR_ProcessData.scd_buffer[1]) {
         free(hfpmod.p_UL_ECNR_ProcessData.scd_buffer[1]);
         hfpmod.p_UL_ECNR_ProcessData.scd_buffer[1] = NULL;
     }
     hfpmod.p_UL_ECNR_ProcessData.scd_buffer_size[1] = 0;
 
-    if (hfpmod.p_DL_ECNR_ProcessData.scd_buffer[0]){
+    if (hfpmod.p_DL_ECNR_ProcessData.scd_buffer[0]) {
         free(hfpmod.p_DL_ECNR_ProcessData.scd_buffer[0]);
         hfpmod.p_DL_ECNR_ProcessData.scd_buffer[0] = NULL;
     }
     hfpmod.p_DL_ECNR_ProcessData.scd_buffer_size[0] = 0;
 
-    if (hfpmod.p_DL_ECNR_ProcessData.scd_buffer[1]){
+    if (hfpmod.p_DL_ECNR_ProcessData.scd_buffer[1]) {
         free(hfpmod.p_DL_ECNR_ProcessData.scd_buffer[1]);
         hfpmod.p_DL_ECNR_ProcessData.scd_buffer[1] = NULL;
     }

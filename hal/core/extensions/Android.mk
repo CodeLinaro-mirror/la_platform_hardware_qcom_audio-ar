@@ -45,8 +45,8 @@ LOCAL_SHARED_LIBRARIES := \
     libxml2 \
     android.hardware.common-V2-ndk \
     android.hardware.common.fmq-V1-ndk \
-    android.media.audio.common.types-V3-ndk \
-    android.hardware.audio.core-V2-ndk \
+    $(LATEST_ANDROID_MEDIA_AUDIO_COMMON_TYPES) \
+    $(LATEST_ANDROID_HARDWARE_AUDIO_CORE) \
     qti-audio-types-aidl-V1-ndk \
     libar-pal
 
@@ -229,3 +229,62 @@ LOCAL_STATIC_LIBRARIES := libhealthhalutils
 
 include $(BUILD_SHARED_LIBRARY)
 
+
+
+#-------------------------------------------
+#            Build Auto OEM extension
+#-------------------------------------------
+include $(CLEAR_VARS)
+
+LOCAL_MODULE := libautooemextension
+LOCAL_VENDOR_MODULE := true
+
+LOCAL_SRC_FILES:= auto_oem_extension.cpp
+LOCAL_C_INCLUDES := $(LOCAL_PATH)/include
+
+LOCAL_CFLAGS := \
+    -Wall \
+    -Werror \
+    -Wno-unused-function \
+    -Wno-unused-variable \
+    -Wno-missing-field-initializers \
+    -Wunused-parameter \
+    -Wextra \
+
+
+LOCAL_C_INCLUDES := \
+    $(TOP)/vendor/qcom/opensource/pal \
+    $(TOP)/vendor/qcom/opensource/audio-hal/primary-hal/hal \
+    $(TOP)/vendor/qcom/opensource/audio-hal/primary-hal/hal/core/extensions/include \
+    $(TOP)/external/expat/lib \
+    $(TOP)/system/media/audio_utils/include \
+    $(call include-path-for, audio-route) \
+
+LOCAL_SHARED_LIBRARIES := \
+    libbinder_ndk \
+    libaudioutils \
+    libbase \
+    libcutils \
+    libdl \
+    libhidlbase \
+    liblog \
+    libutils \
+    libar-pal \
+    libvhalclient \
+
+
+
+LOCAL_HEADER_LIBRARIES :=  \
+    libaudio_system_headers \
+    libsystem_headers \
+    libarpal_headers \
+
+LOCAL_STATIC_LIBRARIES := \
+    VehicleHalUtils \
+    android-automotive-large-parcelable-lib \
+    android.hardware.automotive.vehicle@2.0 \
+    libmath \
+    android.hardware.automotive.vehicle-V3-ndk \
+    android.hardware.automotive.vehicle.property-V3-ndk \
+
+include $(BUILD_SHARED_LIBRARY)

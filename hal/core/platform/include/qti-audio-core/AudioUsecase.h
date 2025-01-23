@@ -133,6 +133,56 @@ class UsecaseConfig {
         }
         return frameCount * frameSizeInBytes;
     }
+#ifdef ECNR_HAL_ENABLE
+    static size_t getDLECNRPeriodSize(int samplerate) {
+       size_t size = 0;
+       switch(samplerate) {
+            case 48000:
+                size = 256;
+                break;
+            case 32000:
+                size = 256;
+                break;
+            case 24000:
+                size = 128;
+                break;
+            case 16000:
+                size = 128;
+                break;
+            case 8000:
+                size = 64;
+                break;
+            default:
+                size = 256;
+                break;
+       }
+       return size;
+    }
+    static size_t getULECNRPeriodSize(int samplerate) {
+       size_t size = 0;
+       switch(samplerate) {
+            case 48000:
+                size = 512;
+                break;
+            case 32000:
+                size = 512;
+                break;
+            case 24000:
+                size = 256;
+                break;
+            case 16000:
+                size = 256;
+                break;
+            case 8000:
+                size = 128;
+                break;
+            default:
+                size = 256;
+                break;
+       }
+       return size;
+    }
+#endif
 };
 
 /**
@@ -680,5 +730,58 @@ class CompressCapture : public UsecaseConfig<CompressCapture, false /*IsPcm*/> {
     size_t mNumReadCalls{0};
     pal_snd_enc_t mPalSndEnc{};
 };
+
+#ifdef ECNR_HAL_ENABLE
+class VoipPlaybackECNR : public UsecaseConfig<VoipPlaybackECNR> {
+    public:
+    inline static size_t kPeriodSize = UsecaseConfig::getDLECNRPeriodSize(DEFAULT_SAMPLE_RATE);
+    inline static size_t kPeriodDurationMs = 8;
+    constexpr static size_t kPeriodCount = 4;
+    constexpr static size_t kPlatformDelayMs = 13;
+
+    static size_t getFrameCount(
+            const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig);
+
+    static int32_t getLatency() { return kPeriodDurationMs * kPeriodCount + kPlatformDelayMs; }
+};
+
+class VoipRecordECNR : public UsecaseConfig<VoipRecordECNR> {
+    public:
+    inline static size_t kPeriodSize = UsecaseConfig::getULECNRPeriodSize(DEFAULT_SAMPLE_RATE);
+    inline static size_t kCaptureDurationMs = 8;
+    constexpr static size_t kPeriodCount = 4;
+    constexpr static size_t kPlatformDelayMs = 13;
+
+    static size_t getFrameCount(
+            const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig);
+
+    static int32_t getLatency() { return kCaptureDurationMs * kPeriodCount + kPlatformDelayMs; }
+};
+
+class PcmRecordECNR : public UsecaseConfig<PcmRecordECNR> {
+    public:
+    inline static size_t kPeriodSize = UsecaseConfig::getULECNRPeriodSize(DEFAULT_SAMPLE_RATE);
+    inline static size_t kCaptureDurationMs = 8;
+    inline static size_t kPeriodCount = 4;
+    constexpr static size_t kFMQMinFrameSize = 128;
+    constexpr static size_t kPlatformDelayMs = 20;
+
+    static size_t getFrameCount(
+            const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig);
+
+    static int32_t getLatency() { return kCaptureDurationMs * kPeriodCount + kPlatformDelayMs; }
+};
+
+class FastRecordECNR : public UsecaseConfig<FastRecordECNR> {
+    public:
+    inline static size_t kPeriodSize = UsecaseConfig::getULECNRPeriodSize(DEFAULT_SAMPLE_RATE);
+    inline static size_t kPeriodCount = 4;
+    constexpr static size_t kPlatformDelayMs = 13;
+
+    static size_t getFrameCount(
+            const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig);
+    static int32_t getLatency() { return kPlatformDelayMs; }
+};
+#endif
 
 } // namespace qti::audio::core

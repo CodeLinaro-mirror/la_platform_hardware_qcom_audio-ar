@@ -14,7 +14,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <arpa/inet.h>
-#include "extensions/tuneringbuffer.h"
+#include "extensions/hal_ringbuffer.h"
 
 #define ECNR_TUNE_FEATURE_PROP "vendor.audio.feature.ecnr_tune.enable"
 #define RX_SOCKET_BUFFER_SIZE 3144
@@ -46,8 +46,8 @@
 
 typedef struct tECNR_TuneIFData
 {
-    TuneRingBuffer* rxRingbuffer  = NULL;
-    TuneRingBuffer* txRingbuffer  = NULL;
+    HalRingBuffer<char>* rxRingbuffer  = NULL;
+    HalRingBuffer<char>* txRingbuffer  = NULL;
     sem_t* pWaitSemaTx = NULL;
     pthread_t receivingThread = NULL;
     pthread_t transmittingThread   = NULL;

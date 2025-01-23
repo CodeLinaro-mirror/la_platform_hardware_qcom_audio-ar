@@ -1355,18 +1355,31 @@ void Platform::initUsecaseOpMap() {
     mUsecaseOpMap[Usecase::MMAP_PLAYBACK] = makeUsecaseOps<MMapPlayback>();
     mUsecaseOpMap[Usecase::COMPRESS_OFFLOAD_PLAYBACK] = makeUsecaseOps<CompressPlayback>();
     mUsecaseOpMap[Usecase::PCM_OFFLOAD_PLAYBACK] = makeUsecaseOps<PcmOffloadPlayback>();
+#ifdef ECNR_HAL_ENABLE
+    mUsecaseOpMap[Usecase::VOIP_PLAYBACK] = makeUsecaseOps<VoipPlaybackECNR>();
+#else
     mUsecaseOpMap[Usecase::VOIP_PLAYBACK] = makeUsecaseOps<VoipPlayback>();
+#endif
     mUsecaseOpMap[Usecase::HAPTICS_PLAYBACK] = makeUsecaseOps<HapticsPlayback>();
     mUsecaseOpMap[Usecase::SPATIAL_PLAYBACK] = makeUsecaseOps<SpatialPlayback>();
     mUsecaseOpMap[Usecase::IN_CALL_MUSIC] = makeUsecaseOps<InCallMusic>();
 
     // Record usecases
+#ifdef ECNR_HAL_ENABLE
+    mUsecaseOpMap[Usecase::PCM_RECORD] = makeUsecaseOps<PcmRecordECNR>();
+    mUsecaseOpMap[Usecase::FAST_RECORD] = makeUsecaseOps<FastRecordECNR>();
+#else
     mUsecaseOpMap[Usecase::PCM_RECORD] = makeUsecaseOps<PcmRecord>();
     mUsecaseOpMap[Usecase::FAST_RECORD] = makeUsecaseOps<FastRecord>();
+#endif
     mUsecaseOpMap[Usecase::ULTRA_FAST_RECORD] = makeUsecaseOps<UltraFastRecord>();
     mUsecaseOpMap[Usecase::MMAP_RECORD] = makeUsecaseOps<MMapRecord>();
     mUsecaseOpMap[Usecase::COMPRESS_CAPTURE] = makeUsecaseOps<CompressCapture>();
+#ifdef ECNR_HAL_ENABLE
+    mUsecaseOpMap[Usecase::VOIP_RECORD] = makeUsecaseOps<VoipRecordECNR>();
+#else
     mUsecaseOpMap[Usecase::VOIP_RECORD] = makeUsecaseOps<VoipRecord>();
+#endif
     mUsecaseOpMap[Usecase::VOICE_CALL_RECORD] = makeUsecaseOps<VoiceCallRecord>();
     mUsecaseOpMap[Usecase::HOTWORD_RECORD] = makeUsecaseOps<HotwordRecord>();
 }

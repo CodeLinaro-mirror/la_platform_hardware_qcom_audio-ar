@@ -163,29 +163,29 @@ HalECNRExtension::HalECNRExtension() {
         LOG(INFO) << __func__ << "----- Feature HAL ECNR is disabled ----";
     }
 
-    bool HalECNRExtension::audio_extn_getEnablement(){
+    bool HalECNRExtension::audio_extn_getEnablement() {
         LOG(DEBUG) << __func__ << " mEnabled ? " << mEnabled;
         return mEnabled;
     }
 
-    int HalECNRExtension::audio_extn_ecnrCreate(tECNR_Main **Main, void* unused ){
+    int HalECNRExtension::audio_extn_ecnrCreate(tECNR_Main **Main, void* unused) {
         return ((ecnrCreate) ?
             ecnrCreate(Main,NULL) : false);
     }
 
-    int HalECNRExtension::audio_extn_ecnrInitialize( tECNR_Main* pMain ){
+    int HalECNRExtension::audio_extn_ecnrInitialize(tECNR_Main* pMain) {
         return ((ecnrInitialize) ?
             ecnrInitialize(pMain) : false);
     }
 
-    int HalECNRExtension::audio_extn_ecnrDestroy( tECNR_Main  **pMain ){
+    int HalECNRExtension::audio_extn_ecnrDestroy(tECNR_Main  **pMain) {
         int ret = 0;
         char ErrorMsg[100] = "";
         if (*pMain == NULL) {
             ret = -1;
-        } else if(ecnrDestroy){
+        } else if (ecnrDestroy) {
             ret = ecnrDestroy(pMain);
-            if ( ret ) {
+            if (ret) {
                 audio_extn_ecnrGetErrorMessage(*pMain, ErrorMsg, sizeof(ErrorMsg) );
                 LOG(ERROR) << __func__ << " failed with error  " << ret << " and error message  "
                       << ErrorMsg;
@@ -194,7 +194,7 @@ HalECNRExtension::HalECNRExtension() {
         return ret;
     }
 
-    int HalECNRExtension::audio_extn_ecnrReset( tECNR_Main* pMain, const unsigned int ResetMode ){
+    int HalECNRExtension::audio_extn_ecnrReset(tECNR_Main* pMain, const unsigned int ResetMode) {
         return ((ecnrReset) ?
             ecnrReset(pMain,ResetMode) : false);
     }
@@ -205,9 +205,9 @@ HalECNRExtension::HalECNRExtension() {
     {
         int ret = 0;
         char ErrorMsg[100] = "";
-        if(ecnrProcess){
+        if (ecnrProcess) {
             ret = ecnrProcess(pMain,AudioIO,pTuneIO);
-            if ( ret ) {
+            if (ret) {
                 audio_extn_ecnrGetErrorMessage(pMain, ErrorMsg, sizeof(ErrorMsg) );
                 LOG(ERROR) << __func__ << " failed with error  " << ret << " and error message  "
                       << ErrorMsg;
@@ -220,7 +220,7 @@ HalECNRExtension::HalECNRExtension() {
 #ifdef ECNR_HAL_HIRES
     int HalECNRExtension::audio_extn_ecnrProcessHiRes(tECNR_Main* pMain,
                           tECNR_AudioIOHiRes AudioIO,
-                          tECNR_TuneIO*      pTuneIO ){
+                          tECNR_TuneIO*      pTuneIO) {
         return ((ecnrProcessHiRes) ?
             ecnrProcessHiRes(pMain,AudioIO,pTuneIO) : false);
     }
@@ -230,7 +230,7 @@ HalECNRExtension::HalECNRExtension() {
         const unsigned int    DataID,
         const int iChannel,
         unsigned int* puSize,
-        const void* pData){
+        const void* pData) {
         return ((ecnrSetData) ?
             ecnrSetData(pMain,DataID,iChannel,puSize,pData) : false);
     }
@@ -239,7 +239,7 @@ HalECNRExtension::HalECNRExtension() {
         const unsigned int DataID,
         const int iChannel,
         unsigned int* puSize,
-        void* pData){
+        void* pData) {
         return ((ecnrGetData) ?
             ecnrGetData(pMain,DataID,iChannel,puSize,pData) : false);
     }
@@ -248,7 +248,7 @@ HalECNRExtension::HalECNRExtension() {
         const unsigned int EffectID,
         const int Channel,
         const unsigned int InputCnt,
-        int* pData){
+        int* pData) {
         return ((ecnrSetEffect) ?
             ecnrSetEffect(pMain,EffectID,Channel,InputCnt,pData) : false);
     }
@@ -257,20 +257,20 @@ HalECNRExtension::HalECNRExtension() {
         const unsigned int EffectID,
         const int Channel,
         const unsigned int OutputCnt,
-        int* pData){
+        int* pData) {
         return ((ecnrGetEffect) ?
             ecnrGetEffect(pMain,EffectID,Channel,OutputCnt,pData) : false);
     }
 
     int HalECNRExtension::audio_extn_ecnrGetErrorMessage( const tECNR_Main* pMain,
         char* pErrorMessage,
-        const unsigned int MaxMessageLength ){
+        const unsigned int MaxMessageLength) {
         return ((ecnrGetErrorMessage) ?
             ecnrGetErrorMessage(pMain,pErrorMessage,MaxMessageLength) : false);
     }
 
-    void HalECNRExtension::audio_extn_ecnrGetVersion(){
-        if(ecnrGetVersion){
+    void HalECNRExtension::audio_extn_ecnrGetVersion() {
+        if (ecnrGetVersion) {
             unsigned int iArrayLen = 0 ;
             const int* pVersionArray = NULL; /* HAL ECNR version  array */
             const char* pVersionString = NULL; /* HAL ECNR version    string */
@@ -289,25 +289,25 @@ HalECNRExtension::HalECNRExtension() {
         return;
     }
 
-    int HalECNRExtension::audio_extn_ecnrSetConfigData(tECNR_Main*   pMain, const void* const pCfgData, const unsigned int uCfgDataSize){
+    int HalECNRExtension::audio_extn_ecnrSetConfigData(tECNR_Main*   pMain, const void* const pCfgData, const unsigned int uCfgDataSize) {
         return ((ecnrSetConfigData) ?
             ecnrSetConfigData(pMain,pCfgData,uCfgDataSize) : false);
     }
 
-    int HalECNRExtension::audio_extn_getSCDtype(uint32_t sample_rate, uint32_t vocoder_type, uint32_t ecnr_type, uint32_t conneection_type, uint32_t dir){
+    int HalECNRExtension::audio_extn_getSCDtype(uint32_t sample_rate, uint32_t vocoder_type, uint32_t ecnr_type, uint32_t conneection_type, uint32_t dir) {
 
         int scd_type = SCD_TYPE_INVALID;
 
         if (ecnr_type == ECNR_TYPE_VR) {
-            if (sample_rate == 16000 ) {
+            if (sample_rate == 16000) {
                 return VR_16K;
             } else {
                 LOG(ERROR) << __func__ << " not supported sampling rate " << sample_rate<< " for ecnr_type " << ecnr_type ;
                 return SCD_TYPE_INVALID;
             }
         } else if (ecnr_type == ECNR_TYPE_TEL) {
-            if (conneection_type == CP_CONNECTION_WIFI){
-                switch (sample_rate){
+            if (conneection_type == CP_CONNECTION_WIFI) {
+                switch (sample_rate) {
                     case 48000 :
                         scd_type = TEL_CP_48K_WIFI;
                         break;
@@ -328,7 +328,7 @@ HalECNRExtension::HalECNRExtension() {
                         break;
                     }
             } else {
-                switch (sample_rate){
+                switch (sample_rate) {
                     case 48000 :
                         scd_type = TEL_CP_48K_USB;
                         break;
@@ -349,7 +349,7 @@ HalECNRExtension::HalECNRExtension() {
                         break;
                 }
             }
-            if ( scd_type < SCD_TYPE_MAX && scd_type > SCD_TYPE_INVALID )
+            if (scd_type < SCD_TYPE_MAX && scd_type > SCD_TYPE_INVALID )
                 scd_type = scd_type + dir;
         } else {
             LOG(ERROR) << __func__ << " invalid ecnr type " << ecnr_type ;
@@ -358,7 +358,7 @@ HalECNRExtension::HalECNRExtension() {
         LOG(ERROR) << __func__ << " return scd_type " << scd_type ;
         return scd_type;
     }
-    int HalECNRExtension::audio_extn_fillSCDbuffer(char * scd_file_name, uint32_t** scd_buffer, uint32_t* scd_buffer_size){
+    int HalECNRExtension::audio_extn_fillSCDbuffer(char * scd_file_name, uint32_t** scd_buffer, uint32_t* scd_buffer_size) {
         FILE *fp_scd = NULL;
         long filesize = 0;
         long numsize = 0;
@@ -366,30 +366,30 @@ HalECNRExtension::HalECNRExtension() {
         uint32_t* i_scd_buffer = NULL;
         *scd_buffer_size = 0;
 
-        if(scd_file_name != NULL & strlen(scd_file_name)> 0 ) {
+        if (scd_file_name != NULL & strlen(scd_file_name)> 0) {
             fp_scd = fopen(scd_file_name, "rb");
 
         } else {
             LOG(ERROR) << __func__ << " not avaiable input " ;
             return -1;
         }
-        if(fp_scd){
+        if (fp_scd) {
             fseek (fp_scd,0,SEEK_END);
             filesize = ftell(fp_scd);
             fseek (fp_scd,0,SEEK_SET);
-            if ( filesize <=0 ) {
+            if (filesize <=0) {
                 LOG(ERROR) << __func__ << " file size error, scd_file_name = " << scd_file_name << " file size = "<< filesize;
                 fclose(fp_scd);
                 return -1;
             }
             numsize = filesize/(sizeof(int32_t));
             i_scd_buffer = (uint32_t *)calloc(numsize, sizeof(int32_t));
-            if (!i_scd_buffer){
+            if (!i_scd_buffer) {
                 LOG(ERROR) << __func__ << " failed to allocate scd buffer";
                 return -1;
             }
             read_num = fread(i_scd_buffer,sizeof(int32_t),numsize,fp_scd);
-            if(read_num != numsize){
+            if (read_num != numsize) {
                 LOG(ERROR) << __func__ << " failed to all data from scd file file size = " << numsize << " read bytes = " << read_num;
                 free(i_scd_buffer);
                 i_scd_buffer=NULL;
@@ -399,13 +399,13 @@ HalECNRExtension::HalECNRExtension() {
             *scd_buffer = i_scd_buffer;
             fclose(fp_scd);
             LOG(DEBUG) << __func__ << " scd_file_name = " << scd_file_name <<" scd_buffer_size = " << filesize;
-        }else{
+        } else {
             LOG(ERROR) << __func__ << " error in opening file scd_file_name = " << scd_file_name;
             return -1;
         }
         return 0;
     }
-    int HalECNRExtension::audio_extn_getSCDdata(tECNR_ProcessData* pECNR_ProcessData){
+    int HalECNRExtension::audio_extn_getSCDdata(tECNR_ProcessData* pECNR_ProcessData) {
 
         long filesize = 0;
         long numsize = 0;
@@ -416,7 +416,7 @@ HalECNRExtension::HalECNRExtension() {
         char scd_file_name[128];
         char scd_file_path[256];
         int32_t tuning_mode = property_get_int32(TUNE_MODE_PROP, 0);
-        if ( NULL == pECNR_ProcessData )
+        if (NULL == pECNR_ProcessData )
         {
             LOG(ERROR) << __func__ << " pECNR_ProcessData must not be NULL";
             ret = -1;
@@ -424,7 +424,7 @@ HalECNRExtension::HalECNRExtension() {
         }
         i_scd_type = pECNR_ProcessData->scd_type;
         LOG(DEBUG) << __func__ << " tuning_mode : " << tuning_mode ;
-        if(i_scd_type < SCD_TYPE_MAX && i_scd_type > SCD_TYPE_INVALID) {
+        if (i_scd_type < SCD_TYPE_MAX && i_scd_type > SCD_TYPE_INVALID) {
             LOG(INFO) << __func__ << " scd_type : " << i_scd_type ;
         } else {
             LOG(ERROR) << __func__ << " not supported scd_type " << i_scd_type ;
@@ -434,13 +434,13 @@ HalECNRExtension::HalECNRExtension() {
             pECNR_ProcessData->scd_buffer[i] = NULL;
             pECNR_ProcessData->scd_buffer_size[i] = 0;
         }
-        if ( scd_file_name_table[i_scd_type] != NULL ) {
+        if (scd_file_name_table[i_scd_type] != NULL) {
             if (strlen(hw_variant) == 0) {
                 snprintf(scd_file_name, sizeof(scd_file_name), "%s%s",scd_file_name_table[i_scd_type],".scd");
             } else {
                 snprintf(scd_file_name, sizeof(scd_file_name), "%s_%s%s",scd_file_name_table[i_scd_type],hw_variant,".scd");
             }
-            if ( !tuning_mode ) {
+            if (!tuning_mode) {
                 snprintf(scd_file_path, sizeof(scd_file_path), "%s%s", SCD_PATH ,scd_file_name);
                 ret = audio_extn_fillSCDbuffer(scd_file_path, &(pECNR_ProcessData->scd_buffer[0]),&(pECNR_ProcessData->scd_buffer_size[0]));
             } else {
@@ -451,13 +451,13 @@ HalECNRExtension::HalECNRExtension() {
                 ret = audio_extn_fillSCDbuffer(scd_file_path, &(pECNR_ProcessData->scd_buffer[0]),&(pECNR_ProcessData->scd_buffer_size[0]));
             }
         }
-        if ( !ret && scd_file_name_table_2nd[i_scd_type] != NULL ) {
+        if (!ret && scd_file_name_table_2nd[i_scd_type] != NULL) {
             if (strlen(hw_variant) == 0) {
                 snprintf(scd_file_name, sizeof(scd_file_name), "%s%s",scd_file_name_table_2nd[i_scd_type],".scd");
             } else {
                 snprintf(scd_file_name, sizeof(scd_file_name), "%s_%s%s",scd_file_name_table_2nd[i_scd_type],hw_variant,".scd");
             }
-            if ( !tuning_mode ) {
+            if (!tuning_mode) {
                 snprintf(scd_file_path, sizeof(scd_file_path), "%s%s", SCD_PATH, scd_file_name);
                 ret = audio_extn_fillSCDbuffer(scd_file_path, &(pECNR_ProcessData->scd_buffer[1]),&(pECNR_ProcessData->scd_buffer_size[1]));
             } else {
@@ -475,8 +475,7 @@ HalECNRExtension::HalECNRExtension() {
     {
         int ret = 0;
 
-        if ( NULL == pECNR_ProcessData )
-        {
+        if (NULL == pECNR_ProcessData) {
             LOG(ERROR) << __func__ << " pECNR_ProcessData must not be NULL";
             ret = -1;
             return ret;
@@ -496,17 +495,15 @@ HalECNRExtension::HalECNRExtension() {
         pECNR_ProcessData->audioIO.MicProcBuffers = NULL;
 
         short int **pIn = new short int*[in_ch];
-        for ( int i = 0; i < in_ch; ++i )
-        {
+        for ( int i = 0; i < in_ch; ++i ) {
             pIn[i] = (short int *)in_buffer + i*framesize;
         }
         short int **pProc = new short int*[out_ch];
-        for ( int i = 0; i < out_ch; ++i )
-        {
+        for ( int i = 0; i < out_ch; ++i ) {
             pProc[i] = (short int *)out_buffer + i*framesize;
         }
 
-        if(dir == DIR_DL) {
+        if (dir == DIR_DL) {
           LOG(DEBUG) << __func__ << " setup IOBuffer for Downlink framesize = "<< framesize << " in_ch = " << in_ch << "out_ch = " << out_ch;
             pECNR_ProcessData->audioIO.RcvInBufferCnt = in_ch;
             pECNR_ProcessData->audioIO.RcvInBuffers = pIn;
@@ -527,22 +524,21 @@ HalECNRExtension::HalECNRExtension() {
     int HalECNRExtension::audio_extn_resetIOBuffer(tECNR_ProcessData* pECNR_ProcessData)
     {
         int ret = 0;
-       if ( NULL==pECNR_ProcessData )
-        {
+       if (NULL==pECNR_ProcessData) {
             LOG(ERROR) << __func__ << " pECNR_ProcessData must not be NULL";
             ret = -1;
             return ret;
         }
-        if(pECNR_ProcessData->audioIO.RcvInBuffers){
+        if (pECNR_ProcessData->audioIO.RcvInBuffers) {
             delete[] pECNR_ProcessData->audioIO.RcvInBuffers;
         }
-        if(pECNR_ProcessData->audioIO.RcvProcBuffers){
+        if (pECNR_ProcessData->audioIO.RcvProcBuffers) {
             delete[] pECNR_ProcessData->audioIO.RcvProcBuffers;
        }
-        if(pECNR_ProcessData->audioIO.MicInBuffers){
+        if (pECNR_ProcessData->audioIO.MicInBuffers) {
             delete[] pECNR_ProcessData->audioIO.MicInBuffers;
         }
-       if(pECNR_ProcessData->audioIO.MicProcBuffers){
+       if (pECNR_ProcessData->audioIO.MicProcBuffers) {
             delete[] pECNR_ProcessData->audioIO.MicProcBuffers;
         }
         pECNR_ProcessData->audioIO.AudioBufferSampleCnt = 0;
@@ -563,15 +559,14 @@ HalECNRExtension::HalECNRExtension() {
     {
        int ret = 0;
        char ErrorMsg[100] = "";
-       if ( NULL==pECNR_ProcessData )
-       {
+       if (NULL==pECNR_ProcessData) {
             LOG(ERROR) << __func__ << " pECNR_ProcessData must not be NULL";
             ret = -1;
             return ret;
        }
        ret = audio_extn_ecnrCreate( &pECNR_ProcessData->pMain, NULL );
 
-       if ( !ret ) {
+       if (!ret) {
             for (int i= 0 ; i < MAX_PARAM_FILES ; i++) {
                 if (pECNR_ProcessData->scd_buffer_size[i] > 0) {
                     ret = audio_extn_ecnrSetConfigData( pECNR_ProcessData->pMain, pECNR_ProcessData->scd_buffer[i], pECNR_ProcessData->scd_buffer_size[i]);
@@ -580,11 +575,11 @@ HalECNRExtension::HalECNRExtension() {
             }
        }
 
-       if ( !ret ) {
+       if (!ret) {
           ret = audio_extn_ecnrInitialize( pECNR_ProcessData->pMain );
        }
 
-       if ( ret ) {
+       if (ret) {
             /*--- get and display error message */
             audio_extn_ecnrGetErrorMessage(pECNR_ProcessData->pMain, ErrorMsg, sizeof(ErrorMsg) );
             LOG(ERROR) << __func__ << " failed with error " << ret << " and error message " << ErrorMsg;
@@ -596,8 +591,8 @@ HalECNRExtension::HalECNRExtension() {
     {
         int16_t *src_buffer = (int16_t *)int_buffer;
         int16_t *dst_buffer = (int16_t *)deint_buffer;
-        if (int_buffer && deint_buffer && frameSz >0){
-            for (int k = 0 ; k < numchannel ; k++){
+        if (int_buffer && deint_buffer && frameSz >0) {
+            for (int k = 0 ; k < numchannel ; k++) {
                 for (int j = 0; j < frameSz; j++) {
                       dst_buffer[j+k*frameSz] = src_buffer[k+j*numchannel];
                 }
@@ -611,8 +606,8 @@ HalECNRExtension::HalECNRExtension() {
     {
         int16_t *src_buffer = (int16_t *)deint_buffer;
         int16_t *dst_buffer = (int16_t *)int_buffer;
-        if (int_buffer && deint_buffer && frameSz >0){
-            for (int k = 0 ; k < numchannel ; k++){
+        if (int_buffer && deint_buffer && frameSz >0) {
+            for (int k = 0 ; k < numchannel ; k++) {
                 for (int j = 0; j < frameSz; j++) {
                       dst_buffer[k+j*numchannel] = src_buffer[j+k*frameSz];
                 }

@@ -42,13 +42,18 @@ LOCAL_HEADER_LIBRARIES :=  \
     libarpal_headers
 
 ifeq ($(AUDIO_FEATURE_ENABLED_ECNR_HAL),true)
+LOCAL_SRC_FILES += StreamOutPrimaryOEM.cpp
+LOCAL_SRC_FILES += StreamInPrimaryOEM.cpp
 LOCAL_CFLAGS += -DECNR_HAL_ENABLE
 
 ifneq (,$(filter userdebug eng,$(TARGET_BUILD_VARIANT)))
 LOCAL_CPPFLAGS += -DECNR_HAL_TUNE
 LOCAL_CPPFLAGS += -DECNR_HAL_DUMP_ENABLE
 endif
+endif
 
+ifneq (,$(filter userdebug eng,$(TARGET_BUILD_VARIANT)))
+LOCAL_CPPFLAGS += -DPCM_DUMP_HAL_ENABLE
 endif
 
 
@@ -84,8 +89,8 @@ LOCAL_SHARED_LIBRARIES := \
     libaudioutils \
     libxml2 \
     android.hardware.common-V2-ndk \
-    android.media.audio.common.types-V3-ndk \
-    android.hardware.audio.core-V2-ndk \
+    $(LATEST_ANDROID_MEDIA_AUDIO_COMMON_TYPES) \
+    $(LATEST_ANDROID_HARDWARE_AUDIO_CORE) \
     $(LATEST_ANDROID_HARDWARE_AUDIO_EFFECT) \
     android.hardware.audio.core.sounddose-V1-ndk \
     libar-pal \
