@@ -23,6 +23,9 @@
 
 #define AFS_QVA_FILE_NAME "/data/vendor/audio/adc_qva_version.txt"
 
+#define ASYNC_STATUS_BUSY 2
+#define ASYNC_STATUS_OK 0
+
 using ::aidl::android::media::audio::common::AudioDevice;
 using ::aidl::android::media::audio::common::AudioDeviceType;
 using ::aidl::android::media::audio::common::AudioDeviceDescription;
@@ -240,12 +243,11 @@ void AWX_set_param(pal_awx_param_t* param, effect_type effect) {
     LOG(DEBUG) << __func__ << " param Id: " << customPayload->paramId << " value: "
                               << customPayload->data[0] << " param_size: " << pal_param_size;
 
+    status = pal_gef_rw_param(PAL_PARAM_ID_UIEFFECT, (void *) pal_payload, payload_size,
+                       aud_source_effect_device, PAL_STREAM_PLAYBACK_BUS, GEF_PARAM_WRITE, NULL);
+
     if (effect == ASYNC) {
         status = handleEffectASYNC(status, pal_payload, payload_size, aud_source_effect_device, customPayload);
-    }
-    else {
-        status = pal_gef_rw_param(PAL_PARAM_ID_UIEFFECT, (void *) pal_payload, payload_size,
-                              aud_source_effect_device, PAL_STREAM_PLAYBACK_BUS, GEF_PARAM_WRITE, NULL);
     }
 
     if(status != 0){
@@ -298,13 +300,8 @@ int AWX_get_param(pal_awx_param_t* param, effect_type effect) {
     createPayload(payloadInfo, &pal_payload, &effect_payload,
                                 &customPayload, data->param_id, pal_param_size);
 
-    if (effect == ASYNC) {
-        status = handleEffectASYNC(status, pal_payload, payload_size, aud_source_effect_device, customPayload);
-    }
-    else {
-        status = pal_gef_rw_param(PAL_PARAM_ID_UIEFFECT, (void*) pal_payload, payload_size,
-                              aud_source_effect_device, PAL_STREAM_PLAYBACK_BUS, GEF_PARAM_READ, NULL);
-    }
+    status = pal_gef_rw_param(PAL_PARAM_ID_UIEFFECT, (void*) pal_payload, payload_size,
+                          aud_source_effect_device, PAL_STREAM_PLAYBACK_BUS, GEF_PARAM_READ, NULL);
 
     if(status != 0){
         LOG(DEBUG) << __func__ << "pal_gef_rw_param failed";
@@ -360,23 +357,15 @@ int handleEffectASYNC(int status, pal_param_payload* pal_payload, uint32_t paylo
                     pal_device_id_t aud_source_effect_device, pal_effect_custom_payload_t* customPayload) {
     LOG(DEBUG) << "Enter " << __func__;
     if (status == -1) {
-        bool idle = false;
         int read_status = 0;
-        while (!idle) {
-            read_status = pal_gef_rw_param(PAL_PARAM_ID_UIEFFECT, (void*) pal_payload, payload_size,
-                                  aud_source_effect_device, PAL_STREAM_PLAYBACK_BUS, GEF_PARAM_READ, NULL);
-            LOG(DEBUG) << "value of read_status: %d" << read_status;
+        read_status = pal_gef_rw_param(PAL_PARAM_ID_UIEFFECT, (void*) pal_payload, payload_size,
+                              aud_source_effect_device, PAL_STREAM_PLAYBACK_BUS, GEF_PARAM_READ, NULL);
 
-            int num = customPayload->data[0];
-            num &= 0x0000FFFF;
-            //Checking status(Byte 2 and 3) of Harman modules in DSP : 0 for idle, 1 for busy
-            if (num == 0) {
-                idle = true;
-                status = 0;
-            } else {
-                //Ambiance is asynchronous effect so sleep is required if status is busy
-                sleep(2000);
-            }
+        int num = customPayload->data[0];
+        num &= 0x0000FFFF;
+        //Checking AsyncTransactionStatus(Byte 2 and 3) of Harman modules in DSP : 0 for OK, 2 for BUSY
+        if (num == ASYNC_STATUS_OK || num == ASYNC_STATUS_BUSY) {
+            status = 0;
         }
     }
     LOG(DEBUG) << "Exit " << __func__;
