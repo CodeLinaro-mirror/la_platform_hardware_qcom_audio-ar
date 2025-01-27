@@ -4,9 +4,17 @@ LATEST_ANDROID_HARDWARE_AUDIO_COMMON := android.hardware.audio.common-V4-ndk
 LATEST_ANDROID_HARDWARE_AUDIO_CORE := android.hardware.audio.core-V3-ndk
 LATEST_ANDROID_MEDIA_AUDIO_COMMON_TYPES := android.media.audio.common.types-V4-ndk
 LATEST_ANDROID_HARDWARE_COMMON_FMQ := android.hardware.common.fmq-V1-ndk
-CUSTOM_AMPERE_HARDWARE_AUDIO_EFFECT := ampere.hardware.audio.effect-V1-ndk
 LATEST_ANDROID_HARDWARE_AUDIO_CORE_SOUNDDOSE := android.hardware.audio.sounddose-V2-ndk
 
+ifeq ($(TARGET_USES_CDC_HW), true)
+#enable this flag for enabling Ampere effects
+AUDIO_AMPERE_EFFECTS := false
+endif
+
+ifeq ($(AUDIO_AMPERE_EFFECTS),true)
+CUSTOM_AMPERE_HARDWARE_AUDIO_EFFECT := ampere.hardware.audio.effect-V1-ndk
+MM_AUDIO += libampereeffects
+endif
 # to have similar to cc_defaults in make files
 EFFECTS_DEFAULTS_SHARED_LIBRARIES := \
     $(LATEST_ANDROID_HARDWARE_AUDIO_EFFECT) \
@@ -64,6 +72,8 @@ MM_AUDIO += libvolumelistener
 MM_AUDIO += libqcompostprocbundle
 MM_AUDIO += libqcomvisualizer
 MM_AUDIO += libqcomvoiceprocessing
+
+
 #KERNEL_TESTS
 #KERNEL_TESTS := mm-audio-native-test
 

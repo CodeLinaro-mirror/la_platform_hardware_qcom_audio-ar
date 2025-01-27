@@ -8,9 +8,6 @@
 
 #include <aidl/android/media/audio/common/AudioUuid.h>
 #include <android-base/stringprintf.h>
-#include <aidl/ampere/hardware/audio/effect/Ambiance.h>
-#include <aidl/ampere/hardware/audio/effect/Sdvc.h>
-#include <aidl/ampere/hardware/audio/effect/SteadyVolume.h>
 
 namespace aidl::qti::effects {
 
