@@ -740,7 +740,6 @@ bool StreamOutWorkerLogic::write(size_t clientSize, StreamDescriptor::Reply* rep
                      << " bytes of data from MQ failed";
         reply->status = STATUS_NOT_ENOUGH_DATA;
     }
-    reply->latencyMs = latency;
     return !fatal;
 }
 
