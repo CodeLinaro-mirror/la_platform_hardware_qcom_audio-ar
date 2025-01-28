@@ -335,18 +335,6 @@ std::vector<pal_device> Platform::convertToPalDevices(
             } else {
                 return {};
             }
-        } else if (isBluetoothDevice(device)) {
-            const auto& deviceAddress = device.address;
-            if (deviceAddress.getTag() != AudioDeviceAddress::Tag::mac) {
-                LOG(ERROR) << __func__ << " failed to find mac address for given bt device "
-                           << device.toString();
-                return {};
-            }
-            const auto& deviceAddressMac = deviceAddress.get<AudioDeviceAddress::Tag::mac>();
-
-            if (auto p = this->mPlatformGlobalCallback; p != nullptr) {
-                p->updateActiveDevicesMap(device.address, palDeviceId);
-            }
         }
 
         i++;
@@ -579,8 +567,42 @@ std::optional<struct HdmiParameters> Platform::getHdmiParameters(
     return hdmiParam;
 }
 
-int Platform::handleDeviceConnectionChange(const AudioPort& deviceAudioPort,
-                                            const bool isConnect) const {
+std::optional<AudioDevice> Platform::findAudioDevice(const struct pal_device& palDevice) {
+    auto it = std::find_if(mConnectedDevicePairs.begin(), mConnectedDevicePairs.end(),
+                           [&](const auto& element) { return compare(element.first, palDevice); });
+
+    if (it != mConnectedDevicePairs.end()) {
+        return it->second;
+    } else {
+        return std::nullopt;
+    }
+}
+
+void Platform::updateConnectedDevices(bool connect, const struct pal_device& palDevice,
+                                      const AudioDevice& audioDevice) {
+    std::pair<struct pal_device, AudioDevice> devicePair = std::make_pair(palDevice, audioDevice);
+
+    if (connect) {
+        LOG(VERBOSE) << __func__ << ": added pair to list " << ::toString(&palDevice).c_str() << " "
+                     << audioDevice.toString();
+        mConnectedDevicePairs.push_back(devicePair);
+    } else {
+        // Remove the pair from the vector
+        LOG(VERBOSE) << __func__ << ": removed " << ::toString(&palDevice).c_str() << " "
+                     << audioDevice.toString();
+        auto it = std::find_if(
+                mConnectedDevicePairs.begin(), mConnectedDevicePairs.end(),
+                [&](const auto& element) { return element.second == devicePair.second; });
+
+        if (it != mConnectedDevicePairs.end()) {
+            LOG(VERBOSE) << __func__ << ": erasing " << ::toString(&palDevice).c_str() << " "
+                         << audioDevice.toString();
+            mConnectedDevicePairs.erase(it);
+        }
+    }
+}
+
+int Platform::handleDeviceConnectionChange(const AudioPort& deviceAudioPort, const bool isConnect) {
     const auto& devicePortExt = deviceAudioPort.ext.get<AudioPortExt::Tag::device>();
 
     auto& audioDeviceDesc = devicePortExt.device.type;
@@ -597,6 +619,7 @@ int Platform::handleDeviceConnectionChange(const AudioPort& deviceAudioPort,
 
     deviceConnection->connection_state = isConnect;
     deviceConnection->id = palDeviceId;
+    deviceConnection->device.id = palDeviceId;
 
     const auto& deviceAddress = devicePortExt.device.address;
     const auto& addressTag = devicePortExt.device.address.getTag();
@@ -651,6 +674,7 @@ int Platform::handleDeviceConnectionChange(const AudioPort& deviceAudioPort,
     LOG(INFO) << __func__ << devicePortExt.device.toString()
               << (isConnect ? ": connected" : "disconnected");
 
+    updateConnectedDevices(isConnect, deviceConnection->device, devicePortExt.device);
     return 0;
 }
 
@@ -1436,6 +1460,30 @@ std::string Platform::toString() const {
     return os.str();
 }
 
+void Platform::onSoundDose(void* const data) {
+    pal_sound_dose_info_t* palSoundDoseInfo = reinterpret_cast<pal_sound_dose_info_t*>(data);
+
+    if (!palSoundDoseInfo) {
+        LOG(ERROR) << "Invalid event data pointer";
+        return;
+    }
+
+    if (!mPlatformGlobalCallback) {
+        LOG(ERROR) << "callback is not set";
+        return;
+    }
+
+    struct pal_device palDevice = palSoundDoseInfo->device;
+    auto audioDevice = findAudioDevice(palDevice);
+    if (audioDevice.has_value()) {
+        LOG(VERBOSE) << "sounddose: " << audioDevice.value().toString();
+        mPlatformGlobalCallback->onSoundDose(data, audioDevice.value());
+    } else {
+        LOG(ERROR) << __func__ << "device " << ::toString(&palDevice)
+                   << " is not connected anymore";
+    }
+}
+
 // static
 int Platform::palGlobalCallback(uint32_t event_id, uint32_t* event_data, uint64_t cookie) {
     auto platform = reinterpret_cast<Platform*>(cookie);
@@ -1446,10 +1494,8 @@ int Platform::palGlobalCallback(uint32_t event_id, uint32_t* event_data, uint64_
             LOG(INFO) << __func__ << " card status changed to " << platform->mSndCardStatus;
             break;
         case PAL_SOUND_DOSE_INFO:
-            LOG(INFO) << __func__ << "received Sound Dose event";
-            if (auto p = platform->mPlatformGlobalCallback;p != nullptr) {
-                p->onSoundDose(event_data);
-            }
+            LOG(VERBOSE) << __func__ << "received Sound Dose event";
+            platform->onSoundDose(event_data);
             break;
         default:
             LOG(ERROR) << __func__ << " invalid event id" << event_id;
@@ -1502,7 +1548,7 @@ Platform::Platform() {
         LOG(ERROR) << __func__ << "pal_init failed, ret:" << ret;
         return;
     }
-    LOG(VERBOSE) << __func__ << " pal_init successful";
+    LOG(INFO) << __func__ << " pal_init successful";
     if (int32_t ret =
                 pal_register_global_callback(&palGlobalCallback, reinterpret_cast<uint64_t>(this));
         ret) {
@@ -1519,7 +1565,7 @@ Platform::Platform() {
 
 // static
 Platform& Platform::getInstance() {
-    static const auto kPlatform = []() {
+    static auto kPlatform = []() {
         std::unique_ptr<Platform> platform{new Platform()};
         return std::move(platform);
     }();
