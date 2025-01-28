@@ -878,7 +878,6 @@ void StreamInPrimary::shutdown_I() {
         std::get<CompressCapture>(mExt).setPalHandle(nullptr);
     }
     mPalHandle = nullptr;
-    mPlatform.setMicMuteStatus(false);
 }
 
 ::android::status_t StreamInPrimary::burstZero() {
