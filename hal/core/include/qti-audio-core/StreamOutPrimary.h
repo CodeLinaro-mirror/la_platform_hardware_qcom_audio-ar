@@ -10,6 +10,12 @@
 #include <qti-audio-core/Stream.h>
 #include <qti-audio-core/PlatformStreamCallback.h>
 
+#define LOW_LATENCY_PLATFORM_DELAY (13*1000LL)
+#define DEEP_BUFFER_PLATFORM_DELAY (70*1000LL)
+#define PCM_OFFLOAD_PLATFORM_DELAY (30*1000LL)
+#define MMAP_PLATFORM_DELAY        (3*1000LL)
+#define ULL_PLATFORM_DELAY         (4*1000LL)
+
 namespace qti::audio::core {
 
 class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public PlatformStreamCallback {
@@ -38,7 +44,7 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
             ::aidl::android::hardware::audio::core::StreamDescriptor::Reply*
             /*reply*/) override;
     void shutdown() override;
-
+    ::android::status_t getHwTimeStamp(::aidl::android::hardware::audio::core::StreamDescriptor::Reply*);
     // methods of StreamCommonInterface
 
     ndk::ScopedAStatus getVendorParameters(
@@ -93,7 +99,7 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     void onTransferReady() override;
     void onDrainReady() override;
     void onError() override;
-
+    uint64_t mBytesWritten; /* total bytes written, not cleared when entering standby */
   protected:
     /*
      * opens, configures and starts pal stream, also validates the pal handle.
@@ -106,8 +112,8 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
 
     // This API calls startEffect/stopEffect only on offload/pcm offload outputs.
     void enableOffloadEffects(const bool enable);
-
-    // API which are *_I are internal 
+    int64_t GetRenderLatency(std::string address);
+    // API which are *_I are internal
     ndk::ScopedAStatus configureConnectedDevices_I();
 
     const Usecase mTag;
@@ -147,7 +153,7 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     const ::aidl::android::media::audio::common::AudioPortConfig& mMixPortConfig;
     HalOffloadEffects& mHalEffects{HalOffloadEffects::getInstance()};
     AudioExtension& mAudExt{AudioExtension::getInstance()};
-
+    int64_t GetSourceLatency();
   private:
     std::string mLogPrefix = "";
     bool mIsMMapStarted = false;

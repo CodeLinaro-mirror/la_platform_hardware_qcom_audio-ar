@@ -84,12 +84,17 @@ StreamInPrimary::StreamInPrimary(StreamContext&& context, const SinkMetadata& si
      *  update metadata, in AIDL its not present , so doing here.
      */
     updateMetadata(sinkMetadata);
-
+    if (property_get_bool("persist.vendor.audio.hw_ts_enable",false)) {
+        LOG(DEBUG) << "hw_ts_enable is true";
+        hw_ts_enable = true;
+    }
+    else
+        hw_ts_enable = false;
     std::ostringstream os;
     os << " : usecase: " << mTagName;
     os << " IoHandle:" << mMixPortConfig.ext.get<AudioPortExt::Tag::mix>().handle;
     mLogPrefix = os.str();
-
+    readAt = {0};
     LOG(DEBUG) << __func__ << mLogPrefix;
 }
 
@@ -335,6 +340,23 @@ void StreamInPrimary::resume() {
     return ::android::OK;
 }
 
+int64_t StreamInPrimary::GetSourceLatency() {
+    auto attr = mPlatform.getPalStreamAttributes(mMixPortConfig, true);
+    switch (attr->type) {
+        case PAL_STREAM_DEEP_BUFFER:
+            return DEEP_BUFFER_PLATFORM_CAPTURE_DELAY;
+        case PAL_STREAM_LOW_LATENCY:
+            return LOW_LATENCY_PLATFORM_CAPTURE_DELAY;
+        case PAL_STREAM_VOIP_TX:
+            return VOIP_TX_PLATFORM_CAPTURE_DELAY;
+        case PAL_STREAM_RAW:
+            return RAW_STREAM_PLATFORM_CAPTURE_DELAY;
+            // TODO: Add more streamtypes if available in pal
+        default:
+            return 0;
+    }
+}
+
 ::android::status_t StreamInPrimary::transfer(void* buffer, size_t frameCount,
                                               size_t* actualFrameCount, int32_t* latencyMs) {
     if (AudioExtension::getInstance().in_power_policy == POWER_POLICY_STATUS_OFFLINE) {
@@ -353,6 +375,18 @@ void StreamInPrimary::resume() {
     pal_buffer palBuffer{};
     palBuffer.buffer = static_cast<uint8_t*>(buffer);
     palBuffer.size = frameCount * mFrameSizeBytes;
+    palBuffer.ts = nullptr;
+    uint64_t signed_frames = 0;
+    uint64_t read_frames = 0;
+    uint64_t kernel_frames = 0;
+    size_t kernel_buffer_size = 0;
+#ifdef HARDWARE_TIMESTAMP
+    palBuffer.ts = (struct timespec *) calloc(1, 1 * sizeof(struct timespec));
+    if (!palBuffer.ts) {
+        LOG(ERROR) << "calloc failed for size: " << sizeof(struct timespec) << "for palBuffer.ts";
+        return ::android::NO_MEMORY;
+    }
+#endif
 #ifdef VERY_VERBOSE_LOGGING
     LOG(VERBOSE) << __func__ << mLogPrefix << ": framecount " << frameCount << " mFrameSizeBytes "
                  << mFrameSizeBytes;
@@ -387,7 +421,16 @@ void StreamInPrimary::resume() {
     } else if (mTag == Usecase::PCM_RECORD || mTag == Usecase::HOTWORD_RECORD) {
         *latencyMs = PcmRecord::kCaptureDurationMs;
     }
-
+#ifndef HARDWARE_TIMESTAMP
+    clock_gettime(CLOCK_MONOTONIC, &readAt);
+#else
+    if(palBuffer.ts) {
+        readAt.tv_sec = palBuffer.ts->tv_sec;
+        readAt.tv_nsec = palBuffer.ts->tv_nsec;
+        free(palBuffer.ts);
+    }
+    LOG(ERROR) << "hw timestamp sec: " << readAt.tv_sec << "  nsec: " << readAt.tv_nsec;
+#endif
     if (bytesRead < 0) {
         LOG(ERROR) << __func__ << mLogPrefix << " read failed, ret:" << std::to_string(bytesRead);
         *actualFrameCount = frameCount;
@@ -401,7 +444,21 @@ void StreamInPrimary::resume() {
     LOG(VERBOSE) << __func__ << mLogPrefix << ": bytes read " << bytesRead << ", return frame count "
                  << *actualFrameCount;
 #endif
-
+    LOG(DEBUG) << "bytes read: " << bytesRead;
+    mBytesRead += bytesRead;
+    LOG(DEBUG) << "mBytes read: " << mBytesRead;
+    read_frames = mBytesRead / mFrameSizeBytes;
+    struct BufferConfig BufferConfig_ = getBufferConfig();
+    kernel_buffer_size = BufferConfig_.bufferSize * BufferConfig_.bufferCount;
+    kernel_frames = kernel_buffer_size / mFrameSizeBytes;
+    signed_frames = read_frames + kernel_frames;
+    if (hw_ts_enable) {
+        LOG(DEBUG) << "signed frames " << signed_frames << " read frames " << read_frames <<
+        " kernel frames " << kernel_frames << " pal_stream_handle = " << mPalHandle << " timestamp = " << readAt.tv_nsec;
+    } else {
+        LOG(VERBOSE) << "signed frames " << signed_frames << " read frames " << read_frames <<
+        " kernel frames " << kernel_frames << " pal_stream_handle = " << mPalHandle << " timestamp = " << readAt.tv_nsec;
+    }
     return ::android::OK;
 }
 
@@ -431,6 +488,23 @@ void StreamInPrimary::shutdown() {
 // end of driverInterface methods
 
 // start of StreamCommonInterface methods
+
+::android::status_t StreamInPrimary::getHwTimeStamp(::aidl::android::hardware::audio::core::StreamDescriptor::Reply* reply) {
+    LOG(DEBUG) << "Enter: " << __func__;
+    if (!reply) {
+        LOG(ERROR) << "Null in reply - " << "Failed to get hw timestamp";
+        return ::android::INVALID_OPERATION;
+    }
+    int64_t dsp_latency = 0;
+    dsp_latency = GetSourceLatency();
+#ifndef HARDWARE_TIMESTAMP
+    reply->observable.timeNs = (readAt.tv_sec * 1000000000LL) + readAt.tv_nsec - (dsp_latency * 1000LL);
+#else
+    reply->observable.timeNs = (readAt.tv_sec * 1000000000LL) + readAt.tv_nsec;
+#endif
+    LOG(DEBUG) << "Exit: ok" << __func__;
+    return ::android::OK;
+}
 
 void StreamInPrimary::checkHearingAidRoutingForVoice(const Metadata& metadata, bool voiceActive) {
 

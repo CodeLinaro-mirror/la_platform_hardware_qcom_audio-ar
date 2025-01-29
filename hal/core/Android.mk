@@ -49,6 +49,11 @@ LOCAL_HEADER_LIBRARIES :=  \
     libmedia_helper_headers \
     libarpal_headers
 
+#Enable Hardware timestamp for Android V and U
+ifeq (ifneq (,$(filter U UpsideDownCake 14 V VanillaIceCream 15, $(PLATFORM_VERSION))))
+LOCAL_CPPFLAGS += -DHARDWARE_TIMESTAMP
+endif
+
 #    defaults: [
 #        "latest_android_media_audio_common_types_ndk_shared",
 #        "latest_android_hardware_audio_core_ndk_shared",
