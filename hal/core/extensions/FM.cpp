@@ -33,7 +33,7 @@
  */
 
 #define LOG_TAG "AHAL_FM_QTI"
-#define LOG_NDDEBUG 0
+//#define LOG_NDDEBUG 0
 
 #include <android-base/logging.h>
 #include <cutils/properties.h>

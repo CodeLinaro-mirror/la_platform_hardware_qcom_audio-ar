@@ -400,6 +400,17 @@ pal_device_id_t PlatformConverter::getPalDeviceId(
     return element->second;
 }
 
+AudioDeviceDescription PlatformConverter::convertPalIdToAudioDeviceDescription(pal_device_id_t palId) noexcept {
+    DevicePairs pairs = getDevicePairs();
+    for (const auto& pair : pairs) {
+        if (pair.second == palId) {
+            return pair.first;
+        }
+    }
+    // Return a default AudioDeviceDescription if no match is found
+    return AudioDeviceDescription{};
+}
+
 outputFlagsStreamtypeMap populatemOutputFlagsStreamtypeMap() {
     outputFlagsStreamtypeMap result;
     constexpr auto flagCastToint = [](auto flag) { return static_cast<int32_t>(flag); };

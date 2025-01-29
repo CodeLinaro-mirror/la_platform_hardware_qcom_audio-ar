@@ -25,10 +25,12 @@
 #include <qti-audio-core/Bluetooth.h>
 #include <qti-audio-core/Module.h>
 #include <qti-audio-core/Platform.h>
+#include <qti-audio-core/PlatformGlobalCallback.h>
 
 namespace qti::audio::core {
 
-class ModulePrimary final : public Module {
+class ModulePrimary final : public Module ,
+                            public PlatformGlobalCallback {
   public:
     ModulePrimary();
 
@@ -106,6 +108,11 @@ class ModulePrimary final : public Module {
     int32_t getNominalLatencyMs(
             const ::aidl::android::media::audio::common::AudioPortConfig&) override;
     // #################### end of overriding APIs from Module ####################
+
+    // #################### start of overriding APIs from PlatformCallback ########
+    void onSoundDose(void* const eventData) override;
+    void updateActiveDevicesMap(const AudioDeviceAddress& address,pal_device_id_t palDeviceId) override;
+    // #################### end of overriding APIs from PlatformCallback ########
 
     // start of Module Parameters
 

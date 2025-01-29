@@ -28,12 +28,12 @@
  *
  * Changes from Qualcomm Innovation Center are provided under the following license:
  *
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
 */
 
 #define LOG_TAG "AHAL_HFP_QTI"
-#define LOG_NDDEBUG 0
+//#define LOG_NDDEBUG 0
 
 #include <android-base/logging.h>
 #include <cutils/properties.h>
@@ -440,7 +440,7 @@ void hfp_set_parameters(bool adev_mute, struct str_parms *parms) {
     int val;
     int rate;
 
-    LOG(DEBUG) << __func__ << " enter";
+    LOG(VERBOSE) << __func__ << " enter";
 
     status = str_parms_get_str(parms, AUDIO_PARAMETER_HFP_ENABLE, value, sizeof(value));
     if (status >= 0) {
@@ -498,7 +498,7 @@ void hfp_set_parameters(bool adev_mute, struct str_parms *parms) {
     }
 
 exit:
-    LOG(DEBUG) << __func__ << " Exit";
+    LOG(VERBOSE) << __func__ << " Exit";
 }
 
 #ifdef __cplusplus
