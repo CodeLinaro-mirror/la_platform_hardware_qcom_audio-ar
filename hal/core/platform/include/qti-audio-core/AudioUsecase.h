@@ -462,7 +462,7 @@ class UltraFastRecord : public UsecaseConfig<UltraFastRecord> {
 
 class MMapRecord : public MmapUsecaseBase, public UsecaseConfig<MMapRecord> {
   public:
-    constexpr static uint32_t kCaptureDurationMs = 2;
+    constexpr static uint32_t kCaptureDurationMs = 1;
     constexpr static size_t kPeriodCount = 512;
     constexpr static size_t kPlatformDelayMs = 4;
 
