@@ -90,6 +90,8 @@ StreamOutPrimary::StreamOutPrimary(StreamContext&& context, const SourceMetadata
         mExt.emplace<InCallMusic>();
     } else if (mTag == Usecase::HAPTICS_PLAYBACK) {
         mExt.emplace<HapticsPlayback>();
+    } else if (mTag == Usecase::LOW_LATENCY_PLAYBACK) {
+        mExt.emplace<LowLatencyPlayback>();
     }
 
     mHwVolumeSupported = isHwVolumeSupported();
@@ -114,6 +116,7 @@ bool StreamOutPrimary::isHwVolumeSupported() {
         case Usecase::ALERTS_PLAYBACK:
         case Usecase::SYS_NOTIFICATION_PLAYBACK:
         case Usecase::PHONE_PLAYBACK:
+        case Usecase::LOW_LATENCY_PLAYBACK:
             return true;
         default:
             break;
@@ -942,7 +945,7 @@ void StreamOutPrimary::configure() {
     if (mTag == Usecase::DEEP_BUFFER_PLAYBACK || mTag == Usecase::PRIMARY_PLAYBACK) {
         attr->type = PAL_STREAM_DEEP_BUFFER;
     } else if (mTag == Usecase::LOW_LATENCY_PLAYBACK) {
-        attr->type = PAL_STREAM_LOW_LATENCY;
+        attr->type = PAL_STREAM_PLAYBACK_BUS;
         auto countProxyDevices = std::count_if(mConnectedDevices.cbegin(), mConnectedDevices.cend(),
                                                 isIPDevice);
         if (countProxyDevices > 0) {
