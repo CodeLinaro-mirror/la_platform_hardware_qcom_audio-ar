@@ -110,7 +110,6 @@ class Platform {
     bool isSoundCardUp() const noexcept;
     bool isSoundCardDown() const noexcept;
 
-    bool isValidMacAddr(const std::vector<uint8_t>& macAddress) const noexcept;
     size_t getMinimumStreamSizeFrames(
             const std::vector<::aidl::android::media::audio::common::AudioPortConfig*>& sources,
             const std::vector<::aidl::android::media::audio::common::AudioPortConfig*>& sinks);

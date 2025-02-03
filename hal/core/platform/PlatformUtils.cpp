@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -10,6 +10,7 @@
 #include <qti-audio-core/Platform.h>
 #include <qti-audio-core/PlatformUtils.h>
 #include <qti-audio/PlatformConverter.h>
+#include <qti-audio-core/Utils.h>
 #include <system/audio.h>
 
 #include <map>
@@ -231,6 +232,37 @@ std::vector<uint8_t> makePalVolumes(std::vector<float> const& volumes) noexcept 
         palVolumeData->volume_pair[channel].vol = volumes[channel];
     }
     return data;
+}
+
+bool makePalDeviceAddress(const AudioDeviceAddress& address, pal_device* const palDevice) {
+    switch (address.getTag()) {
+        case AudioDeviceAddress::Tag::mac: {
+            const std::vector<uint8_t>& mac = address.get<AudioDeviceAddress::mac>();
+            if (mac.size() != 6) return false;
+            std::memcpy(palDevice->addressV1.mac, mac.data(), 6);
+
+        } break;
+        case AudioDeviceAddress::Tag::ipv4: {
+            const std::vector<uint8_t>& ipv4 = address.get<AudioDeviceAddress::ipv4>();
+            if (ipv4.size() != 4) return false;
+            std::memcpy(palDevice->addressV1.ipv4, ipv4.data(), 4);
+        } break;
+        case AudioDeviceAddress::Tag::ipv6: {
+            const std::vector<int32_t>& ipv6 = address.get<AudioDeviceAddress::ipv6>();
+            if (ipv6.size() != 8) return false;
+            std::memcpy(palDevice->addressV1.ipv6, ipv6.data(), 8);
+        } break;
+        case AudioDeviceAddress::Tag::alsa: {
+            const std::vector<int32_t>& alsa = address.get<AudioDeviceAddress::alsa>();
+            if (!isValidAlsaAddr(alsa)) return false;
+            std::memcpy(palDevice->addressV1.alsa, alsa.data(), 2);
+        } break;
+        case AudioDeviceAddress::Tag::id: {
+            const std::string& id = address.get<AudioDeviceAddress::id>();
+            strlcpy(palDevice->addressV1.id, id.c_str(), sizeof(palDevice->addressV1.id));
+        } break;
+    }
+    return true;
 }
 
 } // namespace qti::audio::core
