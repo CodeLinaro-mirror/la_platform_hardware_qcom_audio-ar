@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -1025,8 +1025,10 @@ void StreamOutPrimary::configure() {
         palFn = CompressPlayback::palCallback;
         /* TODO check any dynamic update as per offload metadata or source
          * metadata */
-        if (mOffloadInfo.value().bitWidth != 0) {
-            attr->out_media_config.bit_width = mOffloadInfo.value().bitWidth;
+        // for pcm offload bit_width should be set based on pal configured format.
+        // set bit width only when usecase is with compressed format
+        if (!compressPlayback.isPcmOffload()) {
+            attr->out_media_config.bit_width = compressPlayback.getBitWidth();
         }
         attr->flags = static_cast<pal_stream_flags_t>(PAL_STREAM_FLAG_NON_BLOCKING);
     }
