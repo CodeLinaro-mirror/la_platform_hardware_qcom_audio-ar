@@ -75,6 +75,20 @@ std::vector<uint8_t> makePalVolumes(std::vector<float> const& volumes) noexcept;
  */
 bool makePalDeviceAddress(const aidl::android::media::audio::common::AudioDeviceAddress& address,
                           pal_device* const palDevice);
+
+/**
+ * @brief Compares two pal_device structures to determine if they represent the same device.
+ *
+ * This function compares the device IDs and the addressV1 fields of two pal_device structures.
+ * It uses the getAddressTag function to determine the relevant field in the addressV1 union to
+ * compare.
+ *
+ * @param device1 The first pal_device structure to compare.
+ * @param device2 The second pal_device structure to compare.
+ * @return true if the devices are the same, false otherwise.
+ */
+bool compare(const pal_device& device1, const pal_device& device2);
+
 /*
 * validates if the playback rate parameters are valid
 */

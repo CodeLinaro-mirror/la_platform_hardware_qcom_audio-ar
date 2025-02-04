@@ -16,7 +16,7 @@
 
 /*
  * Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -45,13 +45,13 @@ class SoundDose : public ::aidl::android::hardware::audio::core::sounddose::BnSo
     ndk::ScopedAStatus registerSoundDoseCallback(
             const std::shared_ptr<ISoundDose::IHalSoundDoseCallback>& in_callback) override;
 
-    void handleSoundDoseInfoEvent(void* const eventData);
-    void updateActiveDevicesMap(const AudioDeviceAddress& address, pal_device_id_t palDeviceId);
+    void onSoundDose(void* const eventData,
+                     const ::aidl::android::media::audio::common::AudioDevice& device);
 
   private:
     std::shared_ptr<ISoundDose::IHalSoundDoseCallback> mCallback;
     float mRs2Value;
-    std::map<pal_device_id_t,AudioDeviceAddress> mActiveDeviceAddressMap; // Map to store device address and palDeviceId
+
 };
 
 } // namespace qti::audio::core

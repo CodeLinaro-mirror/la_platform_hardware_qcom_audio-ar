@@ -184,7 +184,7 @@ class Platform {
             const ::aidl::android::media::audio::common::AudioPort& dynamicDeviceAudioPort) const;
     int handleDeviceConnectionChange(
             const ::aidl::android::media::audio::common::AudioPort& deviceAudioPort,
-            const bool isConnect) const;
+            const bool isConnect);
     uint32_t getBluetoothLatencyMs(
             const std::vector<::aidl::android::media::audio::common::AudioDevice>&
                     bluetoothDevices);
@@ -335,6 +335,39 @@ class Platform {
     constexpr static int32_t kDefaultLatencyMs = 51;
 
   private:
+    void onSoundDose(void* const data);
+
+    /**
+     * @brief Finds the corresponding AudioDevice for a given pal_device.
+     *
+     * This function searches through the list of connected device pairs to locate an AudioDevice
+     * that matches the provided pal_device. If a match is found, the corresponding AudioDevice is
+     * returned. Otherwise, the function returns std::nullopt.
+     *
+     * @param palDevice The pal_device instance to be searched for.
+     * @return corresponding AudioDevice if found, otherwise std::nullopt.
+     */
+
+    std::optional<::aidl::android::media::audio::common::AudioDevice> findAudioDevice(
+            const pal_device& device);
+
+    /**
+     * @brief Updates the list of connected devices by adding or removing a device pair.
+     *
+     * This function either adds or removes a pair of `pal_device` and `AudioDevice` from the list
+     * of connected device pairs based on the `connect` parameter. If `connect` is true, the pair is
+     * added to the list. If `connect` is false, the pair is removed from the list.
+     *
+     * @param connect A boolean indicating whether to add (true) or remove (false) the device pair.
+     * @param palDevice The `pal_device` instance to be added or removed.
+     * @param audioDevice The `AudioDevice` instance to be added or removed.
+     */
+    void updateConnectedDevices(bool connect, const struct pal_device& device,
+                                const ::aidl::android::media::audio::common::AudioDevice&);
+
+    std::vector<std::pair<struct pal_device, ::aidl::android::media::audio::common::AudioDevice>>
+            mConnectedDevicePairs;
+
     std::vector<::aidl::android::media::audio::common::AudioDevice> mPrimaryPlaybackDevices{};
 
     std::map<std::string, std::string> mParameters;

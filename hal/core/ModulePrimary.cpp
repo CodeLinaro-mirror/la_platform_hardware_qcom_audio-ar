@@ -1022,21 +1022,13 @@ ModulePrimary::FeatureToGetHandlerMap ModulePrimary::fillFeatureToGetHandlerMap(
 // end of module parameters handling
 
 // start of PlatformGlobalCallback
-void ModulePrimary::onSoundDose(void* const eventData) {
+void ModulePrimary::onSoundDose(void* const eventData, const AudioDevice& device) {
     if (!mSoundDose) {
         mSoundDose = ndk::SharedRefBase::make<SoundDose>();
     }
-    //mSoundDose->onSoundDose(eventData);
-    mSoundDose->handleSoundDoseInfoEvent(eventData);
+    mSoundDose->onSoundDose(eventData, device);
 }
 
-void ModulePrimary::updateActiveDevicesMap(const AudioDeviceAddress& address, pal_device_id_t palDeviceId) {
-    if (!mSoundDose) {
-        mSoundDose = ndk::SharedRefBase::make<SoundDose>();
-    }
-    //mSoundDose->onSoundDose(eventData);
-    mSoundDose->updateActiveDevicesMap(address, palDeviceId);
-}
 // end of PlatformGlobalCallback
 
 } // namespace qti::audio::core

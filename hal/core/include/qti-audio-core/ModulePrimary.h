@@ -15,8 +15,8 @@
  */
 
 /*
- * ​​​​​Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -110,8 +110,8 @@ class ModulePrimary final : public Module ,
     // #################### end of overriding APIs from Module ####################
 
     // #################### start of overriding APIs from PlatformCallback ########
-    void onSoundDose(void* const eventData) override;
-    void updateActiveDevicesMap(const AudioDeviceAddress& address,pal_device_id_t palDeviceId) override;
+    void onSoundDose(void* const eventData,
+                     const ::aidl::android::media::audio::common::AudioDevice&) override;
     // #################### end of overriding APIs from PlatformCallback ########
 
     // start of Module Parameters
