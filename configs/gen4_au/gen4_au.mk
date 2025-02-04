@@ -210,7 +210,10 @@ ifeq ($(TARGET_USES_GY), true)
 PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/mixer_paths_VIOSND.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_VIOSND.xml \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/audio_policy_configuration_7_0_pure.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_configuration.xml \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/microphone_characteristics.xml
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/microphone_characteristics.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/modules.audio.ar.blocklist:$(TARGET_COPY_OUT_VENDOR_DLKM)/lib/modules/modules.audio.ar.blocklist \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/modules.audio.legacy.blocklist:$(TARGET_COPY_OUT_VENDOR_DLKM)/lib/modules/modules.audio.legacy.blocklist
+
 else
 PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_policy_configuration_7_0.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_configuration.xml
@@ -224,7 +227,7 @@ PRODUCT_COPY_FILES += \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/mixer_paths_sa8255_adp_star.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_sa8255_adp_star.xml
 endif
 
-ifneq (,$(filter $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_gvmq msmnile_au gen4_au gen4_gvm))
+ifneq (,$(filter $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_gvmq msmnile_au gen4_au))
 PRODUCT_COPY_FILES += \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/modules.audio.ar.blocklist:$(TARGET_COPY_OUT_VENDOR_DLKM)/lib/modules/modules.audio.ar.blocklist \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/modules.audio.legacy.blocklist:$(TARGET_COPY_OUT_VENDOR_DLKM)/lib/modules/modules.audio.legacy.blocklist

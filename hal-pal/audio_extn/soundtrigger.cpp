@@ -205,7 +205,7 @@ static void get_library_path(char *lib_path)
 {
     snprintf(lib_path, MAX_LIBRARY_PATH,
 #ifdef AUDIO_FRAMEWORK_AWE
-             "/vendor/lib64/hw/sound_trigger.%s.awe.so",
+             "/vendor/lib64/hw/sound_trigger.primary.%s.awe.so",
 #else
              "/vendor/lib64/hw/sound_trigger.primary.%s.ar.so",
 #endif
