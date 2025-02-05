@@ -28,10 +28,15 @@ AUDIO_PAL := libar-pal
 AUDIO_PAL += lib_bt_bundle
 AUDIO_PAL += lib_bt_aptx
 AUDIO_PAL += lib_bt_ble
-AUDIO_PAL += catf
 AUDIO_PAL += PalTest
 AUDIO_PAL += libaudiochargerlistener
 AUDIO_PAL += libhfp_pal
+ifneq ($(call soong_config_get, qtiaudio, hy11), true)
+ifneq ($(call soong_config_get, qtiaudio, hy22), true)
+AUDIO_PAL += catf
+endif
+endif
+
 #PAL Service
 AUDIO_PAL += libpalclient
 AUDIO_PAL += libpalipcservice
