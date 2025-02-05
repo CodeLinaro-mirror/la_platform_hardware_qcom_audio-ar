@@ -32,7 +32,7 @@
 using ::aidl::android::hardware::audio::focus::IAudioFocusService;
 #endif
 
-extern "C" void extn_set_mute_config_for_address(char* address, bool muted, float volume);
+extern "C" __attribute__((visibility("default"))) void extn_set_mute_config_for_address(char* address, bool muted, float volume);
 
 
 namespace qti::audio::core {

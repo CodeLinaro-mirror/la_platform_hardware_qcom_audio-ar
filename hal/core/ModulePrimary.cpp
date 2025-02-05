@@ -26,6 +26,9 @@
 #include <Utils.h>
 #include <android-base/logging.h>
 #include <cutils/str_parms.h>
+#include <android/binder_auto_utils.h>
+#include <android/binder_ibinder.h>
+#include <error/Result.h>
 
 #ifdef ENABLE_QCOM_AMPERE_AUDIO
 #include <aidl/ampere/hardware/interfaces/automotive/audioparameterparser/RadioVendorParameterExt.h>
@@ -88,9 +91,6 @@ using ::aidl::android::hardware::audio::core::IBluetoothLe;
 using aidl::ampere::hardware::interfaces::automotive::audioparameterparser::RadioVendorParameterExt;
 #endif
 
-#ifdef __cplusplus
- extern "C" {
-#endif
 
 namespace qti::audio::core {
 
@@ -736,13 +736,12 @@ void MuteConfig::set_mute_config_for_address(char* address, bool muted, float vo
     ModulePrimary::outListMutex.unlock();
 }
 
- void extn_set_mute_config_for_address(char* address, bool muted, float volume)
+extern "C" __attribute__((visibility("default"))) void extn_set_mute_config_for_address(char* address, bool muted, float volume)
 {
     LOG(DEBUG)<< __func__ << " mute:" << muted  << "address:" << address;
     auto& muteConfigInst = MuteConfig::GetInstance();
     return muteConfigInst.set_mute_config_for_address(address, muted, volume);
 }
-
 
 void ModulePrimary::onSetHDRParameters(const std::vector<VendorParameter>& params) {
     for (const auto& param : params) {
@@ -1283,7 +1282,3 @@ ModulePrimary::FeatureToGetHandlerMap ModulePrimary::fillFeatureToGetHandlerMap(
 
 } // namespace qti::audio::core
 
-
-#ifdef __cplusplus
-}
-#endif
