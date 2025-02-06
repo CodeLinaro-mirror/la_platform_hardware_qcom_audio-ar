@@ -602,6 +602,22 @@ void ModulePrimary::onsetRadioVendorParameter(const std::vector<::aidl::android:
         RadioVendorParameterExt::AudioSource aidlAudioSource = p.value();
         globalAudioSource = toString(aidlAudioSource);
         LOG(DEBUG) << __func__ << " AUDIO_SOURCE: " << globalAudioSource;
+        struct str_parms* parms = NULL;
+        std::string kvpairs = "";
+        std::string keyvalue = param.id + "=" + globalAudioSource + ";";
+        kvpairs.append(keyvalue);
+        if (kvpairs.length() != keyvalue.length()) {
+            LOG(ERROR) << __func__ << ": invalid kvpairs length";
+            return ::android::BAD_VALUE;
+        }
+        LOG(DEBUG) << __func__ << " Key Value pairs: " << kvpairs;
+        if (!kvpairs.empty()) {
+            parms = str_parms_create_str(kvpairs.c_str());
+            if (!parms) {
+                return ::android::BAD_VALUE;
+            }
+            mAudExt.audio_extn_set_parameters(parms);
+        }
     } else {
         LOG(ERROR) << __func__ << ": Unknown parameter id " << param.id.c_str();
         return ::android::BAD_VALUE;
