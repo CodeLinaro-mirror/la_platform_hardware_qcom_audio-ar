@@ -19,10 +19,15 @@ AUDIO_AGM += libagm
 AUDIO_AGM += libagm_compress_plugin
 AUDIO_AGM += libagm_mixer_plugin
 AUDIO_AGM += libagm_pcm_plugin
+AUDIO_AGM += init.qti.AGMIPC.sh
+
+ifneq ($(filter $(TARGET_BOARD_DERIVATIVE_SUFFIX), _sdv _cdcsdv),)
+AUDIO_AGM += agmipcservice
+else
 AUDIO_AGM += vendor.qti.hardware.AGMIPC@1.0
 AUDIO_AGM += vendor.qti.hardware.AGMIPC@1.0-impl
 AUDIO_AGM += vendor.qti.hardware.AGMIPC@1.0-service
-AUDIO_AGM += init.qti.AGMIPC.sh
+endif
 
 #PAL Module
 AUDIO_PAL := libar-pal
@@ -47,6 +52,14 @@ AUDIO_PAL += libhfp_ag_pal
 #PAL Service
 AUDIO_PAL += libpalclient
 
+#PAL Static libraries
+ifneq ($(filter $(TARGET_BOARD_DERIVATIVE_SUFFIX), _sdv _cdcsdv),)
+AUDIO_PAL += libplugin_manager
+AUDIO_PAL += libdev_speaker
+AUDIO_PAL += libstream_pcm
+AUDIO_PAL += libsession_pcm
+endif
+
 ifeq (,$(filter $(TARGET_BUILD_VARIANT),eng,userdebug))
 AUDIO_TEST += agmplay
 AUDIO_TEST += agmcap
@@ -55,7 +68,6 @@ endif # eng & userdebug builds
 
 # C2 Audio
 #AUDIO_C2 := libqc2audio_base
-
 
 AUDIO_MODULES += acdb_cal.acdb
 AUDIO_MODULES += workspaceFileXml.qwsp
