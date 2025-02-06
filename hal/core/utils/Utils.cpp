@@ -102,7 +102,8 @@ bool isBluetoothLETXDevice(const AudioDevice& device) noexcept {
 
 bool isBluetoothDevice(const AudioDevice& device) noexcept {
     return (device.type.connection == AudioDeviceDescription::CONNECTION_BT_A2DP ||
-            device.type.connection == AudioDeviceDescription::CONNECTION_BT_LE);
+            device.type.connection == AudioDeviceDescription::CONNECTION_BT_LE ||
+            device.type.connection == AudioDeviceDescription::CONNECTION_BT_SCO);
 }
 
 bool hasBluetoothDevice(const std::vector<AudioDevice>& devices) noexcept {
