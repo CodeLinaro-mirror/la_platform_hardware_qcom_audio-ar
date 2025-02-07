@@ -51,7 +51,8 @@ MM_AUDIO += liblx-osal
 MM_AUDIO += libbundleaidl
 MM_AUDIO += libdownmixaidl
 MM_AUDIO += libdynamicsprocessingaidl
-
+MM_AUDIO += libhapticgeneratoraidl
+MM_AUDIO += libpreprocessingaidl
 MM_AUDIO += libloudnessenhanceraidl
 MM_AUDIO += libreverbaidl
 MM_AUDIO += libvisualizeraidl
@@ -83,6 +84,9 @@ AUDIO_TESTS += VtsHalAECTargetTest
 AUDIO_TESTS += VtsHalAGC1TargetTest
 AUDIO_TESTS += VtsHalAGC2TargetTest
 AUDIO_TESTS += VtsHalNSTargetTest
+AUDIO_TESTS += VtsHalBassBoostTargetTest
+AUDIO_TESTS += VtsHalSoundDoseFactoryTargetTest
+AUDIO_TESTS += VtsAidlHalAudioControlTest
 endif
 
 AUDIO_GENERIC_MODULES += $(MM_AUDIO)

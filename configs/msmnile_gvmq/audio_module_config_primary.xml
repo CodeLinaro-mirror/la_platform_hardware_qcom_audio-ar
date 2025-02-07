@@ -5,20 +5,27 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
 -->
 <modules>
 <module name="default">
+    <attachedDevices>
+        <item>speaker</item>
+        <item>telephony_tx_device_out</item>
+        <item>built_in_mic</item>
+        <item>built_in_back_mic</item>
+        <item>fm_tuner_mic</item>
+        <item>telephony_rx_mic</item>
+        <item>echo_reference_mic</item>
+    </attachedDevices>
+    <defaultOutputDevice>speaker</defaultOutputDevice>
     <mixPorts>
         <!-- based on role, mixport flags are identified as either input flags or
         output flags-->
         <!-- start of source mixports-->
-        <mixPort name="media" role="source" flags="PRIMARY">
+        <mixPort name="media" role="source" flags="DEEP_BUFFER">
             <profile samplingRates="8000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
         <mixPort name="sys_notification" role="source" flags="FAST">
             <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
         <mixPort name="nav_guidance" role="source"  flags="FAST">
-            <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
-        </mixPort>
-        <mixPort name="nav_guidance_primary" role="source" flags="PRIMARY">
             <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
         <mixPort name="nav_guidance_fast" role="source" flags="FAST">
@@ -45,7 +52,7 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <mixPort name="primary_out" role="source" flags="PRIMARY">
             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
-        <mixPort name="low_latency_out" role="source" flags="FAST PRIMARY">
+        <mixPort name="low_latency_out" role="source" flags="FAST">
             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
         <mixPort name="deep_buffer_out" role="source" flags="DEEP_BUFFER">
