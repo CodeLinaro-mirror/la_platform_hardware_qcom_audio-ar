@@ -418,9 +418,16 @@ int32_t MmapUsecaseBase::createMMapBuffer(int64_t frameSize, int32_t* fd, int64_
 }
 
 int32_t MmapUsecaseBase::getMMapPosition(int64_t* frames, int64_t* timeNs) {
+    static int64_t sUnknown = -1;
     if (!mPalHandle) {
         LOG(ERROR) << __func__ << ": pal stream handle is null";
+        *frames = *timeNs = sUnknown;
         return -EINVAL;
+    }
+    if (!mIsStarted) {
+        LOG(ERROR) << __func__ << ": stream not started, position unknown";
+        *frames = *timeNs = sUnknown;
+        return 0;
     }
     struct pal_mmap_position pal_mmap_pos;
     if (int32_t ret = pal_stream_get_mmap_position(mPalHandle, &pal_mmap_pos); ret) {
@@ -433,10 +440,55 @@ int32_t MmapUsecaseBase::getMMapPosition(int64_t* frames, int64_t* timeNs) {
     LOG(VERBOSE) << __func__ << ": frames:" << *frames << ", timeNs:" << *timeNs;
     return 0;
 }
+
+int32_t MmapUsecaseBase::start() {
+    if (!mPalHandle) {
+        LOG(ERROR) << __func__ << ": pal stream handle is null";
+        return -EINVAL;
+    }
+
+    if (mIsStarted) {
+        LOG(VERBOSE) << __func__ << ": MMAP already started";
+        return 0;
+    }
+
+    if (int32_t ret = ::pal_stream_start(mPalHandle); ret) {
+        LOG(ERROR) << __func__ << " pal stream start failed, ret:" << ret;
+        return ret;
+    }
+
+    mIsStarted = true;
+    LOG(VERBOSE) << __func__ << ": MMAP start success";
+
+    return 0;
+}
+
+int32_t MmapUsecaseBase::stop() {
+    if (!mPalHandle) {
+        LOG(ERROR) << __func__ << ": pal stream handle is null";
+        return -EINVAL;
+    }
+
+    if (!mIsStarted) {
+        LOG(VERBOSE) << __func__ << ": MMAP already stopped";
+        return 0;
+    }
+
+    if (int32_t ret = ::pal_stream_stop(mPalHandle); ret) {
+        LOG(ERROR) << __func__ << " pal stream stop failed, ret:" << ret;
+        return -EINVAL;
+    }
+
+    mIsStarted = false;
+    LOG(VERBOSE) << __func__ << ": MMAP stop success";
+
+    return 0;
+}
+
 // [MmapUsecaseBase End]
 // [MMapPlayback Start]
 size_t MMapPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
-    return kPeriodSize;
+    return kPeriodDurationMs * getSampleRate(mixPortConfig).value() / 1000;
 }
 
 // [MMapPlayback End]
@@ -990,7 +1042,7 @@ size_t UltraFastRecord::getFrameCount(const AudioPortConfig& mixPortConfig) {
 // [MMapRecord Start]
 
 size_t MMapRecord::getFrameCount(const AudioPortConfig& mixPortConfig) {
-    return kPeriodSize;
+    return kCaptureDurationMs * getSampleRate(mixPortConfig).value() / 1000;
 }
 
 // [MMapRecord End]

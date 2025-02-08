@@ -118,6 +118,10 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     void configure();
     void resume();
     void shutdown_I();
+    /* burst zero indicates that burst command with zero bytes issued from framework */
+    ::android::status_t burstZero();
+    ::android::status_t startMMAP();
+    ::android::status_t stopMMAP();
     size_t getPlatformDelay() const noexcept;
     ::android::status_t onWriteError(const size_t sleepFrameCount);
 
@@ -136,7 +140,8 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     std::vector<float> mVolumes{0.6,0.6};
     bool mUseCachedVolume = false;
     bool mHwVolumeSupported = false;
-    bool mVolumeGaincheck = false;
+    bool mHwFlushSupported = false;
+    bool mHwPauseSupported = false;
     // check validaty of mPalHandle before use
     pal_stream_handle_t* mPalHandle{nullptr};
     pal_stream_handle_t* mHapticsPalHandle{nullptr};
@@ -171,8 +176,9 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
 
   private:
     std::string mLogPrefix = "";
-    bool mIsMMapStarted = false;
     bool isHwVolumeSupported();
+    bool isHwFlushSupported();
+    bool isHwPauseSupported();
     struct BufferConfig getBufferConfig();
     std::string busAddr = "";
 

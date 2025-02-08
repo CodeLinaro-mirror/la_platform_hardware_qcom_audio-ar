@@ -267,20 +267,14 @@ ndk::ScopedAStatus StreamInPrimary::configureMMapStream(int32_t* fd, int64_t* bu
     return ::android::OK;
 }
 
-::android::status_t StreamInPrimary::drain(
-        ::aidl::android::hardware::audio::core::StreamDescriptor::DrainMode mode) {
+::android::status_t StreamInPrimary::drain(StreamDescriptor::DrainMode mode) {
     if (!mPalHandle) {
         LOG(WARNING) << __func__ << mLogPrefix << " stream is not configured";
         return ::android::OK;
     }
-    if (mTag == Usecase::MMAP_RECORD && mIsMMapStarted) {
-        LOG(DEBUG) << __func__ << mLogPrefix << ": stopping input mmap";
-        if (int32_t ret = pal_stream_stop(mPalHandle); ret) {
-            LOG(ERROR) << __func__ << mLogPrefix
-                       << " failed to stop MMAP stream, ret:" << std::to_string(ret);
-            return -EINVAL;
-        }
-        mIsMMapStarted = false;
+    if (mTag == Usecase::MMAP_RECORD) {
+        // drain in MMAP is stop
+        return stopMMAP();
     }
     return ::android::OK;
 }
@@ -290,12 +284,20 @@ ndk::ScopedAStatus StreamInPrimary::configureMMapStream(int32_t* fd, int64_t* bu
         LOG(WARNING) << __func__ << mLogPrefix << " stream is not configured";
         return ::android::OK;
     }
-    // No op
+    if (mTag == Usecase::MMAP_RECORD) {
+        // Flush in MMAP is stop
+        return stopMMAP();
+    }
     return ::android::OK;
 }
 
 ::android::status_t StreamInPrimary::pause() {
     // Todo check whether pause is possible in PAL
+
+    if (mTag == Usecase::MMAP_RECORD) {
+        // pause in MMAP is stop
+        return stopMMAP();
+    }
     shutdown_I();
     return ::android::OK;
 }
@@ -305,6 +307,19 @@ void StreamInPrimary::resume() {
 }
 
 ::android::status_t StreamInPrimary::standby() {
+    if (!mPalHandle) {
+        LOG(WARNING) << __func__ << mLogPrefix << ": stream is not configured ";
+        return ::android::OK;
+    }
+
+    if (mTag == Usecase::MMAP_RECORD) {
+       if (AudioExtension::getInstance().in_power_policy == POWER_POLICY_STATUS_OFFLINE) {
+            return stopMMAP();
+       } else {
+            return ::android::OK;
+       }
+    }
+
     shutdown_I();
     return ::android::OK;
 }
@@ -320,14 +335,8 @@ void StreamInPrimary::resume() {
         LOG(ERROR) << "POWER POLICY OFFLINE please try again\n";
         return -EINVAL;
     }
-    if (mTag == Usecase::MMAP_RECORD && !mIsMMapStarted) {
-        if (int32_t ret = ::pal_stream_start(this->mPalHandle); ret) {
-            LOG(ERROR) << __func__ << mLogPrefix << " pal_stream_start failed!! ret:" << std::to_string(ret);
-            ::pal_stream_close(mPalHandle);
-            mPalHandle = nullptr;
-            return -EINVAL;
-        }
-        mIsMMapStarted = true;
+    if (mTag == Usecase::MMAP_RECORD) {
+        return startMMAP();
     }
     return ::android::OK;
 }
@@ -382,6 +391,13 @@ int64_t StreamInPrimary::GetSourceLatency() {
             *actualFrameCount = frameCount;
             return onReadError(frameCount);
         }
+    }
+    if (frameCount == 0) {
+        *actualFrameCount = 0;
+        return burstZero();
+    }
+    if (mTag == Usecase::MMAP_RECORD) {
+        return startMMAP();
     }
 
     pal_buffer palBuffer{};
@@ -717,6 +733,11 @@ size_t StreamInPrimary::getPlatformDelay() const noexcept {
 }
 
 void StreamInPrimary::configure() {
+
+    if(hasInputMMapFlag(mMixPortConfig.flags.value())){
+        // this API doesn't handle for MMAP
+        return;
+    }
     const auto startTime = std::chrono::steady_clock::now();
     auto attr = mPlatform.getPalStreamAttributes(mMixPortConfig, true);
     LOG(INFO) << __func__ << " : configure : Enter";
@@ -914,6 +935,10 @@ void StreamInPrimary::applyEffects() {
 
 void StreamInPrimary::shutdown_I() {
     LOG(DEBUG) << __func__ << mLogPrefix;
+
+    if (mTag == Usecase::MMAP_RECORD) {
+        std::get<MMapRecord>(mExt).setPalHandle(nullptr);
+    }
     mEffectsApplied = true;
     if (mPalHandle != nullptr) {
         if (mTag == Usecase::HOTWORD_RECORD) {
@@ -924,7 +949,33 @@ void StreamInPrimary::shutdown_I() {
         }
     }
     mPalHandle = nullptr;
-    mIsMMapStarted = false;
+}
+
+::android::status_t StreamInPrimary::burstZero() {
+    LOG(VERBOSE) << __func__ << mLogPrefix;
+    if (mTag == Usecase::MMAP_RECORD) {
+        return startMMAP();
+    }
+
+    return ::android::OK;
+}
+
+::android::status_t StreamInPrimary::startMMAP() {
+    auto& mmap = std::get<MMapRecord>(mExt);
+    if (auto ret = mmap.start(); ret) {
+        LOG(ERROR) << __func__ << mLogPrefix << ": failed";
+        return ret;
+    }
+    return ::android::OK;
+}
+
+::android::status_t StreamInPrimary::stopMMAP() {
+    auto& mmap = std::get<MMapRecord>(mExt);
+    if (auto ret = mmap.stop(); ret) {
+        LOG(ERROR) << __func__ << mLogPrefix << ": failed";
+        return ret;
+    }
+    return ::android::OK;
 }
 
 } // namespace qti::audio::core

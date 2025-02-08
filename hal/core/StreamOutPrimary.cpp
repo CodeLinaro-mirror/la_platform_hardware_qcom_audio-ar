@@ -269,26 +269,19 @@ ndk::ScopedAStatus StreamOutPrimary::configureMMapStream(int32_t* fd, int64_t* b
     return ::android::OK;
 }
 
-::android::status_t StreamOutPrimary::drain(
-        ::aidl::android::hardware::audio::core::StreamDescriptor::DrainMode mode) {
+::android::status_t StreamOutPrimary::drain(StreamDescriptor::DrainMode mode) {
     if (!mPalHandle) {
         LOG(WARNING) << __func__ << mLogPrefix << ": stream is not configured";
         return ::android::OK;
     }
     // drain is stop for mmap
-    if (mTag == Usecase::MMAP_PLAYBACK && mIsMMapStarted) {
-        LOG(DEBUG) << __func__ << mLogPrefix << ": stopping out mmap";
-        if (int32_t ret = pal_stream_stop(mPalHandle); ret) {
-            LOG(ERROR) << __func__ << mLogPrefix
-                       << " failed to stop MMAP stream, ret:" << std::to_string(ret);
-            return -EINVAL;
-        }
-        mIsMMapStarted = false;
-        return ::android::OK;
+    if (mTag == Usecase::MMAP_PLAYBACK) {
+        // drain is stop for mmap
+        return stopMMAP();
     }
 
     auto palDrainMode =
-            mode == ::aidl::android::hardware::audio::core::StreamDescriptor::DrainMode::DRAIN_ALL
+            mode == StreamDescriptor::DrainMode::DRAIN_ALL
                     ? PAL_DRAIN
                     : PAL_DRAIN_PARTIAL;
     if (int32_t ret = ::pal_stream_drain(mPalHandle, palDrainMode); ret) {
@@ -304,8 +297,13 @@ ndk::ScopedAStatus StreamOutPrimary::configureMMapStream(int32_t* fd, int64_t* b
         LOG(WARNING) << __func__ << mLogPrefix << ": stream is not configured ";
         return ::android::OK;
     }
-    if (mTag == Usecase::MMAP_PLAYBACK || mTag == Usecase::LOW_LATENCY_PLAYBACK ||
-        mTag == Usecase::ULL_PLAYBACK) {
+
+    if (mTag == Usecase::MMAP_PLAYBACK) {
+        // flush is stop for mmap
+        return stopMMAP();
+    }
+
+    if (!mHwFlushSupported) {
         LOG(VERBOSE) << __func__ << mLogPrefix << " unsupported operation!!, Hence ignored";
         return ::android::OK;
     }
@@ -340,7 +338,15 @@ ndk::ScopedAStatus StreamOutPrimary::configureMMapStream(int32_t* fd, int64_t* b
         LOG(WARNING) << __func__ << mLogPrefix << ": stream is not configured ";
         return ::android::OK;
     }
+    if (mTag == Usecase::MMAP_PLAYBACK) {
+        // pause is stop for mmap
+        return stopMMAP();
+    }
 
+    if (!mHwPauseSupported) {
+        LOG(VERBOSE) << __func__ << mLogPrefix << " unsupported operation!!, Hence ignored";
+        return ::android::OK;
+    }
     // AAUdio/mmap triggres stop for pause, so we can ignore here
     if (mTag == Usecase::LOW_LATENCY_PLAYBACK || mTag == Usecase::ULL_PLAYBACK ||
                        mTag == Usecase::MMAP_PLAYBACK ) {
@@ -379,7 +385,11 @@ void StreamOutPrimary::resume() {
     }
 
     if (mTag == Usecase::MMAP_PLAYBACK) {
-        return ::android::OK;
+       if (AudioExtension::getInstance().out_power_policy == POWER_POLICY_STATUS_OFFLINE) {
+            return stopMMAP();
+       } else {
+            return ::android::OK;
+       }
     }
 
     shutdown_I();
@@ -400,16 +410,8 @@ void StreamOutPrimary::resume() {
         LOG(ERROR) << "POWER POLICY OFFLINE please try again\n";
         return -EINVAL;
     }
-    if (mTag == Usecase::MMAP_PLAYBACK && !mIsMMapStarted) {
-        if (int32_t ret = ::pal_stream_start(this->mPalHandle); ret) {
-            LOG(ERROR) << __func__ << mLogPrefix
-                       << " pal stream start failed, ret:" << std::to_string(ret);
-            ::pal_stream_close(mPalHandle);
-            mPalHandle = nullptr;
-            return -EINVAL;
-        }
-        mIsMMapStarted = true;
-        return ::android::OK;
+    if (mTag == Usecase::MMAP_PLAYBACK) {
+        return startMMAP();
     }
 
     if (mPalHandle && mIsPaused) {
@@ -455,14 +457,14 @@ void StreamOutPrimary::resume() {
             compressPlayback.configureGapless(mPalHandle);
         }
     }
-
+    if (frameCount == 0) {
+        *actualFrameCount = 0;
+        return burstZero();
+    }
     pal_buffer palBuffer{};
     palBuffer.buffer = static_cast<uint8_t*>(buffer);
     palBuffer.size = frameCount * mFrameSizeBytes;
-    if (palBuffer.size == 0) {
-        // resume comes with 0 frameCount
-        return ::android::OK;
-    }
+
     ssize_t bytesWritten;
     if (mBufferFormatConverter.has_value()) {
         bytesWritten = convertBufferAndWrite(buffer, frameCount);
@@ -1015,6 +1017,10 @@ size_t StreamOutPrimary::getPlatformDelay() const noexcept {
 }
 
 void StreamOutPrimary::configure() {
+    if(hasOutputMMapFlag(mMixPortConfig.flags.value())){
+        // this API doesn't handle for MMAP
+        return;
+    }
     const auto startTime = std::chrono::steady_clock::now();
     std::unique_ptr<pal_channel_info> palNonHapticChannelInfo;
     std::unique_ptr<pal_channel_info> palHapticChannelInfo;
@@ -1367,6 +1373,14 @@ ndk::ScopedAStatus StreamOutPrimary::setLatencyMode(
 }
 
 void StreamOutPrimary::shutdown_I() {
+    if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK) {
+        std::get<CompressPlayback>(mExt).setAndConfigureCodecInfo(nullptr);
+    } else if (mTag == Usecase::MMAP_PLAYBACK) {
+        std::get<MMapPlayback>(mExt).setPalHandle(nullptr);
+    }
+
+    if (karaoke) mAudExt.mKarokeExtension->karaoke_stop();
+
     if (mPalHandle != nullptr) {
         if (getAddress() == MEDIA_BUS)
         {
@@ -1388,14 +1402,7 @@ void StreamOutPrimary::shutdown_I() {
         mHapticsBufSize = 0;
     }
 
-    if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK) {
-        std::get<CompressPlayback>(mExt).setAndConfigureCodecInfo(nullptr);
-    }
-
-    if (karaoke) mAudExt.mKarokeExtension->karaoke_stop();
-
     mUseCachedVolume = false;
-    mIsMMapStarted = false;
     mIsPaused = false;
     mPalHandle = nullptr;
     mHapticsPalHandle = nullptr;
@@ -1507,6 +1514,31 @@ int64_t StreamOutPrimary::GetRenderLatency(std::string address) {
         default:
             return 0;
     }
+}
+::android::status_t StreamOutPrimary::burstZero() {
+    LOG(VERBOSE) << __func__ << mLogPrefix;
+    if (mTag == Usecase::MMAP_PLAYBACK) {
+        return startMMAP();
+    }
+    return ::android::OK;
+}
+
+::android::status_t StreamOutPrimary::startMMAP() {
+    auto& mmap = std::get<MMapPlayback>(mExt);
+    if (auto ret = mmap.start(); ret) {
+        LOG(ERROR) << __func__ << mLogPrefix << ": failed";
+        return ret;
+    }
+    return ::android::OK;
+}
+
+::android::status_t StreamOutPrimary::stopMMAP() {
+    auto& mmap = std::get<MMapPlayback>(mExt);
+    if (auto ret = mmap.stop(); ret) {
+        LOG(ERROR) << __func__ << mLogPrefix << ": failed";
+        return ret;
+    }
+    return ::android::OK;
 }
 
 } // namespace qti::audio::core
