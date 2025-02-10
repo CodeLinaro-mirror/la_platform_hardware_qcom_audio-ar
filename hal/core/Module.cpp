@@ -16,7 +16,7 @@
 
 /*
  * ​​​​​Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -1267,6 +1267,10 @@ ndk::ScopedAStatus Module::setAudioPortConfig(const AudioPortConfig& in_requeste
         configs.push_back(*out_suggested);
         *_aidl_return = true;
         auto portName = portNameFromPortConfigIds(out_suggested->id);
+        if (hasInputHotwordFlag(in_requested.flags.value())) {
+            auto& platform = Platform::getInstance();
+            platform.updateHotwordPortConfig(*out_suggested);
+        }
         LOG(DEBUG) << __func__ << ": created new port config for " << portName << " "
                    << out_suggested->toString();
     } else if (existing != configs.end() && requestedIsValid) {

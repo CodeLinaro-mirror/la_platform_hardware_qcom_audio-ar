@@ -16,7 +16,7 @@
 
 /*
  * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -152,6 +152,8 @@ bool hasOutputDeepBufferFlag(const ::aidl::android::media::audio::common::AudioI
 
 bool hasOutputCompressOffloadFlag(
         const ::aidl::android::media::audio::common::AudioIoFlags&) noexcept;
+
+bool hasInputHotwordFlag(const ::aidl::android::media::audio::common::AudioIoFlags&) noexcept;
 
 std::optional<aidl::android::media::audio::common::AudioSource> getAudioSource(
         const ::aidl::android::media::audio::common::AudioPortConfig&) noexcept;

@@ -16,7 +16,7 @@
 
 /*
  * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -24,7 +24,11 @@
 
 #define LOG_TAG "AHAL_ModulePrimary_QTI"
 #include <android-base/logging.h>
+#include <android-base/strings.h>
 #include <cutils/str_parms.h>
+
+#include <mediautils/MemoryLeakTrackUtil.h>
+#include <memunreachable/memunreachable.h>
 
 #include <aidl/qti/audio/core/VString.h>
 #include <qti-audio-core/Bluetooth.h>
@@ -36,7 +40,6 @@
 #include <qti-audio-core/StreamStub.h>
 #include <qti-audio-core/Telephony.h>
 #include <qti-audio-core/Utils.h>
-
 using aidl::android::hardware::audio::common::SinkMetadata;
 using aidl::android::hardware::audio::common::SourceMetadata;
 using aidl::android::media::audio::common::AudioOffloadInfo;
@@ -60,6 +63,8 @@ using ::aidl::qti::audio::core::VString;
 using ::aidl::android::hardware::audio::core::IBluetooth;
 using ::aidl::android::hardware::audio::core::IBluetoothA2dp;
 using ::aidl::android::hardware::audio::core::IBluetoothLe;
+
+using ::android::base::EqualsIgnoreCase;
 
 namespace qti::audio::core {
 
@@ -119,13 +124,44 @@ binder_status_t ModulePrimary::dump(int fd, const char** args, uint32_t numArgs)
         LOG(ERROR) << ": fd:" << fd << " dump error";
         return -EINVAL;
     }
+
     auto dumpData = toStringInternal();
     auto b = ::write(fd, dumpData.c_str(), dumpData.size());
     if (b != static_cast<decltype(b)>(dumpData.size())) {
         LOG(ERROR) << __func__ << " write error in dump";
         return -EIO;
     }
-    LOG(INFO) << __func__ << " :success";
+
+    if (numArgs > 0) {
+        bool dumpUnreachable = false;
+        bool dumpMemory = false;
+
+        for (uint32_t i = 0; i < numArgs; i++) {
+            std::string option = std::string(args[i]);
+            if (EqualsIgnoreCase(option, "--memory")) {
+                dumpUnreachable = true;
+                dumpMemory = true;
+            } else if (EqualsIgnoreCase(option, "-m")) {
+                dumpMemory = true;
+            } else if ((EqualsIgnoreCase(option, "--unreachable"))) {
+                dumpUnreachable = true;
+            }
+        }
+
+        if (dumpMemory) {
+            dprintf(fd, "\nDumping memory:\n");
+            std::string s = android::dumpMemoryAddresses(100 /* limit */);
+            write(fd, s.c_str(), s.size());
+        }
+
+        if (dumpUnreachable) {
+            dprintf(fd, "\nDumping unreachable memory:\n");
+            std::string s =
+                    android::GetUnreachableMemoryString(true /* contents */, 100 /* limit */);
+            write(fd, s.c_str(), s.size());
+        }
+    }
+    LOG(VERBOSE) << __func__ << " :success";
     return 0;
 }
 

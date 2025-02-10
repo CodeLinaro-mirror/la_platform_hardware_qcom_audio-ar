@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -499,7 +499,9 @@ ndk::ScopedAStatus StreamInPrimary::updateMetadataCommon(const Metadata& metadat
         if (metadata.index() != mMetadata.index()) {
             LOG(FATAL) << __func__ << mLogPrefix << ": changing metadata variant is not allowed";
         }
+        StreamInPrimary::sinkMetadata_mutex_.lock();
         mMetadata = metadata;
+        StreamInPrimary::sinkMetadata_mutex_.unlock();
     }
     int callState = mPlatform.getCallState();
     int callMode = mPlatform.getCallMode();
@@ -550,7 +552,7 @@ int32_t StreamInPrimary::setAggregateSinkMetadata(bool voiceActive) {
         }
     }
     LOG(VERBOSE) << __func__ << mLogPrefix << " trackCount " << track_count_total <<
-                " streamSize " << inStreams.size();
+                " IN streams size " << inStreams.size();
     if (track_count_total == 0) {
         ModulePrimary::inListMutex.unlock();
         return 0;
@@ -615,11 +617,15 @@ ndk::ScopedAStatus StreamInPrimary::addEffect(
             mAECEnabled = true;
             applyEffects();
         }
+        isECEnabledCount++;
+        LOG(VERBOSE) << __func__ << mLogPrefix << " isECEnabledCount:" << isECEnabledCount;
     } else if (typeUUID == getEffectTypeUuidNoiseSuppression()) {
         if (!mNSEnabled) {
             mNSEnabled = true;
             applyEffects();
         }
+        isNSEnabledCount++;
+        LOG(VERBOSE) << __func__ << mLogPrefix << " isNSEnabledCount:" << isNSEnabledCount;
     }
 
     return ndk::ScopedAStatus::ok();
@@ -640,12 +646,18 @@ ndk::ScopedAStatus StreamInPrimary::removeEffect(
     const auto& typeUUID = desc.common.id.type;
 
     if (typeUUID == getEffectTypeUuidAcousticEchoCanceler()) {
-        if (mAECEnabled) {
+        isECEnabledCount--;
+        LOG(VERBOSE) << __func__ << mLogPrefix << " isECEnabledCount:" << isECEnabledCount;
+        if (mAECEnabled && !isECEnabledCount) {
+            LOG(VERBOSE) << __func__ << mLogPrefix << " removing EC effect";
             mAECEnabled = false;
             applyEffects();
         }
     } else if (typeUUID == getEffectTypeUuidNoiseSuppression()) {
-        if (mNSEnabled) {
+        isNSEnabledCount--;
+        LOG(VERBOSE) << __func__ << mLogPrefix << " isNSEnabledCount:" << isNSEnabledCount;
+        if (mNSEnabled && !isNSEnabledCount) {
+            LOG(VERBOSE) << __func__ << mLogPrefix << " removing NS effect";
             mNSEnabled = false;
             applyEffects();
         }

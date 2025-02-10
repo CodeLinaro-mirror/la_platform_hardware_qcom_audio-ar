@@ -82,7 +82,9 @@ LOCAL_SHARED_LIBRARIES := \
     libar-pal \
     libaudioserviceexampleimpl \
     libaudioplatformconverter.qti \
-    qti-audio-types-aidl-V1-ndk
+    qti-audio-types-aidl-V1-ndk \
+    libmemunreachable \
+    libmediautils_vendor
 
 include $(BUILD_SHARED_LIBRARY)
 

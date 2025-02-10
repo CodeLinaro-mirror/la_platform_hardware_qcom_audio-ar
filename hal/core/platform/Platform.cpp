@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -41,6 +41,7 @@ using ::aidl::android::media::audio::common::AudioPortDeviceExt;
 using ::aidl::android::media::audio::common::AudioPortExt;
 using ::aidl::android::media::audio::common::AudioProfile;
 using ::aidl::android::media::audio::common::PcmType;
+using ::aidl::android::media::audio::common::Int;
 
 using ::aidl::android::hardware::audio::core::IModule;
 using aidl::android::media::audio::common::MicrophoneDynamicInfo;
@@ -1320,6 +1321,46 @@ void Platform::configurePalDevices(
         (isHdrArmEnable) || (isHdrSpfEnable && (isSourceCamCorder || isMic))) {
         std::for_each(palDevices.begin(), palDevices.end(),
                       [&](auto& palDevice) { this->setHdrOnPalDevice(&palDevice); });
+    }
+}
+
+void Platform::updateHotwordPortConfig(
+        ::aidl::android::media::audio::common::AudioPortConfig& portConfig) {
+
+    // update media format for hotword input in case it is different with requested one
+    if (portConfig.ext.getTag() == AudioPortExt::Tag::mix) {
+        auto ioHandle = portConfig.ext.get<AudioPortExt::Tag::mix>().handle;
+        pal_param_st_capture_info_t stCaptureInfo{0, nullptr};
+        size_t payloadSize = 0;
+
+        stCaptureInfo.capture_handle = ioHandle;
+        int32_t ret = ::pal_get_param(
+            PAL_PARAM_ID_ST_CAPTURE_INFO, (void**)&stCaptureInfo, &payloadSize, nullptr);
+        if (ret || !stCaptureInfo.pal_handle) {
+            LOG(DEBUG) << __func__ << ": sound trigger handle not found, status " << ret;
+            return;
+        }
+        pal_param_payload *payload = nullptr;
+        struct pal_stream_attributes *attr = nullptr;
+        payload = (pal_param_payload *)calloc(1,
+            sizeof(pal_param_payload) + sizeof(struct pal_stream_attributes));
+        if (!payload) {
+            LOG(ERROR) << __func__ << " Failed to allocate memory for stream attributes";
+            return;
+        }
+        payload->payload_size = sizeof(struct pal_stream_attributes);
+        ret = ::pal_stream_get_param(
+            stCaptureInfo.pal_handle, PAL_PARAM_ID_STREAM_ATTRIBUTES, &payload);
+        if (ret) {
+            LOG(ERROR) << __func__ << " Failed to get pal stream attributes";
+        } else {
+            attr = (struct pal_stream_attributes *)payload->payload;
+            portConfig.sampleRate =
+                Int{static_cast<int32_t>(attr->in_media_config.sample_rate)};
+            portConfig.channelMask = getChannelLayoutMaskFromChannelCount(
+                attr->in_media_config.ch_info.channels, true);
+        }
+        free(payload);
     }
 }
 

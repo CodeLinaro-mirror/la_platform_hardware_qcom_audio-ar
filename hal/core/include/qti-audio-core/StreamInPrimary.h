@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -112,6 +112,8 @@ class StreamInPrimary : public StreamIn, public StreamCommonImpl {
     bool mNSEnabled = false;
     bool mEffectsApplied = true;
     std::string mLogPrefix = "";
+    int32_t isECEnabledCount = 0;
+    int32_t isNSEnabledCount = 0;
 };
 
 } // namespace qti::audio::core
