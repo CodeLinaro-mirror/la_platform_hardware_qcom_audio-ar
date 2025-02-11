@@ -13,7 +13,7 @@ endif
 
 ifeq ($(AUDIO_AMPERE_EFFECTS),true)
 CUSTOM_AMPERE_HARDWARE_AUDIO_EFFECT := ampere.hardware.audio.effect-V1-ndk
-MM_AUDIO += libampereeffects
+AUDIO_GENERIC_MODULES += libampereeffects
 endif
 # to have similar to cc_defaults in make files
 EFFECTS_DEFAULTS_SHARED_LIBRARIES := \

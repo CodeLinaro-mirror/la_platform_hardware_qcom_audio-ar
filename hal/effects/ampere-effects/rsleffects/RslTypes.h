@@ -9,6 +9,9 @@
 #include <aidl/android/hardware/audio/effect/BnEffect.h>
 #include "effect-impl/EffectTypes.h"
 #include "effect-impl/EffectUUID.h"
+#include <aidl/ampere/hardware/audio/effect/Ambiance.h>
+#include <aidl/ampere/hardware/audio/effect/Sdvc.h>
+#include <aidl/ampere/hardware/audio/effect/SteadyVolume.h>
 
 using aidl::android::hardware::audio::effect::Descriptor;
 using aidl::android::hardware::audio::effect::Capability;
