@@ -57,6 +57,7 @@ MM_AUDIO += libFlacSwDec
 MM_AUDIO += libbatterylistener
 MM_AUDIO += audioflacapp
 MM_AUDIO += liblx-osal
+MM_AUDIO += libautohal_pal
 
 #AOSP effects
 MM_AUDIO += libbundleaidl
