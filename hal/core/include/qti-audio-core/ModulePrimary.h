@@ -29,6 +29,7 @@
 #ifdef ENABLE_QCOM_AMPERE_AUDIO
 #include <aidl/ampere/hardware/interfaces/automotive/audioparameterparser/RadioVendorParameterExt.h>
 #include <aidl/ampere/hardware/interfaces/automotive/audioparameterparser/CarPlayVendorParameterExt.h>
+#include <aidl/ampere/hardware/interfaces/automotive/audioparameterparser/AudioControlVendorParameterExt.h>
 #endif
 
 #ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
@@ -153,8 +154,11 @@ class ModulePrimary final : public Module {
         FTM, // Factory Test Mode
         AUDIOEXTENSION,
         HAPTICS,
-        CARPLAY,
+#ifdef ENABLE_QCOM_AMPERE_AUDIO
         AUDIOSOURCE,
+        CARPLAY,
+        AUDIOCONTROL,
+#endif
     };
 
     // For set parameters
@@ -214,6 +218,9 @@ class ModulePrimary final : public Module {
     // SetHandler For Carplay
     void onSetCarplayParameters(
             const std::vector<::aidl::android::hardware::audio::core::VendorParameter>&);
+    // SetHandler For AudioControl
+    void onSetAudioControlParameters(
+            const std::vector<::aidl::android::hardware::audio::core::VendorParameter>&);
 #endif
 
     std::vector<::aidl::android::hardware::audio::core::VendorParameter> processGetVendorParameters(
@@ -244,6 +251,9 @@ class ModulePrimary final : public Module {
     std::vector<::aidl::android::hardware::audio::core::VendorParameter> onGetCarplayParams(
             const std::vector<std::string>&);
     std::string carplayParamConverter(::aidl::ampere::hardware::interfaces::automotive::audioparameterparser::CarPlayVendorParameterExt::Rate carplayparams);
+    // GetHandler for AudioControl
+    std::vector<::aidl::android::hardware::audio::core::VendorParameter> onGetAudioControlParams(
+            const std::vector<std::string>&);
 #endif
   protected:
     bool mVolumeGaincheck=false;
@@ -259,6 +269,8 @@ class ModulePrimary final : public Module {
 
   private:
 #ifdef ENABLE_QCOM_AMPERE_AUDIO
+    ::android::status_t setAudioControlParameter(
+            const ::aidl::android::hardware::audio::core::VendorParameter&);
     ::android::status_t setCarPlayParameter(
             const ::aidl::android::hardware::audio::core::VendorParameter&);
 #endif
