@@ -1,5 +1,5 @@
 # Audio product definitions
-include vendor/qcom/opensource/audio-hal/primary-hal/configs/sun/audio-modules.mk
+include vendor/qcom/opensource/audio-hal/primary-hal/configs/vienna/audio-modules.mk
 PRODUCT_PACKAGES += $(AUDIO_MODULES)
 #AUDIO_FEATURE_FLAGS
 ifeq ($(TARGET_USES_QMAA_OVERRIDE_AUDIO), false)
@@ -26,10 +26,6 @@ AUDIO_FEATURE_ENABLED_SVA_MULTI_STAGE := true
 BUILD_AUDIO_TECHPACK_SOURCE := true
 AUDIO_FEATURE_ENABLED_MCS := true
 
-ifneq ($(strip $(TARGET_USES_RRO)), true)
-#Audio Specific device overlays
-DEVICE_PACKAGE_OVERLAYS += vendor/qcom/opensource/audio-hal/primary-hal/configs/common/overlay
-endif
 PRODUCT_PACKAGES += fai__2.7.5_0.0__3.0.0_0.0__3.1.1.0_0.0__3.2.0_0.0__eai_2.7_enpu_v3.pmd
 PRODUCT_PACKAGES += fai__4.8.2_0.0__3.0.0_0.0__3.1.1.0_0.0__3.2.0_0.0__eai_2.7_enpu_v3.pmd
 PRODUCT_PACKAGES += fai__2.6.3_0.0__3.0.0_0.0__3.1.1.0_0.0__3.2.0_0.0__eai_2.7_enpu_v3.pmd
@@ -73,12 +69,12 @@ PRODUCT_PACKAGES += fai__8.0.3_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_4.6_enp
 PRODUCT_PACKAGES += fai__3.0.0_0.0__eai_4.6_enpuv5.pmd
 
 # Audio configuration xml's related to Lanai
-QCV_FAMILY_SKUS := sun
-DEVICE_SKU := sun
-UV_WRAPPER2 := true
+QCV_FAMILY_SKUS := vienna
+DEVICE_SKU := vienna
+UV_WRAPPER2 := false
 
-CONFIG_PAL_SRC_DIR := vendor/qcom/opensource/pal/configs/sun
-CONFIG_HAL_SRC_DIR := vendor/qcom/opensource/audio-hal/primary-hal/configs/sun
+CONFIG_PAL_SRC_DIR := vendor/qcom/opensource/pal/configs/vienna
+CONFIG_HAL_SRC_DIR := vendor/qcom/opensource/audio-hal/primary-hal/configs/vienna
 CONFIG_SKU_OUT_DIR := $(TARGET_COPY_OUT_VENDOR)/etc/audio/sku_$(DEVICE_SKU)
 
 PRODUCT_COPY_FILES += \
@@ -254,5 +250,5 @@ vendor.audio.feature.dmabuf.cma.memory.enable=false
 AUDIO_FEATURE_ENABLED_GKI := true
 BUILD_AUDIO_TECHPACK_SOURCE := true
 
-include vendor/qcom/opensource/audio-hal/primary-hal/configs/sun/audio-properties.mk
+include vendor/qcom/opensource/audio-hal/primary-hal/configs/vienna/audio-properties.mk
 
