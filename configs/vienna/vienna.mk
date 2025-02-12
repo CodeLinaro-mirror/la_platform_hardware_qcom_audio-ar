@@ -83,15 +83,8 @@ PRODUCT_COPY_FILES += \
     $(CONFIG_HAL_SRC_DIR)/audio_effects_config.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects_config.xml \
     $(CONFIG_HAL_SRC_DIR)/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/microphone_characteristics.xml \
     $(CONFIG_PAL_SRC_DIR)/card-defs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/card-defs.xml \
-    $(CONFIG_PAL_SRC_DIR)/mixer_paths_sun_qrd.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_sun_qrd.xml \
-    $(CONFIG_PAL_SRC_DIR)/mixer_paths_sun_mtp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_sun_mtp.xml \
-    $(CONFIG_PAL_SRC_DIR)/mixer_paths_sun_mtp_wsa883x_qmp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_sun_mtp_wsa883x_qmp.xml \
-    $(CONFIG_PAL_SRC_DIR)/mixer_paths_sun_cdp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_sun_cdp.xml \
-    $(CONFIG_PAL_SRC_DIR)/mixer_paths_sun_qrd_sku2.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_sun_qrd_sku2.xml \
-    $(CONFIG_PAL_SRC_DIR)/resourcemanager_sun_qrd.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_sun_qrd.xml \
-    $(CONFIG_PAL_SRC_DIR)/resourcemanager_sun_mtp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_sun_mtp.xml \
-    $(CONFIG_PAL_SRC_DIR)/resourcemanager_sun_cdp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_sun_cdp.xml \
-    $(CONFIG_PAL_SRC_DIR)/resourcemanager_sun_qrd_sku2.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_sun_qrd_sku2.xml \
+    $(CONFIG_PAL_SRC_DIR)/mixer_paths_vienna.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_vienna.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_vienna.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_vienna.xml \
     $(CONFIG_PAL_SRC_DIR)/usecaseKvManager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usecaseKvManager.xml \
     $(CONFIG_PAL_SRC_DIR)/Hapticsconfig.xml:$(TARGET_COPY_OUT_VENDOR)/etc/Hapticsconfig.xml \
     $(CONFIG_PAL_SRC_DIR)/plugin_manager.xml:$(CONFIG_SKU_OUT_DIR)/plugin_manager.xml \
