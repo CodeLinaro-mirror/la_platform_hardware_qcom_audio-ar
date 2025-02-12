@@ -229,11 +229,14 @@ void StreamInPrimaryOEM::shutdown() {
 
 void StreamInPrimaryOEM::configure() {
     LOG(INFO) << __func__ << mLogPrefixOEM;
-    int ret = 0;
+    int ret = 0, vocoder_rate, conn_type;
     ecnrSampleRate = mMixPortConfig.sampleRate.value().value;
     ecnrPeriodSize = mPlatform.getFrameCount(mMixPortConfig, mTag);
     mChannels = getChannelCount(mMixPortConfig.channelMask.value());
     bECNRprop_Enable = property_get_bool(ECNR_FEATURE_PROP, false);
+    vocoder_rate =  mAudExt.mHalExtension->get_vocoder_rate();
+    conn_type = mAudExt.mHalExtension->get_conn_type();
+    LOG(DEBUG) << __func__ << " Vocoder_samplerate : " << vocoder_rate << " connection_type : " << conn_type;
 
 #ifdef ECNR_HAL_TUNE
     int portid = ECNR_PORT_ID_VR_TX_2016;
@@ -256,7 +259,8 @@ void StreamInPrimaryOEM::configure() {
 
     auto bufConfig = getBufferConfigOEM();
     if (mAudExt.mHalExtension->audio_extn_getEnablement() && bECNRprop_Enable &&
-        ((strcmp(attr->bus_addr, "BUS_INPUT_3rdpartyvr0") == 0) || (mTag == Usecase::VOIP_RECORD))) {
+        ((strcmp(attr->bus_addr, "BUS_INPUT_3rdpartyvr0") == 0) || ((mTag == Usecase::VOIP_RECORD) &&
+        (vocoder_rate > 0 && conn_type >= 0)))) {
         bECNR_Enable = true;
         LOG(INFO) << __func__ << " bECNR_Enable " << bECNR_Enable;
         if (mTag == Usecase::VOIP_RECORD) {
@@ -272,7 +276,7 @@ void StreamInPrimaryOEM::configure() {
              portid = ECNR_PORT_ID_VR_TX_2016;
 #endif
         }
-        pECNR_ProcessData.scd_type = mAudExt.mHalExtension->audio_extn_getSCDtype(ecnrSampleRate, VOC_RATE_FB, pECNR_ProcessData.ecnr_type, CP_CONNECTION_USB, DIR_UL);
+        pECNR_ProcessData.scd_type = mAudExt.mHalExtension->audio_extn_getSCDtype(ecnrSampleRate, vocoder_rate, pECNR_ProcessData.ecnr_type, conn_type, DIR_UL);
         if (mAudExt.mHalExtension->audio_extn_getSCDdata(&pECNR_ProcessData)) {
             LOG(ERROR) << __func__ << mLogPrefixOEM << " failed to get scd information, disabling ecnr processing";
             bECNR_Enable = false;
@@ -426,7 +430,13 @@ void StreamInPrimaryOEM::shutdown_I() {
     StreamInPrimary::shutdown_I();
     LOG(INFO) << __func__ << mLogPrefixOEM << " Enter";
 
+    if (bECNR_Enable && (mTag == Usecase::VOIP_RECORD)) {
+        mAudExt.mHalExtension->set_vocoder_rate(INVALID);
+        mAudExt.mHalExtension->set_conn_type(INVALID);
+    }
     bECNR_Enable = false;
+
+
     if (ecnr_ecmx_buffer) {
         ecnr_ecmx_buffer.reset();
     }

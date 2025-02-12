@@ -43,6 +43,7 @@
 #include <include/extensions/auto_oem_extension.h>
 #include "PalApi.h"
 #include <include/extensions/AudioVehicleListener.h>
+#include <cmath> // For round function
 
 
 #include <aidl/android/hardware/automotive/vehicle/SubscribeOptions.h>
@@ -79,6 +80,11 @@
 #define INT_VALUE 4
 #define MIN_AUDIO_SOURCE_VALUE 0
 #define MAX_AUDIO_SOURCE_VALUE 3
+
+#define FADER_BALANCE_MIN_INPUT -1.0f
+#define FADER_BALANCE_MAX_INPUT 1.0f
+
+#define FADER_BALANCE_SCALE 5.0f
 
 #define PADDING_8BYTE_ALIGN(x)  ((((x) + 7) & 7) ^ 7)
 
@@ -340,11 +346,10 @@ int set_oem_audio_source_params(struct str_parms *parms) {
         update_audiosourcedata(&source_data);
     }
     else {
-        LOG(ERROR) << __func__ << ": invalid audio source type" ;
+        LOG(WARNING) << __func__ << ": invalid audio source type" ;
     }
     return ret;
 }
-
 int set_vehicle_speed(int32_t val)
 {
     LOG(DEBUG) << __func__ << ": Enter " ;
@@ -372,56 +377,7 @@ int set_fan_speed(int32_t val) {
     }
     return EXIT_SUCCESS;
 }
-void update_fan_speed_pal_param(struct param_type2_t *params) {
-    LOG(DEBUG) << ": Enter " << __func__;
-
-    struct pal_awx_param_t *pal_param = (struct pal_awx_param_t *)malloc(sizeof(struct pal_awx_param_t));
-
-    if (pal_param != NULL) {
-        pal_param->param_id = HVAC_FAN_SPEED_PARAM_ID;
-        pal_param->param_size = sizeof(param_type2_t);
-        pal_param->data = (void *)params;
-        LOG(DEBUG) << __func__ << ": Successfully created pal_param";
-        speed_set_param(pal_param);
-    }
-    else {
-        LOG(ERROR) << ": pal_param is null";
-        goto exit;
-    }
-
-exit:
-    if (pal_param) {
-        free(pal_param);
-    }
-
-    LOG(DEBUG) << __func__ << ": Exit ";
-}
-void update_vehicle_speed_pal_param(struct param_type2_t *params) {
-    LOG(DEBUG) << "Enter " << __func__;
-
-    struct pal_awx_param_t *pal_param = (struct pal_awx_param_t *)malloc(sizeof(struct pal_awx_param_t));
-
-    if (pal_param != NULL) {
-        pal_param->param_id = PERF_VEHICLE_SPEED_PARAM_ID;
-        pal_param->param_size = sizeof(param_type2_t);
-        pal_param->data = (void *)params;
-        LOG(DEBUG) << __func__ << ": Successfully created pal_param";
-        speed_set_param(pal_param);
-    }
-    else {
-        LOG(ERROR) << "pal_param is null";
-        goto exit;
-    }
-
-exit:
-    if (pal_param) {
-        free(pal_param);
-    }
-
-    LOG(DEBUG) << __func__ << ": Exit ";
-}
-
-void speed_set_param(struct pal_awx_param_t* pal_param) {
+int AWX_set_param_sync(struct pal_awx_param_t* pal_param) {
     LOG(DEBUG) << __func__ <<": Enter ";
     int status = 0;
     size_t padBytes = 0;
@@ -463,7 +419,7 @@ void speed_set_param(struct pal_awx_param_t* pal_param) {
         goto exit;
     }
 
-    LOG(DEBUG) << __func__ << " PARAM ID: " << std::hex << customPayload->paramId;
+    LOG(DEBUG) << __func__ << " PARAM ID: " << std::hex << customPayload->paramId <<"PARAM VALUE: " << pal_param->data;
 
     status = pal_gef_rw_param(PAL_PARAM_ID_UIEFFECT, (void *) pal_payload, payload_size, aud_source_effect_device, PAL_STREAM_PLAYBACK_BUS, GEF_PARAM_WRITE, NULL);
 
@@ -486,6 +442,201 @@ exit:
     data = nullptr;
 
     LOG(DEBUG) << __func__ << ": Exit";
+    return status;
+}
+
+void update_fan_speed_pal_param(struct param_type2_t *params) {
+    LOG(DEBUG) << ": Enter " << __func__;
+
+    struct pal_awx_param_t *pal_param = (struct pal_awx_param_t *)malloc(sizeof(struct pal_awx_param_t));
+    int ret;
+
+    if (params != NULL) {
+        if (pal_param != NULL) {
+            pal_param->param_id = HVAC_FAN_SPEED_PARAM_ID;
+            pal_param->param_size = sizeof(param_type2_t);
+            pal_param->data = (void *)params;
+            LOG(DEBUG) << __func__ << ": Successfully created pal_param";
+            ret = AWX_set_param_sync(pal_param);
+            if (ret != 0)
+            {
+                LOG(WARNING) << __func__ << "AWX_set_param_sync failed ret:"<<ret;
+            }
+        }
+        else {
+            LOG(ERROR) << ": pal_param is null";
+            goto exit;
+        }
+    }
+    else
+    {
+        LOG(ERROR) << ": input params is null";
+    }
+exit:
+    if (pal_param) {
+        free(pal_param);
+    }
+
+    LOG(DEBUG) << __func__ << ": Exit ";
+}
+
+void update_vehicle_speed_pal_param(struct param_type2_t *params) {
+    LOG(DEBUG) << "Enter " << __func__;
+
+    struct pal_awx_param_t *pal_param = (struct pal_awx_param_t *)malloc(sizeof(struct pal_awx_param_t));
+    int ret;
+
+    if (params != NULL) {
+        if (pal_param != NULL) {
+            pal_param->param_id = PERF_VEHICLE_SPEED_PARAM_ID;
+            pal_param->param_size = sizeof(param_type2_t);
+            pal_param->data = (void *)params;
+            LOG(DEBUG) << __func__ << ": Successfully created pal_param";
+            ret = AWX_set_param_sync(pal_param);
+
+            if (ret != 0)
+            {
+                LOG(WARNING) << __func__ << "AWX_set_param_sync failed ret:"<<ret;
+            }
+        }
+        else {
+            LOG(ERROR) << "pal_param is null";
+            goto exit;
+        }
+    }
+    else {
+        LOG(ERROR) << "Input Param is null";
+    }
+
+exit:
+    if (pal_param) {
+        free(pal_param);
+    }
+
+    LOG(DEBUG) << __func__ << ": Exit ";
+}
+
+int convertFloatToInt(float value) {
+    // Ensure the value is within the expected range
+    if (value < FADER_BALANCE_MIN_INPUT)
+    {
+        value = FADER_BALANCE_MIN_INPUT;
+    }
+    if (value > FADER_BALANCE_MAX_INPUT)
+    {
+        value = FADER_BALANCE_MAX_INPUT;
+    }
+
+    // Scale the value from [-1.0, 1.0] to [-5, 5]
+    float scaledValue = value * FADER_BALANCE_SCALE;
+
+    // Round to the nearest integer
+    int intValue = static_cast<int>(round(scaledValue));
+
+    return intValue;
+}
+
+int  set_type2_param(int paramID, int ParamValue)
+{
+    struct pal_awx_param_t *pal_param = (struct pal_awx_param_t *)malloc(sizeof(struct pal_awx_param_t));
+    struct param_type2_t type2params;
+    int ret = -EINVAL ;
+
+    LOG(DEBUG) << "Enter " << __func__;
+
+    if (pal_param != NULL) {
+        pal_param->param_id = paramID;
+        pal_param->param_size = sizeof(param_type2_t);
+        pal_param->data = (void *)&type2params;
+        type2params.value = ParamValue;
+        LOG(DEBUG) << __func__ << ": Successfully created pal_param";
+
+        // Set Param of type 2
+        ret = AWX_set_param_sync(pal_param);
+
+        if (ret != 0)
+        {
+            LOG(WARNING) << __func__ << "AWX_set_param_sync failed ret:"<<ret;
+        }
+    }
+    else {
+        LOG(ERROR) << "pal_param is null";
+        goto exit;
+    }
+
+exit:
+    if (pal_param) {
+        free(pal_param);
+    }
+
+    LOG(DEBUG) << __func__ << ": Exit ";
+    return ret;
+}
+
+
+int setGeometryParam(struct str_parms *parms)
+{
+    int ret = 0;
+
+    if (parms != NULL)
+    {
+        char value[256];
+
+        ret = str_parms_get_str(parms, "Fader", value, sizeof(value));
+
+        if (ret >= 0)
+        {
+
+            float valueinFloat;
+            char *endptr = NULL;
+
+            valueinFloat = strtof(value, &endptr);
+            if (endptr == value) {
+                LOG(ERROR) << "No digits were found\n";
+            } else {
+                LOG(ERROR) << "The float value is:" << valueinFloat;
+            }
+
+            int awxValue = convertFloatToInt(valueinFloat);
+            int paramID = FADER_PARAM_ID;
+            LOG(DEBUG) << "Converted  Value " << awxValue << "ParamId " << paramID;
+            ret = set_type2_param(paramID,awxValue);
+            if (ret != 0)
+            {
+                LOG(ERROR) << "set_type2_param Failed ret " <<ret;
+            }
+        }
+
+
+        ret = str_parms_get_str(parms, "Balance", value, sizeof(value));
+
+        if (ret >= 0) {
+            float valueinFloat;
+            char *endptr = NULL;
+            valueinFloat = strtof(value, &endptr);
+            if (endptr == value) {
+                LOG(ERROR) << "No digits were found\n";
+            } else {
+                LOG(ERROR) << "The float value is:" << valueinFloat;
+            }
+
+            int awxValue = convertFloatToInt(valueinFloat);
+            int paramID = BALANCE_PARAM_ID;
+            LOG(DEBUG) << "awx Value" << awxValue << "{aramId " << paramID;
+            ret = set_type2_param(paramID,awxValue);
+            if (ret != 0)
+            {
+                LOG(ERROR) << "set_type2_param Failed ret " <<ret;
+            }
+        }
+    }
+    else
+    {
+        LOG(ERROR) << "input Params are NULL\n";
+    }
+
+    return ret;
+
 }
 
 int oem_pal_param_update(const std::string& id) {
@@ -616,18 +767,29 @@ extern "C" __attribute__((visibility("default")))void oem_set_parameters(struct 
 
     int ret = 0;
     // AudioManager.setvendorparams()
-    if (parms != NULL) {
+    if (parms != NULL)
+    {
         ret = set_oem_audio_source_params(parms);
-    } else {
+
+        // if Source Params are found no need to check for Geometry
+        if (ret != 0)
+        {
+            ret = setGeometryParam(parms);
+        }
+    }
+    else
+    {
         LOG(ERROR) << "audio source params are null, unable to proceed ";
         goto exit;
     }
 
-    if (ret != 0) {
-        LOG(ERROR) << "unable set the audio source params with error" << ret;
+    if (ret != 0)
+    {
+        LOG(WARNING) << "unable set the OEM params with error" << ret;
         goto exit;
     }
-    else {
+    else
+    {
         LOG(DEBUG) << "set the audio source params done." << ret;
     }
 

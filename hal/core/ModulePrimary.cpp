@@ -28,11 +28,9 @@
 #include <cutils/str_parms.h>
 #include <android/binder_auto_utils.h>
 #include <android/binder_ibinder.h>
+#include <android/binder_manager.h>
 #include <error/Result.h>
 
-#ifdef ENABLE_QCOM_AMPERE_AUDIO
-#include <aidl/ampere/hardware/interfaces/automotive/audioparameterparser/RadioVendorParameterExt.h>
-#endif
 #include <aidl/qti/audio/core/VString.h>
 #include <qti-audio-core/Bluetooth.h>
 #include <qti-audio-core/ModulePrimary.h>
@@ -88,7 +86,10 @@ using ::aidl::android::hardware::audio::core::IBluetoothA2dp;
 using ::aidl::android::hardware::audio::core::IBluetoothLe;
 
 #ifdef ENABLE_QCOM_AMPERE_AUDIO
+using aidl::android::media::audio::common::Float;
+using aidl::ampere::hardware::interfaces::automotive::audioparameterparser::CarPlayVendorParameterExt;
 using aidl::ampere::hardware::interfaces::automotive::audioparameterparser::RadioVendorParameterExt;
+using aidl::ampere::hardware::interfaces::automotive::audioparameterparser::AudioControlVendorParameterExt;
 #endif
 
 
@@ -559,6 +560,8 @@ template <typename T>
 using ConversionResult = ::android::error::Result<T>;
 
 #define GENERATE_EXTRACT_PARAMETER_LIST_DEF(V)      \
+    V(CarPlay)                                      \
+    V(AudioControl)                                 \
     V(Radio)
 
 #define GENERATE_EXTRACT_PARAMETER_TEMPLATES(symbol)                                            \
@@ -581,6 +584,226 @@ GENERATE_EXTRACT_PARAMETER_LIST_DEF(GENERATE_EXTRACT_PARAMETER_TEMPLATES)
 
 }  // namespace
 
+void ModulePrimary::onSetCarplayParameters(const std::vector<VendorParameter>& params) {
+    for (const auto& param : params) {
+        if (setCarPlayParameter(param) != ::android::OK) {
+            LOG(ERROR) << __func__ << ": FAILED to extract value from " << param.id.c_str();
+        }
+    }
+}
+
+std::string ModulePrimary::carplayParamConverter(CarPlayVendorParameterExt::Rate carplayparams) {
+    std::string carplay_param;
+    switch (carplayparams)
+        {
+            case CarPlayVendorParameterExt::Rate::KHZ_8:
+                carplay_param = "8000" ;
+                break;
+            case CarPlayVendorParameterExt::Rate::KHZ_16:
+                carplay_param = "16000" ;
+                break;
+            case CarPlayVendorParameterExt::Rate::KHZ_24:
+                carplay_param = "24000" ;
+                break;
+            case CarPlayVendorParameterExt::Rate::KHZ_32:
+                carplay_param = "32000" ;
+                break;
+            case CarPlayVendorParameterExt::Rate::KHZ_48:
+                carplay_param = "48000" ;
+                break;
+            default:
+                carplay_param = "Invalid" ;
+        }
+        LOG(DEBUG) << __func__ <<" Updated carplay_param: "<<carplay_param;
+        return carplay_param;
+}
+
+::android::status_t ModulePrimary::setCarPlayParameter(const VendorParameter& param) {
+     struct str_parms* parms = NULL;
+    std::string kvpairs = "";
+    std::string keyvalue;
+    using Tag = CarPlayVendorParameterExt::Parameter::Tag;
+    if (param.id == CarPlayVendorParameterExt::CARPLAY_SAMPLERATE) {
+        std::string CarplaySampleRate;
+        auto p = extractParameter<CarPlayVendorParameterExt, Tag::sampleRate,
+                CarPlayVendorParameterExt::Rate>(param);
+        CarPlayVendorParameterExt::Rate aidlCpRate = VALUE_OR_RETURN_STATUS(p);
+        LOG(DEBUG) << __func__ << " CP Rate "<< toString(aidlCpRate);
+
+        CarplaySampleRate = carplayParamConverter(aidlCpRate);
+        LOG(DEBUG) << __func__ << " CP SampleRate "<<CarplaySampleRate;
+
+        keyvalue = param.id + "=" + CarplaySampleRate + ";";
+        kvpairs.append(keyvalue);
+        if (kvpairs.length() != keyvalue.length()) {
+            LOG(ERROR) << __func__ << ": invalid kvpairs length";
+            return ::android::BAD_VALUE;
+        }
+        LOG(DEBUG) << __func__ << " Key Value pairs: " << kvpairs;
+        if (!kvpairs.empty()) {
+            parms = str_parms_create_str(kvpairs.c_str());
+            if (!parms) {
+                return ::android::BAD_VALUE;
+            }
+            mAudExt.audio_extn_set_parameters(parms);
+        }
+    } else if (param.id == CarPlayVendorParameterExt::CARPLAY_VOCODER_SAMPLERATE) {
+        std::string VocoderSampleRate;
+        auto p = extractParameter<CarPlayVendorParameterExt, Tag::vocoderRate,
+                CarPlayVendorParameterExt::Rate>(param);
+        CarPlayVendorParameterExt::Rate aidlVocoderRate = VALUE_OR_RETURN_STATUS(p);
+        LOG(DEBUG) << __func__ << " CP Vocoder Rate "<< toString(aidlVocoderRate) ;
+
+        VocoderSampleRate = carplayParamConverter(aidlVocoderRate);
+        LOG(DEBUG) << __func__ << " CP Vocoder Sample Rate "<<VocoderSampleRate;
+
+        std::string keyvalue = param.id + "=" + VocoderSampleRate + ";";
+        kvpairs.append(keyvalue);
+        if (kvpairs.length() != keyvalue.length()) {
+            LOG(ERROR) << __func__ << ": invalid kvpairs length";
+            return ::android::BAD_VALUE;
+        }
+        LOG(DEBUG) << __func__ << " Key Value pairs: " << kvpairs;
+        if (!kvpairs.empty()) {
+            parms = str_parms_create_str(kvpairs.c_str());
+            if (!parms) {
+                return ::android::BAD_VALUE;
+            }
+            mAudExt.audio_extn_set_parameters(parms);
+        }
+    } else if (param.id == CarPlayVendorParameterExt::CARPLAY_TYPE) {
+        auto p = extractParameter<CarPlayVendorParameterExt, Tag::type,
+                CarPlayVendorParameterExt::Type>(param);
+        CarPlayVendorParameterExt::Type aidlType = VALUE_OR_RETURN_STATUS(p);
+        LOG(DEBUG) << __func__ << " CP Type "<< toString(aidlType);
+        keyvalue = param.id + "=" + toString(aidlType) + ";";
+        kvpairs.append(keyvalue);
+        if (kvpairs.length() != keyvalue.length()) {
+            LOG(ERROR) << __func__ << ": invalid kvpairs length";
+            return ::android::BAD_VALUE;
+        }
+        LOG(DEBUG) << __func__ << " Key Value pairs: " << kvpairs;
+        if (!kvpairs.empty()) {
+            parms = str_parms_create_str(kvpairs.c_str());
+            if (!parms) {
+                return ::android::BAD_VALUE;
+            }
+            mAudExt.audio_extn_set_parameters(parms);
+        }
+    } else if (param.id == CarPlayVendorParameterExt::CARPLAY_TRANSPORT) {
+        std:: string connection_type;
+        auto p = extractParameter<CarPlayVendorParameterExt, Tag::transport,
+                CarPlayVendorParameterExt::Transport>(param);
+        CarPlayVendorParameterExt::Transport aidlTransport = VALUE_OR_RETURN_STATUS(p);
+        LOG(DEBUG) << __func__ << " CP Transport "<< toString(aidlTransport);
+        switch(aidlTransport) {
+            case CarPlayVendorParameterExt::Transport::USB:
+                connection_type = "0";
+                break;
+            case CarPlayVendorParameterExt::Transport::WIFI:
+                connection_type = "1";
+                break;
+            default: connection_type = "Invalid";
+                break;
+        }
+        keyvalue = param.id + "=" + connection_type + ";";
+        kvpairs.append(keyvalue);
+        if (kvpairs.length() != keyvalue.length()) {
+            LOG(ERROR) << __func__ << ": invalid kvpairs length";
+            return ::android::BAD_VALUE;
+        }
+        LOG(DEBUG) << __func__ << " Key Value pairs: " << kvpairs;
+        if (!kvpairs.empty()) {
+            parms = str_parms_create_str(kvpairs.c_str());
+            if (!parms) {
+                return ::android::BAD_VALUE;
+            }
+            mAudExt.audio_extn_set_parameters(parms);
+        }
+    } else if (param.id == CarPlayVendorParameterExt::CARPLAY_DUCK) {
+        auto p = extractParameter<CarPlayVendorParameterExt, Tag::duckAudio,
+                CarPlayVendorParameterExt::DuckAudio>(param);
+        CarPlayVendorParameterExt::DuckAudio aidlDuckAudio = VALUE_OR_RETURN_STATUS(p);
+        if (aidlDuckAudio.command == CarPlayVendorParameterExt::DuckAudio::DuckCommand::NONE) {
+            return ::android::BAD_VALUE;
+        }
+        LOG(DEBUG) << __func__ << " CP Duck command "<< aidlDuckAudio.toString();
+    } else {
+        LOG(ERROR) << __func__ << ": unhandled parameter id " << param.id.c_str();
+        return ::android::BAD_VALUE;
+    }
+    return ::android::OK;
+}
+
+void ModulePrimary::onSetAudioControlParameters(const std::vector<::aidl::android::hardware::audio::core::VendorParameter>& params) {
+    for (const auto& param : params) {
+        if (setAudioControlParameter(param) != ::android::OK) {
+            LOG(ERROR) << __func__ << ": FAILED to extract value from " << param.id.c_str();
+        }
+    }
+}
+
+::android::status_t ModulePrimary::setAudioControlParameter(const ::aidl::android::hardware::audio::core::VendorParameter& param) {
+    LOG(DEBUG) << __func__  ;
+    if (param.id == AudioControlVendorParameterExt::BALANCE) {
+        float value = 0.0;
+        if (!extractParameter<Float>(param, &value)) {
+            LOG(ERROR) << __func__ << ": FAILED extract value from key " << param.id.c_str();
+            return ::android::BAD_VALUE;
+        }
+        else
+        {
+            struct str_parms* parms = NULL;
+            std::string kvpairs;
+            std::string keyvalue = param.id + "=" + std::to_string(value) + ";";
+            kvpairs.append(keyvalue);
+            if (kvpairs.length() != keyvalue.length()) {
+                LOG(ERROR) << __func__ << ": invalid kvpairs length";
+                return ::android::BAD_VALUE;
+            }
+            LOG(DEBUG) << __func__ << " Key Value pairs: " << kvpairs;
+            if (!kvpairs.empty()) {
+                parms = str_parms_create_str(kvpairs.c_str());
+                if (!parms) {
+                    return ::android::BAD_VALUE;
+                }
+                mAudExt.audio_extn_set_parameters(parms);
+            }
+        }
+        LOG(DEBUG) << __func__ << " Balance "<< value;
+    } else if (param.id == AudioControlVendorParameterExt::FADER) {
+        float value = 0.0;
+        if (!extractParameter<Float>(param, &value)) {
+            LOG(ERROR) << __func__ << ": FAILED extract value from key " << param.id.c_str();
+            return ::android::BAD_VALUE;
+        }
+        else
+        {
+            struct str_parms* parms = NULL;
+            std::string kvpairs ;
+            std::string keyvalue = param.id + "=" + std::to_string(value) + ";";
+            kvpairs.append(keyvalue);
+            if (kvpairs.length() != keyvalue.length()) {
+                LOG(ERROR) << __func__ << ": invalid kvpairs length";
+                return ::android::BAD_VALUE;
+            }
+            LOG(DEBUG) << __func__ << " Key Value pairs: " << kvpairs;
+            if (!kvpairs.empty()) {
+                parms = str_parms_create_str(kvpairs.c_str());
+                if (!parms) {
+                    return ::android::BAD_VALUE;
+                }
+                mAudExt.audio_extn_set_parameters(parms);
+            }
+        }
+        LOG(DEBUG) << __func__ << " Fader "<< value;
+    } else {
+        LOG(ERROR) << __func__ << ": unhandled parameter id " << param.id.c_str();
+        return ::android::BAD_VALUE;
+    }
+
+    return ::android::OK;
+}
 void ModulePrimary::onsetRadioVendorParameter(const std::vector<::aidl::android::hardware::audio::core::VendorParameter>& params) {
     for (const auto& param : params) {
         if (setRadioVendorParameter(param) != ::android::OK) {
@@ -973,6 +1196,12 @@ ModulePrimary::SetParameterToFeatureMap ModulePrimary::fillSetParameterToFeature
 #ifdef ENABLE_QCOM_AMPERE_AUDIO
 
                                  {RadioVendorParameterExt::AUDIO_SOURCE, Feature::AUDIOSOURCE},
+                                 {CarPlayVendorParameterExt::CARPLAY_TRANSPORT, Feature::CARPLAY},
+                                 {CarPlayVendorParameterExt::CARPLAY_TYPE, Feature::CARPLAY},
+                                 {CarPlayVendorParameterExt::CARPLAY_SAMPLERATE, Feature::CARPLAY},
+                                 {CarPlayVendorParameterExt::CARPLAY_VOCODER_SAMPLERATE, Feature::CARPLAY},
+                                 {AudioControlVendorParameterExt::BALANCE, Feature::AUDIOCONTROL},
+                                 {AudioControlVendorParameterExt::FADER, Feature::AUDIOCONTROL},
 #endif
     };
     return map;
@@ -989,6 +1218,9 @@ ModulePrimary::FeatureToSetHandlerMap ModulePrimary::fillFeatureToSetHandlerMap(
             {Feature::HAPTICS, &ModulePrimary::onSetHapticsParameters},
 #ifdef ENABLE_QCOM_AMPERE_AUDIO
             {Feature::AUDIOSOURCE, &ModulePrimary::onsetRadioVendorParameter},
+            {Feature::CARPLAY, &ModulePrimary::onSetCarplayParameters},
+            {Feature::AUDIOCONTROL, &ModulePrimary::onSetAudioControlParameters},
+
 
 #endif
     };
@@ -1075,6 +1307,41 @@ std::vector<VendorParameter> ModulePrimary::processGetVendorParameters(
     }
     return result;
 }
+
+#ifdef ENABLE_QCOM_AMPERE_AUDIO
+
+std::vector<VendorParameter> ModulePrimary::onGetCarplayParams(
+        const std::vector<std::string>& ids) {
+    bool allParametersKnown = true;
+    std::vector<VendorParameter> results{};
+    for (const auto& id : ids) {
+        if (id == CarPlayVendorParameterExt::CARPLAY_SAMPLERATE) {
+            VendorParameter returnParameter{.id = id};
+            auto ptr = std::make_shared<CarPlayVendorParameterExt>();
+            using Tag = CarPlayVendorParameterExt::Parameter::Tag;
+            ptr->value = CarPlayVendorParameterExt::Parameter::make<Tag::sampleRate>(
+                    CarPlayVendorParameterExt::Rate::KHZ_32);
+            returnParameter.ext.setParcelable(*ptr.get());
+            results.push_back(returnParameter);
+        } else if (id == CarPlayVendorParameterExt::CARPLAY_DUCK) {
+            VendorParameter returnParameter{.id = id};
+            auto ptr = std::make_shared<CarPlayVendorParameterExt>();
+            using Tag = CarPlayVendorParameterExt::Parameter::Tag;
+            ptr->value = CarPlayVendorParameterExt::Parameter::make<Tag::duckAudio>(
+                    CarPlayVendorParameterExt::DuckAudio::DuckCommand::DUCK, 150, 15);
+            returnParameter.ext.setParcelable(*ptr.get());
+            results.push_back(returnParameter);
+        } else {
+            allParametersKnown = false;
+            LOG(VERBOSE) << __func__ << ": unhandled parameter \"" << id << "\"";
+        }
+    }
+    if (!allParametersKnown) {
+        LOG(ERROR) << __func__ << ": unhandled parameter dispatched to CarPlay";
+    }
+    return results;
+}
+#endif
 
 std::vector<VendorParameter> ModulePrimary::onGetAudioExtnParams(
         const std::vector<std::string>& ids) {
@@ -1277,6 +1544,12 @@ ModulePrimary::GetParameterToFeatureMap ModulePrimary::fillGetParameterToFeature
                                  {Parameters::kFMStatus, Feature::AUDIOEXTENSION},
 #ifdef ENABLE_QCOM_AMPERE_AUDIO
                                  {RadioVendorParameterExt::AUDIO_SOURCE, Feature::AUDIOSOURCE},
+                                 {CarPlayVendorParameterExt::CARPLAY_TRANSPORT, Feature::CARPLAY},
+                                 {CarPlayVendorParameterExt::CARPLAY_TYPE, Feature::CARPLAY},
+                                 {CarPlayVendorParameterExt::CARPLAY_SAMPLERATE, Feature::CARPLAY},
+                                 {CarPlayVendorParameterExt::CARPLAY_VOCODER_SAMPLERATE, Feature::CARPLAY},
+                                 {CarPlayVendorParameterExt::CARPLAY_STATUS, Feature::CARPLAY},
+                                 {CarPlayVendorParameterExt::CARPLAY_DUCK, Feature::CARPLAY},
 #endif
     };
     return map;
@@ -1290,7 +1563,11 @@ ModulePrimary::FeatureToGetHandlerMap ModulePrimary::fillFeatureToGetHandlerMap(
                                {Feature::WFD, &ModulePrimary::onGetWFDParameters},
                                {Feature::FTM, &ModulePrimary::onGetFTMParameters},
                                {Feature::AUDIOEXTENSION, &ModulePrimary::onGetAudioExtnParams},
-                               {Feature::GENERIC, &ModulePrimary::onGetGenericParams}};
+                               {Feature::GENERIC, &ModulePrimary::onGetGenericParams},
+#ifdef ENABLE_QCOM_AMPERE_AUDIO
+                               {Feature::CARPLAY, &ModulePrimary::onGetCarplayParams},
+#endif
+    };
     return map;
 }
 

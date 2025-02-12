@@ -12,6 +12,8 @@
 
 namespace qti::audio::core {
 
+#define INVALID -1
+
 class StreamInPrimaryOEM : public StreamInPrimary{
   public:
 
