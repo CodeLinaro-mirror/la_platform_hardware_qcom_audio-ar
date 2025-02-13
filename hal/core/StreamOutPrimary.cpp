@@ -836,6 +836,7 @@ int32_t StreamOutPrimary::setAggregateSourceMetadata(bool voiceActive) {
             for (auto& item : srcMetadata.tracks) {
                 // check tracks size in this stream metadata not to exceed total count
                 if (totalTracks >= track_count_total) {
+                    LOG(WARNING) << __func__ << mLogPrefix << ": mismatch in total tracks for metadata allocation";
                     break;
                 }
 
