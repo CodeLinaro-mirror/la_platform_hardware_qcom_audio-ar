@@ -5,9 +5,6 @@ CONFIG_PAL_SRC_DIR := $(TOPDIR)$(BOARD_OPENSOURCE_DIR)/pal/configs/monaco
 CONFIG_HAL_SRC_DIR := $(TOPDIR)$(BOARD_OPENSOURCE_DIR)/audio-hal/primary-hal/configs/monaco
 CONFIG_HAL_COMMON_SRC_DIR := $(TOPDIR)$(BOARD_OPENSOURCE_DIR)/audio-hal/primary-hal/configs/common
 CONFIG_SKU_OUT_DIR := $(TARGET_COPY_OUT_VENDOR)/etc/audio/sku_$(DEVICE_SKU)
-# Audio product definitions
-include $(CONFIG_HAL_SRC_DIR)/audio-modules.mk
-PRODUCT_PACKAGES += $(AUDIO_MODULES)
 #AUDIO_FEATURE_FLAGS
 ifeq ($(TARGET_USES_QMAA_OVERRIDE_AUDIO), false)
 ifeq ($(TARGET_USES_QMAA),true)
@@ -115,6 +112,10 @@ PRODUCT_COPY_FILES += \
 endif
 PRODUCT_COPY_FILES += \
     $(CONFIG_HAL_SRC_DIR)/vendor_audio_interfaces.xml:$(CONFIG_SKU_OUT_DIR)/vendor_audio_interfaces.xml
+
+# Audio product definitions
+include $(CONFIG_HAL_SRC_DIR)/audio-modules.mk
+PRODUCT_PACKAGES += $(AUDIO_MODULES)
 
 # Low latency audio buffer size in frames
 PRODUCT_PROPERTY_OVERRIDES += \
