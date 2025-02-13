@@ -43,10 +43,10 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <mixPort name="alerts_fast" role="source" flags="FAST">
             <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
-        <mixPort name="front_passenger" role="source">
+        <mixPort name="front_passenger" role="source" flags="DEEP_BUFFER">
             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
-        <mixPort name="rear_seat" role="source">
+        <mixPort name="rear_seat" role="source" flags="DEEP_BUFFER">
             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
         <mixPort name="primary_out" role="source" flags="PRIMARY">
@@ -147,7 +147,6 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
                       defaultValueMB="0"
                       minRampMs="10"
                       maxRampMs="100"
-                      useForVolume="true"
                       stepValueMB="100"/>
             </gains>
         </devicePort>
@@ -160,7 +159,6 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
                       defaultValueMB="0"
                       minRampMs="10"
                       maxRampMs="100"
-                      useForVolume="true"
                       stepValueMB="100"/>
           </gains>
         </devicePort>
@@ -173,7 +171,6 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
                       defaultValueMB="0"
                       minRampMs="10"
                       maxRampMs="100"
-                      useForVolume="true"
                       stepValueMB="100"/>
             </gains>
         </devicePort>
@@ -186,7 +183,6 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
                       defaultValueMB="0"
                       minRampMs="10"
                       maxRampMs="100"
-                      useForVolume="true"
                       stepValueMB="100"/>
             </gains>
         </devicePort>
@@ -199,7 +195,6 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
                       defaultValueMB="0"
                       minRampMs="10"
                       maxRampMs="100"
-                      useForVolume="true"
                       stepValueMB="100"/>
           </gains>
       </devicePort>
@@ -212,7 +207,6 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
                       defaultValueMB="0"
                       minRampMs="10"
                       maxRampMs="100"
-                      useForVolume="true"
                       stepValueMB="100"/>
             </gains>
         </devicePort>
@@ -225,7 +219,6 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
                       defaultValueMB="0"
                       minRampMs="10"
                       maxRampMs="100"
-                      useForVolume="true"
                       stepValueMB="100"/>
             </gains>
         </devicePort>

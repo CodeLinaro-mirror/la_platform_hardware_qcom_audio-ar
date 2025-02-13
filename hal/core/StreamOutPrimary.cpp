@@ -73,6 +73,10 @@ StreamOutPrimary::StreamOutPrimary(StreamContext&& context, const SourceMetadata
         mExt.emplace<PhonePlayback>();
     } else if (mTag == Usecase::ALERTS_PLAYBACK) {
         mExt.emplace<AlertPlayback>();
+    } else if (mTag == Usecase::FRONT_PASSANGER_PLAYBACK ) {
+        mExt.emplace<FrontPassengerPlayback>();
+    } else if (mTag == Usecase::REAR_SEAT_PLAYBACK ) {
+        mExt.emplace<RearSeatPlayback>();
     } else if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK) {
         mExt.emplace<CompressPlayback>(offloadInfo.value(), this,
                                        mMixPortConfig);
@@ -117,6 +121,8 @@ bool StreamOutPrimary::isHwVolumeSupported() {
         case Usecase::SYS_NOTIFICATION_PLAYBACK:
         case Usecase::PHONE_PLAYBACK:
         case Usecase::LOW_LATENCY_PLAYBACK:
+        case Usecase::FRONT_PASSANGER_PLAYBACK:
+        case Usecase::REAR_SEAT_PLAYBACK:
             return true;
         default:
             break;
@@ -933,7 +939,28 @@ ndk::ScopedAStatus StreamOutPrimary::removeEffect(
 }
 
 // end of StreamCommonInterface Methods
+void StreamOutPrimary::updatePalDeviceForBusAddr(struct pal_device* devices, uint32_t numDevices,
+                               std::string busAddressString) {
+    if (!devices) {
+        LOG(ERROR) << __func__ << "invalid input paramter";
+        return;
+    }
+    LOG(DEBUG) << "device: " << devices << "num devices: "<< numDevices;
+    std::unordered_map<std::string, pal_device_id_t> busAddressMap = {
+            {"BUS08_FRONT_PASSENGER", PAL_DEVICE_OUT_A2B_SPKR},
+            {"BUS16_REAR_SEAT", PAL_DEVICE_OUT_A2B2_SPKR}};
 
+    for (uint32_t devIdx = 0; devIdx < numDevices; devIdx++) {
+        auto it = busAddressMap.find(busAddressString);
+        if (it != busAddressMap.end()) {
+            devices[devIdx].id = it->second;
+        } else {
+            LOG(ERROR) << __func__ << "unknown bus address: " << busAddressString;
+            return;  // or some other default value
+        }
+    }
+    return;
+}
 size_t StreamOutPrimary::getPlatformDelay() const noexcept {
     return 0;
 }
@@ -974,7 +1001,7 @@ void StreamOutPrimary::configure() {
     attr->bus_addr = "";
     if (!mConnectedDevices.empty()) {
          std::string deviceAddress =  mConnectedDevices[0].address.get<AudioDeviceAddress::Tag::id>();
-         LOG(INFO) << __func__ << "configure(): deviceAddress " << deviceAddress;
+         LOG(INFO) << __func__ << " configure(): deviceAddress " << deviceAddress;
          busAddr = deviceAddress;
          bool isBusType = (std::string::npos != deviceAddress.find("BUS")) ? true : false;
          if (isBusType){
@@ -1006,6 +1033,10 @@ void StreamOutPrimary::configure() {
     } else if (mTag == Usecase::ALERTS_PLAYBACK) {
         attr->type = PAL_STREAM_PLAYBACK_BUS;
     } else if (mTag == Usecase::PHONE_PLAYBACK) {
+        attr->type = PAL_STREAM_PLAYBACK_BUS;
+    } else if (mTag == Usecase::FRONT_PASSANGER_PLAYBACK) {
+        attr->type = PAL_STREAM_PLAYBACK_BUS;
+    } else if (mTag == Usecase::REAR_SEAT_PLAYBACK) {
         attr->type = PAL_STREAM_PLAYBACK_BUS;
     } else if (mTag == Usecase::PCM_OFFLOAD_PLAYBACK) {
         attr->type = PAL_STREAM_PCM_OFFLOAD;
@@ -1045,7 +1076,9 @@ void StreamOutPrimary::configure() {
         LOG(ERROR) << __func__ << mLogPrefix << " no connected devices on stream!!";
         return;
     }
-
+    LOG(DEBUG) << __func__ << "pal device id: " << (palDevices.data())->id;
+    updatePalDeviceForBusAddr(palDevices.data(), palDevices.size(), busAddr);
+    LOG(DEBUG) << "updatePalDeviceForBusAddr - pal device id: " << (palDevices.data())->id;
     uint64_t cookie = reinterpret_cast<uint64_t>(this);
     pal_stream_callback palFn = nullptr;
     if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK) {

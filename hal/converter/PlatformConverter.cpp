@@ -399,6 +399,7 @@ pal_device_id_t PlatformConverter::getPalDeviceId(
         // no device found hence return 0;
         return PAL_DEVICE_OUT_MIN;
     }
+    LOG(DEBUG) << __func__ << "returning pal_device_id_t : " << element->second;
     return element->second;
 }
 
@@ -428,6 +429,12 @@ outputFlagsStreamtypeMap populatemOutputFlagsStreamtypeMap() {
     constexpr auto phonePlaybackFlags =
             static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::FAST));
     result[phonePlaybackFlags] = PAL_STREAM_PLAYBACK_BUS;
+    constexpr auto FrontPassangerPlaybackFlag =
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DEEP_BUFFER));
+    result[FrontPassangerPlaybackFlag] = PAL_STREAM_PLAYBACK_BUS;
+    constexpr auto RearSeatPlaybackFlag =
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DEEP_BUFFER));
+    result[RearSeatPlaybackFlag] = PAL_STREAM_PLAYBACK_BUS;
 
 //END
     constexpr auto compressOffloadPlaybackFlags =

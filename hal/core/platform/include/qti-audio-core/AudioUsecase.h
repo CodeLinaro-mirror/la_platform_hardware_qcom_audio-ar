@@ -40,6 +40,8 @@ enum class Usecase : uint16_t {
     NAV_GUIDANCE_PLAYBACK,
     PHONE_PLAYBACK,
     ALERTS_PLAYBACK,
+    FRONT_PASSANGER_PLAYBACK,
+    REAR_SEAT_PLAYBACK,
     MEDIA_PLAYBACK,
     LOW_LATENCY_PLAYBACK,
     DEEP_BUFFER_PLAYBACK,
@@ -221,6 +223,35 @@ class PhonePlayback : public UsecaseConfig<PhonePlayback> {
 };
 
 class AlertPlayback : public UsecaseConfig<AlertPlayback> {
+  public:
+    constexpr static size_t kPeriodCount = 2;
+    constexpr static size_t kPlatformDelayMs = 13;
+    constexpr static size_t kPeriodDurationMs = 4;
+    constexpr static size_t kPeriodSize = kPeriodDurationMs * DEFAULT_SAMPLE_RATE /1000;
+    static std::unordered_set<size_t> kSupportedFrameSizes;
+
+    static size_t getFrameCount(
+            const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig);
+
+    static int32_t getLatency() { return kPeriodDurationMs * kPeriodCount + kPlatformDelayMs; }
+};
+
+
+class FrontPassengerPlayback : public UsecaseConfig<FrontPassengerPlayback> {
+  public:
+    constexpr static size_t kPeriodCount = 2;
+    constexpr static size_t kPlatformDelayMs = 13;
+    constexpr static size_t kPeriodDurationMs = 4;
+    constexpr static size_t kPeriodSize = kPeriodDurationMs * DEFAULT_SAMPLE_RATE /1000;
+    static std::unordered_set<size_t> kSupportedFrameSizes;
+
+    static size_t getFrameCount(
+            const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig);
+
+    static int32_t getLatency() { return kPeriodDurationMs * kPeriodCount + kPlatformDelayMs; }
+};
+
+class RearSeatPlayback : public UsecaseConfig<RearSeatPlayback> {
   public:
     constexpr static size_t kPeriodCount = 2;
     constexpr static size_t kPlatformDelayMs = 13;
