@@ -29,8 +29,8 @@ using ::aidl::qti::audio::core::VString;
 #define AUDIO_PARAMETER_DEVICES_TO_DUCK "DevicesToDuck"
 #define AUDIO_PARAMETER_DEVICES_TO_UNDUCK "DevicesToUnduck"
 
-#define MUTE_VOLUME -9000
-#define DUCK_VOLUME -6300
+#define MUTE_VOLUME 0.0
+#define DUCK_VOLUME 0.3
 
 #define AUDIO_DEVICE_MAX_ADDRESS_LEN 32
 
