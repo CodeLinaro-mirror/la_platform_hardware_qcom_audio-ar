@@ -60,9 +60,17 @@
 #endif
 
 #if LINUX_ENABLED
+#ifndef AUDIO_FRAMEWORK_AWE
 #define GEF_LIBRARY "libqtigefar.so"
 #else
+#define GEF_LIBRARY "libqtigefawe.so"
+#endif
+#else
+#ifndef AUDIO_FRAMEWORK_AWE
 #define GEF_LIBRARY LIBS"libqtigefar.so"
+#else
+#define GEF_LIBRARY LIBS"libqtigefawe.so"
+#endif
 #endif
 
 typedef int (*gef_get_pal_info)(void* adev,
