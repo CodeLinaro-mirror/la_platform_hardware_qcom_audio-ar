@@ -28,7 +28,7 @@
  *
  * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
  *
- * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -5818,6 +5818,19 @@ StreamInPrimary::StreamInPrimary(audio_io_handle_t handle,
             AHAL_DBG("setting SR for usecase %d as %d", usecase_, config_.sample_rate);
         }
 #endif
+
+#ifdef TRUE_STEREO_ENABLED
+        if (source_ == AUDIO_SOURCE_DEFAULT || source_ == AUDIO_SOURCE_MIC || source_ == AUDIO_SOURCE_CAMCORDER) {
+            uint8_t channels =
+                audio_channel_count_from_in_mask(config_.channel_mask);
+            if (channels == 2) {
+                strlcpy(mPalInDevice[i].custom_config.custom_key, "dual-mic-true-stereo",
+                        sizeof(mPalInDevice[i].custom_config.custom_key));
+                AHAL_INFO("Setting custom key as %s", mPalInDevice[i].custom_config.custom_key);
+            }
+        }
+#endif
+
         if (usecase_ == USECASE_AUDIO_RECORD_LOW_LATENCY ||
             usecase_ == USECASE_AUDIO_RECORD_MMAP) {
             uint8_t channels =
