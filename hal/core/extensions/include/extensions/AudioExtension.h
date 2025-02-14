@@ -16,6 +16,17 @@
 #include <extensions/hal_ecnr.h>
 #endif
 #include "extensions/battery_listener.h"
+#include <stdint.h>
+#define MAX_VOLUME_VALUE 0
+#define MIN_VOLUME_VALUE -9000
+#define PARAM_ID_VOLUME  0x11112501
+#define SET 0x7F
+
+struct VolumeParams {
+    uint16_t eq_mask;
+    uint16_t status;
+    int32_t value[16];
+};
 
 #define PADDING_8BYTE_ALIGN(x)  ((((x) + 7) & 7) ^ 7)
 

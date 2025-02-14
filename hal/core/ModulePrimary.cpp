@@ -23,6 +23,7 @@
 #include <vector>
 
 #define LOG_TAG "AHAL_ModulePrimary_QTI"
+
 #include <Utils.h>
 #include <android-base/logging.h>
 #include <cutils/str_parms.h>
@@ -229,6 +230,59 @@ void ModulePrimary::dumpInternal(const std::string& identifier) {
     LOG(DEBUG) << __func__ << ": at: " << kDumpPath;
     ::close(fd);
     return;
+}
+
+std::vector<int32_t> getVolumeProfile(uint16_t bus_mask) {
+    LOG(DEBUG) << "Enter " << __func__;
+    int ret;
+    std::vector<int32_t> volumes(7, -1);
+
+    pal_awx_param_t pal_param;
+    memset(&pal_param, 0, sizeof(pal_awx_param_t));
+
+    VolumeParams params;
+    params.eq_mask = bus_mask;
+    // params.eq_mask = SET; //setting all bus
+    memset(&params, 0, sizeof(VolumeParams));
+
+    pal_param.param_id = PARAM_ID_VOLUME ;
+    pal_param.param_size = sizeof(VolumeParams);
+    pal_param.data = &params;
+
+    effect_type type = SYNC_WITH_AUDIO_BUS;
+    ret = ::qti::audio::core::AWX_get_param(&pal_param, type);
+
+    std::string busTypes[] = {
+        "BUS00_MEDIA",             // bit0
+        "BUS01_SYS_NOTIFICATION",  // bit1
+        "BUS02_NAV_GUIDANCE",      // bit2
+        "BUS03_PHONE",             // bit3
+        "BUS0F_NAV_GUIDANCE2",     // bit4
+        "BUS01_no_ASIL",           // bit5
+        "BUS02_Road_ADAS"          // bit6
+    };
+    if (ret < 0) {
+        LOG(ERROR) << __func__ << "Error while fetching value returned with ret: " << ret;
+        return volumes;
+    }
+    else {
+        for(int i=0; i<7; i++){
+            if (bus_mask & (1 << (i))) {
+                int volValue = params.value[i] ;
+
+                if (volValue < MIN_VOLUME_VALUE || volValue > MAX_VOLUME_VALUE) {
+                    LOG(ERROR) << __func__ << "Unsupported volume value " << "for " << busTypes[i];
+                }
+                else{
+                    volumes[i] = params.value[i];
+                    LOG(DEBUG) << __func__ << " " << busTypes[i] << " Volume fetched successfully! ret: " << params.value[i];
+                }
+            }
+        }
+    }
+
+    LOG(DEBUG) << "Exit " << __func__;
+    return volumes;
 }
 
 binder_status_t ModulePrimary::dump(int fd, const char** args, uint32_t numArgs) {
