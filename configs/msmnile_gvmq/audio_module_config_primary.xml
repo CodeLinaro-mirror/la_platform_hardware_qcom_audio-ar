@@ -235,6 +235,12 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <devicePort tagName="Primary In Bus" deviceType="IN_BUS" role="source" attached="true"  address="BUS04_INPUT">
             <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_FRONT_BACK" formatType="PCM" pcmType="INT_16_BIT" />
         </devicePort>
+        <devicePort tagName="Front Passenger In Bus" deviceType="IN_BUS" role="source" attached="true"  address="BUS09_INPUT_FRONT_PASSENGER">
+            <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </devicePort>
+        <devicePort tagName="Rear Seat In Bus" deviceType="IN_BUS" role="source" attached="true"  address="BUS17_INPUT_REAR_SEAT">
+            <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </devicePort>
         <devicePort tagName="built_in_mic" deviceType="IN_MICROPHONE" role="source" attached="true" defaultDevice="true" address="bottom">
             <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_FRONT_BACK" formatType="PCM" pcmType="INT_16_BIT" />
             <!-- To support compress offload capture such that client can query -->
@@ -261,7 +267,7 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <route type="mix" sink="Alerts Bus" sources="alerts,low_latency_out,low_latency_out_8k,low_latency_out_16k_sys,low_latency_out_24k,low_latency_out_32k" />
         <route type="mix" sink="Front Passenger Bus" sources="front_passenger" />
         <route type="mix" sink="Rear Seat Bus" sources="rear_seat" />
-        <route type="mix" sink="primary_in" sources="built_in_mic,built_in_back_mic,Primary In Bus" />
+        <route type="mix" sink="primary_in" sources="built_in_mic,built_in_back_mic,Primary In Bus,Front Passenger In Bus,Rear Seat In Bus" />
         <route type="mix" sink="compress_in" sources="built_in_mic,built_in_back_mic,wired_headset_mic,bt_sco_headset_mic,fm_tuner,bt_a2dp_mic" />
         <route type="mix" sink="mmap_no_irq_in" sources="built_in_mic,built_in_back_mic,bt_sco_headset_mic,wired_headset_mic" />
         <route type="mix" sink="voip_record" sources="built_in_mic,built_in_back_mic,wired_headset_mic,bt_sco_headset_mic,fm_tuner,bt_a2dp_mic" />

@@ -23,6 +23,7 @@ using aidl::android::hardware::audio::common::getFrameSizeInBytes;
 using aidl::android::hardware::audio::common::SinkMetadata;
 using aidl::android::hardware::audio::common::SourceMetadata;
 using aidl::android::media::audio::common::AudioDevice;
+using aidl::android::media::audio::common::AudioDeviceAddress;
 using aidl::android::media::audio::common::AudioDualMonoMode;
 using aidl::android::media::audio::common::AudioLatencyMode;
 using aidl::android::media::audio::common::AudioOffloadInfo;
@@ -717,12 +718,37 @@ size_t StreamInPrimary::getPlatformDelay() const noexcept {
     return 0;
 }
 
+void StreamInPrimary::updatePalDeviceForBusAddr(struct pal_device* devices, uint32_t numDevices,
+                                                std::string busAddressString) {
+    if (!devices) {
+        LOG(ERROR) << __func__ << "invalid input paramter";
+        return;
+    }
+    LOG(DEBUG) << "device: " << devices << "num devices: " << numDevices;
+    std::unordered_map<std::string, pal_device_id_t> busAddressMap = {
+            {"BUS04_INPUT", PAL_DEVICE_IN_HANDSET_MIC},
+            {"BUS09_INPUT_FRONT_PASSENGER", PAL_DEVICE_IN_A2B_MIC},
+            {"BUS17_INPUT_REAR_SEAT", PAL_DEVICE_IN_A2B2_MIC}};
+
+    for (uint32_t devIdx = 0; devIdx < numDevices; devIdx) {
+        auto it = busAddressMap.find(busAddressString);
+        if (it != busAddressMap.end()) {
+            devices[devIdx].id = it->second;
+        } else {
+            LOG(ERROR) << __func__ << "unknown bus address: " << busAddressString;
+            return;  // or some other default value
+        }
+    }
+    return;
+}
+
 void StreamInPrimary::configure() {
 
     if(hasInputMMapFlag(mMixPortConfig.flags.value())){
         // this API doesn't handle for MMAP
         return;
     }
+    std::string deviceAddress = "";
     const auto startTime = std::chrono::steady_clock::now();
     auto attr = mPlatform.getPalStreamAttributes(mMixPortConfig, true);
     LOG(INFO) << __func__ << " : configure : Enter";
@@ -735,9 +761,22 @@ void StreamInPrimary::configure() {
         LOG(ERROR) << __func__ << mLogPrefix << " no pal attributes";
         return;
     }
+    if (!mConnectedDevices.empty()) {
+        deviceAddress =  mConnectedDevices[0].address.get<AudioDeviceAddress::Tag::id>();
+        LOG(INFO) << __func__ << "configure(): deviceAddress " << deviceAddress;
+        attr->bus_addr = new char[deviceAddress.length() + 1];
+        strlcpy(attr->bus_addr, deviceAddress.c_str(), deviceAddress.length() + 1);
+    } else {
+        LOG(DEBUG) << __func__ << mLogPrefix << ": connected device empty";
+    }
     if (mTag == Usecase::PCM_RECORD) {
-        LOG(DEBUG) << __func__ << " : PCM_RECORD usecase";
+        LOG(DEBUG) << __func__ << " : PCM_RECORD usecase" << "Bus Address: " << attr->bus_addr;
+        if ((std::strcmp(attr->bus_addr, "BUS04_INPUT") == 0) || (std::strcmp(attr->bus_addr, "BUS09_INPUT_FRONT_PASSENGER") == 0) || (std::strcmp(attr->bus_addr, "BUS17_INPUT_REAR_SEAT") == 0)) {
+            attr->type = PAL_STREAM_CAPTURE_BUS;
+        }
+        else {
         attr->type = PAL_STREAM_DEEP_BUFFER;
+        }
         const auto& source = getAudioSource(mMixPortConfig);
         if (source) {
             if (source.value() == AudioSource::ECHO_REFERENCE) {
@@ -792,6 +831,7 @@ void StreamInPrimary::configure() {
 
     LOG(VERBOSE) << __func__ << mLogPrefix << " assigned pal stream type:" << attr->type;
 
+    updatePalDeviceForBusAddr(palDevices.data(), palDevices.size(), deviceAddress);
     if (!palDevices.size()) {
         LOG(ERROR) << __func__ << mLogPrefix << " no connected devices on stream!!";
         return;

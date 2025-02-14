@@ -54,6 +54,9 @@ class StreamInPrimary : public StreamIn, public StreamCommonImpl {
             const std::shared_ptr<::aidl::android::hardware::audio::effect::IEffect>& in_effect)
             override;
 
+    void updatePalDeviceForBusAddr(struct pal_device* devices, uint32_t numDevices,
+        std::string busAddressString);
+
     ndk::ScopedAStatus updateMetadataCommon(const Metadata& metadata) override;
 
     ndk::ScopedAStatus getActiveMicrophones(
