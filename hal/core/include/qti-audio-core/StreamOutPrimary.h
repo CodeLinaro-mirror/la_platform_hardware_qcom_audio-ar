@@ -46,7 +46,8 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     void shutdown() override;
     ::android::status_t getHwTimeStamp(::aidl::android::hardware::audio::core::StreamDescriptor::Reply*);
     // methods of StreamCommonInterface
-
+    void updatePalDeviceForBusAddr(struct pal_device* devices, uint32_t numDevices,
+        std::string busAddressString);
     ndk::ScopedAStatus getVendorParameters(
             const std::vector<std::string>& in_ids,
             std::vector<::aidl::android::hardware::audio::core::VendorParameter>* _aidl_return)
@@ -151,8 +152,9 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
 
     std::variant<std::monostate, PrimaryPlayback, DeepBufferPlayback, CompressPlayback,
                  PcmOffloadPlayback, VoipPlayback, SpatialPlayback, MMapPlayback, UllPlayback,
-                 InCallMusic, HapticsPlayback, SysNotificationPlayback, NavGuidancePlayback,
-                 PhonePlayback, AlertPlayback, MediaPlayback, LowLatencyPlayback>
+                 InCallMusic, HapticsPlayback,SysNotificationPlayback, NavGuidancePlayback,
+                 PhonePlayback, AlertPlayback, MediaPlayback, LowLatencyPlayback,
+                 FrontPassengerPlayback, RearSeatPlayback>
             mExt;
     // references
     Platform& mPlatform{Platform::getInstance()};

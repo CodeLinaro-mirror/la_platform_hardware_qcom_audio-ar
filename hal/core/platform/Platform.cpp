@@ -294,6 +294,7 @@ std::vector<pal_device> Platform::convertToPalDevices(
     size_t i = 0;
     for (auto& device : devices) {
         const auto palDeviceId = PlatformConverter::getPalDeviceId(device.type);
+        LOG(DEBUG) << __func__ << "palDeviceId: " << palDeviceId;
         if (palDeviceId == PAL_DEVICE_OUT_MIN) {
             return {};
         }
@@ -339,6 +340,7 @@ std::vector<pal_device> Platform::convertToPalDevices(
         LOG(INFO) << __func__ << " Send latest DP device in the Pal list " << palDevices[1].id;
         return {palDevices[1]};
     }
+    LOG(DEBUG) << __func__ << "pal device id that is returned: " << (palDevices.data())->id;
     return palDevices;
 }
 
@@ -1344,6 +1346,8 @@ void Platform::initUsecaseOpMap() {
     mUsecaseOpMap[Usecase::SYS_NOTIFICATION_PLAYBACK] = makeUsecaseOps<SysNotificationPlayback>();
     mUsecaseOpMap[Usecase::ALERTS_PLAYBACK] = makeUsecaseOps<AlertPlayback>();
     mUsecaseOpMap[Usecase::PHONE_PLAYBACK] = makeUsecaseOps<PhonePlayback>();
+    mUsecaseOpMap[Usecase::FRONT_PASSANGER_PLAYBACK] = makeUsecaseOps<FrontPassengerPlayback>();
+    mUsecaseOpMap[Usecase::REAR_SEAT_PLAYBACK] = makeUsecaseOps<RearSeatPlayback>();
 //END
     mUsecaseOpMap[Usecase::LOW_LATENCY_PLAYBACK] = makeUsecaseOps<LowLatencyPlayback>();
     mUsecaseOpMap[Usecase::DEEP_BUFFER_PLAYBACK] = makeUsecaseOps<DeepBufferPlayback>();
