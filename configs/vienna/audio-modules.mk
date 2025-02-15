@@ -163,7 +163,6 @@ AUDIO_MODULES += qsap_voiceui
 AUDIO_MODULES += qsap_voiceui.policy
 endif
 
-AUDIO_MODULES += libaudiofeaturestats
 AUDIO_MODULES += libhotword_intf
 AUDIO_MODULES += libcustomva_intf
 AUDIO_MODULES += libvui_intf
