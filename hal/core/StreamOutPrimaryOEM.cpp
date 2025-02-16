@@ -241,12 +241,14 @@ write_without_process:
 }
 
 void StreamOutPrimaryOEM::configure() {
-    int ret = 0;
+    int ret = 0, vocoder_rate, conn_type;
     ecnrSampleRate = mMixPortConfig.sampleRate.value().value;
     ecnrPeriodSize = mPlatform.getFrameCount(mMixPortConfig, mTag);
     mChannels = getChannelCount(mMixPortConfig.channelMask.value());
     bECNRprop_Enable = property_get_bool(ECNR_FEATURE_PROP, false);
-
+    vocoder_rate =  mAudExt.mHalExtension->get_vocoder_rate();
+    conn_type = mAudExt.mHalExtension->get_conn_type();
+    LOG(DEBUG) << __func__ << " Vocoder_samplerate : " << vocoder_rate << " connection_type : " << conn_type;
 
     const auto startTime = std::chrono::steady_clock::now();
     auto attr = mPlatform.getPalStreamAttributes(mMixPortConfig, false);
@@ -268,13 +270,13 @@ void StreamOutPrimaryOEM::configure() {
          LOG(DEBUG) << __func__ << mLogPrefixOEM << ": connected device empty";
     }
 
-    if (!(mTag == Usecase::VOIP_PLAYBACK && mAudExt.mHalExtension->audio_extn_getEnablement() && bECNRprop_Enable)) {
+    if ((!(mTag == Usecase::VOIP_PLAYBACK && mAudExt.mHalExtension->audio_extn_getEnablement() && bECNRprop_Enable)) && (vocoder_rate < 0 && conn_type < 0)) {
         bECNR_Enable = false;
     } else {
         bECNR_Enable = true;
         LOG(INFO) << __func__ << mLogPrefixOEM << " : bECNR_Enable " << bECNR_Enable;
         attr->type = PAL_STREAM_VOIP_RX;
-        pECNR_ProcessData.scd_type = mAudExt.mHalExtension->audio_extn_getSCDtype( ecnrSampleRate, VOC_RATE_FB, ECNR_TYPE_TEL, CP_CONNECTION_USB, DIR_DL);
+        pECNR_ProcessData.scd_type = mAudExt.mHalExtension->audio_extn_getSCDtype( ecnrSampleRate, vocoder_rate, ECNR_TYPE_TEL, conn_type, DIR_DL);
         if (mAudExt.mHalExtension->audio_extn_getSCDdata(&pECNR_ProcessData)) {
             LOG(ERROR) << __func__ << mLogPrefixOEM << " failed to get scd information, disabling ecnr processing";
             bECNR_Enable = false;
@@ -417,7 +419,12 @@ void StreamOutPrimaryOEM::shutdown_I() {
 
     StreamOutPrimary::shutdown_I();
 
+    if (bECNR_Enable && (mTag == Usecase::VOIP_PLAYBACK)) {
+        mAudExt.mHalExtension->set_vocoder_rate(INVALID);
+        mAudExt.mHalExtension->set_conn_type(INVALID);
+    }
     bECNR_Enable = false;
+
     if (ecnr_out_buffer) {
         ecnr_out_buffer.reset();
     }

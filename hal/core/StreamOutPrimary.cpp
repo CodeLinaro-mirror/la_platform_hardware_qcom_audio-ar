@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -675,40 +675,67 @@ ndk::ScopedAStatus StreamOutPrimary::getHwVolume(std::vector<float>* _aidl_retur
 }
 
 ndk::ScopedAStatus StreamOutPrimary::setHwVolume(const std::vector<float>& in_channelVolumes) {
+    std::vector<float> localVolumes = in_channelVolumes;
+    LOG(DEBUG) << __func__ << "setHwVolume called with localVolumes:  " << ::android::internal::ToString(localVolumes);
+
+    float volume = localVolumes[0];
+    auto sourceMetadata = std::get<SourceMetadata>(mMetadata);
+
+    if (!sourceMetadata.tracks.empty()) {
+        auto usage = sourceMetadata.tracks[0].usage;
+        std::string str = ModulePrimary::globalAudioSource;
+
+        if (playbackGainTable.find(usage) != playbackGainTable.end()) {
+            for (const auto& [sourceTypeKey, sourceGainValue] : sourceGainTable) {
+                if (sourceTypeKey == str) {
+                    LOG(DEBUG) << "USAGE matched, gain added: " << sourceGainValue << " sourceTypeKey: " << sourceTypeKey;
+                    LOG(DEBUG) << "Initial volume: " << volume;
+                    volume += sourceGainValue;
+                    LOG(DEBUG) << "Adjusted volume: " << volume;
+                    localVolumes[0] = volume;
+                    localVolumes[1] = volume;
+                    LOG(DEBUG) << "Updated volume is:" << localVolumes[0];
+                    break;
+                } else {
+                    LOG(DEBUG) << "USAGE did not match";
+                }
+            }
+        }
+    }
     mVolumeGaincheck=property_get_bool(mGainVolumecheckProperty.c_str(),false);
     if (!mHwVolumeSupported) {
         return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
     }
 
-    if (mVolumes.size() != in_channelVolumes.size()) {
+    if (mVolumes.size() != localVolumes.size()) {
         LOG(ERROR) << __func__ << mLogPrefix << " channel count mismatch with port, expected "
-                   << mVolumes.size() << " got " << in_channelVolumes.size();
+                   << mVolumes.size() << " got " << localVolumes.size();
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
     }
     if (!mVolumeGaincheck) {
         auto isVolumeInRange=[](const std::vector<float>& volumes) {
             return std::all_of(volumes.begin(),volumes.end(),[](float vol) { return (vol >= 0.0f && vol <= 1.0f); });
         };
-        if (!isVolumeInRange(in_channelVolumes)) {
-            LOG(DEBUG) << __func__ << mLogPrefix << "out of range volume " << ::android::internal::ToString(in_channelVolumes);
+        if (!isVolumeInRange(localVolumes)) {
+            LOG(DEBUG) << __func__ << mLogPrefix << "out of range volume " << ::android::internal::ToString(localVolumes);
             return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
         }
     }
 
     if (!mPalHandle) {
-        mVolumes = in_channelVolumes;
+        mVolumes = localVolumes;
         mUseCachedVolume = true;
         LOG(DEBUG) << __func__ << mLogPrefix << " cache volume "
-                   << ::android::internal::ToString(in_channelVolumes);
+                   << ::android::internal::ToString(localVolumes);
         return ndk::ScopedAStatus::ok();
     }
-    if (int32_t ret = mPlatform.setVolume(mPalHandle, in_channelVolumes); ret) {
+    if (int32_t ret = mPlatform.setVolume(mPalHandle, localVolumes); ret) {
         LOG(ERROR) << __func__ << mLogPrefix << " failed to set volume";
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
     }
-    mVolumes = in_channelVolumes;
+    mVolumes = localVolumes;
 
-    LOG(DEBUG) << __func__ << mLogPrefix << ::android::internal::ToString(mVolumes);
+    LOG(DEBUG) << __func__ << mLogPrefix  << "mVolumes" << ::android::internal::ToString(mVolumes);
     return ndk::ScopedAStatus::ok();
 }
 
@@ -749,8 +776,45 @@ ndk::ScopedAStatus StreamOutPrimary::updateMetadataCommon(const Metadata& metada
     if (metadata.index() != mMetadata.index()) {
         LOG(FATAL) << __func__ << mLogPrefix << ": changing metadata variant is not allowed";
     }
-    mMetadata = metadata;
 
+#ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
+    auto mHalFocusService = ModulePrimary::getHalFocusService();
+    auto sourceMetadata = std::get<SourceMetadata>(metadata);
+    auto sourcemMetadata = std::get<SourceMetadata>(mMetadata);
+    if (!sourceMetadata.tracks.empty()) {
+        mMetadata = metadata;
+
+        //get usage
+        auto tracks = sourceMetadata.tracks;
+        if (tracks.empty()) {
+            LOG(ERROR) << __LINE__ << __func__ << " No tracks in metadata";
+            return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
+        }
+        auto curStreamUsage =
+                static_cast<::aidl::android::media::audio::common::AudioUsage>(tracks[0].usage);
+        const std::shared_ptr<::qti::audio::core::FocusStreamUpdateCallback> focusCallback =
+                    ndk::SharedRefBase::make<::qti::audio::core::FocusStreamUpdateCallback>(this);
+
+        if (!focusSessionInfo.FocusId ) {
+            mHalFocusService->requestFocus(focusCallback, curStreamUsage, mConnectedDevices[0],
+                                                mVolumes[0], &focusSessionInfo);
+            LOG(INFO) << "Requesting audio focus, focusId: " << focusSessionInfo.FocusId;
+        } else {
+            //TODO: handle the calls seen due to focus action from framework
+            LOG(INFO) << "Focus Id already exists " <<
+                focusSessionInfo.FocusId << ", ignoring the call";
+        }
+
+    } else if (sourceMetadata.tracks.empty() && !sourcemMetadata.tracks.empty() &&
+        sourcemMetadata.tracks[0].usage !=
+                    ::aidl::android::media::audio::common::AudioUsage::UNKNOWN) {
+        // request new audio focus with updated metadata
+        LOG(DEBUG) << __func__ << ": Releasing audio focus: " << focusSessionInfo.FocusId;
+        mHalFocusService->abandonFocus(focusSessionInfo);
+        focusSessionInfo.FocusId = 0;
+    }
+#endif
+    mMetadata = metadata;
     if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK) {
         auto& compressPlayback = std::get<CompressPlayback>(mExt);
         compressPlayback.updateSourceMetadata(std::get<SourceMetadata>(mMetadata));
@@ -932,6 +996,7 @@ void StreamOutPrimary::configure() {
     if (!mConnectedDevices.empty()) {
          std::string deviceAddress =  mConnectedDevices[0].address.get<AudioDeviceAddress::Tag::id>();
          LOG(INFO) << __func__ << "configure(): deviceAddress " << deviceAddress;
+         busAddr = deviceAddress;
          bool isBusType = (std::string::npos != deviceAddress.find("BUS")) ? true : false;
          if (isBusType){
              attr->bus_addr = new char[deviceAddress.length() + 1];
@@ -1180,6 +1245,12 @@ void StreamOutPrimary::configure() {
     LOG(INFO) << __func__ << mLogPrefix << ": completed in " << timeTaken
               << " ms [pal_stream_open: " << palStreamOpenTimeTaken
               << ", ms pal_stream_start: " << palStreamStartTimeTaken << " ms]";
+}
+
+std::string StreamOutPrimary::getAddress()const
+{
+    LOG(DEBUG) << __func__ << "busAddr: " << busAddr;
+    return busAddr;
 }
 
 void StreamOutPrimary::enableOffloadEffects(const bool enable) {

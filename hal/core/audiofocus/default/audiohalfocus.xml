@@ -1,0 +1,11 @@
+<!--
+Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
+SPDX-License-Identifier: BSD-3-Clause-Clear
+-->
+<manifest version="9.0" type="device">
+    <hal format="aidl" override ="true">
+        <name>android.hardware.audio.focus</name>
+        <version>1</version>
+        <fqname>IAudioFocusService/default</fqname>
+    </hal>
+</manifest>

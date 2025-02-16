@@ -13,59 +13,59 @@
 #include <extensions/hal_ecnr.h>
 
 const char * const scd_file_name_table[SCD_TYPE_MAX] = {
- [TEL_BT_NB_UL] = "TEL_BT_NB_UL",
- [TEL_BT_NB_DL] = "TEL_BT_NB_DL",
- [TEL_BT_WB_UL] = "TEL_BT_WB_UL",
- [TEL_BT_WB_DL] = "TEL_BT_WB_DL",
- [TEL_CP_8K_USB] = "TEL_CP_8K_USB_UL",
- [TEL_CP_8K_USB_DL] = "TEL_CP_8K_USB_DL",
- [TEL_CP_16K_USB] = "TEL_CP_16K_USB_UL",
- [TEL_CP_16K_USB_DL] = "TEL_CP_16K_USB_DL",
- [TEL_CP_32K_USB] = "TEL_CP_32K_USB_UL",
- [TEL_CP_32K_USB_DL] = "TEL_CP_32K_USB_DL",
- [TEL_CP_24K_USB] = "TEL_CP_24K_USB_UL",
- [TEL_CP_24K_USB_DL] = "TEL_CP_24K_USB_DL",
- [TEL_CP_48K_USB] = "TEL_CP_48K_USB_UL",
- [TEL_CP_48K_USB_DL] = "TEL_CP_48K_USB_DL",
- [TEL_CP_8K_WIFI] = "TEL_CP_8K_WIFI_UL",
- [TEL_CP_8K_WIFI_DL] = "TEL_CP_8K_WIFI_DL",
- [TEL_CP_16K_WIFI] = "TEL_CP_16K_WIFI_UL",
- [TEL_CP_16K_WIFI_DL] = "TEL_CP_16K_WIFI_DL",
- [TEL_CP_32K_WIFI] = "TEL_CP_32K_WIFI_UL",
- [TEL_CP_32K_WIFI_DL] = "TEL_CP_32K_WIFI_DL",
- [TEL_CP_24K_WIFI] = "TEL_CP_24K_WIFI_UL",
- [TEL_CP_24K_WIFI_DL] = "TEL_CP_24K_WIFI_DL",
- [TEL_CP_48K_WIFI] = "TEL_CP_48K_WIFI_UL",
- [TEL_CP_48K_WIFI_DL] = "TEL_CP_48K_WIFI_DL",
- [VR_16K] = "VR_16K",
+ [TEL_BT_NB_UL] = "SSE_BT_HF_NB_UL",
+ [TEL_BT_NB_DL] = "SSE_BT_HF_NB_DL",
+ [TEL_BT_WB_UL] = "SSE_BT_HF_WB_UL",
+ [TEL_BT_WB_DL] = "SSE_BT_HF_WB_DL",
+ [TEL_CP_8K_USB] = "SSE_CP_Tel_NB_USB_UL",
+ [TEL_CP_8K_USB_DL] = "SSE_CP_Tel_NB_USB_DL",
+ [TEL_CP_16K_USB] = "SSE_CP_Tel_WB_USB_UL",
+ [TEL_CP_16K_USB_DL] = "SSE_CP_Tel_WB_USB_DL",
+ [TEL_CP_32K_USB] = "SSE_CP_Tel_SWB_USB_UL",
+ [TEL_CP_32K_USB_DL] = "SSE_CP_Tel_SWB_USB_DL",
+ [TEL_CP_24K_USB] = "SSE_CP_FT_USB_UL",
+ [TEL_CP_24K_USB_DL] = "SSE_CP_FT_USB_DL",
+ [TEL_CP_48K_USB] = "SSE_CP_Tel_SWB_Wifi_UL",
+ [TEL_CP_48K_USB_DL] = "SSE_CP_Tel_SWB_Wifi_DL",
+ [TEL_CP_8K_WIFI] = "SSE_CP_Tel_NB_Wifi_UL",
+ [TEL_CP_8K_WIFI_DL] = "SSE_CP_Tel_NB_Wifi_DL",
+ [TEL_CP_16K_WIFI] = "SSE_CP_Tel_WB_Wifi_UL",
+ [TEL_CP_16K_WIFI_DL] = "SSE_CP_Tel_WB_Wifi_DL",
+ [TEL_CP_32K_WIFI] = "SSE_CP_Tel_SWB_Wifi_UL",
+ [TEL_CP_32K_WIFI_DL] = "SSE_CP_Tel_SWB_Wifi_DL",
+ [TEL_CP_24K_WIFI] = "SSE_CP_FT_Wifi_UL",
+ [TEL_CP_24K_WIFI_DL] = "SSE_CP_FT_Wifi_DL",
+ [TEL_CP_48K_WIFI] = "SSE_CP_Tel_SWB_Wifi_UL",
+ [TEL_CP_48K_WIFI_DL] = "SSE_CP_Tel_SWB_Wifi_DL",
+ [VR_16K] = "SSE_WuW_BI_ESIRI",
 };
 
 const char * const scd_file_name_table_2nd[SCD_TYPE_MAX] = {
  [TEL_BT_NB_UL] = NULL,
  [TEL_BT_NB_DL] = NULL,
- [TEL_BT_WB_UL] = "2nd_TEL_BT_WB_UL",
+ [TEL_BT_WB_UL] = "dnn_dns_hf-sq_16kHz",
  [TEL_BT_WB_DL] = NULL,
  [TEL_CP_8K_USB] = NULL,
  [TEL_CP_8K_USB_DL] = NULL,
- [TEL_CP_16K_USB] = NULL,
+ [TEL_CP_16K_USB] = "dnn_dns_hf-sq_24kHz",
  [TEL_CP_16K_USB_DL] = NULL,
- [TEL_CP_32K_USB] = NULL,
+ [TEL_CP_32K_USB] = "dnn_dns_hf-sq_16kHz",
  [TEL_CP_32K_USB_DL] = NULL,
- [TEL_CP_24K_USB] = NULL,
+ [TEL_CP_24K_USB] = "dnn_dns_hf-sq_24kHz",
  [TEL_CP_24K_USB_DL] = NULL,
  [TEL_CP_48K_USB] = NULL,
  [TEL_CP_48K_USB_DL] = NULL,
  [TEL_CP_8K_WIFI] = NULL,
  [TEL_CP_8K_WIFI_DL] = NULL,
- [TEL_CP_16K_WIFI] = NULL,
+ [TEL_CP_16K_WIFI] = "dnn_dns_hf-sq_24kHz",
  [TEL_CP_16K_WIFI_DL] = NULL,
  [TEL_CP_32K_WIFI] = NULL,
  [TEL_CP_32K_WIFI_DL] = NULL,
- [TEL_CP_24K_WIFI] = NULL,
+ [TEL_CP_24K_WIFI] = "dnn_dns_hf-sq_24kHz",
  [TEL_CP_24K_WIFI_DL] = NULL,
- [TEL_CP_48K_WIFI] = NULL,
+ [TEL_CP_48K_WIFI] = "dnn_dns_hf-sq_24kHz",
  [TEL_CP_48K_WIFI_DL] = NULL,
- [VR_16K] = "2nd_VR_16K",
+ [VR_16K] = "dnn_dns_vr_16kHz",
 };
 
 HalECNRExtension::~HalECNRExtension() {
@@ -87,6 +87,8 @@ HalECNRExtension::HalECNRExtension() {
             }
         }
         LOG(INFO) << __func__ << " Enter";
+        int vocoder_sample_rate = -1, connection_type = -1;
+
         if (mHandle != nullptr) {
             if (!(ecnrCreate = (ecnrCreate_t)dlsym(
                 mHandle, "sseCreate")) ||
@@ -294,25 +296,59 @@ HalECNRExtension::HalECNRExtension() {
             ecnrSetConfigData(pMain,pCfgData,uCfgDataSize) : false);
     }
 
-    int HalECNRExtension::audio_extn_getSCDtype(uint32_t sample_rate, uint32_t vocoder_type, uint32_t ecnr_type, uint32_t conneection_type, uint32_t dir) {
+    int HalECNRExtension::get_vocoder_rate() const {
+        return vocoder_sample_rate;
+    }
+    int HalECNRExtension::get_conn_type() const {
+        return connect_type;
+    }
+    void HalECNRExtension::set_vocoder_rate(int data) {
+        vocoder_sample_rate = data;
+        LOG(DEBUG) << __func__ << " vocoder_rate: " << vocoder_sample_rate;
+    }
+    void HalECNRExtension::set_conn_type(int data) {
+        connect_type = data;
+        LOG(DEBUG) << __func__ << " connection_type: " << connect_type;
+    }
+
+    void HalECNRExtension::carplay_set_parameters(struct str_parms *params) {
+        int ret = 0;
+        char value[32] = {0};
+        if (str_parms_get_str(params, CP_SAMPLERATE, value, sizeof(value)) >= 0) {
+            carplay_sample_rate = (atoi(value));
+            LOG(DEBUG) << __func__ << " carplay sample rate = " << carplay_sample_rate;
+        } else if (str_parms_get_str(params, CP_TYPE, value, sizeof(value)) >= 0) {
+            carplay_type = (atoi(value));
+            LOG(DEBUG) << __func__ << " carplay_type = " << carplay_type;
+        } else if (str_parms_get_str(params, CP_VOCODER_SAMPLERATE, value, sizeof(value)) >= 0) {
+            vocoder_sample_rate = (atoi(value));
+            LOG(DEBUG) << __func__ << " Vocoder sample rate = " << vocoder_sample_rate;
+        } else if (str_parms_get_str(params, CP_TRANSPORT, value, sizeof(value)) >= 0) {
+            connect_type = (atoi(value));
+            LOG(DEBUG) << __func__ << " connection_type = " << connect_type;
+        } else {
+           ret = -1;
+           LOG(ERROR) << __func__ << " Invalid Params : " << ret;
+        }
+   }
+
+    int HalECNRExtension::audio_extn_getSCDtype(uint32_t sample_rate, uint32_t vocoder_rate, uint32_t ecnr_type, uint32_t connection_type, uint32_t dir) {
 
         int scd_type = SCD_TYPE_INVALID;
+        LOG(DEBUG) << __func__ << " vocoder_samplerate: " << vocoder_rate << " connection_type: " << connection_type ;
 
         if (ecnr_type == ECNR_TYPE_VR) {
             if (sample_rate == 16000) {
                 return VR_16K;
             } else {
-                LOG(ERROR) << __func__ << " not supported sampling rate " << sample_rate<< " for ecnr_type " << ecnr_type ;
+                LOG(ERROR) << __func__ << " not supported sampling rate " << sample_rate << " for ecnr_type " << ecnr_type ;
                 return SCD_TYPE_INVALID;
             }
         } else if (ecnr_type == ECNR_TYPE_TEL) {
-            if (conneection_type == CP_CONNECTION_WIFI) {
-                switch (sample_rate) {
+            if (connection_type == CP_CONNECTION_WIFI) {
+                switch (vocoder_rate) {
                     case 48000 :
                         scd_type = TEL_CP_48K_WIFI;
-                        break;
-                    case 32000 :
-                        scd_type = TEL_CP_32K_WIFI;
                         break;
                     case 24000 :
                         scd_type = TEL_CP_24K_WIFI;
@@ -324,14 +360,11 @@ HalECNRExtension::HalECNRExtension() {
                         scd_type = TEL_CP_8K_WIFI;
                         break;
                     default :
-                        LOG(ERROR) << __func__ << " not supported sampling rate " << sample_rate<< " for ecnr_type " << ecnr_type ;
+                        LOG(ERROR) << __func__ << " not supported vocoder sampling rate " << vocoder_rate << " for ecnr_type " << ecnr_type ;
                         break;
                     }
             } else {
-                switch (sample_rate) {
-                    case 48000 :
-                        scd_type = TEL_CP_48K_USB;
-                        break;
+                switch (vocoder_rate) {
                     case 32000 :
                         scd_type = TEL_CP_32K_USB;
                         break;
@@ -345,7 +378,7 @@ HalECNRExtension::HalECNRExtension() {
                         scd_type = TEL_CP_8K_USB;
                         break;
                     default :
-                        LOG(ERROR) << __func__ << " not supported sampling rate " << sample_rate<< " for ecnr_type " << ecnr_type ;
+                        LOG(ERROR) << __func__ << " not supported vocoder sampling rate " << vocoder_rate << " for ecnr_type " << ecnr_type ;
                         break;
                 }
             }

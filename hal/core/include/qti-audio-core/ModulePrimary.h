@@ -16,7 +16,7 @@
 
 /*
  * ​​​​​Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -25,6 +25,20 @@
 #include <qti-audio-core/Bluetooth.h>
 #include <qti-audio-core/Module.h>
 #include <qti-audio-core/Platform.h>
+
+#ifdef ENABLE_QCOM_AMPERE_AUDIO
+#include <aidl/ampere/hardware/interfaces/automotive/audioparameterparser/RadioVendorParameterExt.h>
+#include <aidl/ampere/hardware/interfaces/automotive/audioparameterparser/CarPlayVendorParameterExt.h>
+#include <aidl/ampere/hardware/interfaces/automotive/audioparameterparser/AudioControlVendorParameterExt.h>
+#endif
+
+#ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
+#include <aidl/android/hardware/audio/focus/IAudioFocusService.h>
+using ::aidl::android::hardware::audio::focus::IAudioFocusService;
+#endif
+
+extern "C" __attribute__((visibility("default"))) void extn_set_mute_config_for_address(char* address, bool muted, float volume);
+
 
 namespace qti::audio::core {
 
@@ -66,13 +80,17 @@ class ModulePrimary final : public Module {
     ndk::ScopedAStatus getSupportedPlaybackRateFactors(
             SupportedPlaybackRateFactors* _aidl_return) override;
     // #################### end of overriding APIs from IModule ####################
-
+#ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
+    static std::shared_ptr<IAudioFocusService>  mHalFocusService;
+    static std::shared_ptr<IAudioFocusService> getHalFocusService();
+#endif
     // Mutex for stream lists protection
     static std::mutex outListMutex;
     static std::mutex inListMutex;
 
     static std::vector<std::weak_ptr<StreamOut>>& getOutStreams() { return mStreamsOut; }
     static std::vector<std::weak_ptr<StreamIn>>& getInStreams() { return mStreamsIn; }
+    static std::string globalAudioSource;
 
   protected:
     // #################### start of overriding APIs from Module ####################
@@ -136,6 +154,11 @@ class ModulePrimary final : public Module {
         FTM, // Factory Test Mode
         AUDIOEXTENSION,
         HAPTICS,
+#ifdef ENABLE_QCOM_AMPERE_AUDIO
+        AUDIOSOURCE,
+        CARPLAY,
+        AUDIOCONTROL,
+#endif
     };
 
     // For set parameters
@@ -191,6 +214,14 @@ class ModulePrimary final : public Module {
     // SetHandler For Haptics
     void onSetHapticsParameters(
             const std::vector<::aidl::android::hardware::audio::core::VendorParameter>&);
+#ifdef ENABLE_QCOM_AMPERE_AUDIO
+    // SetHandler For Carplay
+    void onSetCarplayParameters(
+            const std::vector<::aidl::android::hardware::audio::core::VendorParameter>&);
+    // SetHandler For AudioControl
+    void onSetAudioControlParameters(
+            const std::vector<::aidl::android::hardware::audio::core::VendorParameter>&);
+#endif
 
     std::vector<::aidl::android::hardware::audio::core::VendorParameter> processGetVendorParameters(
             const std::vector<std::string>&);
@@ -213,7 +244,17 @@ class ModulePrimary final : public Module {
     std::vector<::aidl::android::hardware::audio::core::VendorParameter> onGetGenericParams(
             const std::vector<std::string>&);
     // end of module parameters handling
-
+#ifdef ENABLE_QCOM_AMPERE_AUDIO
+    void onsetRadioVendorParameter(const std::vector<::aidl::android::hardware::audio::core::VendorParameter>& params);
+    ::android::status_t setRadioVendorParameter(const ::aidl::android::hardware::audio::core::VendorParameter& param);
+    // GetHandler for Carplay
+    std::vector<::aidl::android::hardware::audio::core::VendorParameter> onGetCarplayParams(
+            const std::vector<std::string>&);
+    std::string carplayParamConverter(::aidl::ampere::hardware::interfaces::automotive::audioparameterparser::CarPlayVendorParameterExt::Rate carplayparams);
+    // GetHandler for AudioControl
+    std::vector<::aidl::android::hardware::audio::core::VendorParameter> onGetAudioControlParams(
+            const std::vector<std::string>&);
+#endif
   protected:
     bool mVolumeGaincheck=false;
     const SetParameterToFeatureMap mSetParameterToFeatureMap{fillSetParameterToFeatureMap()};
@@ -227,8 +268,31 @@ class ModulePrimary final : public Module {
     AudioExtension& mAudExt{AudioExtension::getInstance()};
 
   private:
+#ifdef ENABLE_QCOM_AMPERE_AUDIO
+    ::android::status_t setAudioControlParameter(
+            const ::aidl::android::hardware::audio::core::VendorParameter&);
+    ::android::status_t setCarPlayParameter(
+            const ::aidl::android::hardware::audio::core::VendorParameter&);
+#endif
     const std::string mGainVolumecheckProperty{"vendor.audio.feature.oemgainconversion.enable"};
     bool mOffloadSpeedSupported;
+};
+
+class MuteConfig {
+public:
+    static MuteConfig& GetInstance() {
+        static MuteConfig instance;
+        return instance;
+    }
+    ModuleConfig& getConfig();
+    static void set_mute_config_for_address(char* address, bool muted, float volume);
+
+private:
+    MuteConfig() {
+        std::cout << "MuteConfig Instance Created" << std::endl;
+    }
+    ~MuteConfig() {}
+    static std::vector<float> getVol;
 };
 
 } // namespace qti::audio::core

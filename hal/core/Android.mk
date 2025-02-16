@@ -8,7 +8,8 @@ LOCAL_MODULE            := libaudiocorehal.qti
 LOCAL_VENDOR_MODULE     := true
 LOCAL_MODULE_RELATIVE_PATH := hw
 
-LOCAL_C_INCLUDES    :=  $(LOCAL_PATH)/include
+LOCAL_C_INCLUDES    :=  $(LOCAL_PATH)/include \
+                        $(LOCAL_PATH)/extensions/include
 
 LOCAL_CFLAGS := \
     -DBACKEND_NDK \
@@ -29,7 +30,9 @@ LOCAL_SRC_FILES := \
     Telephony.cpp \
     StreamInPrimary.cpp \
     StreamOutPrimary.cpp \
-    HalOffloadEffects.cpp
+    HalOffloadEffects.cpp \
+    extensions/AudioExtension.cpp \
+    extensions/auto_hal.cpp
 
 LOCAL_HEADER_LIBRARIES :=  \
     libxsdc-utils \
@@ -40,6 +43,18 @@ LOCAL_HEADER_LIBRARIES :=  \
     libmedia_helper_headers \
     libmedia_helper_headers \
     libarpal_headers
+
+$(warning ENABLE_QCOM_HAL_AUDIO_FOCUS before $(ENABLE_QCOM_HAL_AUDIO_FOCUS))
+
+ifeq ($(ENABLE_QCOM_HAL_AUDIO_FOCUS),true)
+LOCAL_CFLAGS += -DENABLE_QCOM_HAL_AUDIO_FOCUS
+endif
+$(warning ENABLE_QCOM_HAL_AUDIO_FOCUS after $(ENABLE_QCOM_HAL_AUDIO_FOCUS))
+
+
+ifeq ($(ENABLE_QCOM_AMPERE_AUDIO),true)
+LOCAL_CFLAGS += -DENABLE_QCOM_AMPERE_AUDIO
+endif
 
 ifeq ($(AUDIO_FEATURE_ENABLED_ECNR_HAL),true)
 LOCAL_SRC_FILES += StreamOutPrimaryOEM.cpp
@@ -97,6 +112,15 @@ LOCAL_SHARED_LIBRARIES := \
     libaudioserviceexampleimpl \
     libaudioplatformconverter.qti \
     qti-audio-types-aidl-V1-ndk
+
+ifeq ($(ENABLE_QCOM_HAL_AUDIO_FOCUS),true)
+LOCAL_SHARED_LIBRARIES += \
+    android.hardware.audio.focus-V1-ndk
+endif
+
+ifeq ($(ENABLE_QCOM_AMPERE_AUDIO), true)
+LOCAL_SHARED_LIBRARIES += ampere.hardware.interfaces.automotive.audioparameterparser-V1-ndk
+endif
 
 include $(BUILD_SHARED_LIBRARY)
 

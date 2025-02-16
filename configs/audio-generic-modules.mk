@@ -6,12 +6,23 @@ LATEST_ANDROID_MEDIA_AUDIO_COMMON_TYPES := android.media.audio.common.types-V4-n
 LATEST_ANDROID_HARDWARE_COMMON_FMQ := android.hardware.common.fmq-V1-ndk
 LATEST_ANDROID_HARDWARE_AUDIO_CORE_SOUNDDOSE := android.hardware.audio.sounddose-V2-ndk
 
+ifeq ($(TARGET_USES_CDC_HW), true)
+#enable this flag for enabling Ampere effects
+AUDIO_AMPERE_EFFECTS := false
+endif
+
+ifeq ($(AUDIO_AMPERE_EFFECTS),true)
+CUSTOM_AMPERE_HARDWARE_AUDIO_EFFECT := ampere.hardware.audio.effect-V1-ndk
+AUDIO_GENERIC_MODULES += libampereeffects
+endif
 # to have similar to cc_defaults in make files
 EFFECTS_DEFAULTS_SHARED_LIBRARIES := \
     $(LATEST_ANDROID_HARDWARE_AUDIO_EFFECT) \
     $(LATEST_ANDROID_HARDWARE_COMMON) \
     $(LATEST_ANDROID_MEDIA_AUDIO_COMMON_TYPES) \
     $(LATEST_ANDROID_HARDWARE_COMMON_FMQ) \
+    $(CUSTOM_AMPERE_HARDWARE_AUDIO_EFFECT) \
+    android.hardware.audio.core-V2-ndk \
     libaudioaidlcommon \
     libbase \
     libbinder_ndk \
@@ -46,6 +57,7 @@ MM_AUDIO += libFlacSwDec
 MM_AUDIO += libbatterylistener
 MM_AUDIO += audioflacapp
 MM_AUDIO += liblx-osal
+MM_AUDIO += libautohal_pal
 
 #AOSP effects
 MM_AUDIO += libbundleaidl
@@ -61,6 +73,8 @@ MM_AUDIO += libvolumelistener
 MM_AUDIO += libqcompostprocbundle
 MM_AUDIO += libqcomvisualizer
 MM_AUDIO += libqcomvoiceprocessing
+
+
 #KERNEL_TESTS
 #KERNEL_TESTS := mm-audio-native-test
 

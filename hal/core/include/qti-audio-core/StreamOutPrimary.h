@@ -1,15 +1,22 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
 #pragma once
 
+#include <memory>
 #include <qti-audio-core/AudioUsecase.h>
 #include <qti-audio-core/HalOffloadEffects.h>
 #include <qti-audio-core/Stream.h>
 #include <qti-audio-core/PlatformStreamCallback.h>
+#include <android-base/logging.h>
 
+#ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
+#include <aidl/android/hardware/audio/focus/BnStreamUpdateCallback.h>
+#include <aidl/android/hardware/audio/focus/IStreamUpdateCallback.h>
+#include <aidl/android/hardware/audio/focus/IFocusSession.h>
+#endif
 namespace qti::audio::core {
 
 class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public PlatformStreamCallback {
@@ -22,6 +29,7 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
 
     virtual ~StreamOutPrimary() override;
     int32_t setAggregateSourceMetadata(bool voiceActive) override;
+    std::string getAddress() const;
 
     // Methods of 'DriverInterface'.
     ::android::status_t init() override;
@@ -92,6 +100,9 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     void onTransferReady() override;
     void onDrainReady() override;
     void onError() override;
+#ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
+    ::aidl::android::hardware::audio::focus::IFocusSession focusSessionInfo;
+#endif
 
   protected:
     /*
@@ -154,9 +165,44 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     bool mIsMMapStarted = false;
     bool isHwVolumeSupported();
     struct BufferConfig getBufferConfig();
+    std::string busAddr = "";
 
     // optional buffer format converter, if stream input and output formats are different
     std::optional<std::unique_ptr<BufferFormatConverter>> mBufferFormatConverter;
+    std::set<::aidl::android::media::audio::common::AudioUsage> playbackGainTable = {
+        ::aidl::android::media::audio::common::AudioUsage::MEDIA,
+        ::aidl::android::media::audio::common::AudioUsage::VOICE_COMMUNICATION,
+        ::aidl::android::media::audio::common::AudioUsage::NOTIFICATION,
+        ::aidl::android::media::audio::common::AudioUsage::CALL_ASSISTANT
+    };
+
+    std::map<std::string, float> sourceGainTable = {
+        {"FM", -1500},
+        {"AM", -1200},
+        {"DAB", -200},
+        {"other", 0}
+    };
 };
+
+#ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
+class FocusStreamUpdateCallback :
+        public ::aidl::android::hardware::audio::focus::BnStreamUpdateCallback {
+
+    StreamOutPrimary *stream;
+    public:
+
+        FocusStreamUpdateCallback(StreamOutPrimary* stream){
+            this->stream = stream;
+        }
+
+        ndk::ScopedAStatus onMetadataUpdated(bool doDuck, float gain){
+            LOG(INFO) << "onMetaupdated : gain " << gain;
+            //TODO: check if doDuck needed
+            std::vector<float> Vol = {gain, gain};
+            this->stream->setHwVolume(Vol);
+            return ndk::ScopedAStatus::ok();
+        }
+};
+#endif
 
 } // namespace qti::audio::core

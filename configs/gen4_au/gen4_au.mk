@@ -133,7 +133,21 @@ ifeq ($(ENABLE_HYP),true)
 AUDIO_FEATURE_ENABLED_POWER_POLICY := true
 AUDIO_FEATURE_ENABLED_AUDIO_PARSERS := true
 AUDIO_FEATURE_ENABLED_AUDIO_CONTROL_HAL_AIDL := true
+
+ENABLE_QCOM_HAL_AUDIO_FOCUS := false
+ifeq ($(ENABLE_QCOM_HAL_AUDIO_FOCUS), true)
+PRODUCT_PACKAGES += \
+    android.hardware.automotive.audiocontrol-service.configurable \
+    android.hardware.audio.focus-service
+$(warning ENABLE_QCOM_HAL_AUDIO_FOCUS is $(ENABLE_QCOM_HAL_AUDIO_FOCUS))
+endif
+
+ifneq ($(ENABLE_QCOM_HAL_AUDIO_FOCUS), true)
 PRODUCT_PACKAGES += vendor.qti.hardware.automotive.audiocontrol-service
+endif
+# PRODUCT_PACKAGES += \
+    # android.hardware.automotive.audiocontrol-service.configurable \
+    # android.hardware.audio.focus-service
 PRODUCT_PACKAGES += libqtiautobundle
 ifeq ($(TARGET_BOARD_AUTO), true)
 ifeq ($(TARGET_USES_RRO), true)
@@ -141,6 +155,8 @@ PRODUCT_PACKAGES += CarServiceResAutoTarget_Vendor
 endif
 endif
 endif
+ENABLE_QCOM_AMPERE_AUDIO := false
+$(call soong_config_set_bool,qcom_audio_hal,use_ampere_audio,true)
 
 ifneq (,$(filter U UpsideDownCake 14 V VanillaIceCream 15, $(PLATFORM_VERSION)))
 AUDIO_FEATURE_ENABLED_HAL_V7 := true
@@ -282,7 +298,6 @@ endif
 ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), gen4_gvm)
 PRODUCT_COPY_FILES += \
      $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/vendor_audio_interfaces.xml:$(TARGET_COPY_OUT_VENDOR)/etc/vendor_audio_interfaces.xml \
-     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_effects_config.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects_config.xml \
      $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/microphone_characteristics.xml \
      $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/car_audio_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/car_audio_configuration.xml \
 #     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common/policy_engine/audio_policy_engine_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_engine_configuration.xml \
@@ -290,11 +305,23 @@ PRODUCT_COPY_FILES += \
 #     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common/policy_engine/audio_policy_engine_volumes.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_engine_volumes.xml \
 #     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common/policy_engine/audio_policy_engine_criteria.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_engine_criteria.xml \
 #     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common/policy_engine/audio_policy_engine_criterion_types.xml.in:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_engine_criterion_types.xml
+
+
+ifeq ($(AUDIO_AMPERE_EFFECTS),true)
+PRODUCT_COPY_FILES += \
+$(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_effects_config_rn.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects_config.xml
+else
+PRODUCT_COPY_FILES += \
+     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_effects_config.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects_config.xml
+endif
+
 endif
 
 ifeq ($(TARGET_USES_CDC_HW), true)
 PRODUCT_COPY_FILES += \
-$(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/cdc/audio_module_config_primary.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_module_config_primary.xml
+$(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/cdc/audio_module_config_primary.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_module_config_primary.xml \
+$(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/cdc/duck_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/duck_configuration.xml
+
 else
 PRODUCT_COPY_FILES += \
 $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_module_config_primary.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_module_config_primary.xml

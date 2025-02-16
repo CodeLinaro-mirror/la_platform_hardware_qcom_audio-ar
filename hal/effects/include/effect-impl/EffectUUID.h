@@ -1,5 +1,5 @@
-/*
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ /*
+ * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -428,6 +428,48 @@ static const AudioUuid kQuasarEffectQtiUUID = {static_cast<int32_t>(0x71d0e2ee),
                                                             0xa809,
                                                             {0x09, 0xe7, 0x5e, 0xe5, 0x5e, 0xcd}};
 
+/* Ambiance type uuid: edfe3481-3a6b-47fe-adaa-3f95fb745084 */
+static const AudioUuid kAmbianceTypeUUID = {static_cast<int32_t>(0xedfe3481),
+                                                            0x3a6b,
+                                                            0x47fe,
+                                                            0xadaa,
+                                                            {0x3f, 0x95, 0xfb, 0x74, 0x50, 0x84}};
+//change
+/* Ambiance impl uuid: edfe3481-3a6b-47fe-adaa-3f95fb745084 */
+static const AudioUuid kAmbianceUUID = {static_cast<int32_t>(0xedfe3481),
+                                                            0x3a6b,
+                                                            0x47fe,
+                                                            0xadaa,
+                                                            {0x3f, 0x95, 0xfb, 0x74, 0x50, 0x84}};
+
+/* Sdvc type uuid: cf48ca0e-292d-4d92-8b51-8fe3af991399 */
+static const AudioUuid kSdvcTypeUUID = {static_cast<int32_t>(0xcf48ca0e),
+                                                            0x292d,
+                                                            0x4d92,
+                                                            0x8b51,
+                                                            {0x8f, 0xe3, 0xaf, 0x99, 0x13, 0x99}};
+
+/* Sdvc impl uuid: cf48ca0e-292d-4d92-8b51-8fe3af991399 */
+static const AudioUuid kSdvcUUID = {static_cast<int32_t>(0xcf48ca0e),
+                                                            0x292d,
+                                                            0x4d92,
+                                                            0x8b51,
+                                                            {0x8f, 0xe3, 0xaf, 0x99, 0x13, 0x99}};
+
+/* SteadyVolume type uuid: f5387cca-110c-11ee-be56-0242ac120002 */
+static const AudioUuid kSteadyVolumeTypeUUID = {static_cast<int32_t>(0xf5387cca),
+                                                            0x110c,
+                                                            0x11ee,
+                                                            0xbe56,
+                                                            {0x02, 0x42, 0xac, 0x12, 0x00, 0x02}};
+
+/* SteadyVolume type uuid: f5387cca-110c-11ee-be56-0242ac120002 */
+static const AudioUuid kSteadyVolumeUUID = {static_cast<int32_t>(0xf5387cca),
+                                                            0x110c,
+                                                            0x11ee,
+                                                            0xbe56,
+                                                            {0x02, 0x42, 0xac, 0x12, 0x00, 0x02}};
+
 /**
  * @brief A map between effect name and effect type UUID.
  * All <name> attribution in effect/effectProxy of audio_effects.xml should be listed in this map.
@@ -459,6 +501,17 @@ static const std::map<const std::string /* effect type */, const AudioUuid&> kUu
         {"notification_helper", kNotificationVolumeListenerUUID},
         // {"audiosphere", kNotificationVolumeListenerUUID},
         {"quasar", kQuasarEffectQtiUUID},
+};
+
+/**
+ * @brief A map between effect name and effect type UUID.
+ * All <name> attribution in effect/effectProxy of audio_effects.xml should be listed in this map.
+ * We need this map is because existing audio_effects.xml don't have a type UUID defined.
+ */
+static const std::map<const std::string /* effect type */, const AudioUuid&> kAmpereUuidNameTypeMap = {
+        {"ambiance", kAmbianceTypeUUID},
+        {"sdvc", kSdvcTypeUUID},
+        {"steadyvolume", kSteadyVolumeTypeUUID}
 };
 
 } // namespace aidl::qti::effects

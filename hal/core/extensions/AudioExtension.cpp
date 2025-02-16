@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -11,7 +11,9 @@
 #include <dlfcn.h>
 #include <extensions/AudioExtension.h>
 #include <log/log.h>
+#include <pthread.h>
 #include "PalApi.h"
+#include <qti-audio-core/ModulePrimary.h>
 
 #define DEFAULT_OUTPUT_SAMPLING_RATE 48000
 #define CODEC_BACKEND_DEFAULT_BIT_WIDTH 16
@@ -20,6 +22,9 @@
 #define AUDIO_PARAMETER_KEY_CAN_OPEN_PROXY "can_open_proxy"
 
 #define AFS_QVA_FILE_NAME "/data/vendor/audio/adc_qva_version.txt"
+
+#define ASYNC_STATUS_BUSY 2
+#define ASYNC_STATUS_OK 0
 
 using ::aidl::android::media::audio::common::AudioDevice;
 using ::aidl::android::media::audio::common::AudioDeviceType;
@@ -54,11 +59,29 @@ int AudioExtension::audio_extn_get_parameters(const std::string& id) {
     LOG(DEBUG) << __func__ << ": get param return value : " << ret;
     return ret;
 }
+
+int AutohalExtension::audio_extn_autohal_set_parameters(struct str_parms *parms)
+{
+    int ret = 0;
+    if (parms !=NULL){
+        LOG(DEBUG) << __func__ << " calling autohal_setParameters ";
+        ret = autohal_setParameters(parms);
+        if (ret != 0) {
+            LOG(ERROR) << __func__ << " autohal_setParameters failed with error code " << ret;
+        }
+    }
+    return ret;
+}
+
 void AudioExtension::audio_extn_set_parameters(struct str_parms *params) {
+    mAutohalExtension->audio_extn_autohal_set_parameters(params);
     mHfpExtension->audio_extn_hfp_set_parameters(params);
     mFmExtension->audio_extn_fm_set_parameters(params);
     mAutoOemExtension->audio_extn_autooem_set_parameters(params);
     audio_feature_stats_set_parameters(params);
+#ifdef ECNR_HAL_ENABLE
+    mHalExtension->carplay_set_parameters(params);
+#endif
 }
 
 void AudioExtension::audio_feature_stats_set_parameters(struct str_parms *params) {
@@ -85,6 +108,42 @@ void AudioExtensionBase::cleanUp() {
     if (mHandle != nullptr) {
         dlclose(mHandle);
     }
+}
+
+AutohalExtension::~AutohalExtension() {}
+AutohalExtension::AutohalExtension() : AudioExtensionBase(kAutohalLibrary, isExtensionEnabled(kAutoHalProperty)) {
+    LOG(DEBUG) << __func__ << " Enter";
+    if (!mHandle) {
+            LOG(ERROR)<< __func__ << " dlopen failed \n";
+            goto feature_disabled;
+        }
+    if (mHandle != nullptr) {
+        if (!(autohal_init = (autohal_init_t)dlsym(
+            mHandle, "autohal_init")) ||
+            !(autohal_SetParameters = (set_parameters_t)dlsym(
+                mHandle, "autohal_setParameters"))) {
+            LOG(ERROR)<< __func__ <<  "dlsym failed \n";
+            goto feature_disabled;
+        }
+        init_config.fp_set_mute_config_for_address = extn_set_mute_config_for_address;
+        LOG(DEBUG) << __func__ << "fp log: %s" << init_config.fp_set_mute_config_for_address;
+        autohal_init(init_config);
+
+        LOG(DEBUG)<< __func__ <<  ":: ---- Feature AUTO HAL is Enabled ----";
+
+        return;
+    }
+    feature_disabled:
+    if (mHandle) {
+        dlclose(mHandle);
+        mHandle = NULL;
+        LOG(DEBUG)<< __func__ <<  ":: ---- Feature AUTO HAL is Not Enabled ----";
+    }
+
+    autohal_init = NULL;
+    autohal_SetParameters = NULL;
+
+    LOG(DEBUG) << __func__ << ":: ---- Feature AUTO HAL is disabled ----";
 }
 
 void BatteryListenerExtension::setChargingMode(bool is_charging) {
@@ -152,6 +211,168 @@ feature_disabled:
     batt_listener_deinit = NULL;
     batt_prop_is_charging = NULL;
     LOG(INFO) << __func__ << "----- Feature BATTERY_LISTENER is disabled ----";
+}
+
+// AWX set param for vendorExtension audio effect
+void AWX_set_param(pal_awx_param_t* param, effect_type effect) {
+    LOG(DEBUG) << "Enter " << __func__;
+    int status = 0;
+    size_t padBytes = 0;
+    pal_param_payload* pal_payload = nullptr;
+    effect_pal_payload_t* effect_payload = nullptr;
+    pal_effect_custom_payload_t* customPayload = nullptr;
+    pal_awx_param_t* data = param;
+    uint8_t* payloadInfo = NULL;
+    uint32_t pal_param_size = data->param_size;
+    pal_device_id_t aud_source_effect_device = PAL_DEVICE_OUT_SPEAKER;
+
+    uint32_t payload_size = sizeof(pal_param_payload) + sizeof(effect_pal_payload_t)
+                            + sizeof(pal_effect_custom_payload_t) + pal_param_size;
+    padBytes = PADDING_8BYTE_ALIGN(payload_size);
+
+    payloadInfo = (uint8_t*) calloc(1, (payload_size + padBytes));
+
+    if (payloadInfo == NULL) {
+        LOG(DEBUG) << __func__ << " payloadInfo null";
+        status = -ENOMEM;
+        goto cleanup;
+    }
+
+    createPayload(payloadInfo, &pal_payload, &effect_payload,
+                                &customPayload, data->param_id, pal_param_size);
+
+    memcpy(customPayload->data, data->data, pal_param_size);
+
+    LOG(DEBUG) << __func__ << " param Id: " << customPayload->paramId << " value: "
+                              << customPayload->data[0] << " param_size: " << pal_param_size;
+
+    status = pal_gef_rw_param(PAL_PARAM_ID_UIEFFECT, (void *) pal_payload, payload_size,
+                       aud_source_effect_device, PAL_STREAM_PLAYBACK_BUS, GEF_PARAM_WRITE, NULL);
+
+    if (effect == ASYNC) {
+        status = handleEffectASYNC(status, pal_payload, payload_size, aud_source_effect_device, customPayload);
+    }
+
+    if(status != 0){
+        LOG(DEBUG) << __func__ << "pal_gef_rw_param failed";
+        goto cleanup;
+    }
+
+cleanup:
+    if (payloadInfo) {
+        free(payloadInfo);
+    }
+    pal_payload = nullptr;
+    effect_payload = nullptr;
+    customPayload = nullptr;
+
+    if (status != 0) {
+        LOG(ERROR) << "Error setting param with error: " << status;
+    } else {
+        LOG(INFO) << __func__ << " Set parameter successfully";
+    }
+
+    LOG(DEBUG) << "Exit " << __func__;
+}
+
+// AWX get param for vendorExtension audio effect
+int AWX_get_param(pal_awx_param_t* param, effect_type effect) {
+    LOG(DEBUG) << "Enter " << __func__;
+    int status = 0;
+    size_t padBytes = 0;
+    uint8_t* payloadInfo = NULL;
+    pal_param_payload* pal_payload = nullptr;
+    effect_pal_payload_t* effect_payload = nullptr;
+    pal_effect_custom_payload_t* customPayload = nullptr;
+    pal_awx_param_t* data = param;
+    uint32_t pal_param_size = data->param_size;
+    pal_device_id_t aud_source_effect_device = PAL_DEVICE_OUT_SPEAKER;
+
+    uint32_t payload_size = sizeof(pal_param_payload) + sizeof(effect_pal_payload_t)
+                            + sizeof(pal_effect_custom_payload_t) + pal_param_size;
+    padBytes = PADDING_8BYTE_ALIGN(payload_size);
+
+    payloadInfo = (uint8_t*) calloc(1, (payload_size + padBytes));
+
+    if (payloadInfo == NULL) {
+        LOG(DEBUG) << __func__ <<" payloadInfo null";
+        status = -ENOMEM;
+        goto cleanup;
+    }
+
+    createPayload(payloadInfo, &pal_payload, &effect_payload,
+                                &customPayload, data->param_id, pal_param_size);
+
+    status = pal_gef_rw_param(PAL_PARAM_ID_UIEFFECT, (void*) pal_payload, payload_size,
+                          aud_source_effect_device, PAL_STREAM_PLAYBACK_BUS, GEF_PARAM_READ, NULL);
+
+    if(status != 0){
+        LOG(DEBUG) << __func__ << "pal_gef_rw_param failed";
+        goto cleanup;
+    }
+
+    LOG(DEBUG) << __func__ << " after param Id: " << customPayload->paramId
+                           << " value: " << customPayload->data[0] << " param_size: " << pal_param_size;
+
+    memcpy(data->data, customPayload->data, pal_param_size);
+
+cleanup:
+    if (payloadInfo) {
+        free(payloadInfo);
+    }
+    pal_payload = nullptr;
+    effect_payload = nullptr;
+    customPayload = nullptr;
+
+    LOG(DEBUG) << "Exit " << __func__;
+    return status;
+}
+
+void createPayload(uint8_t* payloadInfo,  pal_param_payload** pal_payload,
+                       effect_pal_payload_t** effect_payload, pal_effect_custom_payload_t** customPayload,
+                       uint32_t param_id, uint32_t pal_param_size) {
+    LOG(DEBUG) << "Enter " << __func__;
+
+    if (!payloadInfo) {
+        LOG(ERROR) << "Bad Parameter";
+        return;
+    }
+
+    *pal_payload = (pal_param_payload*) payloadInfo;
+    *effect_payload = (effect_pal_payload_t*) (payloadInfo + sizeof(pal_param_payload));
+    *customPayload = (pal_effect_custom_payload_t*) (payloadInfo + sizeof(pal_param_payload)
+                    + sizeof(effect_pal_payload_t));
+
+    (*pal_payload)->payload_size = sizeof(effect_pal_payload_t) +
+                                sizeof(pal_effect_custom_payload_t) + pal_param_size;
+
+    (*effect_payload)->isTKV = PARAM_NONTKV;
+    (*effect_payload)->tag = 0xC0000057;
+    (*effect_payload)->payloadSize = sizeof(pal_effect_custom_payload_t) + pal_param_size;
+
+    (*customPayload)->paramId = param_id;
+
+    LOG(DEBUG) << "Exit " << __func__;
+    return;
+}
+
+int handleEffectASYNC(int status, pal_param_payload* pal_payload, uint32_t payload_size,
+                    pal_device_id_t aud_source_effect_device, pal_effect_custom_payload_t* customPayload) {
+    LOG(DEBUG) << "Enter " << __func__;
+    if (status == -1) {
+        int read_status = 0;
+        read_status = pal_gef_rw_param(PAL_PARAM_ID_UIEFFECT, (void*) pal_payload, payload_size,
+                              aud_source_effect_device, PAL_STREAM_PLAYBACK_BUS, GEF_PARAM_READ, NULL);
+
+        int num = customPayload->data[0];
+        num &= 0x0000FFFF;
+        //Checking AsyncTransactionStatus(Byte 2 and 3) of Harman modules in DSP : 0 for OK, 2 for BUSY
+        if (num == ASYNC_STATUS_OK || num == ASYNC_STATUS_BUSY) {
+            status = 0;
+        }
+    }
+    LOG(DEBUG) << "Exit " << __func__;
+    return status;
 }
 
 static int reconfig_cb(tSESSION_TYPE session_type, int state) {

@@ -14,6 +14,8 @@
 
 namespace qti::audio::core {
 
+#define INVALID -1
+
 class StreamOutPrimaryOEM : public StreamOutPrimary {
   public:
     friend class ndk::SharedRefBase;

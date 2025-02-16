@@ -1,0 +1,74 @@
+
+aidl_interface {
+    name: "android.hardware.audio.focus",
+    vendor_available: true,
+    srcs: ["android/hardware/audio/focus/*.aidl"],
+    stability: "vintf",
+    defaults: [
+        "latest_android_media_audio_common_types_import_interface",
+    ],
+    imports: [
+        "android.hardware.automotive.audiocontrol-V5",
+    ],
+    backend: {
+        cpp: {
+            enabled: true,
+        },
+        java: {
+            sdk_version: "module_current",
+            platform_apis: true,
+        },
+        ndk: {
+            enabled: true,
+        },
+    },
+    frozen: true,
+    versions_with_info: [
+        {
+            version: "1",
+            imports: [
+                "android.media.audio.common.types-V4",
+                "android.hardware.automotive.audiocontrol-V5",
+            ],
+        },
+    ],
+
+}
+
+// Note: This should always be one version ahead of the last frozen version
+latest_android_hardware_audio_focus = "android.hardware.audio.focus-V1"
+
+aidl_interface_defaults {
+    name: "latest_android_hardware_audio_focus_import_interface",
+    imports: [
+        latest_android_hardware_audio_focus,
+    ],
+}
+
+cc_defaults {
+    name: "latest_android_hardware_audio_focus_cpp_static",
+    static_libs: [
+        latest_android_hardware_audio_focus + "-cpp",
+    ],
+}
+
+cc_defaults {
+    name: "latest_android_hardware_audio_focus_cpp_shared",
+    shared_libs: [
+        latest_android_hardware_audio_focus + "-cpp",
+    ],
+}
+
+cc_defaults {
+    name: "latest_android_hardware_audio_focus_ndk_static",
+    static_libs: [
+        latest_android_hardware_audio_focus + "-ndk",
+    ],
+}
+
+cc_defaults {
+    name: "latest_android_hardware_audio_focus_ndk_shared",
+    shared_libs: [
+        latest_android_hardware_audio_focus + "-ndk",
+    ],
+}

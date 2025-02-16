@@ -1,5 +1,7 @@
-// Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause-Clear
+ /*
+ * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
 
 #include <memory>
 #include <string>
@@ -286,7 +288,7 @@ void fuzzStream(AudioDataProvider *provider, std::vector<std::shared_ptr<T>> &st
     }
 }
 
-extern "C" binder_status_t registerService(void);
+extern "C" __attribute__((visibility("default"))) binder_status_t registerService(void);
 
 class AudioFuzzer {
 public:

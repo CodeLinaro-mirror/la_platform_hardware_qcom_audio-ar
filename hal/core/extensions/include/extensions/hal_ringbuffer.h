@@ -6,6 +6,7 @@
  */
 
 #pragma once
+#include <android-base/logging.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <log/log.h>
