@@ -16,7 +16,7 @@
 
 /*
  * ​​​​​Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -222,10 +222,14 @@ void Telephony::setDevices(const std::vector<AudioDevice>& devices, const bool u
         mTxDevice = getMatchingTxDevice(mRxDevice);
         updateDevices();
     } else {
-        // mTxDevice = devices;
-        // /* update the voice call devices only on TX devices update. Because Rx
-        //  * devices patch is followed by Tx Devices patch */
-        // updateDevices();
+        /* TX devices update only when call already start. Because Rx
+         * devices patch is set first to setup call.
+         */
+        if (isAnyCallActive() &&
+            (mTxDevice.type.type != devices[0].type.type)) {
+            mTxDevice = devices[0];
+            updateDevices();
+       }
     }
 }
 
