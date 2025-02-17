@@ -15,8 +15,8 @@
  */
 
 /*
- * ​​​​​Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -26,6 +26,15 @@
 #include <qti-audio-core/Module.h>
 #include <qti-audio-core/Platform.h>
 
+typedef enum power_policy_status_t {
+    POWER_POLICY_STATUS_OFFLINE,
+    POWER_POLICY_STATUS_ONLINE
+} power_policy_status_t;
+
+extern "C" void extn_out_set_power_policy(uint8_t enable);
+extern "C" void extn_in_set_power_policy(uint8_t enable);
+extern "C" void extn_set_mute_config_for_address(char* address, bool muted, float volume);
+
 namespace qti::audio::core {
 
 class ModulePrimary final : public Module {
@@ -33,6 +42,7 @@ class ModulePrimary final : public Module {
     ModulePrimary();
 
     // #################### start of overriding APIs from IModule ####################
+    virtual ndk::ScopedAStatus setAudioPortConfig(const ::aidl::android::media::audio::common::AudioPortConfig& in_requested, ::aidl::android::media::audio::common::AudioPortConfig* out_suggested, bool* _aidl_return) override;
     binder_status_t dump(int fd, const char** args, uint32_t numArgs) override;
     ndk::ScopedAStatus getBluetooth(
             std::shared_ptr<::aidl::android::hardware::audio::core::IBluetooth>* _aidl_return)
@@ -226,6 +236,24 @@ class ModulePrimary final : public Module {
 
   private:
     bool mOffloadSpeedSupported;
+};
+
+
+class MuteConfig {
+public:
+    static MuteConfig& GetInstance() {
+        static MuteConfig instance;
+        return instance;
+    }
+    ModuleConfig& getConfig();
+    static void set_mute_config_for_address(char* address, bool muted, float volume);
+
+private:
+    MuteConfig() {
+        std::cout << "MuteConfig Instance Created" << std::endl;
+    }
+    ~MuteConfig() {}
+    static std::vector<float> getVol;
 };
 
 } // namespace qti::audio::core

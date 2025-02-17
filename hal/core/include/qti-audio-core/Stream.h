@@ -55,6 +55,11 @@
 #include <qti-audio-core/Platform.h>
 #include <qti-audio-core/Utils.h>
 
+#define DEEP_BUFFER_PLATFORM_CAPTURE_DELAY (40*1000LL)
+#define LOW_LATENCY_PLATFORM_CAPTURE_DELAY (40*1000LL)
+#define VOIP_TX_PLATFORM_CAPTURE_DELAY (40*1000LL)
+#define RAW_STREAM_PLATFORM_CAPTURE_DELAY (40*1000LL)
+
 namespace qti::audio::core {
 
 class Telephony;
@@ -235,7 +240,8 @@ struct DriverInterface {
             ::aidl::android::hardware::audio::core::StreamDescriptor::Reply* /*reply*/) {
         return ::android::OK;
     }
-
+    // to get hw timestamp from HAL
+    virtual ::android::status_t getHwTimeStamp(::aidl::android::hardware::audio::core::StreamDescriptor::Reply*) = 0;
     // This function is only called once.
     // Implementers must provide implementation to shutdown the platform resources
     virtual void shutdown() { return;}
@@ -687,6 +693,10 @@ class StreamOut : virtual public StreamCommonInterface,
     StreamContext mContext;
     const std::optional<::aidl::android::media::audio::common::AudioOffloadInfo> mOffloadInfo;
     std::optional<::aidl::android::hardware::audio::common::AudioOffloadMetadata> mOffloadMetadata;
+  public:
+    StreamContext& getStreamContext() {
+        return mContext;
+    }
 };
 
 // The recommended way to create a stream instance.

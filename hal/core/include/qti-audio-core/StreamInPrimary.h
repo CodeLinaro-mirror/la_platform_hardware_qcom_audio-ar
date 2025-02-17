@@ -35,6 +35,7 @@ class StreamInPrimary : public StreamIn, public StreamCommonImpl {
             ::aidl::android::hardware::audio::core::StreamDescriptor::Reply*
             /*reply*/) override;
     void shutdown() override;
+    ::android::status_t getHwTimeStamp(::aidl::android::hardware::audio::core::StreamDescriptor::Reply*);
 
     // methods of StreamCommonInterface
 
@@ -71,7 +72,7 @@ class StreamInPrimary : public StreamIn, public StreamCommonImpl {
     void onClose() override { defaultOnClose(); }
     static std::mutex sinkMetadata_mutex_;
     void checkHearingAidRoutingForVoice(const Metadata& metadata, bool voiceActive);
-
+    int64_t GetSourceLatency();
   protected:
     /*
      * This API opens, configures and starts pal stream.
@@ -80,15 +81,19 @@ class StreamInPrimary : public StreamIn, public StreamCommonImpl {
     void configure();
     void resume();
     void shutdown_I();
+    /* burst zero indicates that burst command with zero bytes issued from framework */
+    ::android::status_t burstZero();
+    ::android::status_t startMMAP();
+    ::android::status_t stopMMAP();
     size_t getPlatformDelay() const noexcept;
 
-    // API which are *_I are internal 
+    // API which are *_I are internal
     ndk::ScopedAStatus configureConnectedDevices_I();
 
     const Usecase mTag;
     const std::string mTagName;
     const size_t mFrameSizeBytes;
-
+    uint64_t mBytesRead = 0; /* total bytes read, not cleared when entering standby */
     // All the public must check the validity of this resource, if using
     pal_stream_handle_t* mPalHandle{nullptr};
 
@@ -98,7 +103,7 @@ class StreamInPrimary : public StreamIn, public StreamCommonImpl {
     // references
     Platform& mPlatform{Platform::getInstance()};
     const ::aidl::android::media::audio::common::AudioPortConfig& mMixPortConfig;
-
+    struct timespec readAt;
   private:
     ::android::status_t onReadError(const size_t sleepFrameCount);
     struct BufferConfig getBufferConfig();
@@ -107,7 +112,7 @@ class StreamInPrimary : public StreamIn, public StreamCommonImpl {
     bool mAECEnabled = false;
     bool mNSEnabled = false;
     bool mEffectsApplied = true;
-    bool mIsMMapStarted = false;
+    bool hw_ts_enable = false;
     std::string mLogPrefix = "";
 };
 

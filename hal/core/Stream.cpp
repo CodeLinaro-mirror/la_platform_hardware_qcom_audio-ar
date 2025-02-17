@@ -155,7 +155,13 @@ void StreamWorkerCommonLogic::populateReply(StreamDescriptor::Reply* reply,
     reply->latencyMs = mContext->getNominalLatencyMs();
 
     reply->observable.frames = mContext->getFrameCount();
+#ifndef HARDWARE_TIMESTAMP
     reply->observable.timeNs = ::android::uptimeNanos();
+    LOG(DEBUG) << "android::uptimeNanos() -> TimeStamp - reply->observable.timeNs: " << reply->observable.timeNs;
+#else
+    mDriver->getHwTimeStamp(reply);
+    LOG(DEBUG) << "HW TimeStamp - reply->observable.timeNs: " << reply->observable.timeNs;
+#endif
     if (auto status = mDriver->refinePosition(reply); status == ::android::OK) {
         return;
     }
@@ -379,6 +385,9 @@ bool StreamInWorkerLogic::read(size_t clientSize, StreamDescriptor::Reply* reply
         reply->status = STATUS_NOT_ENOUGH_DATA;
     }
     reply->latencyMs = latency;
+#ifdef VERY_VERBOSE_LOGGING
+    LOG(VERBOSE) << "reply: " << (*reply).toString();
+#endif
     return !fatal;
 }
 

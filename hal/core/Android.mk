@@ -8,7 +8,8 @@ LOCAL_MODULE            := libaudiocorehal.qti
 LOCAL_VENDOR_MODULE     := true
 LOCAL_MODULE_RELATIVE_PATH := hw
 
-LOCAL_C_INCLUDES    :=  $(LOCAL_PATH)/include
+LOCAL_C_INCLUDES    :=  $(LOCAL_PATH)/include\
+                        $(LOCAL_PATH)/extensions/include
 
 LOCAL_CFLAGS := \
     -DBACKEND_NDK \
@@ -16,6 +17,8 @@ LOCAL_CFLAGS := \
     -Wextra \
     -Werror \
     -Wthread-safety
+
+LOCAL_CFLAGS += -Wno-writable-strings
 
 LOCAL_VINTF_FRAGMENTS   := \
     ../../configs/common/manifest_non_qmaa.xml
@@ -32,7 +35,9 @@ LOCAL_SRC_FILES := \
     Telephony.cpp \
     StreamInPrimary.cpp \
     StreamOutPrimary.cpp \
-    HalOffloadEffects.cpp
+    HalOffloadEffects.cpp \
+    extensions/AudioExtension.cpp \
+    extensions/auto_hal.cpp
 
 LOCAL_HEADER_LIBRARIES :=  \
     libxsdc-utils \
@@ -44,6 +49,10 @@ LOCAL_HEADER_LIBRARIES :=  \
     libmedia_helper_headers \
     libarpal_headers
 
+#Enable Hardware timestamp for Android V and U
+ifeq (ifneq (,$(filter U UpsideDownCake 14 V VanillaIceCream 15, $(PLATFORM_VERSION))))
+LOCAL_CPPFLAGS += -DHARDWARE_TIMESTAMP
+endif
 
 #    defaults: [
 #        "latest_android_media_audio_common_types_ndk_shared",
@@ -77,8 +86,8 @@ LOCAL_SHARED_LIBRARIES := \
     libaudioutils \
     libxml2 \
     android.hardware.common-V2-ndk \
-    android.media.audio.common.types-V3-ndk \
-    android.hardware.audio.core-V2-ndk \
+    $(LATEST_ANDROID_MEDIA_AUDIO_COMMON_TYPES) \
+    $(LATEST_ANDROID_HARDWARE_AUDIO_CORE) \
     $(LATEST_ANDROID_HARDWARE_AUDIO_EFFECT) \
     android.hardware.audio.core.sounddose-V1-ndk \
     libar-pal \

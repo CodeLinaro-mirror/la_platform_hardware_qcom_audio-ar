@@ -40,6 +40,8 @@ class StreamStub : public StreamCommonImpl {
     ::android::status_t transfer(void* buffer, size_t frameCount, size_t* actualFrameCount,
                                  int32_t* latencyMs) override;
     void shutdown() override;
+    ::android::status_t getHwTimeStamp(::aidl::android::hardware::audio::core::StreamDescriptor::Reply*) override;
+
 
   private:
     const size_t mFrameSizeBytes;

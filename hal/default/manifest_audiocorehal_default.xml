@@ -15,4 +15,9 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
     <version>2</version>
     <fqname>IModule/default</fqname>
   </hal>
-</manifest> 
+  <hal format="aidl">
+    <name>android.hardware.audio.core</name>
+    <version>2</version>
+    <fqname>IModule/r_submix</fqname>
+  </hal>
+</manifest>

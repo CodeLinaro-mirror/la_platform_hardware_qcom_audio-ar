@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -11,7 +11,10 @@
 #include <dlfcn.h>
 #include <extensions/AudioExtension.h>
 #include <log/log.h>
+#include <pthread.h>
 #include "PalApi.h"
+#include <qti-audio-core/PowerPolicyManager.h>
+#include <qti-audio-core/ModulePrimary.h>
 
 #define DEFAULT_OUTPUT_SAMPLING_RATE 48000
 #define CODEC_BACKEND_DEFAULT_BIT_WIDTH 16
@@ -19,7 +22,14 @@
 
 #define AUDIO_PARAMETER_KEY_CAN_OPEN_PROXY "can_open_proxy"
 
+#ifdef __LP64__
+#define LIBS "/vendor/lib64/"
+#else
+#define LIBS "/vendor/lib/"
+#endif
+
 #define AFS_QVA_FILE_NAME "/data/vendor/audio/adc_qva_version.txt"
+#define POWER_POLICY_LIB_PATH LIBS"libarpowerpolicy.so"
 
 using ::aidl::android::media::audio::common::AudioDevice;
 using ::aidl::android::media::audio::common::AudioDeviceType;
@@ -47,12 +57,156 @@ AudioExtensionBase::~AudioExtensionBase() {
     cleanUp();
 }
 
+// START: Power Policy Client ======================================================================
+static void* power_policy_lib_handle;
+typedef int (*launch_power_policy_t) (power_policy_init_config_t);
+static launch_power_policy_t launch_power_policy;
+
+static void* power_policy_thread_func(void* arg __unused) {
+    if (launch_power_policy == NULL) {
+        LOG(DEBUG) << "%s: Power Policy launcher is NULL" << __func__;
+        goto exit;
+    }
+    LOG(DEBUG) << "%s: Launching Power Policy Client" << __func__;
+    power_policy_init_config_t init_config;
+    init_config.fp_in_set_power_policy = extn_in_set_power_policy;
+    init_config.fp_out_set_power_policy = extn_out_set_power_policy;
+    launch_power_policy(init_config);
+
+exit:
+    return NULL;
+}
+
+int AudioExtension::power_policy_feature_init(bool is_feature_enabled)
+{
+    pthread_t tid;
+    pthread_attr_t attr;
+
+    LOG(DEBUG) << "%s: Called with feature %s" <<  __func__;
+    is_feature_enabled ? LOG(DEBUG) << "Enabled" : LOG(DEBUG) << "NOT Enabled";
+    if (is_feature_enabled) {
+        // dlopen lib
+        power_policy_lib_handle = dlopen(POWER_POLICY_LIB_PATH, RTLD_NOW);
+
+        if (!power_policy_lib_handle) {
+            LOG(ERROR) << "%s: dlopen failed" <<  __func__;
+            goto feature_disabled;
+        }
+        if (!(launch_power_policy = (launch_power_policy_t)dlsym(
+                                    power_policy_lib_handle, "launchPowerPolicyClient"))) {
+            LOG(ERROR) << "%s: dlsym failed" <<  __func__;
+            goto feature_disabled;
+        }
+
+        pthread_attr_init(&attr);
+        pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+        if (pthread_create(&tid, &attr, power_policy_thread_func, NULL)) {
+            LOG(ERROR) << "%s: Failed to create power policy thread" <<  __func__;
+            goto feature_disabled;
+        }
+        LOG(DEBUG) << "%s:: ---- Feature Power Policy Client is Enabled ----" <<  __func__;
+        return 0;
+    }
+
+feature_disabled:
+    if (power_policy_lib_handle) {
+        dlclose(power_policy_lib_handle);
+        power_policy_lib_handle = NULL;
+    }
+
+    launch_power_policy = NULL;
+
+    LOG(DEBUG) << ":: %s: ---- Feature Power Policy Client is disabled ----" <<  __func__;
+    return -ENOSYS;
+}
+
+
+void AudioExtension::in_set_power_policy(uint8_t enable)
+{
+    LOG(DEBUG) << __func__ << " Enter:in_set_power_policy: " << enable;
+    in_power_policy = enable ? POWER_POLICY_STATUS_ONLINE : POWER_POLICY_STATUS_OFFLINE;
+    PowerPolicyManager &mPPolicy = PowerPolicyManager::getInstance();
+    std::vector<std::weak_ptr<StreamInPrimary>> &stream_in_list = mPPolicy.getStreamInPrimaryList();
+    if(stream_in_list.empty()) {
+        LOG(DEBUG)   << __func__ << "stream_in_list is empty\n";
+        return;
+    }
+    auto streamInIter = stream_in_list.begin();
+    if (!enable) {
+        for (streamInIter; streamInIter != stream_in_list.end(); streamInIter++) {
+            auto streamVar = streamInIter->lock();
+            if (streamVar) {
+                LOG(DEBUG) << "Calling standby";
+                streamVar->standby();
+                streamVar.reset();
+            }
+        }
+    }
+    LOG(DEBUG) << __func__ << " Exit:in_set_power_policy:  " << enable;
+}
+
+void AudioExtension::out_set_power_policy(uint8_t enable)
+{
+    LOG(DEBUG) << __func__ << " Enter:out_set_power_policy: " << enable;
+    out_power_policy = enable ? POWER_POLICY_STATUS_ONLINE : POWER_POLICY_STATUS_OFFLINE;
+    PowerPolicyManager &mPPolicy = PowerPolicyManager::getInstance();
+    std::vector<std::weak_ptr<StreamOutPrimary>> &stream_out_list = mPPolicy.getStreamOutPrimaryList();
+    if (stream_out_list.empty()) {
+        LOG(DEBUG)   << __func__ << "stream_out_list is empty\n";
+        return;
+    }
+    auto streamOutIter = stream_out_list.begin();
+    if (!enable) {
+        for (streamOutIter; streamOutIter != stream_out_list.end(); streamOutIter++) {
+            auto streamVar = streamOutIter->lock();
+            if (streamVar) {
+                LOG(DEBUG) << "Calling standby";
+                streamVar->standby();
+                streamVar.reset();
+            }
+        }
+    }
+    LOG(DEBUG) << __func__ << " Exit:out_set_power_policy:  " << enable;
+}
+
+void extn_out_set_power_policy(uint8_t enable)
+{
+    LOG(DEBUG) << __func__ << " extn_out_set_power_policy: " << enable;
+    AudioExtension & AudioExtns =  AudioExtension::getInstance();
+    return AudioExtns.out_set_power_policy(enable);
+}
+
+void extn_in_set_power_policy(uint8_t enable)
+{
+    LOG(DEBUG) << __func__ << " extn_in_set_power_policy " << enable;
+    AudioExtension & AudioExtns =  AudioExtension::getInstance();
+    return AudioExtns.in_set_power_policy(enable);
+}
+
+// END: Power Policy Client ======================================================================
+
+
 void AudioExtension::audio_extn_get_parameters(struct str_parms *query, struct str_parms *reply) {
     char *kv_pairs = NULL;
     char value[32] = {0};
     int ret, val = 0;
 }
+
+int AutohalExtension::audio_extn_autohal_set_parameters(struct str_parms *parms)
+{
+    int ret = 0;
+    if (parms !=NULL){
+        LOG(DEBUG) << __func__ << " calling autohal_setParameters ";
+        ret = autohal_setParameters(parms);
+        if (ret != 0) {
+            LOG(ERROR) << __func__ << " autohal_setParameters failed with error code " << ret;
+        }
+    }
+    return ret;
+}
+
 void AudioExtension::audio_extn_set_parameters(struct str_parms *params) {
+    mAutohalExtension->audio_extn_autohal_set_parameters(params);
     mHfpExtension->audio_extn_hfp_set_parameters(params);
     mFmExtension->audio_extn_fm_set_parameters(params);
     audio_feature_stats_set_parameters(params);
@@ -84,6 +238,40 @@ void AudioExtensionBase::cleanUp() {
     }
 }
 
+AutohalExtension::~AutohalExtension() {}
+AutohalExtension::AutohalExtension() : AudioExtensionBase(kAutohalLibrary, isExtensionEnabled(kAutoHalProperty)) {
+    LOG(DEBUG) << __func__ << " Enter";
+    autohal_init = NULL;
+    autohal_SetParameters = NULL;
+    if (!mHandle) {
+            LOG(ERROR)<< __func__ << " dlopen failed \n";
+            goto feature_disabled;
+        }
+    if (mHandle != nullptr) {
+        if (!(autohal_init = (autohal_init_t)dlsym(
+            mHandle, "autohal_init")) ||
+            !(autohal_SetParameters = (set_parameters_t)dlsym(
+                mHandle, "autohal_setParameters"))) {
+            LOG(ERROR)<< __func__ <<  "dlsym failed \n";
+            goto feature_disabled;
+        }
+        init_config.fp_set_mute_config_for_address = extn_set_mute_config_for_address;
+        LOG(DEBUG) << __func__ << "fp log: %s" << init_config.fp_set_mute_config_for_address;
+        autohal_init(init_config);
+
+        LOG(DEBUG)<< __func__ <<  ":: ---- Feature AUTO HAL is Enabled ----";
+
+        return;
+    }
+feature_disabled:
+    if (mHandle) {
+        dlclose(mHandle);
+        mHandle = NULL;
+        LOG(DEBUG)<< __func__ <<  ":: ---- Feature AUTO HAL is Not Enabled ----";
+    }
+
+    LOG(DEBUG) << __func__ << ":: ---- Feature AUTO HAL is disabled ----";
+}
 void BatteryListenerExtension::setChargingMode(bool is_charging) {
     int32_t result = 0;
     pal_param_charging_state_t charge_state;

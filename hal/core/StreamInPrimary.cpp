@@ -84,12 +84,17 @@ StreamInPrimary::StreamInPrimary(StreamContext&& context, const SinkMetadata& si
      *  update metadata, in AIDL its not present , so doing here.
      */
     updateMetadata(sinkMetadata);
-
+    if (property_get_bool("persist.vendor.audio.hw_ts_enable",false)) {
+        LOG(DEBUG) << "hw_ts_enable is true";
+        hw_ts_enable = true;
+    }
+    else
+        hw_ts_enable = false;
     std::ostringstream os;
     os << " : usecase: " << mTagName;
     os << " IoHandle:" << mMixPortConfig.ext.get<AudioPortExt::Tag::mix>().handle;
     mLogPrefix = os.str();
-
+    readAt = {0};
     LOG(DEBUG) << __func__ << mLogPrefix;
 }
 
@@ -178,6 +183,10 @@ struct BufferConfig StreamInPrimary::getBufferConfig() {
 
 ndk::ScopedAStatus StreamInPrimary::configureMMapStream(int32_t* fd, int64_t* burstSizeFrames,
                                                         int32_t* flags, int32_t* bufferSizeFrames) {
+    if (AudioExtension::getInstance().in_power_policy == POWER_POLICY_STATUS_OFFLINE) {
+        LOG(ERROR) << "POWER POLICY OFFLINE please try again\n";
+        return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
+    }
     if (mTag != Usecase::MMAP_RECORD) {
         LOG(ERROR) << __func__ << mLogPrefix << " cannot call on non-MMAP stream types";
         return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
@@ -256,20 +265,14 @@ ndk::ScopedAStatus StreamInPrimary::configureMMapStream(int32_t* fd, int64_t* bu
     return ::android::OK;
 }
 
-::android::status_t StreamInPrimary::drain(
-        ::aidl::android::hardware::audio::core::StreamDescriptor::DrainMode mode) {
+::android::status_t StreamInPrimary::drain(StreamDescriptor::DrainMode mode) {
     if (!mPalHandle) {
         LOG(WARNING) << __func__ << mLogPrefix << " stream is not configured";
         return ::android::OK;
     }
-    if (mTag == Usecase::MMAP_RECORD && mIsMMapStarted) {
-        LOG(DEBUG) << __func__ << mLogPrefix << ": stopping input mmap";
-        if (int32_t ret = pal_stream_stop(mPalHandle); ret) {
-            LOG(ERROR) << __func__ << mLogPrefix
-                       << " failed to stop MMAP stream, ret:" << std::to_string(ret);
-            return -EINVAL;
-        }
-        mIsMMapStarted = false;
+    if (mTag == Usecase::MMAP_RECORD) {
+        // drain in MMAP is stop
+        return stopMMAP();
     }
     return ::android::OK;
 }
@@ -279,12 +282,20 @@ ndk::ScopedAStatus StreamInPrimary::configureMMapStream(int32_t* fd, int64_t* bu
         LOG(WARNING) << __func__ << mLogPrefix << " stream is not configured";
         return ::android::OK;
     }
-    // No op
+    if (mTag == Usecase::MMAP_RECORD) {
+        // Flush in MMAP is stop
+        return stopMMAP();
+    }
     return ::android::OK;
 }
 
 ::android::status_t StreamInPrimary::pause() {
     // Todo check whether pause is possible in PAL
+
+    if (mTag == Usecase::MMAP_RECORD) {
+        // pause in MMAP is stop
+        return stopMMAP();
+    }
     shutdown_I();
     return ::android::OK;
 }
@@ -294,20 +305,31 @@ void StreamInPrimary::resume() {
 }
 
 ::android::status_t StreamInPrimary::standby() {
+    if (!mPalHandle) {
+        LOG(WARNING) << __func__ << mLogPrefix << ": stream is not configured ";
+        return ::android::OK;
+    }
+
+    if (mTag == Usecase::MMAP_RECORD) {
+       if (AudioExtension::getInstance().in_power_policy == POWER_POLICY_STATUS_OFFLINE) {
+            return stopMMAP();
+       } else {
+            return ::android::OK;
+       }
+    }
+
     shutdown_I();
     return ::android::OK;
 }
 
 ::android::status_t StreamInPrimary::start() {
     LOG(DEBUG) << __func__ << mLogPrefix;
-    if (mTag == Usecase::MMAP_RECORD && !mIsMMapStarted) {
-        if (int32_t ret = ::pal_stream_start(this->mPalHandle); ret) {
-            LOG(ERROR) << __func__ << mLogPrefix << " pal_stream_start failed!! ret:" << std::to_string(ret);
-            ::pal_stream_close(mPalHandle);
-            mPalHandle = nullptr;
-            return -EINVAL;
-        }
-        mIsMMapStarted = true;
+    if (AudioExtension::getInstance().in_power_policy == POWER_POLICY_STATUS_OFFLINE) {
+        LOG(ERROR) << "POWER POLICY OFFLINE please try again\n";
+        return -EINVAL;
+    }
+    if (mTag == Usecase::MMAP_RECORD) {
+        return startMMAP();
     }
     return ::android::OK;
 }
@@ -327,8 +349,29 @@ void StreamInPrimary::resume() {
     return ::android::OK;
 }
 
+int64_t StreamInPrimary::GetSourceLatency() {
+    auto attr = mPlatform.getPalStreamAttributes(mMixPortConfig, true);
+    switch (attr->type) {
+        case PAL_STREAM_DEEP_BUFFER:
+            return DEEP_BUFFER_PLATFORM_CAPTURE_DELAY;
+        case PAL_STREAM_LOW_LATENCY:
+            return LOW_LATENCY_PLATFORM_CAPTURE_DELAY;
+        case PAL_STREAM_VOIP_TX:
+            return VOIP_TX_PLATFORM_CAPTURE_DELAY;
+        case PAL_STREAM_RAW:
+            return RAW_STREAM_PLATFORM_CAPTURE_DELAY;
+            // TODO: Add more streamtypes if available in pal
+        default:
+            return 0;
+    }
+}
+
 ::android::status_t StreamInPrimary::transfer(void* buffer, size_t frameCount,
                                               size_t* actualFrameCount, int32_t* latencyMs) {
+    if (AudioExtension::getInstance().in_power_policy == POWER_POLICY_STATUS_OFFLINE) {
+        LOG(ERROR) << "POWER POLICY OFFLINE please try again\n";
+        return android::INVALID_OPERATION;
+    }
     if (!mPalHandle) {
         configure();
         if (!mPalHandle) {
@@ -337,10 +380,29 @@ void StreamInPrimary::resume() {
             return onReadError(frameCount);
         }
     }
+    if (frameCount == 0) {
+        *actualFrameCount = 0;
+        return burstZero();
+    }
+    if (mTag == Usecase::MMAP_RECORD) {
+        return startMMAP();
+    }
 
     pal_buffer palBuffer{};
     palBuffer.buffer = static_cast<uint8_t*>(buffer);
     palBuffer.size = frameCount * mFrameSizeBytes;
+    palBuffer.ts = nullptr;
+    uint64_t signed_frames = 0;
+    uint64_t read_frames = 0;
+    uint64_t kernel_frames = 0;
+    size_t kernel_buffer_size = 0;
+#ifdef HARDWARE_TIMESTAMP
+    palBuffer.ts = (struct timespec *) calloc(1, 1 * sizeof(struct timespec));
+    if (!palBuffer.ts) {
+        LOG(ERROR) << "calloc failed for size: " << sizeof(struct timespec) << "for palBuffer.ts";
+        return ::android::NO_MEMORY;
+    }
+#endif
 #ifdef VERY_VERBOSE_LOGGING
     LOG(VERBOSE) << __func__ << mLogPrefix << ": framecount " << frameCount << " mFrameSizeBytes "
                  << mFrameSizeBytes;
@@ -375,7 +437,16 @@ void StreamInPrimary::resume() {
     } else if (mTag == Usecase::PCM_RECORD || mTag == Usecase::HOTWORD_RECORD) {
         *latencyMs = PcmRecord::kCaptureDurationMs;
     }
-
+#ifndef HARDWARE_TIMESTAMP
+    clock_gettime(CLOCK_MONOTONIC, &readAt);
+#else
+    if(palBuffer.ts) {
+        readAt.tv_sec = palBuffer.ts->tv_sec;
+        readAt.tv_nsec = palBuffer.ts->tv_nsec;
+        free(palBuffer.ts);
+    }
+    LOG(ERROR) << "hw timestamp sec: " << readAt.tv_sec << "  nsec: " << readAt.tv_nsec;
+#endif
     if (bytesRead < 0) {
         LOG(ERROR) << __func__ << mLogPrefix << " read failed, ret:" << std::to_string(bytesRead);
         *actualFrameCount = frameCount;
@@ -389,12 +460,30 @@ void StreamInPrimary::resume() {
     LOG(VERBOSE) << __func__ << mLogPrefix << ": bytes read " << bytesRead << ", return frame count "
                  << *actualFrameCount;
 #endif
-
+    LOG(DEBUG) << "bytes read: " << bytesRead;
+    mBytesRead += bytesRead;
+    LOG(DEBUG) << "mBytes read: " << mBytesRead;
+    read_frames = mBytesRead / mFrameSizeBytes;
+    struct BufferConfig BufferConfig_ = getBufferConfig();
+    kernel_buffer_size = BufferConfig_.bufferSize * BufferConfig_.bufferCount;
+    kernel_frames = kernel_buffer_size / mFrameSizeBytes;
+    signed_frames = read_frames + kernel_frames;
+    if (hw_ts_enable) {
+        LOG(DEBUG) << "signed frames " << signed_frames << " read frames " << read_frames <<
+        " kernel frames " << kernel_frames << " pal_stream_handle = " << mPalHandle << " timestamp = " << readAt.tv_nsec;
+    } else {
+        LOG(VERBOSE) << "signed frames " << signed_frames << " read frames " << read_frames <<
+        " kernel frames " << kernel_frames << " pal_stream_handle = " << mPalHandle << " timestamp = " << readAt.tv_nsec;
+    }
     return ::android::OK;
 }
 
 ::android::status_t StreamInPrimary::refinePosition(
         ::aidl::android::hardware::audio::core::StreamDescriptor::Reply* reply) {
+    if (AudioExtension::getInstance().in_power_policy == POWER_POLICY_STATUS_OFFLINE) {
+        LOG(ERROR) << "POWER POLICY OFFLINE please try again\n";
+        return android::INVALID_OPERATION;
+    }
     if (mTag == Usecase::COMPRESS_CAPTURE) {
         auto& compressCapture = std::get<CompressCapture>(mExt);
         reply->observable.frames = compressCapture.getPositionInFrames();
@@ -415,6 +504,23 @@ void StreamInPrimary::shutdown() {
 // end of driverInterface methods
 
 // start of StreamCommonInterface methods
+
+::android::status_t StreamInPrimary::getHwTimeStamp(::aidl::android::hardware::audio::core::StreamDescriptor::Reply* reply) {
+    LOG(DEBUG) << "Enter: " << __func__;
+    if (!reply) {
+        LOG(ERROR) << "Null in reply - " << "Failed to get hw timestamp";
+        return ::android::INVALID_OPERATION;
+    }
+    int64_t dsp_latency = 0;
+    dsp_latency = GetSourceLatency();
+#ifndef HARDWARE_TIMESTAMP
+    reply->observable.timeNs = (readAt.tv_sec * 1000000000LL) + readAt.tv_nsec - (dsp_latency * 1000LL);
+#else
+    reply->observable.timeNs = (readAt.tv_sec * 1000000000LL) + readAt.tv_nsec;
+#endif
+    LOG(DEBUG) << "Exit: ok" << __func__;
+    return ::android::OK;
+}
 
 void StreamInPrimary::checkHearingAidRoutingForVoice(const Metadata& metadata, bool voiceActive) {
 
@@ -612,9 +718,18 @@ size_t StreamInPrimary::getPlatformDelay() const noexcept {
 }
 
 void StreamInPrimary::configure() {
+
+    if(hasInputMMapFlag(mMixPortConfig.flags.value())){
+        // this API doesn't handle for MMAP
+        return;
+    }
     const auto startTime = std::chrono::steady_clock::now();
     auto attr = mPlatform.getPalStreamAttributes(mMixPortConfig, true);
     LOG(INFO) << __func__ << " : configure : Enter";
+    if (AudioExtension::getInstance().in_power_policy == POWER_POLICY_STATUS_OFFLINE) {
+        LOG(ERROR) << "POWER POLICY OFFLINE please try again\n";
+        return;
+    }
     auto palDevices = mPlatform.configureAndFetchPalDevices(mMixPortConfig, mTag, mConnectedDevices);
     if (!attr) {
         LOG(ERROR) << __func__ << mLogPrefix << " no pal attributes";
@@ -791,6 +906,10 @@ void StreamInPrimary::applyEffects() {
 
 void StreamInPrimary::shutdown_I() {
     LOG(DEBUG) << __func__ << mLogPrefix;
+
+    if (mTag == Usecase::MMAP_RECORD) {
+        std::get<MMapRecord>(mExt).setPalHandle(nullptr);
+    }
     mEffectsApplied = true;
     if (mPalHandle != nullptr) {
         if (mTag == Usecase::HOTWORD_RECORD) {
@@ -801,7 +920,33 @@ void StreamInPrimary::shutdown_I() {
         }
     }
     mPalHandle = nullptr;
-    mIsMMapStarted = false;
+}
+
+::android::status_t StreamInPrimary::burstZero() {
+    LOG(VERBOSE) << __func__ << mLogPrefix;
+    if (mTag == Usecase::MMAP_RECORD) {
+        return startMMAP();
+    }
+
+    return ::android::OK;
+}
+
+::android::status_t StreamInPrimary::startMMAP() {
+    auto& mmap = std::get<MMapRecord>(mExt);
+    if (auto ret = mmap.start(); ret) {
+        LOG(ERROR) << __func__ << mLogPrefix << ": failed";
+        return ret;
+    }
+    return ::android::OK;
+}
+
+::android::status_t StreamInPrimary::stopMMAP() {
+    auto& mmap = std::get<MMapRecord>(mExt);
+    if (auto ret = mmap.stop(); ret) {
+        LOG(ERROR) << __func__ << mLogPrefix << ": failed";
+        return ret;
+    }
+    return ::android::OK;
 }
 
 } // namespace qti::audio::core

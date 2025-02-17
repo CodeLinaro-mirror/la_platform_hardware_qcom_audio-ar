@@ -16,7 +16,7 @@
 
 /*
  * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -32,12 +32,19 @@
 #include <qti-audio-core/ModulePrimary.h>
 #include <qti-audio-core/Parameters.h>
 #include <qti-audio-core/PlatformUtils.h>
+#include <qti-audio-core/PowerPolicyManager.h>
 #include <qti-audio-core/StreamInPrimary.h>
 #include <qti-audio-core/StreamOutPrimary.h>
 #include <qti-audio-core/StreamStub.h>
 #include <qti-audio-core/Telephony.h>
 #include <qti-audio-core/Utils.h>
+#include <qti-audio-core/Stream.h>
+#include <memory>
 
+#define MIN_VOLUME_GAIN_MB -6000
+#define MAX_VOLUME_GAIN_MB 0
+#define MIN_VOLUME_GAIN 0.0f
+#define MAX_VOLUME_GAIN 1.0f
 using aidl::android::hardware::audio::common::SinkMetadata;
 using aidl::android::hardware::audio::common::SourceMetadata;
 using aidl::android::media::audio::common::AudioOffloadInfo;
@@ -65,10 +72,16 @@ using ::aidl::android::hardware::audio::core::IBluetooth;
 using ::aidl::android::hardware::audio::core::IBluetoothA2dp;
 using ::aidl::android::hardware::audio::core::IBluetoothLe;
 
+#ifdef __cplusplus
+ extern "C" {
+#endif
+
 namespace qti::audio::core {
 
 std::vector<std::weak_ptr<::qti::audio::core::StreamOut>> ModulePrimary::mStreamsOut;
 std::vector<std::weak_ptr<::qti::audio::core::StreamIn>> ModulePrimary::mStreamsIn;
+
+std::vector<float> qti::audio::core::MuteConfig::getVol = {-3600.0f, -3600.0f};
 
 std::mutex ModulePrimary::outListMutex;
 std::mutex ModulePrimary::inListMutex;
@@ -237,9 +250,11 @@ ndk::ScopedAStatus ModulePrimary::createInputStream(StreamContext&& context,
                                                     const std::vector<MicrophoneInfo>& microphones,
                                                     std::shared_ptr<StreamIn>* result) {
     createStreamInstance<StreamInPrimary>(result, std::move(context), sinkMetadata, microphones);
+    PowerPolicyManager::getInstance().updateStreamInPrimaryList(
+        (std::static_pointer_cast<::qti::audio::core::StreamInPrimary>(*result)));
     ModulePrimary::inListMutex.lock();
     ModulePrimary::updateStreamInList(*result);
-    if (mTelephony) { 
+    if (mTelephony) {
         mTelephony->mStreamInPrimary = *result;
     }
     ModulePrimary::inListMutex.unlock();
@@ -256,10 +271,12 @@ ndk::ScopedAStatus ModulePrimary::createOutputStream(
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
     }
     createStreamInstance<StreamOutPrimary>(result, std::move(context), sourceMetadata, offloadInfo);
+    PowerPolicyManager::getInstance().updateStreamOutPrimaryList(
+        (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(*result)));
     ModulePrimary::outListMutex.lock();
     ModulePrimary::updateStreamOutList(*result);
     // save primary out stream weak ptr, as some other modules need it.
-    if (mTelephony) { 
+    if (mTelephony) {
         mTelephony->mStreamOutPrimary = *result;
     }
 
@@ -291,6 +308,74 @@ void ModulePrimary::onNewPatchCreation(const std::vector<AudioPortConfig*>& sour
         numFrames = kMinimumStreamBufferSizeFrames;
     }
     newPatch.minimumStreamBufferSizeFrames = numFrames;
+}
+
+ndk::ScopedAStatus qti::audio::core::ModulePrimary::setAudioPortConfig(const ::aidl::android::media::audio::common::AudioPortConfig& in_requested,::aidl::android::media::audio::common::AudioPortConfig* out_suggested,bool* _aidl_return)
+{
+    int list_id,Requsted_id;
+    LOG(DEBUG) << "setaudioportconfig module primary";
+    Module::setAudioPortConfig(in_requested,out_suggested,_aidl_return);
+    if (in_requested.gain.has_value()) {
+        if (in_requested.gain->values.empty()) {
+            return ndk::ScopedAStatus::ok();
+        }
+        LOG(DEBUG) << __func__ << ": requested " << in_requested.toString();
+    }
+    else {
+        return ndk::ScopedAStatus::ok();
+        }
+    auto list = getOutStreams();
+    if (list.empty()) {
+        LOG(DEBUG) << "the module list is empty";
+        return ndk::ScopedAStatus::ok();
+    }
+    auto& routes = getConfig().routes;
+    auto route = routes.begin();
+    for (route;route != routes.end(); route++) {
+        if (route->sinkPortId == in_requested.portId) {
+            LOG(DEBUG) << "route port " << route->toString();
+            break;
+        }
+    }
+    LOG(DEBUG) << "the module list is not empty";
+    auto iter = list.begin();
+    auto route_portid = route->sourcePortIds.begin();
+    for (iter; (iter != list.end()&& route_portid!=route->sourcePortIds.end()); iter++) {
+       auto outIter = iter->lock();
+        if (outIter) {
+            auto &mcontext = (*outIter).getStreamContext();
+            auto &list_audioportconfig = mcontext.getMixPortConfig();
+            list_id = list_audioportconfig.portId;
+            float volume;
+            if (list_id == (*route_portid)) {
+                std::vector<float> vol;
+                LOG(DEBUG) << "Found the stream at id" << list_id;
+                if (in_requested.gain->values[0] >= MAX_VOLUME_GAIN_MB) {
+                    volume = MAX_VOLUME_GAIN;
+                }
+                else {
+                    if (in_requested.gain->values[0] <= MIN_VOLUME_GAIN_MB) {
+                        volume = MIN_VOLUME_GAIN;
+                }
+                    else {
+                        volume=pow(10,((float)(in_requested.gain->values[0]))/2000);
+                    }
+                }
+                vol.push_back(volume);
+                vol.push_back(volume);
+                LOG(DEBUG) << "gain is:" << volume;
+                LOG(DEBUG) << "volume is:" << vol[0];
+                (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(outIter))->setHwVolume(vol);
+                LOG(DEBUG) << "volume set :" << vol[0];
+                route_portid++;
+            }
+            outIter.reset();
+        }
+        else {
+            LOG(DEBUG) << "error in generation of shared pointer";
+        }
+    }
+    return ndk::ScopedAStatus::ok();
 }
 
 void ModulePrimary::setAudioPatchTelephony(const std::vector<AudioPortConfig*>& sources,
@@ -489,6 +574,54 @@ void ModulePrimary::onSetGenericParameters(const std::vector<VendorParameter>& p
         }
     }
 }
+
+void MuteConfig::set_mute_config_for_address(char* address, bool muted, float volume) {
+    LOG(DEBUG) << __func__ << ": Enter, muted: " << muted << ", address: " << address;
+    bool is_muted = false;
+
+    ModulePrimary::outListMutex.lock();
+
+    for (auto weakStream : ModulePrimary::getOutStreams()) {
+        if (weakStream.expired()) {
+            LOG(DEBUG) << "stream empty: ";
+        }
+        auto stream = weakStream.lock();
+        if (stream) {
+            auto streamOutPrimary = std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(stream);
+            if (std::strcmp(streamOutPrimary->getAddress().c_str(), address) == 0) {
+                LOG(DEBUG) << "Mute applied to stream with address: " << address;
+                if (muted) {
+                   if(!is_muted) {
+                        (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(stream))->getHwVolume(&getVol);
+                        is_muted  = true;
+                    }
+                    std::vector<float> vol;
+                    vol.push_back(volume);
+                    vol.push_back(volume);
+                    LOG(DEBUG)<<"gain is:"<<volume;
+                    LOG(DEBUG)<<"volume is:"<<vol[0];
+                    (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(stream))->setHwVolume(vol);
+                    LOG(DEBUG)<<"volume set :"<<vol[0];
+               } else {
+                    (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(stream))->setHwVolume(getVol);
+                    is_muted  = false;
+                }
+            }
+            stream.reset();
+       } else {
+            LOG(DEBUG) << "failed to generate shared pointer";
+        }
+    }
+    ModulePrimary::outListMutex.unlock();
+}
+
+ void extn_set_mute_config_for_address(char* address, bool muted, float volume)
+{
+    LOG(DEBUG)<< __func__ << " mute:" << muted  << "address:" << address;
+    auto& muteConfigInst = MuteConfig::GetInstance();
+    return muteConfigInst.set_mute_config_for_address(address, muted, volume);
+}
+
 
 void ModulePrimary::onSetHDRParameters(const std::vector<VendorParameter>& params) {
     for (const auto& param : params) {
@@ -996,3 +1129,7 @@ ModulePrimary::FeatureToGetHandlerMap ModulePrimary::fillFeatureToGetHandlerMap(
 // end of module parameters handling
 
 } // namespace qti::audio::core
+
+#ifdef __cplusplus
+}
+#endif

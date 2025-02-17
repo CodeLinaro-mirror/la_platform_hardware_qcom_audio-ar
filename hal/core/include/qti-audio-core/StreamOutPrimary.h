@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -9,6 +9,12 @@
 #include <qti-audio-core/HalOffloadEffects.h>
 #include <qti-audio-core/Stream.h>
 #include <qti-audio-core/PlatformStreamCallback.h>
+
+#define LOW_LATENCY_PLATFORM_DELAY (13*1000LL)
+#define DEEP_BUFFER_PLATFORM_DELAY (70*1000LL)
+#define PCM_OFFLOAD_PLATFORM_DELAY (30*1000LL)
+#define MMAP_PLATFORM_DELAY        (3*1000LL)
+#define ULL_PLATFORM_DELAY         (4*1000LL)
 
 namespace qti::audio::core {
 
@@ -22,6 +28,7 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
 
     virtual ~StreamOutPrimary() override;
     int32_t setAggregateSourceMetadata(bool voiceActive) override;
+    std::string getAddress() const;
 
     // Methods of 'DriverInterface'.
     ::android::status_t init() override;
@@ -37,7 +44,7 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
             ::aidl::android::hardware::audio::core::StreamDescriptor::Reply*
             /*reply*/) override;
     void shutdown() override;
-
+    ::android::status_t getHwTimeStamp(::aidl::android::hardware::audio::core::StreamDescriptor::Reply*);
     // methods of StreamCommonInterface
 
     ndk::ScopedAStatus getVendorParameters(
@@ -92,7 +99,7 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     void onTransferReady() override;
     void onDrainReady() override;
     void onError() override;
-
+    uint64_t mBytesWritten; /* total bytes written, not cleared when entering standby */
   protected:
     /*
      * opens, configures and starts pal stream, also validates the pal handle.
@@ -100,13 +107,17 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     void configure();
     void resume();
     void shutdown_I();
+    /* burst zero indicates that burst command with zero bytes issued from framework */
+    ::android::status_t burstZero();
+    ::android::status_t startMMAP();
+    ::android::status_t stopMMAP();
     size_t getPlatformDelay() const noexcept;
     ::android::status_t onWriteError(const size_t sleepFrameCount);
 
     // This API calls startEffect/stopEffect only on offload/pcm offload outputs.
     void enableOffloadEffects(const bool enable);
-
-    // API which are *_I are internal 
+    int64_t GetRenderLatency(std::string address);
+    // API which are *_I are internal
     ndk::ScopedAStatus configureConnectedDevices_I();
 
     const Usecase mTag;
@@ -116,6 +127,8 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     std::vector<float> mVolumes{};
     bool mUseCachedVolume = false;
     bool mHwVolumeSupported = false;
+    bool mHwFlushSupported = false;
+    bool mHwPauseSupported = false;
     // check validaty of mPalHandle before use
     pal_stream_handle_t* mPalHandle{nullptr};
     pal_stream_handle_t* mHapticsPalHandle{nullptr};
@@ -138,20 +151,22 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
 
     std::variant<std::monostate, PrimaryPlayback, DeepBufferPlayback, CompressPlayback,
                  PcmOffloadPlayback, VoipPlayback, SpatialPlayback, MMapPlayback, UllPlayback,
-                 InCallMusic, HapticsPlayback,SysNotificationPlayback, NavGuidancePlayback,
-                 PhonePlayback, AlertPlayback,MediaPlayback>
+                 InCallMusic, HapticsPlayback, SysNotificationPlayback, NavGuidancePlayback,
+                 PhonePlayback, AlertPlayback, MediaPlayback, LowLatencyPlayback>
             mExt;
     // references
     Platform& mPlatform{Platform::getInstance()};
     const ::aidl::android::media::audio::common::AudioPortConfig& mMixPortConfig;
     HalOffloadEffects& mHalEffects{HalOffloadEffects::getInstance()};
     AudioExtension& mAudExt{AudioExtension::getInstance()};
-
+    int64_t GetSourceLatency();
   private:
     std::string mLogPrefix = "";
-    bool mIsMMapStarted = false;
     bool isHwVolumeSupported();
+    bool isHwFlushSupported();
+    bool isHwPauseSupported();
     struct BufferConfig getBufferConfig();
+    std::string busAddr = "";
 
     // optional buffer format converter, if stream input and output formats are different
     std::optional<std::unique_ptr<BufferFormatConverter>> mBufferFormatConverter;
