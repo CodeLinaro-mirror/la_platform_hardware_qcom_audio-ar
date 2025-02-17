@@ -17,8 +17,8 @@ LOCAL_CFLAGS := \
     -Werror \
     -Wthread-safety
 
-LOCAL_VINTF_FRAGMENTS := \
-    ../../configs/$(TARGET_BOARD_PLATFORM)/manifest_audio_qti_services.xml
+# check default core HAL library VINTF Fragments
+#LOCAL_VINTF_FRAGMENTS := manifest_audiocoreservices_qti.xml
 
 LOCAL_SRC_FILES := \
     CoreService.cpp \
