@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -102,7 +102,8 @@ bool isBluetoothLETXDevice(const AudioDevice& device) noexcept {
 
 bool isBluetoothDevice(const AudioDevice& device) noexcept {
     return (device.type.connection == AudioDeviceDescription::CONNECTION_BT_A2DP ||
-            device.type.connection == AudioDeviceDescription::CONNECTION_BT_LE);
+            device.type.connection == AudioDeviceDescription::CONNECTION_BT_LE ||
+            device.type.connection == AudioDeviceDescription::CONNECTION_BT_SCO);
 }
 
 bool hasBluetoothDevice(const std::vector<AudioDevice>& devices) noexcept {
@@ -276,6 +277,15 @@ bool hasOutputCompressOffloadFlag(const AudioIoFlags& ioFlags) noexcept {
         constexpr auto compressOffloadFlag =
                 static_cast<int32_t>(1 << static_cast<int32_t>(AudioOutputFlags::COMPRESS_OFFLOAD));
         return ((compressOffloadFlag & ioFlags.get<AudioIoFlags::Tag::output>()) != 0);
+    }
+    return false;
+}
+
+bool hasInputHotwordFlag(const AudioIoFlags& ioFlags) noexcept {
+    if (ioFlags.getTag() == AudioIoFlags::Tag::input) {
+        constexpr auto hotwordFlag =
+                static_cast<int32_t>(1 << static_cast<int32_t>(AudioInputFlags::HW_HOTWORD));
+        return ((hotwordFlag & ioFlags.get<AudioIoFlags::Tag::input>()) != 0);
     }
     return false;
 }

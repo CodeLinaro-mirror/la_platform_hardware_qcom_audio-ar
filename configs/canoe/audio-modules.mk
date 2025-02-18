@@ -28,10 +28,15 @@ AUDIO_PAL := libar-pal
 AUDIO_PAL += lib_bt_bundle
 AUDIO_PAL += lib_bt_aptx
 AUDIO_PAL += lib_bt_ble
-AUDIO_PAL += catf
 AUDIO_PAL += PalTest
 AUDIO_PAL += libaudiochargerlistener
 AUDIO_PAL += libhfp_pal
+ifneq ($(call soong_config_get, qtiaudio, hy11), true)
+ifneq ($(call soong_config_get, qtiaudio, hy22), true)
+AUDIO_PAL += catf
+endif
+endif
+
 #PAL Service
 AUDIO_PAL += libpalclient
 AUDIO_PAL += libpalipcservice
@@ -48,7 +53,7 @@ AUDIO_PAL += libstream_haptics
 AUDIO_PAL += libstream_acd
 AUDIO_PAL += libstream_nontunnel
 AUDIO_PAL += libstream_soundtrigger
-AUDIO_PAL += libstream_acdb
+AUDIO_PAL += libstream_dummy
 AUDIO_PAL += libstream_asr
 #PAL Sessions Modules
 AUDIO_PAL += libsession_agm
@@ -130,10 +135,9 @@ AUDIO_MODULES += fai__2.0.0_0.1__3.0.0_0.0__eai_1.36_enpu2.pmd
 AUDIO_MODULES += fai__2.7.2_0.0__3.0.0_0.0__eai_1.36_enpu2.pmd
 AUDIO_MODULES += fai__2.7.20_0.0__3.0.0_0.0__eai_1.36_enpu2.pmd
 AUDIO_MODULES += fai__3.0.0_0.0__eai_1.36_enpu2.pmd
-AUDIO_MODULES += ffv__7.1.1_0.1__eai_4.8_enpu_v5.pmd
-AUDIO_MODULES += ffv__7.1.1_0.2__eai_4.8_enpu_v5.pmd
-AUDIO_MODULES += ffv__5.0.2_0.1__eai_4.8_enpu_v5.pmd
-AUDIO_MODULES += hk01b_relu_eAI_4.6_eNPU_V5_adsp_i.pmd
+AUDIO_MODULES += ffv__7.0.1_0.1__eai_5.4_enpu_v6.pmd
+AUDIO_MODULES += ffv__7.0.1_0.2__eai_5.4_enpu_v6.pmd
+AUDIO_MODULES += hk01b_relu_eAI_5.3_eNPU_V6_adsp_i.pmd
 AUDIO_MODULES += click.pcm
 AUDIO_MODULES += double_click.pcm
 AUDIO_MODULES += heavy_click.pcm
@@ -154,6 +158,7 @@ AUDIO_MODULES += event.eai
 AUDIO_MODULES += music.eai
 AUDIO_MODULES += speech.eai
 AUDIO_MODULES += environment.eai
+AUDIO_MODULES += conv_detection.eai
 AUDIO_MODULES += libqtigefar
 AUDIO_MODULES += audiodsd2pcmtest
 AUDIO_MODULES += mm-audio-ftm

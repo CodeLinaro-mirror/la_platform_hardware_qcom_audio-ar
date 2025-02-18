@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -482,10 +482,6 @@ void StreamOutPrimary::resume() {
 
     // Todo findout write latency
     *latencyMs = mContext.getNominalLatencyMs();
-    if (hasBluetoothDevice(mConnectedDevices)) {
-        const auto& btlatencyMs = mPlatform.getBluetoothLatencyMs(mConnectedDevices);
-        *latencyMs += btlatencyMs;
-    }
     return ::android::OK;
 }
 
@@ -738,7 +734,7 @@ ndk::ScopedAStatus StreamOutPrimary::getPlaybackRateParameters(AudioPlaybackRate
         return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
     }
 
-    LOG(DEBUG) << __func__ << mPlaybackRate.toString();
+    LOG(DEBUG) << __func__ << mLogPrefix << mPlaybackRate.toString();
     *_aidl_return = mPlaybackRate;
     return ndk::ScopedAStatus::ok();
 }
@@ -748,12 +744,16 @@ ndk::ScopedAStatus StreamOutPrimary::setPlaybackRateParameters(
     auto ret = mPlatform.setPlaybackRate(mPalHandle, mTag, in_playbackRate);
     if (PlaybackRateStatus::SUCCESS == ret) {
         mPlaybackRate = in_playbackRate;
-        LOG(DEBUG) << __func__ << mPlaybackRate.toString();
+        LOG(DEBUG) << __func__ << mLogPrefix << mPlaybackRate.toString();
         return ndk::ScopedAStatus::ok();
     } else if (PlaybackRateStatus::UNSUPPORTED == ret) {
+        LOG(VERBOSE) << __func__ << mLogPrefix << "raise EX_UNSUPPORTED_OPERATION exception for "
+                     << mPlaybackRate.toString();
         return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
     }
 
+    LOG(ERROR) << __func__ << mLogPrefix << "raise EX_ILLEGAL_ARGUMENT exception for "
+                 << mPlaybackRate.toString();
     return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
 }
 
@@ -770,6 +770,7 @@ ndk::ScopedAStatus StreamOutPrimary::updateMetadataCommon(const Metadata& metada
     if (metadata.index() != mMetadata.index()) {
         LOG(FATAL) << __func__ << mLogPrefix << ": changing metadata variant is not allowed";
     }
+    StreamOutPrimary::sourceMetadata_mutex_.lock();
     mMetadata = metadata;
 
     if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK) {
@@ -780,7 +781,6 @@ ndk::ScopedAStatus StreamOutPrimary::updateMetadataCommon(const Metadata& metada
     int callMode = mPlatform.getCallMode();
     bool voiceActive = ((callState == 2) || (callMode == 2));
 
-    StreamOutPrimary::sourceMetadata_mutex_.lock();
     setAggregateSourceMetadata(voiceActive);
     StreamOutPrimary::sourceMetadata_mutex_.unlock();
 
@@ -828,16 +828,24 @@ int32_t StreamOutPrimary::setAggregateSourceMetadata(bool voiceActive) {
     btSourceMetadata.track_count = track_count_total;
     btSourceMetadata.tracks = total_tracks.data();
 
+    int32_t totalTracks = 0;
     for (auto it = outStreams.begin(); it != outStreams.end(); it++) {
         ::aidl::android::hardware::audio::common::SourceMetadata srcMetadata;
         if (it->lock()) {
             it->lock()->getMetadata(srcMetadata);
             for (auto& item : srcMetadata.tracks) {
+                // check tracks size in this stream metadata not to exceed total count
+                if (totalTracks >= track_count_total) {
+                    LOG(WARNING) << __func__ << mLogPrefix << ": mismatch in total tracks for metadata allocation";
+                    break;
+                }
+
                 /* currently after cs call ends, we are getting metadata as
                 * usage voice and content speech, this is causing BT to again
                 * open call session, so added below check to send metadata of
                 * voice only if call is active, else discard it
                 */
+
                 if (!voiceActive && (mPlatform.getCallMode() != 3) &&
                     (AUDIO_USAGE_VOICE_COMMUNICATION == static_cast<audio_usage_t>(item.usage)) &&
                     (AUDIO_CONTENT_TYPE_SPEECH ==
@@ -850,8 +858,9 @@ int32_t StreamOutPrimary::setAggregateSourceMetadata(bool voiceActive) {
                     LOG(VERBOSE) << __func__ << mLogPrefix << " source metadata usage is "
                                  << btSourceMetadata.tracks->usage << " content is "
                                  << btSourceMetadata.tracks->content_type;
-                    ++btSourceMetadata.tracks;
+                   ++btSourceMetadata.tracks;
                 }
+                ++totalTracks;
             }
         }
     }
@@ -1021,8 +1030,10 @@ void StreamOutPrimary::configure() {
         palFn = CompressPlayback::palCallback;
         /* TODO check any dynamic update as per offload metadata or source
          * metadata */
-        if (mOffloadInfo.value().bitWidth != 0) {
-            attr->out_media_config.bit_width = mOffloadInfo.value().bitWidth;
+        // for pcm offload bit_width should be set based on pal configured format.
+        // set bit width only when usecase is with compressed format
+        if (!compressPlayback.isPcmOffload()) {
+            attr->out_media_config.bit_width = compressPlayback.getBitWidth();
         }
         attr->flags = static_cast<pal_stream_flags_t>(PAL_STREAM_FLAG_NON_BLOCKING);
     }

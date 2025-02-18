@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -41,6 +41,7 @@ using ::aidl::android::media::audio::common::AudioPortDeviceExt;
 using ::aidl::android::media::audio::common::AudioPortExt;
 using ::aidl::android::media::audio::common::AudioProfile;
 using ::aidl::android::media::audio::common::PcmType;
+using ::aidl::android::media::audio::common::Int;
 
 using ::aidl::android::hardware::audio::core::IModule;
 using aidl::android::media::audio::common::MicrophoneDynamicInfo;
@@ -311,16 +312,21 @@ std::vector<pal_device> Platform::convertToPalDevices(
         palDevices[i].config.bit_width = kDefaultPCMBidWidth;
         palDevices[i].config.aud_fmt_id = kDefaultPalPCMFormat;
 
+        const auto& deviceAddress = device.address;
+        // validate devices and fillAddress
+        if (!makePalDeviceAddress(deviceAddress, &palDevices[i])) {
+            LOG(ERROR) << __func__ << " failed to validate address for " << device.toString();
+            return {};
+        }
+
         if (isUsbDevice(device)) {
-            const auto& deviceAddress = device.address;
             if (deviceAddress.getTag() != AudioDeviceAddress::Tag::alsa) {
                 LOG(ERROR) << __func__ << " failed to find alsa address for given usb device "
                            << device.toString();
                 return {};
             }
             const auto& deviceAddressAlsa = deviceAddress.get<AudioDeviceAddress::Tag::alsa>();
-            if (!isValidAlsaAddr(deviceAddressAlsa))
-                return {};
+
             palDevices[i].address.card_id = deviceAddressAlsa[0];
             palDevices[i].address.device_num = deviceAddressAlsa[1];
         } else if (isHdmiDevice(device)) {
@@ -329,20 +335,8 @@ std::vector<pal_device> Platform::convertToPalDevices(
             } else {
                 return {};
             }
-        } else if (isBluetoothDevice(device)) {
-            const auto& deviceAddress = device.address;
-            if (deviceAddress.getTag() != AudioDeviceAddress::Tag::mac) {
-                LOG(ERROR) << __func__ << " failed to find mac address for given bt device "
-                           << device.toString();
-                return {};
-            }
-            const auto& deviceAddressMac = deviceAddress.get<AudioDeviceAddress::Tag::mac>();
-            if (!isValidMacAddr(deviceAddressMac))
-                return {};
-            if (auto p = this->mPlatformGlobalCallback;p != nullptr) {
-                p->updateActiveDevicesMap(device.address,palDeviceId);
-            }
         }
+
         i++;
     }
     if (devices.size() == 2 && isHdmiDevice(devices[0]) && isHdmiDevice(devices[1])) {
@@ -573,8 +567,42 @@ std::optional<struct HdmiParameters> Platform::getHdmiParameters(
     return hdmiParam;
 }
 
-int Platform::handleDeviceConnectionChange(const AudioPort& deviceAudioPort,
-                                            const bool isConnect) const {
+std::optional<AudioDevice> Platform::findAudioDevice(const struct pal_device& palDevice) {
+    auto it = std::find_if(mConnectedDevicePairs.begin(), mConnectedDevicePairs.end(),
+                           [&](const auto& element) { return compare(element.first, palDevice); });
+
+    if (it != mConnectedDevicePairs.end()) {
+        return it->second;
+    } else {
+        return std::nullopt;
+    }
+}
+
+void Platform::updateConnectedDevices(bool connect, const struct pal_device& palDevice,
+                                      const AudioDevice& audioDevice) {
+    std::pair<struct pal_device, AudioDevice> devicePair = std::make_pair(palDevice, audioDevice);
+
+    if (connect) {
+        LOG(VERBOSE) << __func__ << ": added pair to list " << ::toString(&palDevice).c_str() << " "
+                     << audioDevice.toString();
+        mConnectedDevicePairs.push_back(devicePair);
+    } else {
+        // Remove the pair from the vector
+        LOG(VERBOSE) << __func__ << ": removed " << ::toString(&palDevice).c_str() << " "
+                     << audioDevice.toString();
+        auto it = std::find_if(
+                mConnectedDevicePairs.begin(), mConnectedDevicePairs.end(),
+                [&](const auto& element) { return element.second == devicePair.second; });
+
+        if (it != mConnectedDevicePairs.end()) {
+            LOG(VERBOSE) << __func__ << ": erasing " << ::toString(&palDevice).c_str() << " "
+                         << audioDevice.toString();
+            mConnectedDevicePairs.erase(it);
+        }
+    }
+}
+
+int Platform::handleDeviceConnectionChange(const AudioPort& deviceAudioPort, const bool isConnect) {
     const auto& devicePortExt = deviceAudioPort.ext.get<AudioPortExt::Tag::device>();
 
     auto& audioDeviceDesc = devicePortExt.device.type;
@@ -583,7 +611,6 @@ int Platform::handleDeviceConnectionChange(const AudioPort& deviceAudioPort,
         return -EINVAL;
     }
 
-    void* v = nullptr;
     const auto deviceConnection = std::make_unique<pal_param_device_connection_t>();
     if (!deviceConnection) {
         LOG(ERROR) << __func__ << ": allocation failed ";
@@ -592,19 +619,30 @@ int Platform::handleDeviceConnectionChange(const AudioPort& deviceAudioPort,
 
     deviceConnection->connection_state = isConnect;
     deviceConnection->id = palDeviceId;
+    deviceConnection->device.id = palDeviceId;
+
+    const auto& deviceAddress = devicePortExt.device.address;
+    const auto& addressTag = devicePortExt.device.address.getTag();
+
+    // validate devices and fillAddress
+    if (!makePalDeviceAddress(deviceAddress, &(deviceConnection.get()->device))) {
+        LOG(ERROR) << __func__ << ": failed to validate address for " << deviceAudioPort.toString();
+        return -EINVAL;
+    }
 
     if (isUsbDevice(devicePortExt.device)) {
-        const auto& addressTag = devicePortExt.device.address.getTag();
         if (addressTag != AudioDeviceAddress::Tag::alsa) {
             LOG(ERROR) << __func__ << ": no alsa address provided for the AudioPort"
                        << deviceAudioPort.toString();
             return -EINVAL;
         }
+
+        // makePalDeviceAddress validates the address, so we can safely use it here
+        // TODO move away from using card_id/device_num once we can directly use new
+        // address fields.
         const auto& deviceAddressAlsa =
                 devicePortExt.device.address.get<AudioDeviceAddress::Tag::alsa>();
-        if (!isValidAlsaAddr(deviceAddressAlsa)) {
-            return -EINVAL;
-        }
+
         const auto cardId = deviceAddressAlsa[0];
         const auto deviceId = deviceAddressAlsa[1];
         deviceConnection->device_config.usb_addr.card_id = cardId;
@@ -618,14 +656,15 @@ int Platform::handleDeviceConnectionChange(const AudioPort& deviceAudioPort,
         } else {
             return -EINVAL;
         }
-    }  else if (isIPDevice(devicePortExt.device)) {
-           if (!isIPAsProxyDeviceConnected()) {
-                return -EINVAL;
-           }
+    } else if (isIPDevice(devicePortExt.device)) {
+        if (!isIPAsProxyDeviceConnected()) {
+            return -EINVAL;
+        }
     }
 
-    v = deviceConnection.get();
-    if (int32_t ret = ::pal_set_param(PAL_PARAM_ID_DEVICE_CONNECTION, v,
+    void* devConnectionPtr = deviceConnection.get();
+
+    if (int32_t ret = ::pal_set_param(PAL_PARAM_ID_DEVICE_CONNECTION, devConnectionPtr,
                                       sizeof(pal_param_device_connection_t));
         ret != 0) {
         LOG(ERROR) << __func__ << ": pal_set_param failed for PAL_PARAM_ID_DEVICE_CONNECTION for "
@@ -635,6 +674,7 @@ int Platform::handleDeviceConnectionChange(const AudioPort& deviceAudioPort,
     LOG(INFO) << __func__ << devicePortExt.device.toString()
               << (isConnect ? ": connected" : "disconnected");
 
+    updateConnectedDevices(isConnect, deviceConnection->device, devicePortExt.device);
     return 0;
 }
 
@@ -1159,22 +1199,6 @@ bool Platform::isSoundCardDown() const noexcept {
     return false;
 }
 
-bool Platform::isValidMacAddr(const std::vector<uint8_t>& macAddress) const noexcept {
-    if (macAddress.size() != 6) {
-        LOG(ERROR) << __func__ << ": malformed MAC address: "
-                               << ::android::internal::ToString(macAddress);
-        return false;
-    }
-    for (const auto& byte : macAddress) {
-        if (byte < 0 || byte > 255) {
-            LOG(ERROR) << __func__ << ": invalid byte in MAC address: "
-                       << static_cast<int>(byte);
-            return false;
-        }
-    }
-    return true;
-}
-
 uint32_t Platform::getBluetoothLatencyMs(const std::vector<AudioDevice>& bluetoothDevices) {
     pal_param_bta2dp_t btConfig{};
     pal_param_bta2dp_t *param_bt_a2dp_ptr = &btConfig;
@@ -1220,16 +1244,17 @@ bool Platform::isA2dpSuspended() {
 PlaybackRateStatus Platform::setPlaybackRate(
         pal_stream_handle_t* handle, const Usecase& tag,
         const ::aidl::android::media::audio::common::AudioPlaybackRate& playbackRate) {
-    if (!isValidPlaybackRate(playbackRate)) {
-        return PlaybackRateStatus::ILLEGAL_ARGUMENT;
-    }
 
     if (!usecaseSupportsOffloadSpeed(tag)) {
         return PlaybackRateStatus::UNSUPPORTED;
     }
 
+    if (!isValidPlaybackRate(playbackRate)) {
+        return PlaybackRateStatus::ILLEGAL_ARGUMENT;
+    }
+
     if (!handle) {
-        LOG(DEBUG) << __func__ << " stream inactive ";
+        LOG(DEBUG) << __func__ << " stream inactive for " << getName(tag);
         return PlaybackRateStatus::SUCCESS;
     }
 
@@ -1355,6 +1380,46 @@ void Platform::configurePalDevices(
     }
 }
 
+void Platform::updateHotwordPortConfig(
+        ::aidl::android::media::audio::common::AudioPortConfig& portConfig) {
+
+    // update media format for hotword input in case it is different with requested one
+    if (portConfig.ext.getTag() == AudioPortExt::Tag::mix) {
+        auto ioHandle = portConfig.ext.get<AudioPortExt::Tag::mix>().handle;
+        pal_param_st_capture_info_t stCaptureInfo{0, nullptr};
+        size_t payloadSize = 0;
+
+        stCaptureInfo.capture_handle = ioHandle;
+        int32_t ret = ::pal_get_param(
+            PAL_PARAM_ID_ST_CAPTURE_INFO, (void**)&stCaptureInfo, &payloadSize, nullptr);
+        if (ret || !stCaptureInfo.pal_handle) {
+            LOG(DEBUG) << __func__ << ": sound trigger handle not found, status " << ret;
+            return;
+        }
+        pal_param_payload *payload = nullptr;
+        struct pal_stream_attributes *attr = nullptr;
+        payload = (pal_param_payload *)calloc(1,
+            sizeof(pal_param_payload) + sizeof(struct pal_stream_attributes));
+        if (!payload) {
+            LOG(ERROR) << __func__ << " Failed to allocate memory for stream attributes";
+            return;
+        }
+        payload->payload_size = sizeof(struct pal_stream_attributes);
+        ret = ::pal_stream_get_param(
+            stCaptureInfo.pal_handle, PAL_PARAM_ID_STREAM_ATTRIBUTES, &payload);
+        if (ret) {
+            LOG(ERROR) << __func__ << " Failed to get pal stream attributes";
+        } else {
+            attr = (struct pal_stream_attributes *)payload->payload;
+            portConfig.sampleRate =
+                Int{static_cast<int32_t>(attr->in_media_config.sample_rate)};
+            portConfig.channelMask = getChannelLayoutMaskFromChannelCount(
+                attr->in_media_config.ch_info.channels, true);
+        }
+        free(payload);
+    }
+}
+
 int Platform::setLatencyMode(uint32_t mode) {
 
      int ret = 0;
@@ -1396,6 +1461,30 @@ std::string Platform::toString() const {
     return os.str();
 }
 
+void Platform::onSoundDose(void* const data) {
+    pal_sound_dose_info_t* palSoundDoseInfo = reinterpret_cast<pal_sound_dose_info_t*>(data);
+
+    if (!palSoundDoseInfo) {
+        LOG(ERROR) << "Invalid event data pointer";
+        return;
+    }
+
+    if (!mPlatformGlobalCallback) {
+        LOG(ERROR) << "callback is not set";
+        return;
+    }
+
+    struct pal_device palDevice = palSoundDoseInfo->device;
+    auto audioDevice = findAudioDevice(palDevice);
+    if (audioDevice.has_value()) {
+        LOG(VERBOSE) << "sounddose: " << audioDevice.value().toString();
+        mPlatformGlobalCallback->onSoundDose(data, audioDevice.value());
+    } else {
+        LOG(ERROR) << __func__ << "device " << ::toString(&palDevice)
+                   << " is not connected anymore";
+    }
+}
+
 // static
 int Platform::palGlobalCallback(uint32_t event_id, uint32_t* event_data, uint64_t cookie) {
     auto platform = reinterpret_cast<Platform*>(cookie);
@@ -1406,10 +1495,8 @@ int Platform::palGlobalCallback(uint32_t event_id, uint32_t* event_data, uint64_
             LOG(INFO) << __func__ << " card status changed to " << platform->mSndCardStatus;
             break;
         case PAL_SOUND_DOSE_INFO:
-            LOG(INFO) << __func__ << "received Sound Dose event";
-            if (auto p = platform->mPlatformGlobalCallback;p != nullptr) {
-                p->onSoundDose(event_data);
-            }
+            LOG(VERBOSE) << __func__ << "received Sound Dose event";
+            platform->onSoundDose(event_data);
             break;
         default:
             LOG(ERROR) << __func__ << " invalid event id" << event_id;
@@ -1462,7 +1549,7 @@ Platform::Platform() {
         LOG(ERROR) << __func__ << "pal_init failed, ret:" << ret;
         return;
     }
-    LOG(VERBOSE) << __func__ << " pal_init successful";
+    LOG(INFO) << __func__ << " pal_init successful";
     if (int32_t ret =
                 pal_register_global_callback(&palGlobalCallback, reinterpret_cast<uint64_t>(this));
         ret) {
@@ -1479,7 +1566,7 @@ Platform::Platform() {
 
 // static
 Platform& Platform::getInstance() {
-    static const auto kPlatform = []() {
+    static auto kPlatform = []() {
         std::unique_ptr<Platform> platform{new Platform()};
         return std::move(platform);
     }();

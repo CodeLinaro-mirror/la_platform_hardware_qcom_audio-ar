@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -12,8 +12,8 @@
 
 namespace qti::audio::core {
 
-using ::aidl::android::media::audio::common::AudioProfile;
 using ::aidl::android::media::audio::common::AudioChannelLayout;
+using ::aidl::android::media::audio::common::AudioProfile;
 
 constexpr size_t getNearestMultiple(size_t num, size_t multiplier) {
     size_t remainder = 0;
@@ -64,6 +64,30 @@ AudioChannelLayout getChannelLayoutMaskFromChannelCount(unsigned int channelCoun
 void setPalDeviceCustomKey(pal_device& palDevice, const std::string& customKey) noexcept;
 
 std::vector<uint8_t> makePalVolumes(std::vector<float> const& volumes) noexcept;
+
+/**
+ * @brief Validates the provided AudioDeviceAddress and creates a new PAL device address.
+ * @param address A constant reference to an AudioDeviceAddress object.
+ * @param palDevice A valid constant pointer to a pal_device object.
+ *
+ * @return true if the address is valid and a new PAL device address is created successfully.
+ * @return false otherwise.
+ */
+bool makePalDeviceAddress(const aidl::android::media::audio::common::AudioDeviceAddress& address,
+                          pal_device* const palDevice);
+
+/**
+ * @brief Compares two pal_device structures to determine if they represent the same device.
+ *
+ * This function compares the device IDs and the addressV1 fields of two pal_device structures.
+ * It uses the getAddressTag function to determine the relevant field in the addressV1 union to
+ * compare.
+ *
+ * @param device1 The first pal_device structure to compare.
+ * @param device2 The second pal_device structure to compare.
+ * @return true if the devices are the same, false otherwise.
+ */
+bool compare(const pal_device& device1, const pal_device& device2);
 
 /*
 * validates if the playback rate parameters are valid
