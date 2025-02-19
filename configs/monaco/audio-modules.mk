@@ -11,10 +11,7 @@ ifneq ($(TARGET_IS_HEADLESS),true)
 #AGM
 AUDIO_AGM := libagmclient
 AUDIO_AGM += libagmservice
-
-ifneq ($(strip $(AUDIO_FEATURE_ENABLED_AGM_HIDL)), true)
 AUDIO_AGM += libagmipcservice
-endif
 AUDIO_AGM += libagm
 AUDIO_AGM += agmplay
 AUDIO_AGM += agmcap
