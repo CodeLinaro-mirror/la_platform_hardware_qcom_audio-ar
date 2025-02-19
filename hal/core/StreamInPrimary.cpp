@@ -730,7 +730,7 @@ void StreamInPrimary::updatePalDeviceForBusAddr(struct pal_device* devices, uint
             {"BUS09_INPUT_FRONT_PASSENGER", PAL_DEVICE_IN_A2B_MIC},
             {"BUS17_INPUT_REAR_SEAT", PAL_DEVICE_IN_A2B2_MIC}};
 
-    for (uint32_t devIdx = 0; devIdx < numDevices; devIdx) {
+    for (uint32_t devIdx = 0; devIdx < numDevices; devIdx++) {
         auto it = busAddressMap.find(busAddressString);
         if (it != busAddressMap.end()) {
             devices[devIdx].id = it->second;
