@@ -150,6 +150,7 @@ PRODUCT_COPY_FILES += \
     $(CONFIG_PAL_SRC_DIR)/mixer_paths_volcano6i_mtp_hac_wsa883x.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_volcano6i_mtp_hac_wsa883x.xml \
     $(CONFIG_PAL_SRC_DIR)/mixer_paths_volcano6_mtp_wsa883x_wcd939x.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_volcano6_mtp_wsa883x_wcd939x.xml \
     $(CONFIG_PAL_SRC_DIR)/mixer_paths_volcano6i_mtp_wsa883x.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_volcano6i_mtp_wsa883x.xml \
+    $(CONFIG_PAL_SRC_DIR)/mixer_paths_volcano6i_mtp_msl_wsa883x.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_volcano6i_mtp_msl_wsa883x.xml \
     $(CONFIG_PAL_SRC_DIR)/mixer_paths_volcano6i_qrd_wsa883x.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_volcano6i_qrd_wsa883x.xml \
     $(CONFIG_PAL_SRC_DIR)/mixer_paths_volcano6_cdp_wsa883x_wcd939x.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_volcano6_cdp_wsa883x_wcd939x.xml \
     $(CONFIG_PAL_SRC_DIR)/mixer_paths_volcano_cdp_wsa883x_wcd939x.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_volcano_cdp_wsa883x_wcd939x.xml \
@@ -163,6 +164,7 @@ PRODUCT_COPY_FILES += \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_volcano_mtp_wsa883x_wcd939x.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_volcano_mtp_wsa883x_wcd939x.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_volcano6_mtp_wsa883x_wcd939x.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_volcano6_mtp_wsa883x_wcd939x.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_volcano6i_mtp_wsa883x.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_volcano6i_mtp_wsa883x.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_volcano6i_mtp_msl_wsa883x.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_volcano6i_mtp_msl_wsa883x.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_volcano6i_qrd_wsa883x.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_volcano6i_qrd_wsa883x.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_volcano6_cdp_wsa883x_wcd939x.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_volcano6_cdp_wsa883x_wcd939x.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_volcano_cdp_wsa883x_wcd939x.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_volcano_cdp_wsa883x_wcd939x.xml \
