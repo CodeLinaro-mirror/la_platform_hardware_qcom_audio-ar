@@ -49,6 +49,8 @@ RetCode BassBoostContext::start() {
     LOG(DEBUG) << "Enter " << __func__ << " ioHandle " << getIoHandle();
 
     std::lock_guard lg(mMutex);
+    mState = EffectState::ACTIVE;
+    setBassBoost(MAX_BASS_BOOST_VALUE);
 
     return RetCode::SUCCESS;
 }
@@ -58,12 +60,14 @@ RetCode BassBoostContext::stop() {
     LOG(DEBUG) << "Enter " << __func__ << " ioHandle " << getIoHandle();
 
     struct param_type2_t bassBoostParam = {0}; // by default enable bit is 0
+    mState = EffectState::INITIALIZED;
+    setBassBoost(MIN_BASS_BOOST_VALUE);
 
     return RetCode::SUCCESS;
 }
 
 RetCode BassBoostContext::setBassBoost(int bass) {
-    std::lock_guard lg(mMutex);
+
     LOG(DEBUG) << "Enter " << __func__ << " ioHandle " << getIoHandle();
 
     mBassBoostParams.value[1] = bass;
@@ -109,7 +113,7 @@ int BassBoostContext::getBassBoost(){
 
 RetCode BassBoostContext::setParameter(uint32_t cmd, int32_t param_value) {
     LOG(DEBUG) << "Enter " << __func__ << " cmd: " << cmd << " value " << param_value;
-
+    std::lock_guard lg(mMutex);
     if (param_value < MIN_BASS_BOOST_VALUE || param_value > MAX_BASS_BOOST_VALUE) {
         LOG(DEBUG) << __func__ << "Error in setting value, not in range 0 to 3 ";
         return RetCode::ERROR_ILLEGAL_PARAMETER;
@@ -122,7 +126,7 @@ RetCode BassBoostContext::setParameter(uint32_t cmd, int32_t param_value) {
 
 RetCode BassBoostContext::getParameter(effect_param_t* param, uint32_t *size) {
     LOG(DEBUG) << "Enter " << __func__;
-
+    std::lock_guard lg(mMutex);
     uint64_t cmd;
     memcpy(&cmd, param->data, param->psize);
 

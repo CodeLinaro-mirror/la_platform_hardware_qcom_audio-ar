@@ -49,6 +49,11 @@ RetCode BMTContext::start() {
     LOG(DEBUG) << "Enter " << __func__ << " ioHandle " << getIoHandle();
 
     std::lock_guard lg(mMutex);
+    struct param_type2_t BMTParams;
+    mState = EffectState::ACTIVE;
+    updatePalParameters(EFFECT_BMT_PARAM_BASS, &mBMTLevel[0]) ;
+    updatePalParameters(EFFECT_BMT_PARAM_MID, &mBMTLevel[1]) ;
+    updatePalParameters(EFFECT_BMT_PARAM_TREBEL, &mBMTLevel[2]) ;
 
     return RetCode::SUCCESS;
 }
@@ -57,7 +62,11 @@ RetCode BMTContext::stop() {
     std::lock_guard lg(mMutex);
     LOG(DEBUG) << "Enter " << __func__ << " ioHandle " << getIoHandle();
 
-    struct param_type2_t fnbParam = {0}; // by default enable bit is 0
+    struct param_type2_t BMTParams = {0};
+    mState = EffectState::INITIALIZED;
+    updatePalParameters(EFFECT_BMT_PARAM_BASS, &BMTParams) ;
+    updatePalParameters(EFFECT_BMT_PARAM_MID, &BMTParams) ;
+    updatePalParameters(EFFECT_BMT_PARAM_TREBEL, &BMTParams) ;
 
     return RetCode::SUCCESS;
 }
@@ -83,6 +92,7 @@ RetCode BMTContext::setParameter(uint32_t cmd, int32_t param_value) {
     LOG(DEBUG) << "Enter " << __func__ << " cmd: " << cmd << " value " << param_value;
 
     std::lock_guard lg(mMutex);
+
     mBMTParams.value = param_value;
 
     if (updatePalParameters(cmd, &mBMTParams) == 0) {
@@ -96,7 +106,7 @@ RetCode BMTContext::setParameter(uint32_t cmd, int32_t param_value) {
 
 RetCode BMTContext::getParameter(effect_param_t* param, uint32_t *size) {
     LOG(DEBUG) << "Enter " << __func__;
-
+    std::lock_guard lg(mMutex);
     uint64_t cmd;
     memcpy(&cmd, param->data, param->psize);
 
@@ -135,6 +145,8 @@ RetCode BMTContext::setBMTBandLevels(
             LOG(DEBUG) << __func__ << "Error in setting value, not in range -9 to +9 ";
             return RetCode::ERROR_ILLEGAL_PARAMETER;
         }
+
+        mBMTLevel[bandLevel.index].value = bandLevel.levelMb;
 
         LOG(VERBOSE) << __func__ << " level " << bandLevel.index << " level" << bandLevel.levelMb
                      << " refined level" << level;

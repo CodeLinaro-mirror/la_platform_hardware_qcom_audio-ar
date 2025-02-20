@@ -132,7 +132,7 @@ namespace aidl::ampere::effects {
             aidl::android::hardware::audio::effect::Descriptor* _aidl_return) {
         LOG(DEBUG) << "Enter " << __func__;
         RETURN_IF(!_aidl_return, EX_ILLEGAL_ARGUMENT, "Parameter:nullptr");
-        LOG(ERROR) <<" tejajain  "<< _aidl_return->toString();
+        LOG(INFO) <<" getDescriptor  "<< _aidl_return->toString();
         *_aidl_return = *mDescriptor;
         return ndk::ScopedAStatus::ok();
     }
@@ -177,8 +177,8 @@ namespace aidl::ampere::effects {
                 return setParameterBMT(specific);
             case Parameter::Specific::bassBoost:
                 return setParameterBassBoost(specific);
-	    case Parameter::Specific::vendorEffect:
-	        return setParameterVendorEffect(specific);
+            case Parameter::Specific::vendorEffect:
+                return setParameterVendorEffect(specific);
             default:
                 LOG(ERROR) << __func__ << " unsupported tag " << toString(tag);
                 return ndk::ScopedAStatus::fromExceptionCodeWithMessage(EX_ILLEGAL_ARGUMENT,
@@ -238,8 +238,10 @@ namespace aidl::ampere::effects {
         RETURN_IF(!mContext, EX_NULL_POINTER, "nullContext");
         switch (command) {
             case aidl::android::hardware::audio::effect::CommandId::START:
+                mContext->start();
                 break;
             case aidl::android::hardware::audio::effect::CommandId::STOP:
+                mContext->stop();
                 break;
             case aidl::android::hardware::audio::effect::CommandId::RESET:
                 mContext->resetBuffer();
@@ -260,27 +262,19 @@ namespace aidl::ampere::effects {
         std::optional<DefaultExtension> queryExtension;
 
         param.extension.getParcelable(&queryExtension);
-        effect_param_t *effect_param = (effect_param_t*)queryExtension->bytes.data();
 
-        uint32_t size = 0;
-        RetCode status = mContext->getParameter(effect_param, &size);
-        if (status != RetCode::SUCCESS) {
-            return ndk::ScopedAStatus::fromExceptionCodeWithMessage(EX_ILLEGAL_ARGUMENT,
-                                                                        "wrongIdTag");
-        }
-
-        int64_t value;
-        memcpy(&value, effect_param->data + effect_param->psize, effect_param->vsize);
-        LOG(DEBUG) << __func__ << " value " << value << " psize " << effect_param->psize << " vsize " << effect_param->vsize;
+        RETURN_IF(!queryExtension.has_value(), EX_ILLEGAL_ARGUMENT, "parcelableIdNull");
 
         DefaultExtension replyExtension;
-        replyExtension.bytes.resize(size);
-        std::memcpy(replyExtension.bytes.data(), (void *)effect_param, size);
         VendorExtension vendor_extension;
+
+
+        RETURN_IF(!mContext, EX_NULL_POINTER, "nullContext");
+        LOG(DEBUG) << "mContext->getEffectType() " << mContext->getEffectType();
+        replyExtension.bytes = mContext->getParameter(queryExtension->bytes);
         vendor_extension.extension.setParcelable(replyExtension);
         RETURN_IF(!specific, EX_NULL_POINTER, "nullPtr");
         specific->set<Parameter::Specific::vendorEffect>(vendor_extension);
-
         LOG(DEBUG) << "Exit: " << __func__;
         return ndk::ScopedAStatus::ok();
     }
@@ -293,23 +287,17 @@ namespace aidl::ampere::effects {
         auto& param = specific.get<Parameter::Specific::vendorEffect>();
         std::optional<aidl::android::hardware::audio::effect::DefaultExtension> defaultExt;
 
-        param.extension.getParcelable(&defaultExt);
-        effect_param_t *effect_param = (effect_param_t *)defaultExt->bytes.data();
+        RETURN_IF(STATUS_OK != param.extension.getParcelable(&defaultExt), EX_ILLEGAL_ARGUMENT,
+              "getParcelableFailed");
 
-        memcpy(&cmd, effect_param->data, effect_param->psize);
-        memcpy(&value, (effect_param->data + effect_param->psize), effect_param->vsize);
-        LOG(DEBUG) << __func__ << " cmd: " << cmd << ", value: " << value;
+        RETURN_IF(!defaultExt.has_value(), EX_ILLEGAL_ARGUMENT, "parcelableNull");
 
-        RETURN_IF(!mContext, EX_NULL_POINTER, "nullContext");
-
-        if (mContext->setParameter(cmd, value) == RetCode::SUCCESS) {
-           return ndk::ScopedAStatus::ok();
+        if (mContext->setParameter(defaultExt->bytes) != RetCode::SUCCESS)
+        {
+            return ndk::ScopedAStatus::fromExceptionCodeWithMessage(EX_ILLEGAL_ARGUMENT,
+                "ErrorSetSpecificParam");
         }
-        else {
-           return ndk::ScopedAStatus::fromExceptionCodeWithMessage(EX_ILLEGAL_ARGUMENT,
-                                            "ErrorSetSpecificParam");
-        }
-        LOG(DEBUG) << "Exit " << __func__;
+        return ndk::ScopedAStatus::ok();
     }
 
     ndk::ScopedAStatus RslAidl::setParameterBMT(const Parameter::Specific& specific) {

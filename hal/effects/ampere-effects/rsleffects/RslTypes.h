@@ -133,6 +133,12 @@ static const Descriptor kBassBoostDescriptor = {
 #define PARAM_ID_TREBEL 0x11112529
 #define PARAM_ID_BASS_BOOST 0x11112522
 
+
+#define MAX_SDVC_PROFILE  6
+#define MAX_AMBIANCE_PROFILE 4
+#define DEFAULT_SDVC_PROFILE 0
+#define DEFAULT_AMBIANCE_PROFILE 2
+
 constexpr inline size_t MAX_NUM_BANDS = 3;
 
 } // namespace aidl::ampere::effects
