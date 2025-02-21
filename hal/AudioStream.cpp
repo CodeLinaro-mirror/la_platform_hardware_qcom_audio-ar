@@ -5824,7 +5824,7 @@ StreamInPrimary::StreamInPrimary(audio_io_handle_t handle,
             uint8_t channels =
                 audio_channel_count_from_in_mask(config_.channel_mask);
             if (channels == 2) {
-                strlcpy(mPalInDevice[i].custom_config.custom_key, "dual-mic-true-stereo",
+                strlcat(mPalInDevice[i].custom_config.custom_key, "dual-mic-true-stereo",
                         sizeof(mPalInDevice[i].custom_config.custom_key));
                 AHAL_INFO("Setting custom key as %s", mPalInDevice[i].custom_config.custom_key);
             }
