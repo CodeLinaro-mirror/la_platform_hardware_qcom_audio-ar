@@ -1259,9 +1259,10 @@ void StreamOutPrimary::configure() {
               << ", ms pal_stream_start: " << palStreamStartTimeTaken << " ms]";
 }
 
-std::string StreamOutPrimary::getAddress()const
+std::string StreamOutPrimary::getAddress()const { return busAddr; }
+std::string StreamOutPrimary::setAddress(std::string Address) 
 {
-    LOG(DEBUG) << __func__ << "busAddr: " << busAddr;
+    busAddr = Address; 
     return busAddr;
 }
 
