@@ -69,7 +69,10 @@ Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConf
             static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DEEP_BUFFER));
     constexpr auto phonePlaybackFlags =
             static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DEEP_BUFFER));
-
+    constexpr auto FrontPassangerPlaybackFlag =
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DEEP_BUFFER));
+    constexpr auto RearSeatPlaybackFlag =
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DEEP_BUFFER));
 //end
     constexpr auto deepBufferPlaybackFlags =
             static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DEEP_BUFFER));
@@ -123,7 +126,10 @@ Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConf
             tag = Usecase::ALERTS_PLAYBACK;
         } else if (outFlags == phonePlaybackFlags) {
             tag = Usecase::PHONE_PLAYBACK;
-//end
+        } else if (outFlags == FrontPassangerPlaybackFlag) {
+            tag = Usecase::FRONT_PASSANGER_PLAYBACK;
+        } else if (outFlags == RearSeatPlaybackFlag) {
+            tag = Usecase::REAR_SEAT_PLAYBACK;
         } else if (outFlags == primaryPlaybackFlags) {
             tag = Usecase::PRIMARY_PLAYBACK;
 
@@ -196,6 +202,10 @@ std::string getName(const Usecase tag) {
             return "PHONE_PLAYBACK";
         case Usecase::ALERTS_PLAYBACK:
             return "ALERTS_PLAYBACK";
+        case Usecase::FRONT_PASSANGER_PLAYBACK:
+            return "FRONT_PASSANGER_PLAYBACK";
+        case Usecase::REAR_SEAT_PLAYBACK:
+            return "REAR_SEAT_PLAYBACK";
         case Usecase::DEEP_BUFFER_PLAYBACK:
             return "DEEP_BUFFER_PLAYBACK";
         case Usecase::LOW_LATENCY_PLAYBACK:
@@ -348,6 +358,34 @@ size_t PhonePlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
 }
 // [PhonePlayback End]
 
+
+// [FrontPassengerPlayback  Start]
+std::unordered_set<size_t> FrontPassengerPlayback::kSupportedFrameSizes = {160, 192, 240, 320, 480};
+
+size_t FrontPassengerPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
+    const std::string kPeriodSizeProp = "vendor.audio_hal.period_size";
+    auto frameSize = ::android::base::GetUintProperty<size_t>(kPeriodSizeProp,
+                                                              FrontPassengerPlayback::kPeriodSize);
+    if (kSupportedFrameSizes.count(frameSize)) {
+        return frameSize;
+    }
+    return FrontPassengerPlayback::kPeriodSize;
+}
+// [FrontPassengerPlayback End]
+
+// [RearSeatPlayback  Start]
+std::unordered_set<size_t> RearSeatPlayback::kSupportedFrameSizes = {160, 192, 240, 320, 480};
+
+size_t RearSeatPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
+    const std::string kPeriodSizeProp = "vendor.audio_hal.period_size";
+    auto frameSize = ::android::base::GetUintProperty<size_t>(kPeriodSizeProp,
+                                                              RearSeatPlayback::kPeriodSize);
+    if (kSupportedFrameSizes.count(frameSize)) {
+        return frameSize;
+    }
+    return RearSeatPlayback::kPeriodSize;
+}
+// [RearSeatPlayback End]
 
 // [Deep Buffer Start]
 
