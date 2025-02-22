@@ -29,6 +29,7 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     virtual ~StreamOutPrimary() override;
     int32_t setAggregateSourceMetadata(bool voiceActive) override;
     std::string getAddress() const;
+    std::string setAddress(std::string Address);
 
     // Methods of 'DriverInterface'.
     ::android::status_t init() override;
