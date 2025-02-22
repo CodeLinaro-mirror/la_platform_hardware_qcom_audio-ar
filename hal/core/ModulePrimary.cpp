@@ -54,6 +54,7 @@ using aidl::android::media::audio::common::AudioDevice;
 using aidl::android::media::audio::common::AudioPortConfig;
 using aidl::android::media::audio::common::MicrophoneInfo;
 using aidl::android::media::audio::common::Boolean;
+using aidl::android::media::audio::common::AudioDeviceAddress;
 
 using ::aidl::android::hardware::audio::common::getFrameSizeInBytes;
 using ::aidl::android::hardware::audio::common::isBitPositionFlagSet;
@@ -81,7 +82,7 @@ namespace qti::audio::core {
 std::vector<std::weak_ptr<::qti::audio::core::StreamOut>> ModulePrimary::mStreamsOut;
 std::vector<std::weak_ptr<::qti::audio::core::StreamIn>> ModulePrimary::mStreamsIn;
 
-std::vector<float> qti::audio::core::MuteConfig::getVol = {-3600.0f, -3600.0f};
+std::vector<float> qti::audio::core::MuteConfig::getVol = {0.3f, 0.3f};
 
 std::mutex ModulePrimary::outListMutex;
 std::mutex ModulePrimary::inListMutex;
@@ -324,6 +325,7 @@ ndk::ScopedAStatus qti::audio::core::ModulePrimary::setAudioPortConfig(const ::a
     else {
         return ndk::ScopedAStatus::ok();
         }
+    auto& port = in_requested.ext.get<AudioPortExt::Tag::device>();
     auto list = getOutStreams();
     if (list.empty()) {
         LOG(DEBUG) << "the module list is empty";
@@ -365,6 +367,7 @@ ndk::ScopedAStatus qti::audio::core::ModulePrimary::setAudioPortConfig(const ::a
                 vol.push_back(volume);
                 LOG(DEBUG) << "gain is:" << volume;
                 LOG(DEBUG) << "volume is:" << vol[0];
+                (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(outIter))->setAddress(port.device.address.get<AudioDeviceAddress::Tag::id>());
                 (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(outIter))->setHwVolume(vol);
                 LOG(DEBUG) << "volume set :" << vol[0];
                 route_portid++;
