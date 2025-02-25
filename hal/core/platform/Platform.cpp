@@ -178,6 +178,23 @@ std::unique_ptr<pal_stream_attributes> Platform::getDefaultTelephonyAttributes()
     return std::move(attributes);
 }
 
+std::unique_ptr<pal_stream_attributes> Platform::getDefaultCallTranslationAttributes() const {
+    auto attributes = std::make_unique<pal_stream_attributes>();
+    auto inChannelInfo = PlatformConverter::getPalChannelInfoForChannelCount(1);
+    auto outChannelInfo = PlatformConverter::getPalChannelInfoForChannelCount(2);
+    attributes->type = PAL_STREAM_CALL_TRANSLATION;
+    attributes->direction = PAL_AUDIO_INPUT;
+    attributes->in_media_config.sample_rate = kDefaultOutputSampleRate;
+    attributes->in_media_config.ch_info = *inChannelInfo;
+    attributes->in_media_config.bit_width = kDefaultPCMBidWidth;
+    attributes->in_media_config.aud_fmt_id = PAL_AUDIO_FMT_PCM_S16_LE;
+    attributes->out_media_config.sample_rate = kDefaultOutputSampleRate;
+    attributes->out_media_config.ch_info = *outChannelInfo;
+    attributes->out_media_config.bit_width = kDefaultPCMBidWidth;
+    attributes->out_media_config.aud_fmt_id = PAL_AUDIO_FMT_PCM_S16_LE;
+    return std::move(attributes);
+}
+
 std::unique_ptr<pal_stream_attributes> Platform::getDefaultCRSTelephonyAttributes() const {
     auto attributes = std::make_unique<pal_stream_attributes>();
     auto outChannelInfo = PlatformConverter::getPalChannelInfoForChannelCount(2);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -87,13 +87,21 @@ const static std::string kUHQA{"UHQA"};
 const static std::string kOffloadPlaySpeedSupported{"offloadVariableRateSupported"};
 const static std::string kSupportsHwSuspend{"supports_hw_suspend"};
 const static std::string kIsDirectPCMTrack{"is_direct_pcm_track"};
-const static std::string kTranslateRecord{"translate_record"};
 /**
  * translate_record : AUDIO_FLUENCE_FFECNS PCM_RECORD
- * Use this parameter to for the Voice Translation usecase.
+ * Use this parameter for the Voice Translation usecase.
  * Set param support for APK to select FFECNS record and populate
  * custom key for FFECNS record based on the setparam.
  **/
+ static std::string kTranslateRecord{"translate_record"};
+
+/**
+ * call_translation : Use this parameter for the Voice and Voip Call Translation.
+ * based on the enable/diable of this parameter the translation graph
+ * will open and close on top of the Voice and Voip Calls.
+ * the translation will happen with the help of ASR, TTS and Translation module in the graph.
+ **/
+ const static std::string kCallTranslation{"call_translation"};
 
 // FTM
 const static std::string kFbspCfgWaitTime{"fbsp_cfg_wait_time"};

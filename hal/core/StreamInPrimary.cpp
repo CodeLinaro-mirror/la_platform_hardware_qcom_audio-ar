@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -806,7 +806,11 @@ void StreamInPrimary::configure() {
         mPalHandle = nullptr;
         return;
     }
-
+    if (mTag == Usecase::VOIP_RECORD && mPlatform.getCallTranslationState()) {
+        if (auto telephony = mContext.getTelephony().lock()) {
+            telephony->CallTranslationManager();
+        }
+    }
     if (mPlatform.getMicMuteStatus() && !(mPlatform.getTranslationRecordState())) {
         setStreamMicMute(true);
     }
