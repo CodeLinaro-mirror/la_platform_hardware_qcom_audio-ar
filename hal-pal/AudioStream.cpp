@@ -1785,10 +1785,8 @@ int StreamOutPrimary::Stop() {
 
     AHAL_DBG("Enter");
     stream_mutex_.lock();
-
-    if ((usecase_ == USECASE_AUDIO_PLAYBACK_MMAP &&
-            pal_stream_handle_ && stream_started_) ||
-            (is_bus_media_boot_load && pal_stream_handle_ && stream_started_)) {
+    if (usecase_ == USECASE_AUDIO_PLAYBACK_MMAP &&
+            pal_stream_handle_ && stream_started_) {
 
         ret = pal_stream_stop(pal_stream_handle_);
         if (ret == 0) {
@@ -1813,18 +1811,7 @@ int StreamOutPrimary::Start() {
         }
     }
     stream_mutex_.lock();
-
-    if (is_bus_media_boot_load && pal_stream_handle_ && !stream_started_) {
-        if (volume_) {
-            ret = pal_stream_set_volume(pal_stream_handle_, volume_);
-            if (ret) {
-                AHAL_ERR("Pal Stream volume Error (%d)", (int)ret);
-            }
-        }
-        ret = pal_stream_start(pal_stream_handle_);
-        if (ret == 0)
-            stream_started_ = true;
-    } else if (usecase_ == USECASE_AUDIO_PLAYBACK_MMAP &&
+    if (usecase_ == USECASE_AUDIO_PLAYBACK_MMAP &&
             pal_stream_handle_ && !stream_started_) {
 
         ret = pal_stream_start(pal_stream_handle_);
@@ -1954,12 +1941,6 @@ int StreamOutPrimary::Standby() {
     int ret = 0;
 
     AHAL_DBG("Enter");
-    if (is_bus_media_boot_load
-        && ((strncmp(address_, "BUS00_MEDIA", strlen("BUS00_MEDIA"))) == 0)) {
-        pal_stream_handle_ = media_stream_handle;
-        goto exit;
-    }
-
     stream_mutex_.lock();
     if (pal_stream_handle_) {
         ret = pal_stream_stop(pal_stream_handle_);
@@ -2835,12 +2816,6 @@ ssize_t StreamOutPrimary::configurePalOutputStream() {
         }
     }
 
-    if (is_bus_media_boot_load &&
-        ((strncmp(address_, "BUS00_MEDIA", strlen("BUS00_MEDIA"))) == 0)) {
-        media_stream_handle = pal_stream_handle_;
-        media_count++;
-    }
-
     if (!stream_started_) {
         AutoPerfLock perfLock;
         /* set cached volume if any, dont return failure back up */
@@ -2925,16 +2900,11 @@ ssize_t StreamOutPrimary::write(const void *buffer, size_t bytes)
     palBuffer.offset = 0;
 
     AHAL_VERBOSE("handle_ %x bytes:(%zu)", handle_, bytes);
-    stream_mutex_.lock();
-    if (is_bus_media_boot_load &&
-        ((strncmp(address_, "BUS00_MEDIA", strlen("BUS00_MEDIA"))) == 0)) {
-        pal_stream_handle_ =  media_stream_handle;
-    } else {
-        ret = configurePalOutputStream();
-        if (ret < 0)
-            goto exit;
-    }
 
+    stream_mutex_.lock();
+    ret = configurePalOutputStream();
+    if (ret < 0)
+        goto exit;
     ATRACE_BEGIN("hal: pal_stream_write");
     if (halInputFormat != halOutputFormat && convertBuffer != NULL) {
         if (bytes > fragment_size_) {
@@ -3059,9 +3029,6 @@ int StreamOutPrimary::StopOffloadVisualizer(
     return ret;
 }
 
-int StreamOutPrimary::media_count = 0;
-pal_stream_handle_t* StreamOutPrimary::media_stream_handle = nullptr;
-
 void StreamOutPrimary::SetOutputMute(bool muted)
 {
     int ret = 0;
@@ -3106,12 +3073,6 @@ StreamOutPrimary::StreamOutPrimary(
     writeAt.tv_sec = 0;
     writeAt.tv_nsec = 0;
     mBytesWritten = 0;
-    hapticsStreamAttributes = {};
-    hapticsDevice = nullptr;
-    convertBufSize = 0;
-    gaplessMeta = {};
-    msample_rate = 0;
-    mchannels = 0;
     int noPalDevices = 0;
     int ret = 0;
 
@@ -3242,13 +3203,6 @@ StreamOutPrimary::StreamOutPrimary(
         audio_extn_gef_notify_device_config(dev, config_.channel_mask,
             config_.sample_rate, flags_);
 
-    if (is_bus_media_boot_load &&
-        ((strncmp(address_, "BUS00_MEDIA", strlen("BUS00_MEDIA"))) == 0 && media_count == 0)) {
-        ret = configurePalOutputStream();
-        if (ret < 0)
-            goto error;
-    }
-
 error:
     AHAL_DBG("Exit");
     return;
@@ -3260,20 +3214,13 @@ StreamOutPrimary::~StreamOutPrimary() {
 
     stream_mutex_.lock();
     if (pal_stream_handle_) {
-        if (is_bus_media_boot_load &&
-            ((strncmp(address_, "BUS00_MEDIA", strlen("BUS00_MEDIA")) == 0) && media_count > 0)) {
-
-            AHAL_DBG("Not closing stream, handle(%x), pal_stream_handle (%p)",
-            handle_, pal_stream_handle_);
-        } else {
-            if (CheckOffloadEffectsType(streamAttributes_.type)) {
-                StopOffloadEffects(handle_, pal_stream_handle_);
-                StopOffloadVisualizer(handle_, pal_stream_handle_);
-            }
-
-            pal_stream_close(pal_stream_handle_);
-            pal_stream_handle_ = nullptr;
+        if (CheckOffloadEffectsType(streamAttributes_.type)) {
+            StopOffloadEffects(handle_, pal_stream_handle_);
+            StopOffloadVisualizer(handle_, pal_stream_handle_);
         }
+
+        pal_stream_close(pal_stream_handle_);
+        pal_stream_handle_ = nullptr;
     }
 
     if (pal_haptics_stream_handle) {

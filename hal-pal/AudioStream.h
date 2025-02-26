@@ -29,7 +29,7 @@
 /*
  * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
  *
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -433,8 +433,6 @@ extern "C" typedef int (*visualizer_hal_start_output)(audio_io_handle_t,
 extern "C" typedef int (*visualizer_hal_stop_output)(audio_io_handle_t,
                                                       pal_stream_handle_t*);
 
-extern bool is_bus_media_boot_load;
-
 int adev_open(audio_hw_device_t **device);
 
 class AudioDevice;
@@ -522,7 +520,6 @@ public:
     uint32_t GetBufferSize();
     int GetFrames(uint64_t *frames);
     static pal_stream_type_t GetPalStreamType(audio_output_flags_t halStreamFlags, char *address);
-    static int media_count;
     int64_t GetRenderLatency(audio_output_flags_t flags, char *address);
     int GetOutputUseCase(audio_output_flags_t halStreamFlags);
     int StartOffloadEffects(audio_io_handle_t, pal_stream_handle_t*);
@@ -559,7 +556,6 @@ protected:
     //Haptics Usecase
     struct pal_stream_attributes hapticsStreamAttributes;
     pal_stream_handle_t* pal_haptics_stream_handle;
-    static pal_stream_handle_t* media_stream_handle;
     struct pal_device* hapticsDevice;
     uint8_t* hapticBuffer;
     size_t hapticsBufSize;
