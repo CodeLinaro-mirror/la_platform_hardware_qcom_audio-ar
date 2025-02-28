@@ -277,6 +277,12 @@ void Platform::customizePalDevices(const AudioPortConfig& mixPortConfig, const U
         });
         setPalDeviceCustomKey(*itr, "HAC");
     }
+    if (tag == Usecase::BIT_PERFECT_PLAYBACK) {
+        auto itr = std::find_if(palDevices.begin(), palDevices.end(), [](const auto& palDevice) {
+            return palDevice.id == PAL_DEVICE_OUT_USB_HEADSET;
+        });
+        setPalDeviceCustomKey(*itr, "bit_perfect");
+    }
 }
 
 std::vector<pal_device> Platform::convertToPalDevices(
@@ -1517,6 +1523,7 @@ void Platform::initUsecaseOpMap() {
     mUsecaseOpMap[Usecase::HAPTICS_PLAYBACK] = makeUsecaseOps<HapticsPlayback>();
     mUsecaseOpMap[Usecase::SPATIAL_PLAYBACK] = makeUsecaseOps<SpatialPlayback>();
     mUsecaseOpMap[Usecase::IN_CALL_MUSIC] = makeUsecaseOps<InCallMusic>();
+    mUsecaseOpMap[Usecase::BIT_PERFECT_PLAYBACK] = makeUsecaseOps<BitPerfectPlayback>();
 
     // Record usecases
     mUsecaseOpMap[Usecase::PCM_RECORD] = makeUsecaseOps<PcmRecord>();
