@@ -47,6 +47,7 @@ enum class Usecase : uint16_t {
     HAPTICS_PLAYBACK,
     SPATIAL_PLAYBACK,
     IN_CALL_MUSIC,
+    BIT_PERFECT_PLAYBACK,
     PCM_RECORD, // Start of record usecases
     FAST_RECORD,
     ULTRA_FAST_RECORD,
@@ -417,6 +418,27 @@ class HapticsPlayback : public UsecaseConfig<HapticsPlayback> {
             const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig);
 
     static int32_t getLatency() { return kPeriodDurationMs * kPeriodCount + kPlatformDelayMs; }
+};
+
+class BitPerfectPlayback : public UsecaseConfig<BitPerfectPlayback> {
+  public:
+    explicit BitPerfectPlayback(
+            const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig)
+        : mMixPortConfig(mixPortConfig) {}
+    constexpr static size_t kPeriodDurationMs = 80;
+    constexpr static size_t kPeriodCount = 2;
+    //TODO: Decide on Platform Delay value for BitPerfect
+    constexpr static size_t kPlatformDelayMs = 0;
+    constexpr static size_t kMinPeriodSize = 512;
+    constexpr static size_t kMaxPeriodSize = 240 * 1024;
+
+    static size_t getFrameCount(
+           const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig);
+
+    static int32_t getLatency() { return kPeriodDurationMs * kPeriodCount + kPlatformDelayMs; }
+
+    private:
+    const ::aidl::android::media::audio::common::AudioPortConfig& mMixPortConfig;
 };
 
 class PcmRecord : public UsecaseConfig<PcmRecord> {

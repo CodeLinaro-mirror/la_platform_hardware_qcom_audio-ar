@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -111,7 +111,7 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     // This API calls startEffect/stopEffect only on offload/pcm offload outputs.
     void enableOffloadEffects(const bool enable);
 
-    // API which are *_I are internal 
+    // API which are *_I are internal
     ndk::ScopedAStatus configureConnectedDevices_I();
 
     const Usecase mTag;
@@ -144,7 +144,7 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
 
     std::variant<std::monostate, PrimaryPlayback, DeepBufferPlayback, CompressPlayback,
                  PcmOffloadPlayback, VoipPlayback, SpatialPlayback, MMapPlayback, UllPlayback,
-                 InCallMusic, HapticsPlayback>
+                 InCallMusic, HapticsPlayback, BitPerfectPlayback>
             mExt;
     // references
     Platform& mPlatform{Platform::getInstance()};
