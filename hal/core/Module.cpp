@@ -78,6 +78,7 @@ using aidl::android::media::audio::common::FlushFromFrameSupport;
 using aidl::android::media::audio::common::Int;
 using aidl::android::media::audio::common::MicrophoneInfo;
 using aidl::android::media::audio::common::PcmType;
+using aidl::android::media::audio::common::AudioSource;
 
 using ::aidl::android::hardware::audio::common::SinkMetadata;
 using ::aidl::android::hardware::audio::common::SourceMetadata;
@@ -2106,6 +2107,33 @@ void Module::onSetHDRParameters(const std::vector<VendorParameter>& params) {
     LOG(VERBOSE) << __func__ << ": processed";
 }
 
+void Module::onSetAudioZoomParameters(const std::vector<VendorParameter>& params) {
+    for (const auto& param : params) {
+        std::string paramValue{};
+        if (!extractParameter<VString>(param, &paramValue)) {
+            LOG(ERROR) << __func__ << ": extraction failed for " << param.id;
+            continue;
+        }
+        LOG(INFO) << __func__ << ": param.id=" << param.id << " value=" << paramValue;
+        if (param.id == Parameters::kAudioZoom) {
+            mPlatform.setAudioZoomEnabled(paramValue == "true");
+        } else if (param.id == Parameters::kAudioZoomFactor) {
+            const float zoomFactor = getFloatFromString(paramValue);
+            const auto& portConfigs = getConfig().portConfigs;
+            for (const auto& portConfigId :
+                 getActiveInputMixPortConfigIds(portConfigs)) {
+                auto configIt = findById<AudioPortConfig>(portConfigs, portConfigId);
+                if (configIt == portConfigs.end()) continue;
+                auto source = getAudioSource(*configIt);
+                if (source && source.value() == AudioSource::CAMCORDER) {
+                    mStreams.setAudioZoomFactor(portConfigId, zoomFactor);
+                }
+            }
+        }
+    }
+    LOG(VERBOSE) << __func__ << ": processed";
+}
+
 void Module::onSetTelephonyParameters(const std::vector<VendorParameter>& parameters) {
     if (!mTelephony) {
         LOG(ERROR) << __func__ << ": Telephony not created";
@@ -2442,6 +2470,8 @@ Module::SetParameterToFeatureMap Module::fillSetParameterToFeatureMap() {
                                  {Parameters::kHdrChannelCount, Feature::HDR},
                                  {Parameters::kHdrSamplingRate, Feature::HDR},
                                  {Parameters::kFacing, Feature::HDR},
+                                 {Parameters::kAudioZoomFactor, Feature::AUDIOZOOM},
+                                 {Parameters::kAudioZoom, Feature::AUDIOZOOM},
                                  {Parameters::kVoiceCallState, Feature::TELEPHONY},
                                  {Parameters::kVoiceCallType, Feature::TELEPHONY},
                                  {Parameters::kVoiceVSID, Feature::TELEPHONY},
@@ -2481,6 +2511,7 @@ Module::FeatureToSetHandlerMap Module::fillFeatureToSetHandlerMap() {
     FeatureToSetHandlerMap map{
             {Feature::GENERIC, &Module::onSetGenericParameters},
             {Feature::HDR, &Module::onSetHDRParameters},
+            {Feature::AUDIOZOOM, &Module::onSetAudioZoomParameters},
             {Feature::TELEPHONY, &Module::onSetTelephonyParameters},
             {Feature::WFD, &Module::onSetWFDParameters},
             {Feature::FTM, &Module::onSetFTMParameters},
@@ -2620,6 +2651,23 @@ std::vector<VendorParameter> Module::onGetHDRParameters(const std::vector<std::s
     return result;
 }
 
+std::vector<VendorParameter> Module::onGetAudioZoomParameters(
+        const std::vector<std::string>& ids) {
+    std::vector<VendorParameter> result;
+    for (const auto& id : ids) {
+        std::string value{};
+        if (id == Parameters::kAudioZoom) {
+            value = makeParamValue(mPlatform.isAudioZoomEnabled());
+            result.push_back(makeVendorParameter(id, value));
+        } else if (id == Parameters::kAudioZoomFactor) {
+            value = std::to_string(mPlatform.getAudioZoomFactor());
+            result.push_back(makeVendorParameter(id, value));
+        }
+    }
+    LOG(VERBOSE) << __func__ << ": processed";
+    return result;
+}
+
 std::vector<VendorParameter> Module::onGetTelephonyParameters(const std::vector<std::string>& ids) {
     if (!mTelephony) {
         LOG(ERROR) << __func__ << ": Telephony not created";
@@ -2719,6 +2767,8 @@ Module::GetParameterToFeatureMap Module::fillGetParameterToFeatureMap() {
                                  {Parameters::kHdrChannelCount, Feature::HDR},
                                  {Parameters::kHdrSamplingRate, Feature::HDR},
                                  {Parameters::kFacing, Feature::HDR},
+                                 {Parameters::kAudioZoomFactor, Feature::AUDIOZOOM},
+                                 {Parameters::kAudioZoom, Feature::AUDIOZOOM},
                                  {Parameters::kVoiceIsCRsSupported, Feature::TELEPHONY},
                                  {Parameters::kVoiceIsCRsDeviceSupported, Feature::TELEPHONY},
                                  {Parameters::kA2dpSuspended, Feature::BLUETOOTH},
@@ -2734,6 +2784,7 @@ Module::GetParameterToFeatureMap Module::fillGetParameterToFeatureMap() {
 // static
 Module::FeatureToGetHandlerMap Module::fillFeatureToGetHandlerMap() {
     FeatureToGetHandlerMap map{{Feature::HDR, &Module::onGetHDRParameters},
+                               {Feature::AUDIOZOOM, &Module::onGetAudioZoomParameters},
                                {Feature::TELEPHONY, &Module::onGetTelephonyParameters},
                                {Feature::BLUETOOTH, &Module::onGetBluetoothParams},
                                {Feature::WFD, &Module::onGetWFDParameters},

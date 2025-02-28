@@ -394,6 +394,12 @@ void StreamInPrimary::checkHearingAidRoutingForVoice(const Metadata& metadata, b
     }
 }
 
+void StreamInPrimary::setAudioZoomFactor(float const& audioZoomFactor){
+    if(!mPalHandle) return;
+
+    mPlatform.setAudioZoomFactor(mPalHandle, audioZoomFactor);
+}
+
 ndk::ScopedAStatus StreamInPrimary::updateMetadataCommon(const Metadata& metadata) {
     if (!isClosed()) {
         if (metadata.index() != mMetadata.index()) {

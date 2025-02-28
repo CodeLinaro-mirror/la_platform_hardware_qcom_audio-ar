@@ -1296,6 +1296,10 @@ void StreamCommonImpl::setStreamMicMute(const bool muted) {
     return;
 }
 
+void StreamCommonImpl::setAudioZoomFactor(float const& /*factor*/) {
+    return;
+}
+
 ndk::ScopedAStatus StreamCommonImpl::configureMMapStream(MmapBufferDescriptor* desc,
                                                          int32_t* bufferSizeFrames) {
     return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
