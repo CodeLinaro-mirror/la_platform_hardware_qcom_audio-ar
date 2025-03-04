@@ -300,6 +300,47 @@ include $(BUILD_SHARED_LIBRARY)
 
 
 #-------------------------------------------
+
+#            Build Power_Policy_Client LIB
+#-------------------------------------------
+ifeq ($(strip $(AUDIO_FEATURE_ENABLED_POWER_POLICY)),true)
+
+include $(CLEAR_VARS)
+
+LOCAL_MODULE := libarpowerpolicy
+
+LOCAL_VENDOR_MODULE := true
+
+LOCAL_SRC_FILES:= \
+        PowerPolicyClient.cpp \
+        power_policy_launcher.cpp
+
+LOCAL_C_INCLUDES := \
+        $(LOCAL_PATH)/.. \
+        system/media/audio/include \
+        $(LOCAL_PATH)/../include
+
+LOCAL_SHARED_LIBRARIES:= \
+        android.frameworks.automotive.powerpolicy-V2-ndk \
+        libbase \
+        libbinder_ndk \
+        libcutils \
+        liblog \
+        libpowerpolicyclient
+
+LOCAL_C_INCLUDES += $(TOP)/packages/services/Car/cpp/powerpolicy/client/include
+LOCAL_C_INCLUDES += $(TOP)/system/libbase/include
+LOCAL_C_INCLUDES += $(TOP)/external/fmtlib/include
+LOCAL_C_INCLUDES += $(LOCAL_PATH)../../..
+LOCAL_C_INCLUDES += $(TOP)/vendor/qcom/opensource/audio-hal/primary-hal/hal/core/include
+LOCAL_SHARED_LIBRARIES += android.frameworks.automotive.powerpolicy-V1-ndk
+
+include $(BUILD_SHARED_LIBRARY)
+endif
+
+#-------------------------------------------
+
+#-------------------------------------------
 #            Build Auto OEM extension
 #-------------------------------------------
 include $(CLEAR_VARS)

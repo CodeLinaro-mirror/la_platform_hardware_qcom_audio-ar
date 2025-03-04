@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -179,6 +179,11 @@ struct BufferConfig StreamInPrimary::getBufferConfig() {
 
 ndk::ScopedAStatus StreamInPrimary::configureMMapStream(int32_t* fd, int64_t* burstSizeFrames,
                                                         int32_t* flags, int32_t* bufferSizeFrames) {
+
+    if (AudioExtension::getInstance().in_power_policy == POWER_POLICY_STATUS_OFFLINE) {
+        LOG(ERROR) << "POWER POLICY OFFLINE please try again\n";
+        return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
+    }
     if (mTag != Usecase::MMAP_RECORD) {
         LOG(ERROR) << __func__ << mLogPrefix << " cannot call on non-MMAP stream types";
         return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
@@ -301,6 +306,10 @@ void StreamInPrimary::resume() {
 
 ::android::status_t StreamInPrimary::start() {
     LOG(DEBUG) << __func__ << mLogPrefix;
+    if (AudioExtension::getInstance().in_power_policy == POWER_POLICY_STATUS_OFFLINE) {
+        LOG(ERROR) << "POWER POLICY OFFLINE please try again\n";
+        return -EINVAL;
+    }
     if (mTag == Usecase::MMAP_RECORD && !mIsMMapStarted) {
         if (int32_t ret = ::pal_stream_start(this->mPalHandle); ret) {
             LOG(ERROR) << __func__ << mLogPrefix << " pal_stream_start failed!! ret:" << std::to_string(ret);
@@ -330,6 +339,11 @@ void StreamInPrimary::resume() {
 
 ::android::status_t StreamInPrimary::transfer(void* buffer, size_t frameCount,
                                               size_t* actualFrameCount, int32_t* latencyMs) {
+
+    if (AudioExtension::getInstance().in_power_policy == POWER_POLICY_STATUS_OFFLINE) {
+        LOG(ERROR) << "POWER POLICY OFFLINE please try again\n";
+        return android::INVALID_OPERATION;
+    }
     if (!mPalHandle) {
         configure();
         if (!mPalHandle) {
@@ -396,6 +410,10 @@ void StreamInPrimary::resume() {
 
 ::android::status_t StreamInPrimary::refinePosition(
         ::aidl::android::hardware::audio::core::StreamDescriptor::Reply* reply) {
+    if (AudioExtension::getInstance().in_power_policy == POWER_POLICY_STATUS_OFFLINE) {
+        LOG(ERROR) << "POWER POLICY OFFLINE please try again\n";
+        return android::INVALID_OPERATION;
+    }
     if (mTag == Usecase::COMPRESS_CAPTURE) {
         auto& compressCapture = std::get<CompressCapture>(mExt);
         reply->observable.frames = compressCapture.getPositionInFrames();
@@ -616,6 +634,10 @@ void StreamInPrimary::configure() {
     const auto startTime = std::chrono::steady_clock::now();
     auto attr = mPlatform.getPalStreamAttributes(mMixPortConfig, true);
     LOG(INFO) << __func__ << " : configure : Enter";
+    if (AudioExtension::getInstance().in_power_policy == POWER_POLICY_STATUS_OFFLINE) {
+        LOG(ERROR) << "POWER POLICY OFFLINE please try again\n";
+        return;
+    }
     auto palDevices = mPlatform.configureAndFetchPalDevices(mMixPortConfig, mTag, mConnectedDevices);
     if (!attr) {
         LOG(ERROR) << __func__ << mLogPrefix << " no pal attributes";
