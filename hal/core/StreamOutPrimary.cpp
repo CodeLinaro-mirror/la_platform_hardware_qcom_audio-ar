@@ -1177,6 +1177,12 @@ void StreamOutPrimary::configure() {
         return;
         }
 
+    if (attr->type == PAL_STREAM_VOIP_RX && mPlatform.getCallTranslationState()) {
+        if (auto telephony = mContext.getTelephony().lock()) {
+            telephony->CallTranslationManager("",CALL_TRANSLATION_DIR_RX);
+        }
+    }
+
     if (mTag == Usecase::HAPTICS_PLAYBACK && mHapticsPalHandle) {
         if (int32_t ret = ::pal_stream_start(this->mHapticsPalHandle); ret) {
             LOG(ERROR) << __func__ << mLogPrefix << " failed to start haptics stream. ret:" << ret;

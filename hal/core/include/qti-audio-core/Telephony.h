@@ -70,7 +70,8 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
         CallState current_;
         CallState new_;
     };
-
+    call_translation_config* tx_call_translation_conf;
+    call_translation_config* rx_call_translation_conf;
     float mCRSVolume = 0.4f; //default CRS call volume
     bool mIsCRSStarted{false};
     VSID mCRSVSID{VSID::VSID_1};
@@ -118,8 +119,10 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
     void updateCalls();
     bool isAnyCallActive();
     bool isVoipActive();
-    void CallTranslationManager();
-    void updateCallTranslationParam(std::string param);
+    void CallTranslationManager(const std::string& str = "", pal_call_translation_direction direction = CALL_TRANSLATION_DEFAULT);
+    uint32_t* stringToUint32Array(const std::string& str, size_t* size);
+    void updateCallTranslationConfigs(const std::string& str);
+    void updateCallTranslationParam(pal_call_translation_direction direction);
 
     // The following below API are both aimed to solve routing on telephony
     /**
@@ -175,7 +178,7 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
     void stopCrsLoopback();
     void triggerHACinVoipPlayback();
     void getPlaybackStreamDevices();
-    void startCallTranslation();
+    void startCallTranslation(pal_call_translation_direction direction);
     void stopCallTranslation();
     ::aidl::android::media::audio::common::AudioDevice getMatchingTxDevice(
             const ::aidl::android::media::audio::common::AudioDevice & rxDevice);
@@ -216,11 +219,11 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
 
     ::aidl::android::media::audio::common::AudioDevice mRxDevice; // speaker, earpiece
     ::aidl::android::media::audio::common::AudioDevice mTxDevice; // mic, speaker mic
-    struct call_translation_config* tx_call_translation_conf;
-    struct call_translation_config* rx_call_translation_conf;
     pal_stream_handle_t* mPalCrsHandle{nullptr};
     pal_stream_handle_t* mPalHandle{nullptr};
-    pal_stream_handle_t* mPalCallTranslationHandle{nullptr};
+    pal_stream_handle_t* mPalCallTranslationTxHandle{nullptr};
+    pal_stream_handle_t* mPalCallTranslationRxHandle{nullptr};
+    pal_call_translation_direction callTranslationDirection;
     // Stream Handle for VOIP Playback
     std::weak_ptr<StreamCommonInterface> mVoipStreamWptr;
     std::vector<::aidl::android::media::audio::common::AudioDevice> mPlaybackStreamDevices;

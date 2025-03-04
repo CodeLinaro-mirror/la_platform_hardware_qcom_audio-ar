@@ -39,11 +39,15 @@ const static std::string kVoiceHDVoice{"hd_voice"};
 const static std::string kVoiceIsCRsSupported{"isCRSsupported"};
 const static std::string kVoiceCRSCall{"crs_call"};
 const static std::string kVoiceCRSVolume{"CRS_volume"};
-const static std::string kVoiceTranslationRxMute{"voice_translation_rx_mute"};
 /** kVoiceTranslationRxMute : helps to set the Voice Rx Volume
 * to mute when the param is set to enabled during the
 * voice call translation usecase running.
 **/
+const static std::string kVoiceTranslationRxMute{"voice_translation_rx_mute"};
+/** kTranslationConfig : Use this parameter to set the config to
+* ASR, TTS and NMT modules for the Voice Call Translation graph.
+**/
+const static std::string kTranslationConfig{"translation_config"};
 
 
 // WFD
@@ -95,13 +99,6 @@ const static std::string kIsDirectPCMTrack{"is_direct_pcm_track"};
  **/
  static std::string kTranslateRecord{"translate_record"};
 
-/**
- * call_translation : Use this parameter for the Voice and Voip Call Translation.
- * based on the enable/diable of this parameter the translation graph
- * will open and close on top of the Voice and Voip Calls.
- * the translation will happen with the help of ASR, TTS and Translation module in the graph.
- **/
- const static std::string kCallTranslation{"call_translation"};
 
 // FTM
 const static std::string kFbspCfgWaitTime{"fbsp_cfg_wait_time"};
