@@ -178,12 +178,17 @@ std::unique_ptr<pal_stream_attributes> Platform::getDefaultTelephonyAttributes()
     return std::move(attributes);
 }
 
-std::unique_ptr<pal_stream_attributes> Platform::getDefaultCallTranslationAttributes() const {
+std::unique_ptr<pal_stream_attributes> Platform::getDefaultCallTranslationAttributes(pal_call_translation_direction callTranslationDirection) const {
     auto attributes = std::make_unique<pal_stream_attributes>();
     auto inChannelInfo = PlatformConverter::getPalChannelInfoForChannelCount(1);
     auto outChannelInfo = PlatformConverter::getPalChannelInfoForChannelCount(2);
     attributes->type = PAL_STREAM_CALL_TRANSLATION;
-    attributes->direction = PAL_AUDIO_INPUT;
+
+    if (callTranslationDirection == CALL_TRANSLATION_DIR_TX) {
+        attributes->direction = PAL_AUDIO_INPUT;
+    } else if (callTranslationDirection == CALL_TRANSLATION_DIR_RX) {
+        attributes->direction = PAL_AUDIO_OUTPUT;
+    }
     attributes->in_media_config.sample_rate = kDefaultOutputSampleRate;
     attributes->in_media_config.ch_info = *inChannelInfo;
     attributes->in_media_config.bit_width = kDefaultPCMBidWidth;

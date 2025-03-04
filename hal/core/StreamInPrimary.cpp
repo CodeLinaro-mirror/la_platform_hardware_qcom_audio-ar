@@ -814,9 +814,9 @@ void StreamInPrimary::configure() {
         mPalHandle = nullptr;
         return;
     }
-    if (mTag == Usecase::VOIP_RECORD && mPlatform.getCallTranslationState()) {
+    if (attr->type == PAL_STREAM_VOIP_TX && mPlatform.getCallTranslationState()) {
         if (auto telephony = mContext.getTelephony().lock()) {
-            telephony->CallTranslationManager();
+            telephony->CallTranslationManager("",CALL_TRANSLATION_DIR_TX);
         }
     }
     if (mPlatform.getMicMuteStatus() && !(mPlatform.getTranslationRecordState())) {

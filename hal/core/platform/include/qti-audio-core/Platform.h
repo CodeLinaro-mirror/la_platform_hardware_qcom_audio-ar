@@ -190,7 +190,7 @@ class Platform {
                     bluetoothDevices);
     std::unique_ptr<pal_stream_attributes> getDefaultTelephonyAttributes() const;
     std::unique_ptr<pal_stream_attributes> getDefaultCRSTelephonyAttributes() const;
-    std::unique_ptr<pal_stream_attributes> getDefaultCallTranslationAttributes() const;
+    std::unique_ptr<pal_stream_attributes> getDefaultCallTranslationAttributes(pal_call_translation_direction callTranslationDirection) const;
     void configurePalDevicesCustomKey(std::vector<pal_device>& palDevices,
                                       const std::string& customKey) const;
 
