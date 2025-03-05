@@ -264,14 +264,16 @@ ndk::ScopedAStatus ModulePrimary::createInputStream(StreamContext&& context,
 
 ndk::ScopedAStatus ModulePrimary::createOutputStream(
         StreamContext&& context, const SourceMetadata& sourceMetadata,
-        const std::optional<AudioOffloadInfo>& offloadInfo, std::shared_ptr<StreamOut>* result) {
+        const std::optional<AudioOffloadInfo>& offloadInfo,
+        std::shared_ptr<StreamOut>* result, std::vector<AudioDevice> AudioDevices) {
     if (mPlatform.isSoundCardDown() &&
         (hasOutputDirectFlag(context.getMixPortConfig().flags.value()) ||
          hasOutputCompressOffloadFlag(context.getMixPortConfig().flags.value()))) {
         LOG(ERROR) << __func__ << ": avoid direct or compress streams as sound card is down";
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
     }
-    createStreamInstance<StreamOutPrimary>(result, std::move(context), sourceMetadata, offloadInfo);
+    createStreamInstance<StreamOutPrimary>(result, std::move(context),
+                                           sourceMetadata, offloadInfo, AudioDevices);
     PowerPolicyManager::getInstance().updateStreamOutPrimaryList(
         (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(*result)));
     ModulePrimary::outListMutex.lock();

@@ -23,7 +23,7 @@
 #pragma once
 
 #include <qti-audio-core/Module.h>
-
+using ::aidl::android::media::audio::common::AudioDevice;
 namespace qti::audio::core {
 
 class ModuleStub final : public Module {
@@ -50,7 +50,7 @@ class ModuleStub final : public Module {
             const ::aidl::android::hardware::audio::common::SourceMetadata& sourceMetadata,
             const std::optional<::aidl::android::media::audio::common::AudioOffloadInfo>&
                     offloadInfo,
-            std::shared_ptr<StreamOut>* result) override;
+            std::shared_ptr<StreamOut>* result, std::vector<AudioDevice> AudioDevices) override;
 
   private:
     ChildInterface<::aidl::android::hardware::audio::core::IBluetooth> mBluetooth;

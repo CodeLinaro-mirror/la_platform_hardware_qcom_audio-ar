@@ -15,7 +15,7 @@
 #define PCM_OFFLOAD_PLATFORM_DELAY (30*1000LL)
 #define MMAP_PLATFORM_DELAY        (3*1000LL)
 #define ULL_PLATFORM_DELAY         (4*1000LL)
-
+using ::aidl::android::media::audio::common::AudioDevice;
 namespace qti::audio::core {
 
 class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public PlatformStreamCallback {
@@ -24,7 +24,8 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     StreamOutPrimary(StreamContext&& context,
                      const ::aidl::android::hardware::audio::common::SourceMetadata& sourceMetadata,
                      const std::optional<::aidl::android::media::audio::common::AudioOffloadInfo>&
-                             offloadInfo);
+                             offloadInfo,
+                             std::vector<AudioDevice> AudioDevices);
 
     virtual ~StreamOutPrimary() override;
     int32_t setAggregateSourceMetadata(bool voiceActive) override;
