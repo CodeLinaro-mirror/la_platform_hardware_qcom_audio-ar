@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <!--
-Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+Copyright (c) 2024-2025 Qualcomm Innovation Center, Inc. All rights reserved.
 SPDX-License-Identifier: BSD-3-Clause-Clear
 -->
 <modules>
@@ -49,7 +49,7 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <mixPort name="rear_seat" role="source" flags="DEEP_BUFFER">
             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
-        <mixPort name="primary_out" role="source" flags="PRIMARY">
+        <mixPort name="primary_out" role="source" flags="FAST">
             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
         <mixPort name="low_latency_out" role="source" flags="FAST">
