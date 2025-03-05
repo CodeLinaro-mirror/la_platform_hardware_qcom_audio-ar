@@ -53,10 +53,11 @@ namespace qti::audio::core {
 std::mutex StreamInPrimary::sinkMetadata_mutex_;
 
 StreamInPrimary::StreamInPrimary(StreamContext&& context, const SinkMetadata& sinkMetadata,
-                                 const std::vector<MicrophoneInfo>& microphones)
+                                 const std::vector<MicrophoneInfo>& microphones,
+                                 std::vector<AudioDevice> AudioDevices)
     : StreamIn(std::move(context), microphones),
       StreamCommonImpl(&(StreamIn::mContext), sinkMetadata),
-      mTag(getUsecaseTag(getContext().getMixPortConfig())),
+      mTag(getUsecaseTag(getContext().getMixPortConfig(), AudioDevices)),
       mTagName(getName(mTag)),
       mFrameSizeBytes(getContext().getFrameSize()),
       mMixPortConfig(getContext().getMixPortConfig()) {

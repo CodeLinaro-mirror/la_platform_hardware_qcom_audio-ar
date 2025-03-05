@@ -16,7 +16,8 @@ class StreamInPrimary : public StreamIn, public StreamCommonImpl {
     StreamInPrimary(
             StreamContext&& context,
             const ::aidl::android::hardware::audio::common::SinkMetadata& sinkMetadata,
-            const std::vector<::aidl::android::media::audio::common::MicrophoneInfo>& microphones);
+            const std::vector<::aidl::android::media::audio::common::MicrophoneInfo>& microphones,
+            std::vector<AudioDevice> AudioDevices);
 
     virtual ~StreamInPrimary() override;
 

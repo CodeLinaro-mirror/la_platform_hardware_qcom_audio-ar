@@ -87,7 +87,8 @@ ndk::ScopedAStatus ModuleStub::getBluetoothLe(std::shared_ptr<IBluetoothLe>* _ai
 ndk::ScopedAStatus ModuleStub::createInputStream(StreamContext&& context,
                                                  const SinkMetadata& sinkMetadata,
                                                  const std::vector<MicrophoneInfo>& microphones,
-                                                 std::shared_ptr<StreamIn>* result) {
+                                                 std::shared_ptr<StreamIn>* result,
+                                                 std::vector<AudioDevice> AudioDevices) {
     return createStreamInstance<StreamInStub>(result, std::move(context), sinkMetadata,
                                               microphones);
 }

@@ -249,8 +249,10 @@ ndk::ScopedAStatus ModulePrimary::getTelephony(std::shared_ptr<ITelephony>* _aid
 ndk::ScopedAStatus ModulePrimary::createInputStream(StreamContext&& context,
                                                     const SinkMetadata& sinkMetadata,
                                                     const std::vector<MicrophoneInfo>& microphones,
-                                                    std::shared_ptr<StreamIn>* result) {
-    createStreamInstance<StreamInPrimary>(result, std::move(context), sinkMetadata, microphones);
+                                                    std::shared_ptr<StreamIn>* result,
+                                                    std::vector<AudioDevice> AudioDevices) {
+    createStreamInstance<StreamInPrimary>(result, std::move(context),
+                                          sinkMetadata, microphones, AudioDevices);
     PowerPolicyManager::getInstance().updateStreamInPrimaryList(
         (std::static_pointer_cast<::qti::audio::core::StreamInPrimary>(*result)));
     ModulePrimary::inListMutex.lock();
