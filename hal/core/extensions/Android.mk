@@ -228,6 +228,8 @@ LOCAL_HEADER_LIBRARIES += libhardware_headers
 LOCAL_HEADER_LIBRARIES += libsystem_headers
 include $(BUILD_SHARED_LIBRARY)
 
+# BATTERY_LISTENER not required for automotive
+ifneq ($(TARGET_BOARD_AUTO),true)
 #-------------------------------------------
 #            Build BATTERY_LISTENER
 #-------------------------------------------
@@ -263,4 +265,4 @@ LOCAL_SHARED_LIBRARIES := \
 LOCAL_STATIC_LIBRARIES := libhealthhalutils
 
 include $(BUILD_SHARED_LIBRARY)
-
+endif

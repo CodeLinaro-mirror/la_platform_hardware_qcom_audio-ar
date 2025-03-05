@@ -1346,7 +1346,7 @@ void StreamOutPrimary::shutdown_I() {
     }
     // for stream out we use the system uptime as the time stamp
     reply->observable.timeNs = ::android::uptimeNanos();
-    LOG(DEBUG) << "android::uptimeNanos() -> TimeStamp - reply->observable.timeNs: " << reply->observable.timeNs;
+    LOG(VERBOSE) << "android::uptimeNanos() -> TimeStamp - reply->observable.timeNs: " << reply->observable.timeNs;
     LOG(DEBUG) << "Exit : " << __func__;
     return ::android::OK;
 }
@@ -1376,7 +1376,7 @@ int64_t StreamOutPrimary::GetRenderLatency(std::string address) {
 
     if (mPalHandle) {
         ret = pal_stream_get_rendering_latency(mPalHandle, &latency);
-        LOG(INFO) << "ret " << ret << ", latency " << latency;
+        LOG(VERBOSE) << "ret " << ret << ", latency " << latency;
         return latency;
     }
     switch (streamAttributes_->type) {
