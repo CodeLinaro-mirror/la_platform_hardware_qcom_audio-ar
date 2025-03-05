@@ -50,8 +50,8 @@ namespace qti::audio::core {
 int VoipPlaybackECNR::kSampleRate = 48000;
 
 StreamOutPrimaryOEM::StreamOutPrimaryOEM(StreamContext&& context, const SourceMetadata& sourceMetadata,
-                                   const std::optional<AudioOffloadInfo>& offloadInfo)
-    : StreamOutPrimary(std::move(context),sourceMetadata,offloadInfo) {
+                                   const std::optional<AudioOffloadInfo>& offloadInfo, std::vector<AudioDevice> audioDevices)
+    : StreamOutPrimary(std::move(context),sourceMetadata,offloadInfo,audioDevices) {
 
     std::ostringstream os;
     os << " : usecase: " << mTagName;

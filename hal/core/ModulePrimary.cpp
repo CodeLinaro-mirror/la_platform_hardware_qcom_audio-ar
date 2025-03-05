@@ -459,7 +459,8 @@ ndk::ScopedAStatus ModulePrimary::createInputStream(StreamContext&& context,
 
 ndk::ScopedAStatus ModulePrimary::createOutputStream(
         StreamContext&& context, const SourceMetadata& sourceMetadata,
-        const std::optional<AudioOffloadInfo>& offloadInfo, std::shared_ptr<StreamOut>* result) {
+        const std::optional<AudioOffloadInfo>& offloadInfo,
+        std::shared_ptr<StreamOut>* result, std::vector<AudioDevice> AudioDevices) {
     if (mPlatform.isSoundCardDown() &&
         (hasOutputDirectFlag(context.getMixPortConfig().flags.value()) ||
          hasOutputCompressOffloadFlag(context.getMixPortConfig().flags.value()))) {
@@ -467,9 +468,10 @@ ndk::ScopedAStatus ModulePrimary::createOutputStream(
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
     }
 #ifdef ECNR_HAL_ENABLE
-    createStreamInstance<StreamOutPrimaryOEM>(result, std::move(context), sourceMetadata, offloadInfo);
+    createStreamInstance<StreamOutPrimaryOEM>(result, std::move(context), sourceMetadata, offloadInfo, AudioDevices);
 #else
-    createStreamInstance<StreamOutPrimary>(result, std::move(context), sourceMetadata, offloadInfo);
+    createStreamInstance<StreamOutPrimary>(result, std::move(context),
+                                           sourceMetadata, offloadInfo, AudioDevices);
 #endif
     PowerPolicyManager::getInstance().updateStreamOutPrimaryList(
         (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(*result)));

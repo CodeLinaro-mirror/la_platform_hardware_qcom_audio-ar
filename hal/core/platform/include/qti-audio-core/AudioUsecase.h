@@ -25,6 +25,7 @@
 #include <numeric>
 #include <unordered_set>
 
+using aidl::android::media::audio::common::AudioDevice;
 #define DIV_ROUND_UP(x, y) (((x) + (y) - 1) / (y))
 #define ALIGN(x, y) ((y) * DIV_ROUND_UP((x), (y)))
 #define DEFAULT_SAMPLE_RATE 48000
@@ -63,6 +64,12 @@ enum class Usecase : uint16_t {
 };
 
 Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig);
+
+/* overloaded method which takes additional arguement AudioDevices
+*  this AudioDevices vector will have bus address for automotive specific usecases
+*  based on the busaddress proper usecase can be assigned to the stream object */
+Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig,
+        std::vector<AudioDevice> audioDevice);
 
 std::string getName(const Usecase tag);
 

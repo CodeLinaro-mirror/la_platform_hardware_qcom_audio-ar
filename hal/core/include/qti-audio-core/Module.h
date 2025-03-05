@@ -33,7 +33,7 @@
 #include <qti-audio-core/ModuleConfig.h>
 #include <qti-audio-core/Stream.h>
 #include <qti-audio-core/Telephony.h>
-
+using ::aidl::android::media::audio::common::AudioDevice;
 namespace qti::audio::core {
 
 class Module : public ::aidl::android::hardware::audio::core::BnModule,
@@ -188,7 +188,7 @@ class Module : public ::aidl::android::hardware::audio::core::BnModule,
             const ::aidl::android::hardware::audio::common::SourceMetadata& sourceMetadata,
             const std::optional<::aidl::android::media::audio::common::AudioOffloadInfo>&
                     offloadInfo,
-            std::shared_ptr<StreamOut>* result) = 0;
+            std::shared_ptr<StreamOut>* result, std::vector<AudioDevice> AudioDevices) = 0;
     virtual std::vector<::aidl::android::media::audio::common::AudioProfile> getDynamicProfiles(
             const ::aidl::android::media::audio::common::AudioPort& audioPort);
 
