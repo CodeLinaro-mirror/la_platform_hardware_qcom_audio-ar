@@ -446,7 +446,7 @@ int64_t StreamInPrimary::GetSourceLatency() {
         readAt.tv_nsec = palBuffer.ts->tv_nsec;
         free(palBuffer.ts);
     }
-    LOG(ERROR) << "hw timestamp sec: " << readAt.tv_sec << "  nsec: " << readAt.tv_nsec;
+    LOG(VERBOSE) << "hw timestamp sec: " << readAt.tv_sec << "  nsec: " << readAt.tv_nsec;
 #endif
     if (bytesRead < 0) {
         LOG(ERROR) << __func__ << mLogPrefix << " read failed, ret:" << std::to_string(bytesRead);
@@ -461,9 +461,9 @@ int64_t StreamInPrimary::GetSourceLatency() {
     LOG(VERBOSE) << __func__ << mLogPrefix << ": bytes read " << bytesRead << ", return frame count "
                  << *actualFrameCount;
 #endif
-    LOG(DEBUG) << "bytes read: " << bytesRead;
+    LOG(VERBOSE) << "bytes read: " << bytesRead;
     mBytesRead += bytesRead;
-    LOG(DEBUG) << "mBytes read: " << mBytesRead;
+    LOG(VERBOSE) << "mBytes read: " << mBytesRead;
     read_frames = mBytesRead / mFrameSizeBytes;
     struct BufferConfig BufferConfig_ = getBufferConfig();
     kernel_buffer_size = BufferConfig_.bufferSize * BufferConfig_.bufferCount;
@@ -507,7 +507,6 @@ void StreamInPrimary::shutdown() {
 // start of StreamCommonInterface methods
 
 ::android::status_t StreamInPrimary::getHwTimeStamp(::aidl::android::hardware::audio::core::StreamDescriptor::Reply* reply) {
-    LOG(DEBUG) << "Enter: " << __func__;
     if (!reply) {
         LOG(ERROR) << "Null in reply - " << "Failed to get hw timestamp";
         return ::android::INVALID_OPERATION;
@@ -519,7 +518,6 @@ void StreamInPrimary::shutdown() {
 #else
     reply->observable.timeNs = (readAt.tv_sec * 1000000000LL) + readAt.tv_nsec;
 #endif
-    LOG(DEBUG) << "Exit: ok" << __func__;
     return ::android::OK;
 }
 

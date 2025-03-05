@@ -157,10 +157,10 @@ void StreamWorkerCommonLogic::populateReply(StreamDescriptor::Reply* reply,
     reply->observable.frames = mContext->getFrameCount();
 #ifndef HARDWARE_TIMESTAMP
     reply->observable.timeNs = ::android::uptimeNanos();
-    LOG(DEBUG) << "android::uptimeNanos() -> TimeStamp - reply->observable.timeNs: " << reply->observable.timeNs;
+    LOG(VERBOSE) << "android::uptimeNanos() -> TimeStamp - reply->observable.timeNs: " << reply->observable.timeNs;
 #else
     mDriver->getHwTimeStamp(reply);
-    LOG(DEBUG) << "HW TimeStamp - reply->observable.timeNs: " << reply->observable.timeNs;
+    LOG(VERBOSE) << "HW TimeStamp - reply->observable.timeNs: " << reply->observable.timeNs;
 #endif
     if (auto status = mDriver->refinePosition(reply); status == ::android::OK) {
         return;
