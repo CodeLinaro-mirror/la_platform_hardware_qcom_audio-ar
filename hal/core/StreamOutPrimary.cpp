@@ -51,10 +51,11 @@ namespace qti::audio::core {
 std::mutex StreamOutPrimary::sourceMetadata_mutex_;
 
 StreamOutPrimary::StreamOutPrimary(StreamContext&& context, const SourceMetadata& sourceMetadata,
-                                   const std::optional<AudioOffloadInfo>& offloadInfo)
+                                   const std::optional<AudioOffloadInfo>& offloadInfo,
+                                   std::vector<AudioDevice> audioDevices)
     : StreamOut(std::move(context), offloadInfo),
       StreamCommonImpl(&(StreamOut::mContext), sourceMetadata),
-      mTag(getUsecaseTag(getContext().getMixPortConfig())),
+      mTag(getUsecaseTag(getContext().getMixPortConfig(), audioDevices)),
       mTagName(getName(mTag)),
       mFrameSizeBytes(getContext().getFrameSize()),
       mMixPortConfig(getContext().getMixPortConfig()),

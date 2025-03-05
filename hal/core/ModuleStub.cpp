@@ -51,7 +51,7 @@ using ::aidl::android::hardware::audio::core::IBluetoothLe;
 using ::aidl::android::hardware::audio::core::IStreamIn;
 using ::aidl::android::hardware::audio::core::IStreamOut;
 using ::aidl::android::hardware::audio::core::VendorParameter;
-
+using ::aidl::android::media::audio::common::AudioDevice;
 namespace qti::audio::core {
 
 ndk::ScopedAStatus ModuleStub::getBluetooth(std::shared_ptr<IBluetooth>* _aidl_return) {
@@ -94,7 +94,9 @@ ndk::ScopedAStatus ModuleStub::createInputStream(StreamContext&& context,
 
 ndk::ScopedAStatus ModuleStub::createOutputStream(
         StreamContext&& context, const SourceMetadata& sourceMetadata,
-        const std::optional<AudioOffloadInfo>& offloadInfo, std::shared_ptr<StreamOut>* result) {
+        const std::optional<AudioOffloadInfo>& offloadInfo,
+        std::shared_ptr<StreamOut>* result,
+        std::vector<AudioDevice> AudioDevices) {
     return createStreamInstance<StreamOutStub>(result, std::move(context), sourceMetadata,
                                                offloadInfo);
 }
