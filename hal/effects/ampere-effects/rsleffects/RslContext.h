@@ -56,18 +56,8 @@ class RslContext : public EffectContext {
     virtual RetCode setParameter(uint32_t cmd, int32_t param_value) { return RetCode::SUCCESS; }
     virtual RetCode getParameter(effect_param_t *param, uint32_t *size) { return RetCode::SUCCESS; }
 
-    // Ambiance methods, implement in AmbianceContext
-    virtual RetCode setAmbianceProfile(int profile) { return RetCode::ERROR_ILLEGAL_PARAMETER; }
-    virtual int getAmbianceProfile() { return 0; }
-    virtual int updatePalParameters(struct AmbianceParams *param) { return 0; }
-
-    // Sdvc methods, implement in SdvcContext
-    virtual RetCode setSdvcCurrentProfile(int profile) { return RetCode::ERROR_ILLEGAL_PARAMETER; }
-    virtual int getSdvcCurrentProfile() { return 0; }
-
-    // SteadyVolume methods, implement in SteadyVolumeContext
-    virtual RetCode setSteadyVolume(int value) { return RetCode::ERROR_ILLEGAL_PARAMETER; }
-    virtual int getSteadyVolume() { return 0; }
+    virtual RetCode setParameter(const std::vector<uint8_t>& params) { return RetCode::SUCCESS; }
+    virtual std::vector<uint8_t> getParameter(std::vector<uint8_t> id)  { return id; }
 
     // BMT methods, implement in BMTContext
     virtual int getValueFromPalParam(uint32_t cmd) const { return 0; }
@@ -105,14 +95,19 @@ class AmbianceContext final : public RslContext {
     virtual RetCode stop() override;
     RetCode setParameter(uint32_t cmd, int32_t param_value) override;
     RetCode setOutputDevice(const std::vector<AudioDeviceDescription>& device) override;
-    RetCode setAmbianceProfile(int profile) override;
-    int getAmbianceProfile() override;
+    RetCode setAmbianceProfile(int profile) ;
+    int getAmbianceProfile() ;
     RetCode getParameter(effect_param_t *param, uint32_t *size) override;
     int updatePalParameters(struct AmbianceParams *param);
+    virtual RetCode setParameter(const std::vector<uint8_t>& params)  override ;
+    virtual std::vector<uint8_t> getParameter(std::vector<uint8_t> id)  override;
 
   private:
     struct AmbianceParams mAmbianceParams;
     bool mTempDisabled = false;
+    uint16_t mNumProfiles = MAX_AMBIANCE_PROFILE;
+    uint16_t mCurrentProfile = DEFAULT_AMBIANCE_PROFILE;
+    int32_t mAsyncTransationStatus = 0 ;
 };
 
 class SDVCContext final : public RslContext {
@@ -126,14 +121,19 @@ class SDVCContext final : public RslContext {
     virtual RetCode stop() override;
     RetCode setParameter(uint32_t cmd, int32_t param_value) override;
     RetCode setOutputDevice(const std::vector<AudioDeviceDescription>& device) override;
-    RetCode setSdvcCurrentProfile(int profile) override;
-    int getSdvcCurrentProfile() override;
+    RetCode setSdvcCurrentProfile(int profile) ;
+    int getSdvcCurrentProfile() ;
     int updatePalParameters(struct param_type2_t *param);
     RetCode getParameter(effect_param_t *param, uint32_t *size) override;
+    virtual RetCode setParameter(const std::vector<uint8_t>& params)  override ;
+    virtual std::vector<uint8_t> getParameter(std::vector<uint8_t> id)  override;
 
   private:
     struct param_type2_t mSdvcParams;
     bool mTempDisabled = false;
+    uint16_t mNumProfiles = MAX_SDVC_PROFILE;
+    uint16_t mCurrentProfile = DEFAULT_SDVC_PROFILE;
+
 };
 
 class SteadyVolumeContext final : public RslContext {
@@ -147,10 +147,12 @@ class SteadyVolumeContext final : public RslContext {
     virtual RetCode stop() override;
     RetCode setParameter(uint32_t cmd, int32_t param_value) override;
     RetCode setOutputDevice(const std::vector<AudioDeviceDescription>& device) override;
-    RetCode setSteadyVolume(int profile) override;
-    int getSteadyVolume() override;
+    RetCode setSteadyVolume(int profile) ;
+    int getSteadyVolume() ;
     int updatePalParameters(struct param_type2_t *param);
     RetCode getParameter(effect_param_t *param, uint32_t *size) override;
+    virtual RetCode setParameter(const std::vector<uint8_t>& params)  override ;
+    virtual std::vector<uint8_t> getParameter(std::vector<uint8_t> id)  override;
 
   private:
     struct param_type2_t mSteadyVolumeParams;
@@ -177,6 +179,7 @@ class BMTContext final : public RslContext {
   private:
     struct param_type2_t mBMTParams;
     bool mTempDisabled = false;
+    struct param_type2_t mBMTLevel[MAX_NUM_BANDS];
 };
 
 class BassBoostContext final : public RslContext {

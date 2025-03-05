@@ -8,7 +8,7 @@ LATEST_ANDROID_HARDWARE_AUDIO_CORE_SOUNDDOSE := android.hardware.audio.sounddose
 
 ifeq ($(TARGET_USES_CDC_HW), true)
 #enable this flag for enabling Ampere effects
-AUDIO_AMPERE_EFFECTS := false
+#AUDIO_AMPERE_EFFECTS := true
 endif
 
 ifeq ($(AUDIO_AMPERE_EFFECTS),true)

@@ -11,6 +11,9 @@
 #include "RslContext.h"
 #include "RslTypes.h"
 #include "extensions/AudioExtension.h"
+#include <system/audio_effects/audio_effects_utils.h>
+#include "aidl/android/hardware/audio/effect/DefaultExtension.h"
+#include <system/audio_effect.h>
 
 #define MIN_STEADY_VOLUME_VALUE 0
 #define MAX_STEADY_VOLUME_VALUE 1
@@ -19,6 +22,9 @@ namespace aidl::ampere::effects {
 
 using aidl::android::media::audio::common::AudioDeviceDescription;
 using aidl::android::media::audio::common::AudioDeviceType;
+using namespace ::android::effect::utils;
+using aidl::android::hardware::audio::effect::DefaultExtension;
+
 
 SteadyVolumeContext::SteadyVolumeContext(const Parameter::Common& common,
                                    const RslEffectType& type, bool processData)
@@ -49,7 +55,16 @@ RetCode SteadyVolumeContext::start() {
     LOG(DEBUG) << "Enter " << __func__ << " ioHandle " << getIoHandle();
 
     std::lock_guard lg(mMutex);
-
+    RetCode code = setSteadyVolume(MIN_STEADY_VOLUME_VALUE);
+    mState = EffectState::ACTIVE;
+    if (RetCode::SUCCESS == code)
+    {
+        LOG(DEBUG) << "Set SteadyVolume is success  " << code ;
+    }
+    else
+    {
+        LOG(DEBUG) << "Set SteadyVolume is failed  " << code ;
+    }
     return RetCode::SUCCESS;
 }
 
@@ -58,12 +73,21 @@ RetCode SteadyVolumeContext::stop() {
     LOG(DEBUG) << "Enter " << __func__ << " ioHandle " << getIoHandle();
 
     struct param_type2_t steadyVolumeParam = {0}; // by default enable bit is 0
-
+    mState = EffectState::UNINITIALIZED;
+    RetCode code = setSteadyVolume(MIN_STEADY_VOLUME_VALUE);
+    if (RetCode::SUCCESS == code)
+    {
+        LOG(DEBUG) << "Set SteadyVolume is success  " << code ;
+    }
+    else
+    {
+        LOG(DEBUG) << "Set SteadyVolume is failed  " << code ;
+    }
     return RetCode::SUCCESS;
 }
 
 RetCode SteadyVolumeContext::setSteadyVolume(int value) {
-    std::lock_guard lg(mMutex);
+
     LOG(DEBUG) << "Enter " << __func__ << " ioHandle " << getIoHandle();
 
     mSteadyVolumeParams.value = value;
@@ -77,7 +101,49 @@ RetCode SteadyVolumeContext::setSteadyVolume(int value) {
     return RetCode::ERROR_NULL_POINTER;
 }
 
+RetCode SteadyVolumeContext::setParameter(const std::vector<uint8_t>& specific)
+{
+    std::lock_guard lg(mMutex);
+    LOG(DEBUG) << __func__ << "  SteadyVolume";
+    auto reader = EffectParamReader(*(effect_param_t*)specific.data());
+
+    uint32_t type;
+    if (::android::OK != reader.readFromParameter(&type)) {
+        LOG(ERROR) << __func__ << " invalid param " << reader.toString().c_str();
+        return {};
+    }
+
+    if (setSteadyVolume(type) != RetCode::SUCCESS)
+    {
+        LOG(ERROR) << __func__ << " setSteadyVolume Failed " ;
+    }
+    LOG(DEBUG) << __func__ << "  SteadyVolume";
+
+return RetCode::SUCCESS;
+}
+
+std::vector<uint8_t> SteadyVolumeContext::getParameter(std::vector<uint8_t> id)
+{
+    std::lock_guard lg(mMutex);
+    LOG(DEBUG) << "Enter " << __func__;
+    auto reader = EffectParamReader(*(effect_param_t*)id.data());
+    auto writer = EffectParamWriter(*(effect_param_t*)id.data());
+
+    uint32_t type;
+    if (::android::OK != reader.readFromParameter(&type)) {
+        LOG(ERROR) << __func__ << " invalid param " << reader.toString().c_str();
+        return {};
+    }
+    DefaultExtension replyExt;
+    size_t len = writer.getTotalSize();
+    replyExt.bytes.resize(len);
+    std::memcpy(replyExt.bytes.data(), (void *) &writer.getEffectParam(), len);
+    LOG(DEBUG) << "Exit " << __func__;
+    return replyExt.bytes;
+}
+
 RetCode SteadyVolumeContext::setParameter(uint32_t cmd, int32_t param_value) {
+    std::lock_guard lg(mMutex);
     LOG(DEBUG) << "Enter " << __func__ << " cmd: " << cmd << " value " << param_value;
 
     if ( param_value < MIN_STEADY_VOLUME_VALUE || param_value > MAX_STEADY_VOLUME_VALUE ) {
@@ -92,7 +158,7 @@ RetCode SteadyVolumeContext::setParameter(uint32_t cmd, int32_t param_value) {
 
 RetCode SteadyVolumeContext::getParameter(effect_param_t* param, uint32_t *size) {
     LOG(DEBUG) << "Enter " << __func__;
-
+    std::lock_guard lg(mMutex);
     uint64_t cmd;
     memcpy(&cmd, param->data, param->psize);
 
@@ -111,7 +177,7 @@ RetCode SteadyVolumeContext::getParameter(effect_param_t* param, uint32_t *size)
 
     LOG(DEBUG) << " Exit " << __func__;
 
-    return RetCode::SUCCESS;;
+    return RetCode::SUCCESS;
 }
 
 RetCode SteadyVolumeContext::setOutputDevice(

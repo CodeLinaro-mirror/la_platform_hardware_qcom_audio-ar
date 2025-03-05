@@ -89,7 +89,6 @@
         <effect name="ambiance" library="rsl_effects" uuid="edfe3481-3a6b-47fe-adaa-3f95fb745084"/>
         <effect name="sdvc" library="rsl_effects" uuid="cf48ca0e-292d-4d92-8b51-8fe3af991399"/>
         <effect name="steadyvolume" library="rsl_effects" uuid="f5387cca-110c-11ee-be56-0242ac120002"/>
-        <effect name="fnb" library="rsl_effects" uuid="6bc88c84-a544-11e8-98d0-529269fb1459"/>
         <effect name="aec" library="audio_pre_processing" uuid="0f8d0d2a-59e5-45fe-b6e4-248c8a799109"/>
         <effect name="ns" library="audio_pre_processing" uuid="1d97bb0b-9e2f-4403-9ae3-58c2554306f8"/>
     </effects>
