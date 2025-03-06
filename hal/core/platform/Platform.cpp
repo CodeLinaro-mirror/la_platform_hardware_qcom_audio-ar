@@ -1324,6 +1324,24 @@ int Platform::getRecommendedLatencyModes(
      return ret;
 }
 
+void Platform::setWNREnabled(bool const& enable) {
+    int ret = 0;
+    auto byteSize = sizeof(pal_param_payload) + sizeof(bool);
+    auto bytes = std::make_unique<uint8_t[]>(byteSize);
+    auto palParamPayload = reinterpret_cast<pal_param_payload*>(bytes.get());
+
+    mWNREnabled = enable;
+    palParamPayload->payload_size = sizeof(bool);
+    palParamPayload->payload[0] = mWNREnabled;
+    LOG(DEBUG) << __func__ << ": Enter";
+    ret = ::pal_set_param(PAL_PARAM_ID_WNR_MODE, palParamPayload, sizeof(pal_param_payload));
+    if (ret) {
+        LOG(ERROR) << __func__ << ": failed to set PAL_PARAM_ID_WNR_MODE";
+    }
+    LOG(DEBUG) << __func__ << ": Exit";
+    return;
+}
+
 bool Platform::isHDRARMenabled() {
     const auto& platform = Platform::getInstance();
     const std::string kHdrArmProperty{"vendor.audio.hdr.record.enable"};

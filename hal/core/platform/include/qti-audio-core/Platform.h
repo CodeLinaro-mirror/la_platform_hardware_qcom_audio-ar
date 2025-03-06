@@ -212,7 +212,7 @@ class Platform {
     void setHDRChannelCount(int32_t const& channelCount) { mHDRChannelCount = channelCount; }
 
     bool isWNREnabled() const { return mWNREnabled; }
-    void setWNREnabled(bool const& enable) { mWNREnabled = enable; }
+    void setWNREnabled(bool const& enable);
 
     bool isANREnabled() const { return mANREnabled; }
     void setANREnabled(bool const& enable) { mANREnabled = enable; }
