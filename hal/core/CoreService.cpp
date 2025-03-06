@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -10,6 +10,7 @@
 #include <android/binder_ibinder_platform.h>
 #include <android/binder_manager.h>
 #include <android/binder_process.h>
+#include <extensions/AudioExtension.h>
 
 #include <qti-audio-core/Module.h>
 #include <qti-audio-core/ModulePrimary.h>
@@ -17,6 +18,7 @@
 #include <ctime>
 
 std::shared_ptr<::qti::audio::core::ModulePrimary> gModuleDefaultQti;
+using namespace ::qti::audio::core;
 
 auto registerBinderAsService = [](auto &&binder, const std::string &serviceName) {
     AIBinder_setMinSchedulerPolicy(binder.get(), SCHED_NORMAL, ANDROID_PRIORITY_AUDIO);
@@ -30,6 +32,8 @@ auto registerBinderAsService = [](auto &&binder, const std::string &serviceName)
 
 void registerIModuleDefaultQti() {
     gModuleDefaultQti = ndk::SharedRefBase::make<::qti::audio::core::ModulePrimary>();
+    //start of power policy registration
+    AudioExtension::power_policy_feature_init(property_get_bool("vendor.audio.feature.arpowerpolicy.enable", false));
     const std::string kServiceName =
             std::string(gModuleDefaultQti->descriptor).append("/").append("default");
     registerBinderAsService(gModuleDefaultQti->asBinder(), kServiceName);

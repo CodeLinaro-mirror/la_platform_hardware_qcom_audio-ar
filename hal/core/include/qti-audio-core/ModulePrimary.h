@@ -39,6 +39,14 @@ using ::aidl::android::hardware::audio::focus::IAudioFocusService;
 
 extern "C" __attribute__((visibility("default"))) void extn_set_mute_config_for_address(char* address, bool muted, float volume);
 
+typedef enum power_policy_status_t {
+    POWER_POLICY_STATUS_OFFLINE,
+    POWER_POLICY_STATUS_ONLINE
+} power_policy_status_t;
+
+extern "C" void extn_out_set_power_policy(uint8_t enable);
+extern "C" void extn_in_set_power_policy(uint8_t enable);
+
 
 namespace qti::audio::core {
 

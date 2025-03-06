@@ -30,6 +30,7 @@
 #include <android/binder_ibinder.h>
 #include <android/binder_manager.h>
 #include <error/Result.h>
+#include <qti-audio-core/PowerPolicyManager.h>
 
 #include <aidl/qti/audio/core/VString.h>
 #include <qti-audio-core/Bluetooth.h>
@@ -387,9 +388,11 @@ ndk::ScopedAStatus ModulePrimary::createInputStream(StreamContext&& context,
 #else
     createStreamInstance<StreamInPrimary>(result, std::move(context), sinkMetadata, microphones);
 #endif
+    PowerPolicyManager::getInstance().updateStreamInPrimaryList(
+        (std::static_pointer_cast<::qti::audio::core::StreamInPrimary>(*result)));
     ModulePrimary::inListMutex.lock();
     ModulePrimary::updateStreamInList(*result);
-    if (mTelephony) { 
+    if (mTelephony) {
         mTelephony->mStreamInPrimary = *result;
     }
     ModulePrimary::inListMutex.unlock();
@@ -410,10 +413,12 @@ ndk::ScopedAStatus ModulePrimary::createOutputStream(
 #else
     createStreamInstance<StreamOutPrimary>(result, std::move(context), sourceMetadata, offloadInfo);
 #endif
+    PowerPolicyManager::getInstance().updateStreamOutPrimaryList(
+        (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(*result)));
     ModulePrimary::outListMutex.lock();
     ModulePrimary::updateStreamOutList(*result);
     // save primary out stream weak ptr, as some other modules need it.
-    if (mTelephony) { 
+    if (mTelephony) {
         mTelephony->mStreamOutPrimary = *result;
     }
 
