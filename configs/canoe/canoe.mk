@@ -81,6 +81,9 @@ PRODUCT_PACKAGES += fai__4.8.4_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_5.3.0_e
 PRODUCT_PACKAGES += fai__8.0.2_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_5.3.0_enpuv6.pmd
 PRODUCT_PACKAGES += fai__3.0.0_0.0__eai_5.3.0_enpuv6.pmd
 
+# Adding WNR Model File
+#PRODUCT_PACKAGES += wind_filter__1.0__48k__2ch__16b__eai_5.5.eai
+
 # Audio configuration xml's related to Kaanapali
 QCV_FAMILY_SKUS := canoe
 DEVICE_SKU := canoe
