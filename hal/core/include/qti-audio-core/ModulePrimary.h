@@ -97,7 +97,7 @@ class ModulePrimary final : public Module {
             const ::aidl::android::hardware::audio::common::SourceMetadata& sourceMetadata,
             const std::optional<::aidl::android::media::audio::common::AudioOffloadInfo>&
                     offloadInfo,
-            std::shared_ptr<StreamOut>* result) override;
+            std::shared_ptr<StreamOut>* result, std::vector<AudioDevice> AudioDevices) override;
     std::vector<::aidl::android::media::audio::common::AudioProfile> getDynamicProfiles(
             const ::aidl::android::media::audio::common::AudioPort& audioPort) override;
     void onNewPatchCreation(

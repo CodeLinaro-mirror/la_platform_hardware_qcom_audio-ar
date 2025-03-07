@@ -885,7 +885,8 @@ ndk::ScopedAStatus Module::openOutputStream(const OpenOutputStreamArguments& in_
     context.fillDescriptor(&_aidl_return->desc);
     std::shared_ptr<StreamOut> stream;
     RETURN_STATUS_IF_ERROR(createOutputStream(std::move(context), in_args.sourceMetadata,
-                                              in_args.offloadInfo, &stream));
+                                              in_args.offloadInfo, &stream,
+                                              findConnectedDevices(in_args.portConfigId)));
     StreamWrapper streamWrapper(stream);
     if (auto patchIt = mPatches.find(in_args.portConfigId); patchIt != mPatches.end()) {
         RETURN_STATUS_IF_ERROR(
