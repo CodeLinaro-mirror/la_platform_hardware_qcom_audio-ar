@@ -182,7 +182,7 @@ class Module : public ::aidl::android::hardware::audio::core::BnModule,
             StreamContext&& context,
             const ::aidl::android::hardware::audio::common::SinkMetadata& sinkMetadata,
             const std::vector<::aidl::android::media::audio::common::MicrophoneInfo>& microphones,
-            std::shared_ptr<StreamIn>* result) = 0;
+            std::shared_ptr<StreamIn>* result, std::vector<AudioDevice> AudioDevices) = 0;
     virtual ndk::ScopedAStatus createOutputStream(
             StreamContext&& context,
             const ::aidl::android::hardware::audio::common::SourceMetadata& sourceMetadata,
