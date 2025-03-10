@@ -27,7 +27,7 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -43,6 +43,7 @@
 #include <include/extensions/auto_oem_extension.h>
 #include "PalApi.h"
 #include <include/extensions/AudioVehicleListener.h>
+#include "include/extensions/AudioConfig.h"
 #include <cmath> // For round function
 
 
@@ -99,6 +100,7 @@ using ::android::hardware::automotive::vehicle::toInt;
 using ::android::frameworks::automotive::vhal::VhalClientResult;
 using ::android::frameworks::automotive::vhal::IHalPropValue;
 using ::aidl::android::hardware::automotive::vehicle::RawPropValues;
+using namespace ::qti::audio::oem::config;
 
 #ifndef ENABLE_VHAL_TEST_WITH_KITCHENSINK
 #define ENABLE_VHAL_TEST_WITH_KITCHENSINK
@@ -759,6 +761,12 @@ extern "C" __attribute__((visibility("default")))int oem_init(void)
             LOG(ERROR) << "Register for HVAC_FAN_SPEED done.";
         }
     }
+    ::qti::audio::oem::config::AudioConfigType req = AUDIO_CONFIG_MAX_VOL_STARTUP ;
+    ::qti::audio::oem::config::AudioConfigData configData;
+    ::qti::audio::oem::config::AudioConfigManager::getInstance().getAudioConfigValue(req,&configData);
+    std::string s = std::to_string(configData.defaultValue);
+    LOG(ERROR) << "String " << s << " Integer " << configData.defaultValue;
+    property_set("persist.vendor.max_vol_startup",s.c_str());
     return EXIT_SUCCESS;
 
 }
