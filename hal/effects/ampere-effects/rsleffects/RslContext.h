@@ -195,11 +195,11 @@ class BassBoostContext final : public RslContext {
     RetCode setOutputDevice(const std::vector<AudioDeviceDescription>& device) override;
     RetCode setBassBoost(int bass) override;
     int getBassBoost() override;
-    int updatePalParameters(struct AmbianceParams *param);
+    int updatePalParameters(struct param_type2_t *param);
     RetCode getParameter(effect_param_t *param, uint32_t *size) override;
 
   private:
-    struct AmbianceParams mBassBoostParams;
+    struct param_type2_t mBassBoostSyncParams;
     bool mTempDisabled = false;
 };
 

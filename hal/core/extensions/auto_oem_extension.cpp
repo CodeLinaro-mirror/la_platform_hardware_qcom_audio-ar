@@ -69,7 +69,8 @@
 
 #define AWX_MODULE_CUSTOM_TAG 0XC0000057
 
-#define EQ_MASK_SOURCE_TYPE  0x0004
+#define EQ_MASK_SOURCE_TYPE  0x0002
+#define EQ_MASK_SOURCE_VAL  1
 #define MASK 0x0000FFFF
 #define MIN__PERF_VEHICLE_SPEED 0
 #define MAX_PERF_VEHICLE_SPEED 65534
@@ -274,13 +275,8 @@ void audiosource_set_param(struct pal_awx_param_t* pal_param) {
     dummy_ptr = (pal_awx_source_data *)&(customPayload->data[0]);
     LOG(DEBUG) << __func__ << " PARAM ID: " << std::hex << customPayload->paramId;
     LOG(DEBUG) << __func__ << " EQ_mask: " << std::hex << dummy_ptr->eq_mask;
-    LOG(DEBUG) << __func__ << " value[2]: " << dummy_ptr->value[2];
-
+    LOG(DEBUG) << __func__ << " value[EQ_MASK_SOURCE_VAL]: " << dummy_ptr->value[EQ_MASK_SOURCE_VAL];
     status = pal_gef_rw_param(PAL_PARAM_ID_UIEFFECT, (void *) pal_payload, payload_size, aud_source_effect_device, PAL_STREAM_PLAYBACK_BUS, GEF_PARAM_WRITE, NULL);
-
-    if (capi_param_type == Type3) {
-        status = capi_param_type3_handling(status, pal_payload, payload_size, aud_source_effect_device, dummy_ptr);
-    }
 
     if (status != 0) {
         LOG(ERROR) << "Error setting param with error " << status;
@@ -344,7 +340,7 @@ int set_oem_audio_source_params(struct str_parms *parms) {
     if (ret >= MIN_AUDIO_SOURCE_VALUE && ret <= MAX_AUDIO_SOURCE_VALUE)
     {
         LOG(DEBUG) << __func__ << ": valid audio source type" ;
-        source_data.value[2] = ret;
+        source_data.value[EQ_MASK_SOURCE_VAL] = ret;
         update_audiosourcedata(&source_data);
     }
     else {

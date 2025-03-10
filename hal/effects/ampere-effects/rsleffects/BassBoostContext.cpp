@@ -37,7 +37,7 @@ BassBoostContext::~BassBoostContext() {
 
 void BassBoostContext::init() {
     LOG(DEBUG) << "Enter " << __func__ << " ioHandle " << getIoHandle();
-    memset(&mBassBoostParams, 0, sizeof(struct AmbianceParams));
+    memset(&mBassBoostSyncParams, 0, sizeof(struct param_type2_t));
 }
 
 void BassBoostContext::deInit() {
@@ -70,9 +70,10 @@ RetCode BassBoostContext::setBassBoost(int bass) {
 
     LOG(DEBUG) << "Enter " << __func__ << " ioHandle " << getIoHandle();
 
-    mBassBoostParams.value[1] = bass;
+    mBassBoostSyncParams.value = bass ;
 
-    if (updatePalParameters(&mBassBoostParams) == 0) {
+    if (updatePalParameters(&mBassBoostSyncParams) == 0)
+    {
         return RetCode::SUCCESS;
     }
 
@@ -86,29 +87,31 @@ int BassBoostContext::getBassBoost(){
 
     int ret = -1;
     pal_awx_param_t pal_param;
-    AmbianceParams params;
+
+    struct param_type2_t Bassbootparams;
 
     memset(&pal_param, 0, sizeof(pal_awx_param_t));
-    memset(&params, 0, sizeof(AmbianceParams));
+    memset(&Bassbootparams, 0, sizeof(Bassbootparams));
 
-    pal_param.param_id = PARAM_ID_AMBIANCE;
-    pal_param.param_size = sizeof(AmbianceParams);
-    pal_param.data = &params;
+
+    pal_param.param_id = PARAM_ID_BASS_MANAGER;
+    pal_param.param_size = sizeof(Bassbootparams);
+    pal_param.data = &Bassbootparams;
 
     // Defining CAPI param Type
-    effect_type type = ASYNC;
+    effect_type type = SYNC_WITHOUT_AUDIO_BUS;
     ret = ::qti::audio::core::AWX_get_param(&pal_param, type);
 
     if(ret < 0) {
         LOG(ERROR) << __func__ << "Error while fetching value returned with ret: " << ret;
         return ret;
     } else {
-        LOG(DEBUG) << __func__ << "Parameter fetched successfully! ret: " << params.value[1];
+        LOG(DEBUG) << __func__ << "Parameter fetched successfully! ret: " << Bassbootparams.value;
     }
 
     LOG(DEBUG) << "Exit " << __func__;
 
-    return params.value[1];
+    return Bassbootparams.value;
 }
 
 RetCode BassBoostContext::setParameter(uint32_t cmd, int32_t param_value) {
@@ -166,26 +169,22 @@ RetCode BassBoostContext::setOutputDevice(
     return RetCode::SUCCESS;
 }
 
-int BassBoostContext::updatePalParameters(struct AmbianceParams *params) {
+int BassBoostContext::updatePalParameters(struct param_type2_t *params) {
     LOG(DEBUG) << "Enter " << __func__;
 
     pal_awx_param_t *pal_param = (pal_awx_param_t *)malloc(sizeof(pal_awx_param_t));
 
     if (pal_param == NULL) {
-        LOG(ERROR) << __func__ << " Error while memory allocation ";
+        LOG(ERROR) << __func__ << "Memory not assigned properly";
         return -1;
     }
 
-    pal_param->param_id = PARAM_ID_AMBIANCE;
-    pal_param->param_size = sizeof(AmbianceParams);
-
-    // setting bit0 of eq_mask for ambiance mode
-    params->eq_mask = 0;
-    params->eq_mask |= 0x2;
+    pal_param->param_id = PARAM_ID_BASS_MANAGER;
+    pal_param->param_size = sizeof(param_type2_t);
     pal_param->data = (void *)params;
 
     // Defining CAPI param Type
-    effect_type type = ASYNC;
+    effect_type type = SYNC_WITHOUT_AUDIO_BUS;
     LOG(DEBUG) << __func__ << "Successfully created pal_param";
 
     ::qti::audio::core::AWX_set_param(pal_param, type);
@@ -193,9 +192,7 @@ int BassBoostContext::updatePalParameters(struct AmbianceParams *params) {
     if (pal_param) {
         free(pal_param);
     }
-
     LOG(DEBUG) << "Exit " << __func__;
-
     return 0;
 }
 } // namespace aidl::ampere::effects

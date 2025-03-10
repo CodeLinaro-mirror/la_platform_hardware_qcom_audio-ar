@@ -382,7 +382,7 @@ void AWX_set_param(pal_awx_param_t* param, effect_type effect) {
 
     memcpy(customPayload->data, data->data, pal_param_size);
 
-    LOG(DEBUG) << __func__ << " param Id: " << customPayload->paramId << " value: "
+    LOG(DEBUG) << __func__ << std::hex << " param Id: " << customPayload->paramId << " value: "
                               << customPayload->data[0] << " param_size: " << pal_param_size;
 
     status = pal_gef_rw_param(PAL_PARAM_ID_UIEFFECT, (void *) pal_payload, payload_size,
@@ -450,7 +450,7 @@ int AWX_get_param(pal_awx_param_t* param, effect_type effect) {
         goto cleanup;
     }
 
-    LOG(DEBUG) << __func__ << " after param Id: " << customPayload->paramId
+    LOG(DEBUG) << __func__ << " after param Id: " << std::hex << customPayload->paramId
                            << " value: " << customPayload->data[0] << " param_size: " << pal_param_size;
 
     memcpy(data->data, customPayload->data, pal_param_size);
