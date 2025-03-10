@@ -3140,8 +3140,9 @@ StreamOutPrimary::StreamOutPrimary(
     AHAL_DBG("No of Android devices %zu", mAndroidOutDevices.size());
 
     mPalOutDeviceIds = new pal_device_id_t[mAndroidOutDevices.size()];
-    memset(mPalOutDeviceIds, 0, mAndroidOutDevices.size() * sizeof(pal_device_id_t));
-    if (!mPalOutDeviceIds) {
+    if (mPalOutDeviceIds) {
+        memset(mPalOutDeviceIds, 0, mAndroidOutDevices.size() * sizeof(pal_device_id_t));
+    } else {
         goto error;
     }
     if (address != NULL) {
