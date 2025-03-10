@@ -104,7 +104,7 @@ RetCode SteadyVolumeContext::setSteadyVolume(int value) {
 RetCode SteadyVolumeContext::setParameter(const std::vector<uint8_t>& specific)
 {
     std::lock_guard lg(mMutex);
-    LOG(DEBUG) << __func__ << "  SteadyVolume";
+    LOG(DEBUG) << __func__ << ": SteadyVolume Enter";
     auto reader = EffectParamReader(*(effect_param_t*)specific.data());
 
     uint32_t type;
@@ -112,12 +112,13 @@ RetCode SteadyVolumeContext::setParameter(const std::vector<uint8_t>& specific)
         LOG(ERROR) << __func__ << " invalid param " << reader.toString().c_str();
         return {};
     }
+    LOG(DEBUG) << __func__ << ": Setting SteadyVolume = " << type;
 
     if (setSteadyVolume(type) != RetCode::SUCCESS)
     {
         LOG(ERROR) << __func__ << " setSteadyVolume Failed " ;
     }
-    LOG(DEBUG) << __func__ << "  SteadyVolume";
+    LOG(DEBUG) << __func__ << ":  SteadyVolume Exit";
 
 return RetCode::SUCCESS;
 }
@@ -125,19 +126,41 @@ return RetCode::SUCCESS;
 std::vector<uint8_t> SteadyVolumeContext::getParameter(std::vector<uint8_t> id)
 {
     std::lock_guard lg(mMutex);
+    int32_t steadyvolume_switch;
     LOG(DEBUG) << "Enter " << __func__;
     auto reader = EffectParamReader(*(effect_param_t*)id.data());
-    auto writer = EffectParamWriter(*(effect_param_t*)id.data());
+    auto paramWriter = EffectParamWriter(*(effect_param_t*)id.data());
 
     uint32_t type;
     if (::android::OK != reader.readFromParameter(&type)) {
         LOG(ERROR) << __func__ << " invalid param " << reader.toString().c_str();
         return {};
     }
+
+    if (type < MIN_STEADY_VOLUME_VALUE || type > MAX_STEADY_VOLUME_VALUE ) {
+        LOG(ERROR) << __func__ << "not getting 0(OFF) or 1(ON), fetching error in steadyvolume";
+        return {};
+    }
+
+    size_t valueSize;
+    int ret = getSteadyVolume();
+    if (ret < 0) {
+        LOG(ERROR) << __func__ << ": get steadyvolume failed " << ret;
+        return {};
+    } else {
+        steadyvolume_switch = ret;
+    }
+
+    valueSize = sizeof(steadyvolume_switch);
+    LOG(DEBUG) << __func__ << ": valueSize = " << valueSize <<
+    " steadyvolume effect get paramWrite structure =  " << paramWriter.toString().c_str();
+    paramWriter.writeToValue(&steadyvolume_switch);
+    paramWriter.setStatus(::android::OK);
+
     DefaultExtension replyExt;
-    size_t len = writer.getTotalSize();
+    size_t len = paramWriter.getTotalSize();
     replyExt.bytes.resize(len);
-    std::memcpy(replyExt.bytes.data(), (void *) &writer.getEffectParam(), len);
+    std::memcpy(replyExt.bytes.data(), (void *) &paramWriter.getEffectParam(), len);
     LOG(DEBUG) << "Exit " << __func__;
     return replyExt.bytes;
 }
