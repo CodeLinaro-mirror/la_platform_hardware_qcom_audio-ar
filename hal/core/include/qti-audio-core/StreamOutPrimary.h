@@ -169,12 +169,6 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
 
     // optional buffer format converter, if stream input and output formats are different
     std::optional<std::unique_ptr<BufferFormatConverter>> mBufferFormatConverter;
-    std::set<::aidl::android::media::audio::common::AudioUsage> playbackGainTable = {
-        ::aidl::android::media::audio::common::AudioUsage::MEDIA,
-        ::aidl::android::media::audio::common::AudioUsage::VOICE_COMMUNICATION,
-        ::aidl::android::media::audio::common::AudioUsage::NOTIFICATION,
-        ::aidl::android::media::audio::common::AudioUsage::CALL_ASSISTANT
-    };
 
     std::map<std::string, float> sourceGainTable = {
         {"FM", -1500},

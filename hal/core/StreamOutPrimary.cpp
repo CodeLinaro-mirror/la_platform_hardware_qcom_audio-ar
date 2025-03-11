@@ -694,15 +694,13 @@ ndk::ScopedAStatus StreamOutPrimary::setHwVolume(const std::vector<float>& in_ch
 
     if (!sourceMetadata.tracks.empty()) {
         auto usage = sourceMetadata.tracks[0].usage;
+        if (usage == ::aidl::android::media::audio::common::AudioUsage::MEDIA){
         std::string str = ModulePrimary::globalAudioSource;
-
-        if (playbackGainTable.find(usage) != playbackGainTable.end()) {
             for (const auto& [sourceTypeKey, sourceGainValue] : sourceGainTable) {
                 if (sourceTypeKey == str) {
                     LOG(DEBUG) << "USAGE matched, gain added: " << sourceGainValue << " sourceTypeKey: " << sourceTypeKey;
                     LOG(DEBUG) << "Initial volume: " << volume;
                     volume += sourceGainValue;
-                    LOG(DEBUG) << "Adjusted volume: " << volume;
                     localVolumes[0] = volume;
                     localVolumes[1] = volume;
                     LOG(DEBUG) << "Updated volume is:" << localVolumes[0];
