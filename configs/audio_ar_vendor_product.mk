@@ -12,15 +12,19 @@ TARGET_USES_AOSP_FOR_AUDIO := false
 
 ifeq ($(TARGET_USES_QMAA_OVERRIDE_AUDIO), false)
 ifeq ($(TARGET_USES_QMAA),true)
-#AUDIO_USE_STUB_HAL := true
+AUDIO_USE_STUB_HAL := true
+
 TARGET_USES_AOSP_FOR_AUDIO := true
 endif
 endif
+ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), gen4_gvm)
+$(warning AUDIO_USE_STUB_HAL is $(AUDIO_USE_STUB_HAL))
+AUDIO_USE_STUB_HAL := true
+endif
 ifeq ($(AUDIO_USE_STUB_HAL), true)
-$(error AUDIO_USE_STUB_HAL is $(AUDIO_USE_STUB_HAL))
--include $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common/default.mk
+include $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common/default.mk
 else
-#$(error TARGET_BOARD_PLATFORM is $(TARGET_BOARD_PLATFORM))
+$(warning TARGET_BOARD_PLATFORM is $(TARGET_BOARD_PLATFORM))
 ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), gen4_gvm)
 include vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/gen4_au.mk
 endif
