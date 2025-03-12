@@ -362,9 +362,14 @@ ndk::ScopedAStatus qti::audio::core::ModulePrimary::setAudioPortConfig(const ::a
                 else {
                     if (in_requested.gain->values[0] <= MIN_VOLUME_GAIN_MB) {
                         volume = MIN_VOLUME_GAIN;
-                }
-                    else {
-                        volume=pow(10,((float)(in_requested.gain->values[0]))/2000);
+                    } else {
+                        /* converting gain from range of -6000MB to 600MB to this range to 0.0f to 1.0f
+                        this formula converts gain value to pal_stream_volume linearly
+                        new_value = ( (old_range_value - old_range_min) / (old_range_max - old_range_min) ) * (new_range_max - new_range_min) + new_range_min */
+                        LOG(DEBUG) << "Gain in MB: " << in_requested.gain->values[0];
+                        volume = (((float)(in_requested.gain->values[0]) - MIN_VOLUME_GAIN_MB) /
+                                  (MAX_VOLUME_GAIN_MB - MIN_VOLUME_GAIN_MB)) *
+                                      (MAX_VOLUME_GAIN - MIN_VOLUME_GAIN) + MIN_VOLUME_GAIN;
                     }
                 }
                 vol.push_back(volume);
