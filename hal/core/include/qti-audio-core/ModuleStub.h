@@ -44,7 +44,7 @@ class ModuleStub final : public Module {
             StreamContext&& context,
             const ::aidl::android::hardware::audio::common::SinkMetadata& sinkMetadata,
             const std::vector<::aidl::android::media::audio::common::MicrophoneInfo>& microphones,
-            std::shared_ptr<StreamIn>* result) override;
+            std::shared_ptr<StreamIn>* result, std::vector<AudioDevice> AudioDevices) override;
     ndk::ScopedAStatus createOutputStream(
             StreamContext&& context,
             const ::aidl::android::hardware::audio::common::SourceMetadata& sourceMetadata,
