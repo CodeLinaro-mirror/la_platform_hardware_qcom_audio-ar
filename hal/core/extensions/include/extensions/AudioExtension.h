@@ -70,6 +70,14 @@ typedef enum {
 namespace qti::audio::core {
 // RAII based classes to dlopen/dysym on init and dlclose on dest.
 
+typedef enum power_policy_status_t {
+    POWER_POLICY_STATUS_OFFLINE,
+    POWER_POLICY_STATUS_ONLINE
+} power_policy_status_t;
+
+extern "C" void extn_out_set_power_policy(uint8_t enable);
+extern "C" void extn_in_set_power_policy(uint8_t enable);
+
 #ifdef __LP64__
 static std::string kBluetoothIpcLibrary = "/vendor/lib64/btaudio_offload_if.so";
 static std::string kAutohalLibrary = "/vendor/lib64/libautohal_pal.so";
@@ -150,6 +158,16 @@ typedef void (*oem_set_parameters_t)(struct str_parms*);
 typedef int (*oem_get_parameters_t)(const std::string&);
 typedef int (*oem_init_t)(void);
 extern "C" int autohal_setParameters(struct str_parms *parms);
+
+
+// POWER_POLICY FEATURE
+typedef void (*fp_in_set_power_policy_t) (uint8_t);
+typedef void (*fp_out_set_power_policy_t) (uint8_t);
+
+typedef struct power_policy_init_config {
+    fp_in_set_power_policy_t     fp_in_set_power_policy;
+    fp_out_set_power_policy_t    fp_out_set_power_policy;
+} power_policy_init_config_t;
 
 static bool isExtensionEnabled(std::string property) {
     return property_get_bool(property.c_str(), false);
@@ -290,6 +308,13 @@ class AudioExtension {
         }();
         return *(kAudioExtension.get());
     }
+    //Power Policy
+    static int power_policy_feature_init(bool is_feature_enabled);
+    power_policy_status_t out_power_policy = POWER_POLICY_STATUS_ONLINE;
+    power_policy_status_t in_power_policy = POWER_POLICY_STATUS_ONLINE;
+    void in_set_power_policy(uint8_t enable);
+    void out_set_power_policy(uint8_t enable);
+
     int audio_extn_autohal_set_parameters(struct str_parms *params);
     void audio_extn_set_parameters(struct str_parms* params);
     int audio_extn_get_parameters(const std::string&);

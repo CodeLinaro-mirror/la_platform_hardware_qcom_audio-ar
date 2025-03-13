@@ -11,6 +11,10 @@
 #include "RslContext.h"
 #include "RslTypes.h"
 #include "extensions/AudioExtension.h"
+#include <aidl/ampere/hardware/audio/effect/Ambiance.h>
+#include <system/audio_effects/audio_effects_utils.h>
+#include "aidl/android/hardware/audio/effect/DefaultExtension.h"
+#include <system/audio_effect.h>
 
 #define MAX_PROFILE_VALUE 3
 #define MIN_PROFILE_VALUE 0
@@ -20,6 +24,10 @@ namespace aidl::ampere::effects {
 
 using aidl::android::media::audio::common::AudioDeviceDescription;
 using aidl::android::media::audio::common::AudioDeviceType;
+using aidl::ampere::hardware::audio::effect::Ambiance;
+using namespace ::android::effect::utils;
+using aidl::android::hardware::audio::effect::DefaultExtension;
+
 
 AmbianceContext::AmbianceContext(const Parameter::Common& common,
                                    const RslEffectType& type, bool processData)
@@ -39,6 +47,7 @@ AmbianceContext::~AmbianceContext() {
 void AmbianceContext::init() {
     LOG(DEBUG) << "Enter " << __func__ << " ioHandle " << getIoHandle();
     memset(&mAmbianceParams, 0, sizeof(struct AmbianceParams));
+    mCurrentProfile = DEFAULT_AMBIANCE_PROFILE;
 }
 
 void AmbianceContext::deInit() {
@@ -50,6 +59,8 @@ RetCode AmbianceContext::start() {
     LOG(DEBUG) << "Enter " << __func__ << " ioHandle " << getIoHandle();
 
     std::lock_guard lg(mMutex);
+    mState = EffectState::ACTIVE;
+    setAmbianceProfile(mCurrentProfile);
 
     return RetCode::SUCCESS;
 }
@@ -59,12 +70,18 @@ RetCode AmbianceContext::stop() {
     LOG(DEBUG) << "Enter " << __func__ << " ioHandle " << getIoHandle();
 
     struct AmbianceParams ambianceParam = {0}; // by default enable bit is 0
+    mState = EffectState::INITIALIZED;
+
+    // Deactivate the Ambiance
+    if (updatePalParameters(&ambianceParam) == 0) {
+        mAsyncTransationStatus = 0;
+    }
 
     return RetCode::SUCCESS;
 }
 
 RetCode AmbianceContext::setAmbianceProfile(int profile) {
-    std::lock_guard lg(mMutex);
+
     LOG(DEBUG) << "Enter " << __func__ << " ioHandle " << getIoHandle();
 
     if ( profile < MIN_PROFILE_VALUE || profile > MAX_PROFILE_VALUE ) {
@@ -73,10 +90,14 @@ RetCode AmbianceContext::setAmbianceProfile(int profile) {
     }
 
     mAmbianceParams.value[0] = profile;
+    mCurrentProfile = profile;
 
     if (updatePalParameters(&mAmbianceParams) == 0) {
+        mAsyncTransationStatus = 0;
         return RetCode::SUCCESS;
     }
+
+    mAsyncTransationStatus = static_cast<int32_t>(Ambiance::AsyncTransactionStatus::BUSY);;
 
     return RetCode::ERROR_NULL_POINTER;
 }
@@ -103,22 +124,142 @@ int AmbianceContext::getAmbianceProfile() {
         LOG(ERROR) << __func__ << "Error while fetching value returned with ret: " << ret;
         return ret;
     } else {
-        LOG(DEBUG) << __func__ << "Parameter fetched successfully! ret: " << params.value[0];
+        LOG(DEBUG) << __func__ << "Parameter fetched successfully! Amabiance value:" << params.value[0] <<" status: "<< params.status ;
     }
 
+    mAsyncTransationStatus =  params.status;
     LOG(DEBUG) << "Exit " << __func__;
 
     return params.value[0];
 }
+RetCode AmbianceContext::setParameter(const std::vector<uint8_t>& specific) {
+    LOG(DEBUG) << __func__ << " Entry";
+    std::lock_guard lg(mMutex);
+
+    auto reader = EffectParamReader(*(effect_param_t*)specific.data());
+
+    uint32_t type;
+    if (::android::OK != reader.readFromParameter(&type)) {
+        LOG(ERROR) << __func__ << " invalid param " << reader.toString().c_str();
+        return RetCode::ERROR_ILLEGAL_PARAMETER;
+    }
+
+    if ( type < MIN_PROFILE_VALUE || type > MAX_PROFILE_VALUE ) {
+        LOG(DEBUG) << __func__ << " Error in setting value, not in range 0 to 3 ";
+        return RetCode::ERROR_ILLEGAL_PARAMETER;
+    }
+
+    Ambiance::Params paramId = static_cast<Ambiance::Params>(type);
+    size_t psize = sizeof(paramId);
+    size_t valueSize = reader.getValueSize();
+    size_t paramSize = reader.getParameterSize();
+
+    if (paramId == Ambiance::Params::PARAM_CURRENT_PROFILE ||
+        paramId == Ambiance::Params::PARAM_CURRENT_PROFILE_ASYNC) {
+
+        LOG(DEBUG) << __func__ << " PARAM_CURRENT_PROFILE_ASYNC";
+
+        if (valueSize != sizeof(mCurrentProfile) || paramSize != psize) {
+            LOG(ERROR) << __func__ << " PARAM_CURRENT_PROFILE_ASYNC invalid size";
+            return RetCode::ERROR_ILLEGAL_PARAMETER;
+        }
+
+        uint16_t newProfile;
+        if (reader.readFromValue(&newProfile) != ::android::OK) {
+            LOG(ERROR) << __func__ << " PARAM_CURRENT_PROFILE_ASYNC invalid size";
+            return RetCode::ERROR_ILLEGAL_PARAMETER;
+        }
+
+        mCurrentProfile = newProfile;
+
+        auto ret = setAmbianceProfile(mCurrentProfile);
+
+        // Reset  the ASYNC transaction status if Effect is not initialized and ret failure
+        if ((ret != RetCode::SUCCESS) && (mState == EffectState::INITIALIZED))
+        {
+            mAsyncTransationStatus = 0;
+        }
+        LOG(DEBUG) << __func__ << " Set Ambiance Profile " << mCurrentProfile << " return " << static_cast<int32_t>(ret);
+    } else {
+        LOG(ERROR) << __func__ << " unknown parameter requested=" << static_cast<int>(paramId);
+        return RetCode::ERROR_ILLEGAL_PARAMETER;
+    }
+    LOG(DEBUG) << __func__ << " Exit";
+    return RetCode::SUCCESS;
+}
+
+std::vector<uint8_t> AmbianceContext::getParameter(std::vector<uint8_t> id) {
+    std::lock_guard lg(mMutex);
+    auto paramReader = EffectParamReader(*(effect_param_t*)id.data());
+    auto paramWriter = EffectParamWriter(*(effect_param_t*)id.data());
+
+    uint32_t paramType;
+    if (::android::OK != paramReader.readFromParameter(&paramType)) {
+        ALOGE("%s invalid param %s", __func__, paramReader.toString().c_str());
+        LOG(ERROR) << __func__ << " invalid param " << paramReader.toString().c_str();
+        return {};
+    }
+
+    Ambiance::Params paramId = static_cast<Ambiance::Params>(paramType);
+    size_t paramSize = sizeof(paramId);
+
+    size_t valueSize;
+    auto ret = getAmbianceProfile();
+    bool profileFailed = (ret < 0);
+
+    switch (paramId) {
+        case Ambiance::Params::PARAM_CURRENT_PROFILE_ASYNC:
+        case Ambiance::Params::PARAM_CURRENT_PROFILE: {
+            LOG(DEBUG) << __func__ << " PARAM_CURRENT_PROFILE_ASYNC/PARAM_CURRENT_PROFILE Param ID" << static_cast<int32_t>(paramId);
+
+            if (!profileFailed) {
+                mCurrentProfile = ret;
+            }
+            valueSize = sizeof(mCurrentProfile) + sizeof(mAsyncTransationStatus);
+            if (paramWriter.getValueSize() != valueSize || paramReader.getParameterSize() != paramSize) {
+                LOG(ERROR) << __func__ << " PARAM_CURRENT_PROFILE_ASYNC/PARAM_CURRENT_PROFILE invalid size";
+                paramWriter.setStatus(::android::BAD_VALUE);
+                break;
+            }
+            paramWriter.writeToValue(&mCurrentProfile);
+            paramWriter.writeToValue(&mAsyncTransationStatus);
+            paramWriter.setStatus(::android::OK);
+            break;
+        }
+        case Ambiance::Params::PARAM_GET_NUM_OF_PROFILES: {
+            LOG(ERROR) << __func__ << " AMBIANCE_PARAM_GET_NUM_OF_PROFILES";
+            valueSize = sizeof(mNumProfiles);
+            if (paramWriter.getValueSize() != valueSize || paramReader.getParameterSize() != paramSize) {
+                LOG(ERROR) << __func__ << " AMBIANCE_PARAM_GET_NUM_OF_PROFILES invalid size";
+                paramWriter.setStatus(::android::BAD_VALUE);
+                break;
+            }
+            paramWriter.writeToValue(&mNumProfiles);
+            paramWriter.setStatus(::android::OK);
+            break;
+        }
+        default:
+            LOG(ERROR) << __func__ << " unknown parameter requested=" << static_cast<int>(paramId);
+            paramWriter.setStatus(::android::BAD_VALUE);
+            break;
+    }
+
+    DefaultExtension responseExtension;
+    size_t totalSize = paramWriter.getTotalSize();
+    responseExtension.bytes.resize(totalSize);
+    std::memcpy(responseExtension.bytes.data(), (void*)&paramWriter.getEffectParam(), totalSize);
+    return responseExtension.bytes;
+}
 
 RetCode AmbianceContext::setParameter(uint32_t cmd, int32_t param_value) {
     LOG(DEBUG) << "Enter " << __func__;
+    std::lock_guard lg(mMutex);
     return setAmbianceProfile(param_value);
 }
 
 RetCode AmbianceContext::getParameter(effect_param_t* param, uint32_t *size) {
     LOG(DEBUG) << "Enter " << __func__;
-
+    std::lock_guard lg(mMutex);
     uint64_t cmd;
     memcpy(&cmd, param->data, param->psize);
     LOG(DEBUG) << __func__ << " cmd: "<< cmd;

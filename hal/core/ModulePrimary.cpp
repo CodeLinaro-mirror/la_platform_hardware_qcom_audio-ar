@@ -30,6 +30,7 @@
 #include <android/binder_ibinder.h>
 #include <android/binder_manager.h>
 #include <error/Result.h>
+#include <qti-audio-core/PowerPolicyManager.h>
 
 #include <aidl/qti/audio/core/VString.h>
 #include <qti-audio-core/Bluetooth.h>
@@ -73,7 +74,7 @@ using ::aidl::android::hardware::audio::common::isBitPositionFlagSet;
 using ::aidl::android::hardware::audio::common::isValidAudioMode;
 using ::aidl::android::hardware::audio::common::SinkMetadata;
 using ::aidl::android::hardware::audio::common::SourceMetadata;
-
+using ::aidl::android::hardware::audio::common::getChannelCount;
 using ::aidl::android::hardware::audio::core::AudioPatch;
 using ::aidl::android::hardware::audio::core::AudioRoute;
 using ::aidl::android::hardware::audio::core::IStreamIn;
@@ -134,12 +135,18 @@ ndk::ScopedAStatus qti::audio::core::ModulePrimary::setAudioPortConfig(const ::a
     LOG(DEBUG) << "the module list is not empty";
     auto iter = list.begin();
     auto route_portid = route->sourcePortIds.begin();
-    for (iter; (iter != list.end()&& route_portid!=route->sourcePortIds.end()); iter++) {
-       auto outIter = iter->lock();
+    for (iter; route_portid!=route->sourcePortIds.end(); iter++) {
+        if(iter == list.end()) {
+           iter = list.begin();
+           LOG(DEBUG) << __func__ << "port not found " << *route_portid;
+           route_portid++;
+        }
+        auto outIter = iter->lock();
         if (outIter) {
             auto &mcontext = (*outIter).getStreamContext();
             auto &list_audioportconfig = mcontext.getMixPortConfig();
             list_id = list_audioportconfig.portId;
+            int no_of_channels = (int)getChannelCount(list_audioportconfig.channelMask.value());
             float volume;
             if (list_id == (*route_portid)) {
                 std::vector<float> vol;
@@ -160,8 +167,10 @@ ndk::ScopedAStatus qti::audio::core::ModulePrimary::setAudioPortConfig(const ::a
                 else {
                     volume = (static_cast<float>(in_requested.gain->values[0]));
                 }
-                vol.push_back(volume);
-                vol.push_back(volume);
+                int iter_channel;
+                for(iter_channel = 0; iter_channel<no_of_channels; iter_channel++) {
+                    vol.push_back(volume);
+                }
                 LOG(DEBUG) << "gain is:" << volume;
                 LOG(DEBUG) << "volume is:" << vol[0];
                 (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(outIter))->setHwVolume(vol);
@@ -379,9 +388,11 @@ ndk::ScopedAStatus ModulePrimary::createInputStream(StreamContext&& context,
 #else
     createStreamInstance<StreamInPrimary>(result, std::move(context), sinkMetadata, microphones);
 #endif
+    PowerPolicyManager::getInstance().updateStreamInPrimaryList(
+        (std::static_pointer_cast<::qti::audio::core::StreamInPrimary>(*result)));
     ModulePrimary::inListMutex.lock();
     ModulePrimary::updateStreamInList(*result);
-    if (mTelephony) { 
+    if (mTelephony) {
         mTelephony->mStreamInPrimary = *result;
     }
     ModulePrimary::inListMutex.unlock();
@@ -402,10 +413,12 @@ ndk::ScopedAStatus ModulePrimary::createOutputStream(
 #else
     createStreamInstance<StreamOutPrimary>(result, std::move(context), sourceMetadata, offloadInfo);
 #endif
+    PowerPolicyManager::getInstance().updateStreamOutPrimaryList(
+        (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(*result)));
     ModulePrimary::outListMutex.lock();
     ModulePrimary::updateStreamOutList(*result);
     // save primary out stream weak ptr, as some other modules need it.
-    if (mTelephony) { 
+    if (mTelephony) {
         mTelephony->mStreamOutPrimary = *result;
     }
 
