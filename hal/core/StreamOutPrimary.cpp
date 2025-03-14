@@ -10,6 +10,9 @@
 #include <android-base/logging.h>
 #include <audio_utils/clock.h>
 #include <hardware/audio.h>
+#ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
+#include <extensions/AudioHalFocusManager.h>
+#endif
 #include <qti-audio-core/Module.h>
 #include <qti-audio-core/ModulePrimary.h>
 #include <qti-audio-core/StreamOutPrimary.h>
@@ -791,7 +794,6 @@ ndk::ScopedAStatus StreamOutPrimary::updateMetadataCommon(const Metadata& metada
     }
 
 #ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
-    auto mHalFocusService = ModulePrimary::getHalFocusService();
     auto sourceMetadata = std::get<SourceMetadata>(metadata);
     auto sourcemMetadata = std::get<SourceMetadata>(mMetadata);
     if (!sourceMetadata.tracks.empty()) {
@@ -805,12 +807,12 @@ ndk::ScopedAStatus StreamOutPrimary::updateMetadataCommon(const Metadata& metada
         }
         auto curStreamUsage =
                 static_cast<::aidl::android::media::audio::common::AudioUsage>(tracks[0].usage);
-        const std::shared_ptr<::qti::audio::core::FocusStreamUpdateCallback> focusCallback =
-                    ndk::SharedRefBase::make<::qti::audio::core::FocusStreamUpdateCallback>(this);
-
-        if (!focusSessionInfo.FocusId ) {
-            mHalFocusService->requestFocus(focusCallback, curStreamUsage, mConnectedDevices[0],
-                                                mVolumes[0], &focusSessionInfo);
+        FocusInfo focusInfo;
+        focusInfo.device = mConnectedDevices[0];
+        focusInfo.usage = curStreamUsage;
+        focusInfo.gain = mVolumes[0];
+        if (focusSessionInfo.FocusId  == -1) {
+            mAudExt.mAutoAudioHalPriorityExtension->requestFocus(focusInfo, &focusSessionInfo.FocusId);
             LOG(INFO) << "Requesting audio focus, focusId: " << focusSessionInfo.FocusId;
         } else {
             //TODO: handle the calls seen due to focus action from framework
@@ -823,8 +825,8 @@ ndk::ScopedAStatus StreamOutPrimary::updateMetadataCommon(const Metadata& metada
                     ::aidl::android::media::audio::common::AudioUsage::UNKNOWN) {
         // request new audio focus with updated metadata
         LOG(DEBUG) << __func__ << ": Releasing audio focus: " << focusSessionInfo.FocusId;
-        mHalFocusService->abandonFocus(focusSessionInfo);
-        focusSessionInfo.FocusId = 0;
+        mAudExt.mAutoAudioHalPriorityExtension->abandonFocus(focusSessionInfo.FocusId);
+        focusSessionInfo.FocusId = -1;
     }
 #endif
     mMetadata = metadata;

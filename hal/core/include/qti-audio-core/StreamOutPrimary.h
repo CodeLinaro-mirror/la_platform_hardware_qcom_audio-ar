@@ -13,9 +13,7 @@
 #include <android-base/logging.h>
 
 #ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
-#include <aidl/android/hardware/audio/focus/BnStreamUpdateCallback.h>
-#include <aidl/android/hardware/audio/focus/IStreamUpdateCallback.h>
-#include <aidl/android/hardware/audio/focus/IFocusSession.h>
+#include <extensions/AudioHalFocusManager.h>
 #endif
 namespace qti::audio::core {
 
@@ -101,9 +99,8 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     void onDrainReady() override;
     void onError() override;
 #ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
-    ::aidl::android::hardware::audio::focus::IFocusSession focusSessionInfo;
+    FocusSession focusSessionInfo;
 #endif
-
   protected:
     /*
      * opens, configures and starts pal stream, also validates the pal handle.
@@ -178,25 +175,5 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     };
 };
 
-#ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
-class FocusStreamUpdateCallback :
-        public ::aidl::android::hardware::audio::focus::BnStreamUpdateCallback {
-
-    StreamOutPrimary *stream;
-    public:
-
-        FocusStreamUpdateCallback(StreamOutPrimary* stream){
-            this->stream = stream;
-        }
-
-        ndk::ScopedAStatus onMetadataUpdated(bool doDuck, float gain){
-            LOG(INFO) << "onMetaupdated : gain " << gain;
-            //TODO: check if doDuck needed
-            std::vector<float> Vol = {gain, gain};
-            this->stream->setHwVolume(Vol);
-            return ndk::ScopedAStatus::ok();
-        }
-};
-#endif
 
 } // namespace qti::audio::core
