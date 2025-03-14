@@ -58,6 +58,15 @@ LOCAL_SHARED_LIBRARIES := \
     qti-audio-types-aidl-V1-ndk \
     libar-pal
 
+ifeq ($(ENABLE_QCOM_HAL_AUDIO_FOCUS),true)
+LOCAL_CFLAGS += -DENABLE_QCOM_HAL_AUDIO_FOCUS
+LOCAL_SHARED_LIBRARIES += \
+    android.hardware.automotive.audiocontrol-V4-ndk \
+    alliance.hardware.automotive.audiocontrol.internal-V2-ndk \
+    ampere.hardware.interfaces.automotive.audioparameterparser-V1-ndk \
+    libexpat
+endif
+
 include $(BUILD_STATIC_LIBRARY)
 
 ifneq ($(AUDIO_FEATURE_ENABLED_ECNR_HAL),true)
@@ -459,12 +468,12 @@ LOCAL_CFLAGS := \
     -Wno-unused-variable \
     -Wno-missing-field-initializers \
     -Wunused-parameter \
-    -Wextra \
+    -Wextra
 
 
 LOCAL_C_INCLUDES := \
     $(TOP)/vendor/qcom/opensource/audio-hal/primary-hal/hal/core/extensions/include \
-    $(TOP)/system/media/audio_utils/include \
+    $(TOP)/system/media/audio_utils/include
 
 LOCAL_SHARED_LIBRARIES := \
     libbinder_ndk \
@@ -479,14 +488,14 @@ LOCAL_SHARED_LIBRARIES := \
     alliance.hardware.automotive.audiocontrol.internal-V2-ndk \
     android.hardware.automotive.audiocontrol-V4-ndk \
     ampere.hardware.interfaces.automotive.audioparameterparser-V1-ndk \
-    libAudioConfigOem \
+    libAudioConfigOem
 
 
 
 LOCAL_HEADER_LIBRARIES :=  \
     libaudio_system_headers \
     libsystem_headers \
-    libarpal_headers \
+    libarpal_headers
 
 include $(BUILD_SHARED_LIBRARY)
 #-------------------------------------------------

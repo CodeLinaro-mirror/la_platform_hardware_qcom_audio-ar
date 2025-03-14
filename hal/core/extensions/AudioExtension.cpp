@@ -10,6 +10,9 @@
 #include <android-base/logging.h>
 #include <dlfcn.h>
 #include <extensions/AudioExtension.h>
+#ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
+#include <extensions/AudioHalFocusManager.h>
+#endif
 #include <log/log.h>
 #include <pthread.h>
 #include "PalApi.h"
@@ -987,5 +990,40 @@ void AutoOemExtension::audio_extn_autooem_set_parameters(struct str_parms* param
         }
     }
 }
+
+#ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
+AutoAudioHALPriorityExtension::AutoAudioHALPriorityExtension():AudioExtensionBase(kAudioHalPriorityLibrary){
+        if (mHandle != nullptr) {
+            requestFocus = (request_focus_t)dlsym(mHandle, "requestFocus");
+            abandonFocus = (abandon_focus_t)dlsym(mHandle, "abandonFocus");
+            updateVolume = (update_volume_t)dlsym(mHandle, "updateVolume");
+            if (!requestFocus || !abandonFocus || !updateVolume) {
+                LOG(ERROR) << __func__ << "dlsym failed";
+                goto feature_disabled;
+            }
+            LOG(INFO) << __func__ << "----- Focus APIs initialized ----";
+            return;
+        }
+feature_disabled:
+    if (mHandle) {
+        dlclose(mHandle);
+        mHandle = NULL;
+    }
+    requestFocus = NULL;
+    abandonFocus = NULL;
+    updateVolume = NULL;
+}
+AutoAudioHALPriorityExtension::~AutoAudioHALPriorityExtension()
+{
+   LOG(INFO) << __func__ << " Enter";
+     if (mHandle) {
+        dlclose(mHandle);
+        mHandle = NULL;
+    }
+    requestFocus = NULL;
+    abandonFocus = NULL;
+    updateVolume = NULL;
+}
+#endif
 
 } // namespace qti::audio::core
