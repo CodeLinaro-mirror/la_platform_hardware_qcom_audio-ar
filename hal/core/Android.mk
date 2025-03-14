@@ -109,6 +109,13 @@ LOCAL_SHARED_LIBRARIES := \
     libaudioplatformconverter.qti \
     qti-audio-types-aidl-V1-ndk
 
+ifeq ($(ENABLE_QCOM_HAL_AUDIO_FOCUS),true)
+LOCAL_SHARED_LIBRARIES += \
+    android.hardware.automotive.audiocontrol-V4-ndk \
+    alliance.hardware.automotive.audiocontrol.internal-V2-ndk \
+    libexpat
+endif
+
 ifeq ($(ENABLE_QCOM_AMPERE_AUDIO), true)
 LOCAL_SHARED_LIBRARIES += ampere.hardware.interfaces.automotive.audioparameterparser-V1-ndk
 endif
