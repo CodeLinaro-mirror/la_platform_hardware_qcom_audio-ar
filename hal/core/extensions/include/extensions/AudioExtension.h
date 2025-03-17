@@ -84,6 +84,7 @@ static std::string kGefLibrary = "libqtigefar.so";
 static std::string kAutoOemLibrary = "libautooemextension.so";
 #ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
 static std::string kAudioHalPriorityLibrary = "libaudiohalpriorityextn.so";
+static std::string kVhalPriorityLibrary = "libvhalpriorityextension.so";
 #endif
 static std::string kAudioDiagnosticsLibrary = "libaudiodiagnostics.so";
 
@@ -149,6 +150,10 @@ typedef void (*streamInfo_t) (pal_stream_type_t streamType);
 typedef int (*request_focus_t)(FocusInfo focusInfo, int64_t* focusId);
 typedef int (*abandon_focus_t)(const int64_t focusId);
 typedef int (*update_volume_t)(const int64_t focusId, const float gain, bool isExternalGain);
+
+ //for VHAL
+typedef int (*priority_init_t)(void);
+
 #endif
 typedef void (*diagnostic_init_t)(void);
 
@@ -277,6 +282,15 @@ class AutoAudioHALPriorityExtension : public AudioExtensionBase {
      abandon_focus_t abandonFocus;
      update_volume_t updateVolume;
 };
+
+class AutoVhalPriorityExtension : public AudioExtensionBase {
+  public:
+    AutoVhalPriorityExtension();
+    ~AutoVhalPriorityExtension();
+  private:
+     priority_init_t priority_init;
+
+};
 #endif
 
 #ifdef ENABLE_AUDIO_DIAGNOSTICS
@@ -354,6 +368,8 @@ class AudioExtension {
 #ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
     std::unique_ptr<AutoAudioHALPriorityExtension>
       mAutoAudioHalPriorityExtension = std::make_unique<AutoAudioHALPriorityExtension>();
+
+    std::unique_ptr<AutoVhalPriorityExtension> mAAutoVhalPriorityExtensionn = std::make_unique<AutoVhalPriorityExtension>();
 #endif
     std::unique_ptr<KarokeExtension> mKarokeExtension = std::make_unique<KarokeExtension>();
     std::unique_ptr<GefExtension> mGefExtension = std::make_unique<GefExtension>();
