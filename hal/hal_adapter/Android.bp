@@ -1,5 +1,5 @@
 cc_library {
-    name: "libaudiohalvendorextn",
+    name: "libaudiohalvendorextn_wear",
     system_ext_specific: true,
     srcs: ["HalAdapterVendorExtension.cpp"],
 
