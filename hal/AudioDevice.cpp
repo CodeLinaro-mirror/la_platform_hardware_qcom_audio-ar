@@ -801,7 +801,6 @@ void adev_close_input_stream(struct audio_hw_device *dev,
     AHAL_DBG("Enter:stream_handle(%p)", astream_in.get());
 
     adevice->CloseStreamIn(astream_in);
-    adevice->mute_ = false;
 
     AHAL_DBG("Exit");
 }

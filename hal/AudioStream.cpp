@@ -1618,8 +1618,13 @@ static void in_update_sink_metadata_v7(
             audio_mode_t mode;
             bool voice_active = false;
             bool voice_mode_active = false;
-            AHAL_DBG("track count is %d for usecase (%d: %s)", track_count,
-                astream_in->GetUseCase(), use_case_table[astream_in->GetUseCase()]);
+            if (astream_in->GetUseCase() != USECASE_INVALID) {
+                AHAL_DBG("track count is %d for usecase (%d: %s)", track_count,
+                    astream_in->GetUseCase(), use_case_table[astream_in->GetUseCase()]);
+            }
+            else {
+                AHAL_WARN(" Warning USECASE_INVALID detected !");
+            }
 
             /* When BLE gets connected, adev_input_stream opens from mixports capabilities. In this
              * case channel mask is set to "0" by FWK whereas when actual usecase starts,
@@ -1797,8 +1802,13 @@ static int astream_in_standby(struct audio_stream *stream) {
         return ret;
     }
 
-    AHAL_DBG("enter: stream (%p) usecase(%d: %s)", astream_in.get(),
-          astream_in->GetUseCase(), use_case_table[astream_in->GetUseCase()]);
+    if (astream_in->GetUseCase() != USECASE_INVALID) {
+        AHAL_DBG("enter: stream (%p) usecase(%d: %s)", astream_in.get(),
+             astream_in->GetUseCase(), use_case_table[astream_in->GetUseCase()]);
+    }
+    else {
+        AHAL_WARN("USECASE_INVALID detected !");
+    }
 
     if (astream_in) {
         ret = astream_in->Standby();
