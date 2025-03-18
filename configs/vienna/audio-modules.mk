@@ -191,7 +191,7 @@ AUDIO_MODULES += \
 
 # AIDL AHAL VENDOR EXTENSION
 AUDIO_MODULES += \
-    libaudiohalvendorextn
+    libaudiohalvendorextn_wear
 
 # add modules for fuzzing
 ifneq ($(filter audio,$(QC_HWASAN))$(filter hwaddress,$(SANITIZE_TARGET)),)
