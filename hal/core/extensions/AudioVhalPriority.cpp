@@ -11,7 +11,7 @@
 #include <string>
 #include <errno.h>
 #include <log/log.h>
-#include <include/extensions/AudioVhalPriority.h>
+#include "include/extensions/AudioVhalPriority.h"
 #include "PalApi.h"
 #include <include/extensions/AudioVHALListener.h>
 #include <include/extensions/AudioHalFocusManager.h>
@@ -35,6 +35,10 @@
 
 #include <cstdlib>
 
+#define MIN_NIGHT_MODE 0
+#define MAX_NIGHT_MODE 1
+#define MIN_DOOR_VALUE 0
+#define MAX_DOOR_VALUE 1
 #define MIN_RADIO_MUTE_VALUE 0
 #define MAX_RADIO_MUTE_VALUE 1
 #define DEFAULT_GAIN_VALUE -4000
@@ -56,9 +60,19 @@ using namespace ::qti::audio::oem::config;
 #ifndef ENABLE_VHAL_TEST_WITH_KITCHENSINK
 #define ENABLE_VHAL_TEST_WITH_KITCHENSINK
 const VehicleProperty MuteRadioOrderByAAMId = VehicleProperty::HVAC_STEERING_WHEEL_HEAT;
+const VehicleProperty NightModePropertyId = VehicleProperty::HVAC_SIDE_MIRROR_HEAT;
+const VehicleProperty DriverDoorPropertyId = VehicleProperty::DOOR_POS;
+const VehicleProperty FrontPassengerDoorPropertyId = VehicleProperty::HVAC_SEAT_TEMPERATURE;
+const VehicleProperty RearLeftDoorPropertyId = VehicleProperty::HVAC_SEAT_VENTILATION;
+const VehicleProperty RearRightDoorPropertyId = VehicleProperty::WINDOW_POS;
 
 #else
 const VehicleProperty MuteRadioOrderByAAMId = VehicleProperty::HVAC_STEERING_WHEEL_HEAT;
+const VehicleProperty NightModePropertyId = VehicleProperty::HVAC_SIDE_MIRROR_HEAT;
+const VehicleProperty DriverDoorPropertyId = VehicleProperty::DOOR_POS;
+const VehicleProperty FrontPassengerDoorPropertyId = VehicleProperty::HVAC_SEAT_TEMPERATURE;
+const VehicleProperty RearLeftDoorPropertyId = VehicleProperty::HVAC_SEAT_VENTILATION;
+const VehicleProperty RearRightDoorPropertyId = VehicleProperty::WINDOW_POS;
 
 #endif //ENABLE_VHAL_TEST_WITH_KITCHENSINK
 
@@ -125,6 +139,7 @@ float getAttenuationTarget(){
 }
 
 FocusHandler g_focusHandler(PRIORITY_LIB);
+struct vhal_data* Vhal_Data::vhal_data = nullptr;
 
 // Helper to subscribe to VHal notifications
 bool subscribeToVHal(ISubscriptionClient* client, VehicleProperty propertyId) {
@@ -157,6 +172,7 @@ void AudioVHALListener::onPropertyEvent(const std::vector<std::unique_ptr<IHalPr
         LOG(ERROR) << __func__ << ": Received empty property values vector";
         return;
     }
+    struct vhal_data* vhal_data = Vhal_Data::vhal_get_params();
 
     for(const auto& value : values) {
         int32_t propId = value->getPropId();
@@ -164,7 +180,80 @@ void AudioVHALListener::onPropertyEvent(const std::vector<std::unique_ptr<IHalPr
         int32_t area = value->getAreaId();
         LOG(DEBUG) << __func__ << ": areaId : " << area;
 
-
+        if (value->getPropId() == static_cast<int32_t>(NightModePropertyId)) {
+            if (value->getInt32Values().size() < 1) {
+                LOG(ERROR) << "Invalid NIGHT_MODE getFloatValues size, empty value :" << value->getInt32Values().size();
+                goto exit;
+            } else {
+                LOG(DEBUG) << "Event Notify: New NIGHT_MODE event received. Val:" << value->getInt32Values()[0];
+                vhal_data->nightModeValue = value->getInt32Values()[0];
+                Vhal_Data::vhal_set_params(vhal_data);
+                handler_vhal();
+            }
+        }
+        if (value->getPropId() == static_cast<int32_t>(DriverDoorPropertyId)) {
+            if (value->getInt32Values().size() < 1) {
+                LOG(ERROR) << "Invalid Driver Door getInt32Values size, empty value :" << value->getInt32Values().size();
+                goto exit;
+            } else {
+                if (value->getInt32Values()[0] < MIN_DOOR_VALUE || value->getInt32Values()[0] > MAX_DOOR_VALUE) {
+                    LOG(ERROR) << "Invalid Driver Door value :" << value->getInt32Values()[0];
+                }
+                else{
+                    LOG(DEBUG) << "Event Notify: New Driver Door event received. Val:" << value->getInt32Values()[0];
+                    vhal_data->driverDoor = value->getInt32Values()[0];
+                    Vhal_Data::vhal_set_params(vhal_data);
+                    handler_vhal();
+                }
+            }
+        }
+        if (value->getPropId() == static_cast<int32_t>(FrontPassengerDoorPropertyId)) {
+            if (value->getInt32Values().size() < 1) {
+                LOG(ERROR) << "Invalid Front Passenger Door getInt32Values size, empty value :" << value->getInt32Values().size();
+                goto exit;
+            } else {
+                if (value->getInt32Values()[0] < MIN_DOOR_VALUE || value->getInt32Values()[0] > MAX_DOOR_VALUE) {
+                    LOG(ERROR) << "Invalid Front Passenger Door value :" << value->getInt32Values()[0];
+                }
+                else{
+                    LOG(DEBUG) << "Event Notify: New Front Passenger Door event received. Val:" << value->getInt32Values()[0];
+                    vhal_data->frontPassengerDoor = value->getInt32Values()[0];
+                    Vhal_Data::vhal_set_params(vhal_data);
+                    handler_vhal();
+                }
+            }
+        }if (value->getPropId() == static_cast<int32_t>(RearLeftDoorPropertyId)) {
+            if (value->getInt32Values().size() < 1) {
+                LOG(ERROR) << "Invalid Rear Left Door getInt32Values size, empty value :" << value->getInt32Values().size();
+                goto exit;
+            } else {
+                if (value->getInt32Values()[0] < MIN_DOOR_VALUE || value->getInt32Values()[0] > MAX_DOOR_VALUE) {
+                    LOG(ERROR) << "Invalid Rear Left Door value :" << value->getInt32Values()[0];
+                }
+                else{
+                    LOG(DEBUG) << "Event Notify: New Rear Left Door event received. Val:" << value->getInt32Values()[0];
+                    vhal_data->rearLeftDoor = value->getInt32Values()[0];
+                    Vhal_Data::vhal_set_params(vhal_data);
+                    handler_vhal();
+                }
+            }
+        }
+        if (value->getPropId() == static_cast<int32_t>(RearRightDoorPropertyId)) {
+            if (value->getInt32Values().size() < 1) {
+                LOG(ERROR) << "Invalid Rear Right Door getInt32Values size, empty value :" << value->getInt32Values().size();
+                goto exit;
+            } else {
+                if (value->getInt32Values()[0] < MIN_DOOR_VALUE || value->getInt32Values()[0] > MAX_DOOR_VALUE) {
+                    LOG(ERROR) << "Invalid Rear Right Door value :" << value->getInt32Values()[0];
+                }
+                else{
+                    LOG(DEBUG) << "Event Notify: New Rear Right Door event received. Val:" << value->getInt32Values()[0];
+                    vhal_data->rearRightDoor = value->getInt32Values()[0];
+                    Vhal_Data::vhal_set_params(vhal_data);
+                    handler_vhal();
+                }
+            }
+        }
         if (value->getPropId() == static_cast<int32_t>(MuteRadioOrderByAAMId)) {
             if (value->getInt32Values().size() < 1) {
                 LOG(ERROR) << "Invalid Radio Mute getInt32Values size, empty value :" << value->getInt32Values().size();
@@ -236,12 +325,75 @@ exit:
     LOG(DEBUG) << __func__ << ": Exit ";
 }
 
+extern "C" __attribute__((visibility("default"))) void handler_vhal(){
+
+    LOG(DEBUG) << __func__ << ": Enter " ;
+    struct vhal_data* vhal_data = Vhal_Data::vhal_get_params();
+    qti::audio::core::FocusSession focusSessionInfo;
+    qti::audio::core::FocusInfo focusInfo;
+    focusInfo.usage = "NIGHT_MODE";
+    focusInfo.isExternalGain = true;
+    float gainValue = DEFAULT_GAIN_VALUE;
+    if(getAttenuationTarget() != -1.0f){
+        gainValue = getAttenuationTarget();
+    }
+    focusInfo.gain = gainValue;
+
+    if(vhal_data != nullptr){
+        if(vhal_data->nightModeValue == 1){
+            LOG(DEBUG) << "Night mode value is set" ;
+
+            if(vhal_data->driverDoor == 1 || vhal_data->frontPassengerDoor==1 || vhal_data->rearLeftDoor==1 || vhal_data->rearRightDoor==1){
+                LOG(DEBUG) << "Atleast 1 door is open, calling Focus Service to Duck to volume:" << gainValue ;
+                if (!g_focusHandler.isValid()) {
+                    LOG(ERROR) << "Failed to initialize g_focusHandler";
+                    return;
+                }
+                g_focusHandler.requestFocus(focusInfo, &focusSessionInfo.FocusId);
+                LOG(INFO) << "Focus Id: " << focusSessionInfo.FocusId;
+                const auto& it = FocusHandler::focusIdMap.find("NIGHT_MODE");
+                if(it != FocusHandler::focusIdMap.end())
+                    it->second.push_back(focusSessionInfo.FocusId);
+                else
+                    FocusHandler::focusIdMap.insert({"NIGHT_MODE", {focusSessionInfo.FocusId}});
+            }
+            else if(vhal_data->driverDoor == 0 && vhal_data->frontPassengerDoor==0 && vhal_data->rearLeftDoor==0 && vhal_data->rearRightDoor==0){
+                LOG(DEBUG) << "All doors are closed, calling Focus Service to Unduck" ;
+                const auto& it = FocusHandler::focusIdMap.find("NIGHT_MODE");
+                if(it != FocusHandler::focusIdMap.end() && !it->second.empty()) {
+                    while(!it->second.empty()){
+                        focusSessionInfo.FocusId = it->second.back();
+                        LOG(DEBUG) << __func__ << ": Releasing NIGHT_MODE audio focus: " << focusSessionInfo.FocusId;
+                        if (!g_focusHandler.isValid()) {
+                            LOG(ERROR) << "Failed to initialize g_focusHandler";
+                            return;
+                        }
+                        g_focusHandler.abandonFocus(focusSessionInfo.FocusId);
+                        focusSessionInfo.FocusId = 0;
+                        it->second.pop_back();
+                    }
+                }
+                else{
+                    LOG(DEBUG) << "No NIGHT_MODE Focus Session to unduck";
+                    goto exit;
+                }
+            }
+        }
+        else{
+            LOG(DEBUG) << "NIGHT_MODE value is not set" ;
+        }
+    }
+exit:
+    LOG(DEBUG) << __func__ << ": Exit ";
+}
+
 extern "C" __attribute__((visibility("default")))int priority_init(void)
 {
     LOG(DEBUG) << __func__ << ": Enter " ;
     // Construct our async helper object
-
     std::shared_ptr<AudioVHALListener> pAudioListener = std::make_shared<AudioVHALListener>();
+    //Create VHAL DATA struct
+    Vhal_Data::init();
 
     // Connect to the Vehicle HAL so we can monitor state
     std::shared_ptr<IVhalClient> pVnet;
@@ -261,6 +413,50 @@ extern "C" __attribute__((visibility("default")))int priority_init(void)
         else
         {
             LOG(ERROR) << "Register for RADIO_AAM_MUTE_ORDER done.";
+        }
+        if (!subscribeToVHal(subscriptionClient.get(), NightModePropertyId)) {
+            LOG(ERROR) << "Didn't register for NIGHT_MODE , Exiting.";
+            return EXIT_FAILURE;
+        }
+        else
+        {
+            LOG(ERROR) << "regiter for NIGHT_MODE done.";
+        }
+
+        if (!subscribeToVHal(subscriptionClient.get(), DriverDoorPropertyId)) {
+            LOG(ERROR) << "Didn't register for Driver Door notification, Exiting.";
+            return EXIT_FAILURE;
+        }
+        else
+        {
+            LOG(ERROR) << "Register for Driver Door done.";
+        }
+
+        if (!subscribeToVHal(subscriptionClient.get(), FrontPassengerDoorPropertyId)) {
+            LOG(ERROR) << "Didn't register for Front Passenger Door notification, Exiting.";
+            return EXIT_FAILURE;
+        }
+        else
+        {
+            LOG(ERROR) << "Register for Front Passenger door done.";
+        }
+
+        if (!subscribeToVHal(subscriptionClient.get(), RearLeftDoorPropertyId)) {
+            LOG(ERROR) << "Didn't register for Rear Left Door notification, Exiting.";
+            return EXIT_FAILURE;
+        }
+        else
+        {
+            LOG(ERROR) << "Register for Rear Left Door done.";
+        }
+
+        if (!subscribeToVHal(subscriptionClient.get(), RearRightDoorPropertyId)) {
+            LOG(ERROR) << "Didn't register for Rear Right Door notification, Exiting.";
+            return EXIT_FAILURE;
+        }
+        else
+        {
+            LOG(ERROR) << "Register for Rear Right Door done.";
         }
     }
     return EXIT_SUCCESS;
