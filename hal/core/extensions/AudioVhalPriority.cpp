@@ -16,7 +16,10 @@
 #include <include/extensions/AudioVHALListener.h>
 #include <include/extensions/AudioHalFocusManager.h>
 #include <include/extensions/BusDuckConfig.h>
+#include <include/extensions/ThermalConfig.h>
+
 #define XML_FILE_PATH "/vendor/etc/audio_ar/duck_configuration.xml"
+#define TEMPERATURE_XML_PATH "/vendor/etc/audio_ar/thermal_config.xml"
 
 #include <aidl/android/hardware/automotive/vehicle/SubscribeOptions.h>
 #include <aidl/android/hardware/automotive/vehicle/VehicleProperty.h>
@@ -42,6 +45,8 @@
 #define MIN_RADIO_MUTE_VALUE 0
 #define MAX_RADIO_MUTE_VALUE 1
 #define DEFAULT_GAIN_VALUE -4000
+#define MIN_THERMAL_VALUE 0
+#define MAX_THERMAL_VALUE 120
 // Define the macro for the Priority Focus library name
 #define PRIORITY_LIB "libaudiohalpriorityextn.so"
 
@@ -65,6 +70,7 @@ const VehicleProperty DriverDoorPropertyId = VehicleProperty::DOOR_POS;
 const VehicleProperty FrontPassengerDoorPropertyId = VehicleProperty::HVAC_SEAT_TEMPERATURE;
 const VehicleProperty RearLeftDoorPropertyId = VehicleProperty::HVAC_SEAT_VENTILATION;
 const VehicleProperty RearRightDoorPropertyId = VehicleProperty::WINDOW_POS;
+const VehicleProperty ThermalPropertyId = VehicleProperty::HVAC_FAN_DIRECTION;
 
 #else
 const VehicleProperty MuteRadioOrderByAAMId = VehicleProperty::HVAC_STEERING_WHEEL_HEAT;
@@ -73,6 +79,7 @@ const VehicleProperty DriverDoorPropertyId = VehicleProperty::DOOR_POS;
 const VehicleProperty FrontPassengerDoorPropertyId = VehicleProperty::HVAC_SEAT_TEMPERATURE;
 const VehicleProperty RearLeftDoorPropertyId = VehicleProperty::HVAC_SEAT_VENTILATION;
 const VehicleProperty RearRightDoorPropertyId = VehicleProperty::WINDOW_POS;
+const VehicleProperty ThermalPropertyId = VehicleProperty::HVAC_FAN_DIRECTION;
 
 #endif //ENABLE_VHAL_TEST_WITH_KITCHENSINK
 
@@ -268,6 +275,20 @@ void AudioVHALListener::onPropertyEvent(const std::vector<std::unique_ptr<IHalPr
                 }
             }
         }
+        if (value->getPropId() == static_cast<int32_t>(ThermalPropertyId)) {
+            if (value->getInt32Values().size() < 1) {
+                LOG(ERROR) << "Invalid Thermal Property size, empty value :" << value->getInt32Values().size();
+                goto exit;
+            } else {
+                if (value->getInt32Values()[0] < MIN_THERMAL_VALUE || value->getInt32Values()[0] > MAX_THERMAL_VALUE) {
+                    LOG(ERROR) << "Invalid Thermal Property value :" << value->getInt32Values()[0];
+                }
+                else{
+                    LOG(DEBUG) << "Event Notify: New Thermal Property event received. Val:" << value->getInt32Values()[0];
+                    handler_thermal(value->getInt32Values()[0]);
+                }
+            }
+        }
     }
 exit:
     LOG(DEBUG) << __func__ << ": Exit ";
@@ -387,6 +408,80 @@ exit:
     LOG(DEBUG) << __func__ << ": Exit ";
 }
 
+extern "C" __attribute__((visibility("default"))) void handler_thermal(int32_t temperature){
+    LOG(DEBUG) << __func__ << ": Enter " ;
+    qti::audio::core::FocusSession focusSessionInfo;
+    float gainValue;
+    qti::audio::core::FocusInfo focusInfo;
+    focusInfo.usage = "DEVICE_TEMPERATURE_STATUS";
+    focusInfo.isExternalGain = true;
+
+    ThermalParser parser; // to parse thermal conditions XML
+    FILE* file = NULL;
+    file = fopen(TEMPERATURE_XML_PATH, "r");
+    if(!file){
+        LOG(ERROR) << __func__ <<  " File not present: " << TEMPERATURE_XML_PATH;
+        return;
+    }
+    else{
+        LOG(ERROR) << __func__ <<  " File present" << TEMPERATURE_XML_PATH;
+    }
+    fclose(file);
+
+    if (parser.parseConfig(TEMPERATURE_XML_PATH)) {
+        const auto& conditions = parser.getConditions();
+        for(const auto& condn : conditions){
+
+            // Extract the attributes
+            int tempLower = condn.tempLower;
+            int tempUpper = condn.tempUpper;
+            gainValue = condn.gain;
+            focusInfo.gain = gainValue;
+
+            if (temperature >= tempLower && temperature <= tempUpper) {
+                if(gainValue == 0) {
+                    LOG(DEBUG) << "No vol limit, unducking"; //unduck
+                    const auto& it = FocusHandler::focusIdMap.find("DEVICE_TEMPERATURE_STATUS");
+                    if(it != FocusHandler::focusIdMap.end() && !it->second.empty()) {
+                        while( !it->second.empty()){
+                            focusSessionInfo.FocusId = it->second.back(); // Retrieving the last Id value
+                            LOG(DEBUG) << __func__ << ": Releasing DEVICE_TEMPERATURE_STATUS audio focus: " << focusSessionInfo.FocusId;
+                            if (!g_focusHandler.isValid()) {
+                                LOG(ERROR) << "Failed to initialize g_focusHandler";
+                                return;
+                            }
+                            g_focusHandler.abandonFocus(focusSessionInfo.FocusId);
+                            focusSessionInfo.FocusId = 0;
+                            it->second.pop_back();
+                        }
+                    }
+                    else{
+                        LOG(ERROR) << "No DEVICE_TEMPERATURE_STATUS Focus Session to unduck";
+                        goto exit;
+                    }
+                }
+                else {
+                    LOG(DEBUG) << "Ducking to Vol limit =" << gainValue;//duck
+                    if (!g_focusHandler.isValid()) {
+                        LOG(ERROR) << "Failed to initialize g_focusHandler";
+                        return;
+                    }
+                    g_focusHandler.requestFocus(focusInfo, &focusSessionInfo.FocusId);
+                    LOG(INFO) << "Focus Id for DEVICE_TEMPERATURE_STATUS " << focusSessionInfo.FocusId;
+                    const auto& it = FocusHandler::focusIdMap.find("DEVICE_TEMPERATURE_STATUS");
+                    if(it != FocusHandler::focusIdMap.end())
+                        it->second.push_back(focusSessionInfo.FocusId);
+                    else
+                        FocusHandler::focusIdMap.insert({"DEVICE_TEMPERATURE_STATUS", {focusSessionInfo.FocusId}});
+                }
+            }
+        }
+    }
+exit:
+    LOG(DEBUG) << __func__ << ": Exit ";
+    return;
+}
+
 extern "C" __attribute__((visibility("default")))int priority_init(void)
 {
     LOG(DEBUG) << __func__ << ": Enter " ;
@@ -457,6 +552,14 @@ extern "C" __attribute__((visibility("default")))int priority_init(void)
         else
         {
             LOG(ERROR) << "Register for Rear Right Door done.";
+        }
+        if (!subscribeToVHal(subscriptionClient.get(), ThermalPropertyId)) {
+            LOG(ERROR) << "Didn't register for Thermal Property, Exiting.";
+            return EXIT_FAILURE;
+        }
+        else
+        {
+            LOG(ERROR) << "Register for Thermal Property done.";
         }
     }
     return EXIT_SUCCESS;

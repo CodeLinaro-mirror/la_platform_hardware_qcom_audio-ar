@@ -511,7 +511,8 @@ include $(CLEAR_VARS)
 LOCAL_MODULE := libvhalpriorityextension
 LOCAL_VENDOR_MODULE := true
 
-LOCAL_SRC_FILES:= AudioVhalPriority.cpp
+LOCAL_SRC_FILES:= AudioVhalPriority.cpp \
+                    ThermalConfig.cpp
 
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/include
 

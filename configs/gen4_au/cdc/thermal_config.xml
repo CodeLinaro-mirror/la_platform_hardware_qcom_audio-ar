@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
+SPDX-License-Identifier: BSD-3-Clause-Clear
+-->
+<TemperatureConfig>
+    <Conditions>
+        <Condition tempLower="0" tempUpper="103" gain="0" />
+        <Condition tempLower="104" tempUpper="108" gain="-3600" />
+        <Condition tempLower="109" tempUpper="1000" gain="-3200" />
+    </Conditions>
+</TemperatureConfig>

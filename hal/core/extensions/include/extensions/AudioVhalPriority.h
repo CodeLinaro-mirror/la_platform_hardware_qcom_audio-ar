@@ -7,6 +7,8 @@
 #include <android-base/logging.h>
 #include <include/extensions/AudioHalFocusManager.h>
 #include <dlfcn.h>
+#include <include/extensions/BusDuckConfig.h>
+#include <include/extensions/ThermalConfig.h>
 
 namespace {
 
@@ -16,6 +18,7 @@ extern "C" {
 
 void handler_vhal();
 void handler_radioMute(int32_t radio_mute_byAAM_value);
+void handler_thermal(int32_t temp);
 
 class FocusHandler {
     private:
