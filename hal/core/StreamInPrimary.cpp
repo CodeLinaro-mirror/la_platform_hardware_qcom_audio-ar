@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -83,7 +83,8 @@ StreamInPrimary::StreamInPrimary(StreamContext&& context, const SinkMetadata& si
 
     std::ostringstream os;
     os << " : usecase: " << mTagName;
-    os << " IoHandle:" << mMixPortConfig.ext.get<AudioPortExt::Tag::mix>().handle;
+    os << ", mix port config id:" << mMixPortConfig.id;
+    os << ", IoHandle:" << mMixPortConfig.ext.get<AudioPortExt::Tag::mix>().handle << " ";
     mLogPrefix = os.str();
 
     LOG(DEBUG) << __func__ << mLogPrefix;
@@ -521,8 +522,7 @@ ndk::ScopedAStatus StreamInPrimary::updateMetadataCommon(const Metadata& metadat
     StreamInPrimary::sinkMetadata_mutex_.lock();
     setAggregateSinkMetadata(voiceActive);
     StreamInPrimary::sinkMetadata_mutex_.unlock();
-    LOG(ERROR) << __func__ << mLogPrefix << ": stream was closed";
-    // return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
+    LOG(DEBUG) << __func__ << mLogPrefix;
     return ndk::ScopedAStatus::ok();
 }
 
@@ -806,7 +806,11 @@ void StreamInPrimary::configure() {
         mPalHandle = nullptr;
         return;
     }
-
+    if (mTag == Usecase::VOIP_RECORD && mPlatform.getCallTranslationState()) {
+        if (auto telephony = mContext.getTelephony().lock()) {
+            telephony->CallTranslationManager();
+        }
+    }
     if (mPlatform.getMicMuteStatus() && !(mPlatform.getTranslationRecordState())) {
         setStreamMicMute(true);
     }

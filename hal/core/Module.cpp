@@ -405,66 +405,152 @@ ndk::ScopedAStatus Module::updateStreamsConnectedState(const AudioPatch& oldPatc
                                 }) != patch.sinkPortConfigIds.end()) {
             // Sources are device ports.
             fillConnectionsHelper(connections, patch.sinkPortConfigIds, patch.sourcePortConfigIds);
-        } // Otherwise, there are no streams to notify.
+        }  // Otherwise, there are no streams to notify.
+    };
+    auto restoreOldConnections = [&](const std::set<int32_t>& mixPortIds,
+                                     const bool continueWithEmptyDevices) {
+        for (const auto mixPort : mixPortIds) {
+            if (auto it = oldConnections.find(mixPort);
+                continueWithEmptyDevices || it != oldConnections.end()) {
+                AudioDevice noneDevice;
+                const std::vector<AudioDevice> d =
+                        it != oldConnections.end()
+                                ? getDevicesFromDevicePortConfigIds(it->second)
+                                : std::vector<AudioDevice>({noneDevice}) /*None Device Fail-Safe*/;
+                if (auto status = mStreams.setStreamConnectedDevices(mixPort, d); status.isOk()) {
+                    LOG(WARNING) << ":updateStreamsConnectedState: rollback: mix port config:"
+                                 << mixPort
+                                 << (d.empty() ? "; not connected"
+                                               : std::string("; connected to ") +
+                                                         ::android::internal::ToString(d));
+                } else {
+                    // can't do much about rollback failures
+                    LOG(ERROR)
+                            << ":updateStreamsConnectedState: rollback: failed for mix port config:"
+                            << mixPort;
+                }
+            }
+        }
     };
     fillConnections(oldConnections, oldPatch);
     fillConnections(newConnections, newPatch);
+    /**
+     * Illustration of oldConnections and newConnections
+     *
+     * oldConnections {
+     * a : {A,B,C},
+     * b : {D},
+     * d : {H,I,J},
+     * e : {N,O,P},
+     * f : {Q,R},
+     * g : {T,U,V},
+     * }
+     *
+     * newConnections {
+     * a : {A,B,C},
+     * c : {E,F,G},
+     * d : {K,L,M},
+     * e : {N,P},
+     * f : {Q,R,S},
+     * g : {U,V,W},
+     * }
+     *
+     * Expected routings:
+     *      'a': is ignored both in disconnect step and connect step,
+     *           due to same devices both in oldConnections and newConnections.
+     *      'b': handled only in disconnect step with empty devices because 'b' is only present
+     *           in oldConnections.
+     *      'c': handled only in connect step with {E,F,G} devices because 'c' is only present
+     *           in newConnections.
+     *      'd': handled only in connect step with {K,L,M} devices because 'd' is also present
+     *           in newConnections and it is ignored in disconnected step.
+     *      'e': handled only in connect step with {N,P} devices because 'e' is also present
+     *           in newConnections and it is ignored in disconnect step. please note that there
+     *           is no exclusive disconnection for device {O}.
+     *      'f': handled only in connect step with {Q,R,S} devices because 'f' is also present
+     *           in newConnections and it is ignored in disconnect step. Even though stream is
+     *           already connected with {Q,R} devices and connection happens with {Q,R,S}.
+     *      'g': handled only in connect step with {U,V,W} devices because 'g' is also present
+     *           in newConnections and it is ignored in disconnect step. There is no exclusive
+     *           disconnection with devices {T,U,V}.
+     *
+     *       If, any failure, will lead to restoreOldConnections (rollback).
+     *       The aim of the restoreOldConnections is to make connections back to oldConnections.
+     *       Failures in restoreOldConnections aren't handled.
+     */
 
-    std::for_each(oldConnections.begin(), oldConnections.end(), [&](const auto& connectionPair) {
-        const int32_t mixPortConfigId = connectionPair.first;
-        if (auto it = newConnections.find(mixPortConfigId);
-            it == newConnections.end()) {
-            ::aidl::android::media::audio::common::AudioDevice noneDevice;
-            if (auto status = mStreams.setStreamConnectedDevices(mixPortConfigId, {noneDevice});
+    std::set<int32_t> idsToConnectBackOnFailure;
+    // disconnection step
+    for (const auto& [oldMixPortConfigId, oldDevicePortConfigIds] : oldConnections) {
+        if (auto it = newConnections.find(oldMixPortConfigId); it == newConnections.end()) {
+            idsToConnectBackOnFailure.insert(oldMixPortConfigId);
+            /**
+             * None Device Fail-Safe
+             *
+             * Although setting empty devices on stream is allowed momentarily.
+             * But read's or write's to stream when empty devices leads to failures.
+             *
+             * Configure stream devices to the NONE device as a fail-safe mechanism.
+             * This ensures that any attempts to read from or write to the stream when no device is
+             * connected are handled gracefully.
+             *
+             * Note: This scenario is not expected to occur. The HAL client (i.e., framework) must
+             * ensure that this situation does not arise.
+             */
+            AudioDevice noneDevice;
+            if (auto status = mStreams.setStreamConnectedDevices(oldMixPortConfigId, {noneDevice});
                 status.isOk()) {
-                LOG(DEBUG) << "updateStreamsConnectedState: The "
-                              "stream on port config id "
-                           << mixPortConfigId << " has been disconnected";
+                LOG(DEBUG) << __func__ << ": The stream on port config id " << oldMixPortConfigId
+                           << " has been disconnected";
             } else {
-                // Disconnection is tricky to roll back, just
-                // register a failure.
                 maybeFailure = std::move(status);
+                // proceed to rollback even on one failure
+                break;
             }
         }
-    });
-    if (!maybeFailure.isOk()) return maybeFailure;
-    std::set<int32_t> idsToDisconnectOnFailure;
-    std::for_each(newConnections.begin(), newConnections.end(), [&](const auto& connectionPair) {
-        const int32_t mixPortConfigId = connectionPair.first;
-        if (auto it = oldConnections.find(mixPortConfigId);
-            it == oldConnections.end() || it->second != connectionPair.second
-            || hasBluetoothDevice(getDevicesFromDevicePortConfigIds(connectionPair.second))) {
-            const auto connectedDevices = getDevicesFromDevicePortConfigIds(connectionPair.second);
+    }
+
+    if (!maybeFailure.isOk()) {
+        restoreOldConnections(idsToConnectBackOnFailure, false /*continueWithEmptyDevices*/);
+        LOG(WARNING) << __func__ << ": failed to disconnect from old patch. attempted rollback";
+        return maybeFailure;
+    }
+
+    std::set<int32_t> idsToRollbackOnFailure;
+    // connection step
+    for (const auto& [newMixPortConfigId, newDevicePortConfigIds] : newConnections) {
+        const auto connectedDevices = getDevicesFromDevicePortConfigIds(newDevicePortConfigIds);
+        if (auto it = oldConnections.find(newMixPortConfigId);
+            it == oldConnections.end() || it->second != newDevicePortConfigIds ||
+            /* if bluetooth device, force route to the streams due to A2DP|SCO suspend on or off*/
+            hasBluetoothDevice(connectedDevices)) {
+            idsToRollbackOnFailure.insert(newMixPortConfigId);
             if (connectedDevices.empty()) {
-                // This is important as workers use the vector size to
-                // derive the connection status.
-                LOG(FATAL) << "updateStreamsConnectedState: No connected "
-                              "devices found for port "
-                              "config id "
-                           << mixPortConfigId;
+                // This is important as workers use the vector size to derive the connection status.
+                LOG(FATAL) << __func__ << ": No connected devices found for port config id "
+                           << newMixPortConfigId;
             }
-            if (auto status = mStreams.setStreamConnectedDevices(mixPortConfigId, connectedDevices);
+            if (auto status =
+                        mStreams.setStreamConnectedDevices(newMixPortConfigId, connectedDevices);
                 status.isOk()) {
-                LOG(DEBUG) << "updateStreamsConnectedState: The stream on port "
-                              "config id "
-                           << mixPortConfigId << " has been connected to: "
+                LOG(DEBUG) << __func__ << ": The stream on port config id " << newMixPortConfigId
+                           << " has been connected to: "
                            << ::android::internal::ToString(connectedDevices);
             } else {
                 maybeFailure = std::move(status);
-                idsToDisconnectOnFailure.insert(mixPortConfigId);
+                // proceed to rollback even on one failure
+                break;
             }
         }
-    });
+    }
+
     if (!maybeFailure.isOk()) {
-        LOG(WARNING) << __func__ << ": Due to a failure, disconnecting streams on port config ids "
-                     << ::android::internal::ToString(idsToDisconnectOnFailure);
-        std::for_each(idsToDisconnectOnFailure.begin(), idsToDisconnectOnFailure.end(),
-                      [&](const auto& portConfigId) {
-                          auto status = mStreams.setStreamConnectedDevices(portConfigId, {});
-                          (void)status.isOk(); // Can't do much about a failure here.
-                      });
+        restoreOldConnections(idsToConnectBackOnFailure, false /*continueWithEmptyDevices*/);
+        restoreOldConnections(idsToRollbackOnFailure, true /*continueWithEmptyDevices*/);
+        LOG(WARNING) << __func__ << ": failed to connect for new patch. attempted rollback";
         return maybeFailure;
     }
+
     return ndk::ScopedAStatus::ok();
 }
 
@@ -1329,50 +1415,54 @@ ndk::ScopedAStatus Module::resetAudioPortConfig(int32_t in_portConfigId) {
     return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
 }
 
-ndk::ScopedAStatus Module::getMasterMute(bool* _aidl_return) {
-    *_aidl_return = mMasterMute;
-    LOG(DEBUG) << __func__ << ": returning " << *_aidl_return;
-    return ndk::ScopedAStatus::ok();
+ndk::ScopedAStatus Module::getMasterMute(bool* _aidl_return __unused) {
+    // *_aidl_return = mMasterMute;
+    // LOG(DEBUG) << __func__ << ": returning " << *_aidl_return;
+    // return ndk::ScopedAStatus::ok();
+    return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
 }
 
-ndk::ScopedAStatus Module::setMasterMute(bool in_mute) {
-    LOG(DEBUG) << __func__ << ": " << in_mute;
-    auto result = mDebug.simulateDeviceConnections ? ndk::ScopedAStatus::ok()
-                                                   : onMasterMuteChanged(in_mute);
-    if (result.isOk()) {
-        mMasterMute = in_mute;
-    } else {
-        LOG(ERROR) << __func__ << ": failed calling onMasterMuteChanged(" << in_mute
-                   << "), error=" << result;
-        // Reset master mute if it failed.
-        onMasterMuteChanged(mMasterMute);
-    }
-    return std::move(result);
+ndk::ScopedAStatus Module::setMasterMute(bool in_mute __unused) {
+    // LOG(DEBUG) << __func__ << ": " << in_mute;
+    // auto result = mDebug.simulateDeviceConnections ? ndk::ScopedAStatus::ok()
+    //                                                : onMasterMuteChanged(in_mute);
+    // if (result.isOk()) {
+    //     mMasterMute = in_mute;
+    // } else {
+    //     LOG(ERROR) << __func__ << ": failed calling onMasterMuteChanged(" << in_mute
+    //                << "), error=" << result;
+    //     // Reset master mute if it failed.
+    //     onMasterMuteChanged(mMasterMute);
+    // }
+    // return std::move(result);
+    return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
 }
 
-ndk::ScopedAStatus Module::getMasterVolume(float* _aidl_return) {
-    *_aidl_return = mMasterVolume;
-    LOG(DEBUG) << __func__ << ": returning " << *_aidl_return;
-    return ndk::ScopedAStatus::ok();
+ndk::ScopedAStatus Module::getMasterVolume(float* _aidl_return __unused) {
+    // *_aidl_return = mMasterVolume;
+    // LOG(DEBUG) << __func__ << ": returning " << *_aidl_return;
+    // return ndk::ScopedAStatus::ok();
+    return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
 }
 
-ndk::ScopedAStatus Module::setMasterVolume(float in_volume) {
-    LOG(DEBUG) << __func__ << ": " << in_volume;
-    if (in_volume >= 0.0f && in_volume <= 1.0f) {
-        auto result = mDebug.simulateDeviceConnections ? ndk::ScopedAStatus::ok()
-                                                       : onMasterVolumeChanged(in_volume);
-        if (result.isOk()) {
-            mMasterVolume = in_volume;
-        } else {
-            // Reset master volume if it failed.
-            LOG(ERROR) << __func__ << ": failed calling onMasterVolumeChanged(" << in_volume
-                       << "), error=" << result;
-            onMasterVolumeChanged(mMasterVolume);
-        }
-        return std::move(result);
-    }
-    LOG(ERROR) << __func__ << ": invalid master volume value: " << in_volume;
-    return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
+ndk::ScopedAStatus Module::setMasterVolume(float in_volume __unused) {
+    // LOG(DEBUG) << __func__ << ": " << in_volume;
+    // if (in_volume >= 0.0f && in_volume <= 1.0f) {
+    //     auto result = mDebug.simulateDeviceConnections ? ndk::ScopedAStatus::ok()
+    //                                                    : onMasterVolumeChanged(in_volume);
+    //     if (result.isOk()) {
+    //         mMasterVolume = in_volume;
+    //     } else {
+    //         // Reset master volume if it failed.
+    //         LOG(ERROR) << __func__ << ": failed calling onMasterVolumeChanged(" << in_volume
+    //                    << "), error=" << result;
+    //         onMasterVolumeChanged(mMasterVolume);
+    //     }
+    //     return std::move(result);
+    // }
+    // LOG(ERROR) << __func__ << ": invalid master volume value: " << in_volume;
+    // return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
+    return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
 }
 
 ndk::ScopedAStatus Module::getMicMute(bool* _aidl_return) {

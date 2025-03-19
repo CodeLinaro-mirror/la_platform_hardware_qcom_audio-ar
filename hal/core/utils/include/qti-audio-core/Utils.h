@@ -122,6 +122,8 @@ bool hasBluetoothLEDevice(const std::vector<::aidl::android::media::audio::commo
 
 bool hasBluetoothA2dpDevice(const std::vector<::aidl::android::media::audio::common::AudioDevice>&) noexcept;
 
+bool isBluetoothLEBroadcastDevice(const ::aidl::android::media::audio::common::AudioDevice&) noexcept;
+
 bool hasInputMMapFlag(const ::aidl::android::media::audio::common::AudioIoFlags&) noexcept;
 
 bool hasOutputMMapFlag(const ::aidl::android::media::audio::common::AudioIoFlags&) noexcept;

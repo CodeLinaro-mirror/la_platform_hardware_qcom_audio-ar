@@ -178,6 +178,23 @@ std::unique_ptr<pal_stream_attributes> Platform::getDefaultTelephonyAttributes()
     return std::move(attributes);
 }
 
+std::unique_ptr<pal_stream_attributes> Platform::getDefaultCallTranslationAttributes() const {
+    auto attributes = std::make_unique<pal_stream_attributes>();
+    auto inChannelInfo = PlatformConverter::getPalChannelInfoForChannelCount(1);
+    auto outChannelInfo = PlatformConverter::getPalChannelInfoForChannelCount(2);
+    attributes->type = PAL_STREAM_CALL_TRANSLATION;
+    attributes->direction = PAL_AUDIO_INPUT;
+    attributes->in_media_config.sample_rate = kDefaultOutputSampleRate;
+    attributes->in_media_config.ch_info = *inChannelInfo;
+    attributes->in_media_config.bit_width = kDefaultPCMBidWidth;
+    attributes->in_media_config.aud_fmt_id = PAL_AUDIO_FMT_PCM_S16_LE;
+    attributes->out_media_config.sample_rate = kDefaultOutputSampleRate;
+    attributes->out_media_config.ch_info = *outChannelInfo;
+    attributes->out_media_config.bit_width = kDefaultPCMBidWidth;
+    attributes->out_media_config.aud_fmt_id = PAL_AUDIO_FMT_PCM_S16_LE;
+    return std::move(attributes);
+}
+
 std::unique_ptr<pal_stream_attributes> Platform::getDefaultCRSTelephonyAttributes() const {
     auto attributes = std::make_unique<pal_stream_attributes>();
     auto outChannelInfo = PlatformConverter::getPalChannelInfoForChannelCount(2);
@@ -486,29 +503,28 @@ std::vector<::aidl::android::media::audio::common::AudioProfile> Platform::getUs
         }
     } else {
         // check if capture profile is supported or not
+        auto deviceCapture_query = std::make_unique<pal_param_device_capability_t>();
+        auto dynamicCaptureMediaConfig = std::make_unique<dynamic_media_config_t>();
         mUSBCapEnable = false;
-        size_t payloadSize = 0;
-        deviceCapability->addr.card_id = cardId;
-        deviceCapability->addr.device_num = deviceId;
-        deviceCapability->config = dynamicMediaConfig.get();
-        deviceCapability->id = PAL_DEVICE_IN_USB_HEADSET;
-        deviceCapability->is_playback = false;
-        void* deviceCapabilityPtr = deviceCapability.get();
-        if (int32_t ret = pal_get_param(PAL_PARAM_ID_DEVICE_CAPABILITY, &deviceCapabilityPtr,
-                                        &payloadSize, nullptr);
-            ret != 0) {
-            LOG(ERROR) << __func__ << " PAL get param failed for PAL_PARAM_ID_DEVICE_CAPABILITY" << ret;
-            return {};
-        }
-        if (!dynamicMediaConfig->jack_status) {
-            LOG(ERROR) << __func__ << " false usb jack status ";
-            return {};
-        }
-        if ((dynamicMediaConfig.get()->sample_rate[0] == 0 && dynamicMediaConfig.get()->format[0] == 0 &&
-             dynamicMediaConfig.get()->mask[0] == 0) || (dynamicMediaConfig->jack_status == false)) {
-             mUSBCapEnable = false;
-        } else {
-             mUSBCapEnable = true;
+        if (deviceCapture_query && dynamicCaptureMediaConfig) {
+            size_t payloadSize = 0;
+            deviceCapture_query->addr.card_id = cardId;
+            deviceCapture_query->addr.device_num = deviceId;
+            deviceCapture_query->config = dynamicCaptureMediaConfig.get();
+            deviceCapture_query->id = PAL_DEVICE_IN_USB_HEADSET;
+            deviceCapture_query->is_playback = false;
+            void* deviceCapabilityPtr = deviceCapture_query.get();
+            if (int32_t ret = pal_get_param(PAL_PARAM_ID_DEVICE_CAPABILITY, &deviceCapabilityPtr,
+                                            &payloadSize, nullptr);
+                ret != 0) {
+                LOG(ERROR) << __func__ << " PAL get param failed for PAL_PARAM_ID_DEVICE_CAPABILITY" << ret;
+            }
+            if ((dynamicCaptureMediaConfig.get()->sample_rate[0] == 0 && dynamicCaptureMediaConfig.get()->format[0] == 0 &&
+                 dynamicCaptureMediaConfig.get()->mask[0] == 0) || (dynamicCaptureMediaConfig->jack_status == false)) {
+                 mUSBCapEnable = false;
+            } else {
+                 mUSBCapEnable = true;
+            }
         }
     }
 
@@ -1413,8 +1429,11 @@ void Platform::updateHotwordPortConfig(
             attr = (struct pal_stream_attributes *)payload->payload;
             portConfig.sampleRate =
                 Int{static_cast<int32_t>(attr->in_media_config.sample_rate)};
-            portConfig.channelMask = getChannelLayoutMaskFromChannelCount(
-                attr->in_media_config.ch_info.channels, true);
+            if (getChannelCount(portConfig.channelMask.value()) !=
+                attr->in_media_config.ch_info.channels) {
+                portConfig.channelMask = getChannelLayoutMaskFromChannelCount(
+                    attr->in_media_config.ch_info.channels, true);
+            }
         }
         free(payload);
     }

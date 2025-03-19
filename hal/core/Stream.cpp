@@ -186,24 +186,14 @@ StreamInWorkerLogic::Status StreamInWorkerLogic::cycle() {
         mState = StreamDescriptor::State::ERROR;
         return Status::ABORT;
     }
-    using Tag = StreamDescriptor::Command::Tag;
-    using LogSeverity = ::android::base::LogSeverity;
-    const LogSeverity severity =
-            command.getTag() == Tag::burst || command.getTag() == Tag::getStatus
-                    ? LogSeverity::VERBOSE
-                    : LogSeverity::DEBUG;
 
-#ifdef VERY_VERBOSE_LOGGING
-    LOG(severity) << __func__ << ": received command " << command.toString() << " in "
+    LOG(VERBOSE) << __func__ << ": received command " << command.toString() << " in "
                   << kThreadName;
-#else
-    if (command.getTag() != Tag::burst && command.getTag() != Tag::getStatus)
-        LOG(DEBUG) << __func__ << ": received command " << command.toString() << " in "
-                   << kThreadName;
-#endif
 
     StreamDescriptor::Reply reply{};
     reply.status = STATUS_BAD_VALUE;
+
+    using Tag = StreamDescriptor::Command::Tag;
     switch (command.getTag()) {
         case Tag::halReservedExit:
             if (const int32_t cookie = command.get<Tag::halReservedExit>();
@@ -332,7 +322,12 @@ StreamInWorkerLogic::Status StreamInWorkerLogic::cycle() {
             break;
     }
     reply.state = mState;
+
+    using LogSeverity = ::android::base::LogSeverity;
+    const LogSeverity severity =
+            (reply.status != STATUS_OK) ? LogSeverity::ERROR : LogSeverity::VERBOSE;
     LOG(severity) << __func__ << ": writing reply " << reply.toString();
+
     if (!mContext->getReplyMQ()->writeBlocking(&reply, 1)) {
         LOG(ERROR) << __func__ << ": writing of reply " << reply.toString() << " to MQ failed";
         mState = StreamDescriptor::State::ERROR;

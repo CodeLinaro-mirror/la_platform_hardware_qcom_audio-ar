@@ -85,7 +85,8 @@ StreamOutPrimary::StreamOutPrimary(StreamContext&& context, const SourceMetadata
     }
     std::ostringstream os;
     os << " : usecase: " << mTagName;
-    os << " IoHandle: " << mMixPortConfig.ext.get<AudioPortExt::Tag::mix>().handle << " ";
+    os << ", mix port config id:" << mMixPortConfig.id;
+    os << ", IoHandle:" << mMixPortConfig.ext.get<AudioPortExt::Tag::mix>().handle << " ";
     mLogPrefix = os.str();
     LOG(DEBUG) << __func__ << mLogPrefix;
 }
@@ -502,7 +503,8 @@ void StreamOutPrimary::resume() {
     return -EINVAL;
 }
 ::android::status_t StreamOutPrimary::hapticsWrite(const void* buffer, size_t frameCount) {
-    int ret = 0;
+    int ret_audio = 0;
+    int ret_haptics = 0;
     bool allocHapticsBuffer = false;
     struct pal_buffer audioBuf;
     struct pal_buffer hapticsBuf;
@@ -553,13 +555,16 @@ void StreamOutPrimary::resume() {
         hapIndex += hapticsFrameSize;
         srcIndex += hapticsFrameSize;
     }
-
     // write audio data
-    ret = ::pal_stream_write(mPalHandle, &audioBuf);
+    ret_audio = ::pal_stream_write(mPalHandle, &audioBuf);
     // write haptics data
-    ret = ::pal_stream_write(mHapticsPalHandle, &hapticsBuf);
+    ret_haptics = ::pal_stream_write(mHapticsPalHandle, &hapticsBuf);
 
-    return (ret < 0 ? ret :  (frameSize*frameCount));
+    if (ret_audio < 0 || ret_haptics < 0) {
+        return (ret_audio < 0) ? ret_audio : ret_haptics;
+    }
+
+    return (frameSize * frameCount);
 }
 
 ::android::status_t StreamOutPrimary::refinePosition(StreamDescriptor::Reply* reply) {
