@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022, 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022, 2024-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -2237,13 +2237,14 @@ exit:
     return ret;
 }
 
-int StreamOutPrimary::RouteStream(const std::set<audio_devices_t>& new_devices, bool force_device_switch __unused) {
+int StreamOutPrimary::RouteStream(const std::set<audio_devices_t>& new_devices_tmp, bool force_device_switch __unused) {
     int ret = 0, noPalDevices = 0;
     pal_device_id_t * deviceId = nullptr;
     struct pal_device* deviceIdConfigs = nullptr;
     pal_param_device_capability_t *device_cap_query = nullptr;
     size_t payload_size = 0;
     dynamic_media_config_t dynamic_media_config;
+    std::set<audio_devices_t> new_devices;
     std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
 
     bool isHifiFilterEnabled = false;
@@ -2257,12 +2258,28 @@ int StreamOutPrimary::RouteStream(const std::set<audio_devices_t>& new_devices, 
         goto done;
     }
 
+    new_devices = new_devices_tmp;
     AHAL_INFO("enter: usecase(%d: %s) devices 0x%x, num devices %zu",
             this->GetUseCase(), use_case_table[this->GetUseCase()],
             AudioExtn::get_device_types(new_devices), new_devices.size());
     AHAL_DBG("mAndroidOutDevices %d, mNoOfOutDevices %zu",
              AudioExtn::get_device_types(mAndroidOutDevices),
              mAndroidOutDevices.size());
+
+    if (adevice->use_spk_whs_combo) {
+        AHAL_DBG ("Feature use_spkr_hs_combo_enabled ");
+        /* Check for combo device routing selection, if so update combo devices */
+        if (new_devices.count(AUDIO_DEVICE_OUT_SPEAKER) &&
+            (new_devices.count(AUDIO_DEVICE_OUT_WIRED_HEADSET) ||new_devices.count(AUDIO_DEVICE_OUT_WIRED_HEADPHONE))) {
+            new_devices.erase(AUDIO_DEVICE_OUT_WIRED_HEADSET);
+            new_devices.erase(AUDIO_DEVICE_OUT_WIRED_HEADPHONE);
+            mComboDevice = true;
+            AHAL_INFO("Found combo device: updating new_devices to be 0x%x, num devices %zu, mComboDevice = %d",
+                AudioExtn::get_device_types(new_devices), new_devices.size(), mComboDevice);
+            } else {
+            mComboDevice = false;
+        }
+    }
 
     if (!AudioExtn::audio_devices_empty(new_devices)) {
         // re-allocate mPalOutDevice and mPalOutDeviceIds
@@ -2341,6 +2358,13 @@ int StreamOutPrimary::RouteStream(const std::set<audio_devices_t>& new_devices, 
             strlcpy(mPalOutDevice[i].custom_config.custom_key, "",
                     sizeof(mPalOutDevice[i].custom_config.custom_key));
 
+            if (adevice->use_spk_whs_combo) {
+                if (mComboDevice && (mPalOutDeviceIds[i] == PAL_DEVICE_OUT_SPEAKER)) {
+                    strlcpy(mPalOutDevice[i].custom_config.custom_key, "speaker-and-headphones",
+                        sizeof(mPalOutDevice[i].custom_config.custom_key));
+                    AHAL_INFO("Setting custom key as %s", mPalOutDevice[i].custom_config.custom_key);
+                }
+            }
             if ((AudioExtn::audio_devices_cmp(mAndroidOutDevices, AUDIO_DEVICE_OUT_SPEAKER_SAFE)) &&
                                    (mPalOutDeviceIds[i] == PAL_DEVICE_OUT_SPEAKER)) {
                 strlcat(mPalOutDevice[i].custom_config.custom_key, "speaker-safe;",
@@ -3612,6 +3636,20 @@ StreamOutPrimary::StreamOutPrimary(
           address(%s)", handle, config->format, config->sample_rate, config->channel_mask,
           mAndroidOutDevices.size(), flags, address);
 
+    if (adevice->use_spk_whs_combo) {
+        if (mAndroidOutDevices.count(AUDIO_DEVICE_OUT_SPEAKER) &&
+            (mAndroidOutDevices.count(AUDIO_DEVICE_OUT_WIRED_HEADSET) ||
+                mAndroidOutDevices.count(AUDIO_DEVICE_OUT_WIRED_HEADPHONE))) {
+            mAndroidOutDevices.erase(AUDIO_DEVICE_OUT_WIRED_HEADSET);
+            mAndroidOutDevices.erase(AUDIO_DEVICE_OUT_WIRED_HEADPHONE);
+            mComboDevice = true;
+            AHAL_INFO("Found combo device: updating new_devices to be 0x%x, num devices %zu, mComboDevice = %d",
+                AudioExtn::get_device_types(mAndroidOutDevices), mAndroidOutDevices.size(), mComboDevice);
+        } else {
+            mComboDevice = false;
+        }
+    }
+
     //TODO: check if USB device is connected or not
     if (AudioExtn::audio_devices_cmp(mAndroidOutDevices, audio_is_usb_out_device)){
         // get capability from device of USB
@@ -3735,6 +3773,14 @@ StreamOutPrimary::StreamOutPrimary(
         }
         strlcpy(mPalOutDevice[i].custom_config.custom_key, "",
                 sizeof(mPalOutDevice[i].custom_config.custom_key));
+
+        if (adevice->use_spk_whs_combo) {
+            if (mComboDevice && (mPalOutDeviceIds[i] == PAL_DEVICE_OUT_SPEAKER)) {
+                strlcpy(mPalOutDevice[i].custom_config.custom_key, "speaker-and-headphones",
+                    sizeof(mPalOutDevice[i].custom_config.custom_key));
+                AHAL_INFO("Setting custom key as %s", mPalOutDevice[i].custom_config.custom_key);
+            }
+        }
 
         if ((AudioExtn::audio_devices_cmp(mAndroidOutDevices, AUDIO_DEVICE_OUT_SPEAKER_SAFE)) &&
                                    (mPalOutDeviceIds[i] == PAL_DEVICE_OUT_SPEAKER)) {

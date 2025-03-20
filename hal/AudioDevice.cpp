@@ -2,7 +2,7 @@
  * Copyright (c) 2013-2021, The Linux Foundation. All rights reserved.
  * Not a Contribution.
  *
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * Not a Contribution.
  *
  * Copyright (C) 2013 The Android Open Source Project
@@ -1171,6 +1171,10 @@ int AudioDevice::Init(hw_device_t **device, const hw_module_t *module) {
     adev_->perf_lock_opts[2] = 0x40C00000;
     adev_->perf_lock_opts[3] = 0x1;
     adev_->perf_lock_opts_size = 4;
+
+    adev_->use_spk_whs_combo =
+            property_get_bool("vendor.audio.feature.use_spkr_hs_combo.enable", false);
+    AHAL_ERR("Feature use_spkr_hs_combo  set to %d ",adev_->use_spk_whs_combo);
 
     voice_ = VoiceInit();
     mute_ = false;

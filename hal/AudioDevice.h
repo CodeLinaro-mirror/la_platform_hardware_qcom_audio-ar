@@ -28,7 +28,7 @@
  */
 /*
  * Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2022, 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022, 2024-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -192,6 +192,7 @@ public:
     int perf_lock_opts[MAX_PERF_LOCK_OPTS];
     int perf_lock_opts_size;
     bool hdr_record_enabled = false;
+    bool use_spk_whs_combo = false;
     bool wnr_enabled = false;
     bool ans_enabled = false;
     bool orientation_landscape = true;
