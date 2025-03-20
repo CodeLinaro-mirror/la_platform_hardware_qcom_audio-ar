@@ -123,6 +123,9 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
             <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_32_BIT" />
             <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="FIXED_Q_8_24" />
         </mixPort>
+        <mixPort name="echo_ref" role="sink">
+            <profile samplingRates="16000 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
         <!-- end of source mixports-->
 
         <!-- start of sink mixports-->
@@ -266,6 +269,9 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <devicePort tagName="bt_sco_headset_mic" deviceType="IN_HEADSET" connection="bt-sco" role="source">
             <profile samplingRates="8000 16000" channelLayouts="LAYOUT_MONO" formatType="PCM" pcmType="INT_16_BIT" />
         </devicePort>
+        <devicePort tagName="echo_reference_mic" deviceType="IN_ECHO_REFERENCE" role="source" attached="true">
+           <profile samplingRates="16000 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </devicePort>
     </devicePorts>
     <routes>
         <route type="mix" sink="Media Bus" sources="media,primary_out,low_latency_out,mmap_no_irq_out" />
@@ -281,6 +287,7 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <route type="mix" sink="voip_record" sources="built_in_mic,built_in_back_mic,wired_headset_mic,bt_sco_headset_mic,bt_a2dp_mic" />
         <route type="mix" sink="mixport_tuner0" sources="fm_tuner" />
         <route type="mix" sink="fast_input" sources="built_in_mic,built_in_back_mic"/>
+        <route type="mix" sink="echo_ref" sources="echo_reference_mic"/>
     </routes>
 </module>
 </modules>
