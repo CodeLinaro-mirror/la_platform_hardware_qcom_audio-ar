@@ -56,7 +56,6 @@ PRODUCT_COPY_FILES += \
     $(CONFIG_PAL_SRC_DIR)/mixer_paths_monaco_idp_slate.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_monaco_idp_slate.xml \
     $(CONFIG_PAL_SRC_DIR)/mixer_paths_monaco_idp_slate_amic.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_monaco_idp_slate_amic.xml \
     $(CONFIG_PAL_SRC_DIR)/mixer_paths_monaco_idp_slate_wsa.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_monaco_idp_slate_wsa.xml \
-    frameworks/native/data/etc/android.hardware.audio.pro.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.pro.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_monaco_idp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_monaco_idp.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_monaco_idp_amic.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_monaco_idp_amic.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_monaco_idp_wsa.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_monaco_idp_wsa.xml \
