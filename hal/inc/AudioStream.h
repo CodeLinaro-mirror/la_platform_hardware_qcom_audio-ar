@@ -28,7 +28,7 @@
  *
  * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
  *
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -40,6 +40,7 @@
 
 #include <set>
 #include <string>
+#include <thread>
 
 #include <cutils/properties.h>
 #include <hardware/audio.h>
@@ -529,6 +530,7 @@ protected:
     struct pal_volume_data *volume_; /* used to cache volume */
     std::map <audio_devices_t, pal_device_id_t> mAndroidDeviceMap;
     int mmap_shared_memory_fd;
+    struct pal_mmap_buffer palMmapBuf_;
     pal_param_device_capability_t *device_cap_query_;
 };
 
@@ -624,6 +626,8 @@ public:
     std::vector<playback_track_metadata_t> tracks;
     int SetAggregateSourceMetadata(bool voice_active);
     static std::mutex sourceMetadata_mutex_;
+    std::thread mmap_start_thread_;
+    int mmap_start_ret_;
 
     // [offload playback speed
     int getPlaybackRateParameters(audio_playback_rate_t *playbackRate);

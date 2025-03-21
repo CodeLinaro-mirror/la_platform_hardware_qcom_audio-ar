@@ -46,7 +46,6 @@
 #include <inttypes.h>
 
 #include <chrono>
-#include <thread>
 
 #include "PalApi.h"
 #include <audio_effects/effect_aec.h>
@@ -376,13 +375,25 @@ static int astream_out_mmap_noirq_start(const struct audio_stream_out *stream)
         return -EINVAL;
     }
 
+    AHAL_DBG("Enter\n");
+
     astream_out = adevice->OutGetStream((audio_stream_t*)stream);
     if (!astream_out) {
         AHAL_ERR("unable to get audio OutStream");
         return -EINVAL;
     }
 
-    return astream_out->Start();
+    if (astream_out->mmap_start_thread_.joinable()) {
+        AHAL_INFO("Waiting for Start thread\n");
+        astream_out->mmap_start_thread_.join();
+    }
+
+    if (!astream_out->isStarted())
+        astream_out->mmap_start_ret_ =  astream_out->Start();
+
+    AHAL_DBG("Exit\n");
+
+    return astream_out->mmap_start_ret_;
 }
 
 static int astream_out_mmap_noirq_stop(const struct audio_stream_out *stream)
@@ -416,6 +427,8 @@ static int astream_out_create_mmap_buffer(const struct audio_stream_out *stream,
         return -EINVAL;
     }
 
+    AHAL_DBG("Enter\n");
+
     astream_out = adevice->OutGetStream((audio_stream_t*)stream);
     if (!astream_out) {
         AHAL_ERR("unable to get audio OutStream");
@@ -434,6 +447,8 @@ static int astream_out_create_mmap_buffer(const struct audio_stream_out *stream,
     ret = astream_out->CreateMmapBuffer(min_size_frames, info);
     if (ret)
         AHAL_ERR("failed %d\n", ret);
+
+    AHAL_DBG("Exit\n");
 
     return ret;
 }
@@ -2188,10 +2203,16 @@ int StreamOutPrimary::CreateMmapBuffer(int32_t min_size_frames,
     struct pal_mmap_buffer palMmapBuf;
 
     stream_mutex_.lock();
+
     if (pal_stream_handle_) {
-        AHAL_ERR("error pal handle already created\n");
-        stream_mutex_.unlock();
-        return -EINVAL;
+        AHAL_DBG("Pal stream exists, return mmap buffer\n");
+        info->shared_memory_address = palMmapBuf_.buffer;
+        info->shared_memory_fd = palMmapBuf_.fd;
+        info->buffer_size_frames = palMmapBuf_.buffer_size_frames;
+        info->burst_size_frames = palMmapBuf_.burst_size_frames;
+        info->flags = (audio_mmap_buffer_flag) AUDIO_MMAP_APPLICATION_SHAREABLE;
+        ret = 0;
+        goto exit;
     }
 
     ret = Open();
@@ -2216,7 +2237,22 @@ int StreamOutPrimary::CreateMmapBuffer(int32_t min_size_frames,
     info->flags = (audio_mmap_buffer_flag) AUDIO_MMAP_APPLICATION_SHAREABLE;
     mmap_shared_memory_fd = info->shared_memory_fd;
 
+    palMmapBuf_ = palMmapBuf;
+
+exit:
     stream_mutex_.unlock();
+    if (mmap_start_thread_.joinable())
+        mmap_start_thread_.join();
+
+    if (!stream_started_) {
+        mmap_start_thread_ = std::thread([this]() {
+            struct sched_param param;
+            param.sched_priority = sched_get_priority_max(SCHED_FIFO);
+            pthread_setschedparam(pthread_self(), SCHED_FIFO, &param);
+            mmap_start_ret_ = this->Start();
+        });
+    }
+
     return ret;
 }
 
@@ -2232,6 +2268,7 @@ int StreamOutPrimary::Stop() {
         if (ret == 0) {
             stream_started_ = false;
             stream_paused_ = false;
+            mmap_start_ret_ = -ENOSYS;
         }
     }
     stream_mutex_.unlock();
@@ -2446,7 +2483,7 @@ int StreamOutPrimary::Standby() {
         ret = StopOffloadVisualizer(handle_, pal_stream_handle_);
     }
 
-    if (pal_stream_handle_) {
+    if (pal_stream_handle_ && usecase_ != USECASE_AUDIO_PLAYBACK_MMAP) {
         ret = pal_stream_close(pal_stream_handle_);
         pal_stream_handle_ = NULL;
         if (usecase_ == USECASE_AUDIO_PLAYBACK_WITH_HAPTICS && pal_haptics_stream_handle) {
@@ -2475,11 +2512,6 @@ int StreamOutPrimary::Standby() {
                 ret = 0;
             }
         }
-    }
-
-    if (mmap_shared_memory_fd >= 0) {
-        close(mmap_shared_memory_fd);
-        mmap_shared_memory_fd = -1;
     }
 
     if (ret)
@@ -2987,10 +3019,10 @@ exit:
         if (ret != 0) {
             AHAL_ERR("Failed to get mmap position %d", ret);
         } else {
-            AHAL_INFO("mmap position is %d", position.position_frames);
+            AHAL_VERBOSE("mmap position is %d", position.position_frames);
             signed_frames = position.position_frames -
               (MMAP_PLATFORM_DELAY * (streamAttributes_.out_media_config.sample_rate) / 1000000LL);
-            AHAL_INFO("mmap signed frames %llu", signed_frames);
+            AHAL_VERBOSE("mmap signed frames %llu", signed_frames);
         }
     }
 
@@ -4514,6 +4546,11 @@ StreamOutPrimary::~StreamOutPrimary() {
 
         pal_stream_close(pal_stream_handle_);
         pal_stream_handle_ = nullptr;
+
+        if (mmap_shared_memory_fd >= 0) {
+            close(mmap_shared_memory_fd);
+            mmap_shared_memory_fd = -1;
+        }
     }
 
     if (pal_haptics_stream_handle) {
