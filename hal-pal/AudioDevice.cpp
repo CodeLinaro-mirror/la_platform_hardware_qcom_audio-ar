@@ -1776,8 +1776,13 @@ int AudioDevice::SetParameters(const char *kvpairs) {
             ret = pal_get_param(PAL_PARAM_ID_DEVICE_CAPABILITY,
                     (void **)&device_cap_query,
                     &payload_size, nullptr);
+#ifdef AUDIO_FRAMEWORK_AWE
+            if (dynamic_media_config.sample_rate[0] == 0 && dynamic_media_config.format[0] == 0 &&
+                    dynamic_media_config.mask[0] == 0)
+#else
             if (dynamic_media_config.sample_rate == 0 && dynamic_media_config.format == 0 &&
                     dynamic_media_config.mask == 0)
+#endif
                 usb_input_dev_enabled = false;
             delete device_cap_query;
             if (pal_device_ids) {

@@ -84,6 +84,24 @@ endif #ends ENABLE_HYP
 MM_AUDIO_AR += sound_trigger.primary.$(TARGET_BOARD_PLATFORM).ar
 PRODUCT_PACKAGES += $(MM_AUDIO_AR)
 
+ifeq ($(TARGET_USES_GY), true)
+# AWE PAL and dependency packages
+MM_AUDIO_AWE += libawe-pal
+MM_AUDIO_AWE += libstream_pcm
+MM_AUDIO_AWE += libvui_intf
+MM_AUDIO_AWE += libcustomva_intf
+MM_AUDIO_AWE += libhotword_intf
+MM_AUDIO_AWE += libarmemlog
+MM_AUDIO_AWE += libtinyalsav2
+MM_AUDIO_AWE += libdev_dummy
+# AWE HAL packages
+MM_AUDIO_AWE += libhfp_pal_awe
+MM_AUDIO_AWE += libhfp_ag_pal_awe
+MM_AUDIO_AWE += libicc_pal_awe
+MM_AUDIO_AWE += libautohal_pal_awe
+MM_AUDIO_AWE += sound_trigger.primary.$(TARGET_BOARD_PLATFORM).awe
+PRODUCT_PACKAGES += $(MM_AUDIO_AWE)
+endif
 #-------
 # audio specific
 # ------
@@ -105,7 +123,7 @@ ifeq ($(AUDIO_USE_STUB_HAL), true)
 TARGET_USES_AOSP_FOR_AUDIO := true
 -include $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common/default.mk
 else
-ifeq ($(call is-board-platform-in-list, gen4), true)
+ifeq ($(call is-board-platform-in-list, gen4 gen5), true)
 -include $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/gen4_au.mk
 else
 -include $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_au/msmnile_au.mk
