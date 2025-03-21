@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2019-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022, 2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -26,6 +25,10 @@
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
+ * Copyright (c) 2022, 2024-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
 #define LOG_NDEBUG 0
@@ -1908,17 +1911,14 @@ int StreamOutPrimary::GetMmapPosition(struct audio_mmap_position *position)
     struct pal_mmap_position pal_mmap_pos;
     int32_t ret = 0;
 
-    stream_mutex_.lock();
     if (pal_stream_handle_ == nullptr) {
         AHAL_ERR("error pal handle is null\n");
-        stream_mutex_.unlock();
         return -EINVAL;
     }
 
     ret = pal_stream_get_mmap_position(pal_stream_handle_, &pal_mmap_pos);
     if (ret) {
         AHAL_ERR("failed to get mmap position %d\n", ret);
-        stream_mutex_.unlock();
         return ret;
     }
     position->position_frames = pal_mmap_pos.position_frames;
@@ -1933,7 +1933,6 @@ int StreamOutPrimary::GetMmapPosition(struct audio_mmap_position *position)
     position->time_nanoseconds += mmap_time_offset_micros * (int64_t)1000;
 #endif
 
-    stream_mutex_.unlock();
     return 0;
 }
 
