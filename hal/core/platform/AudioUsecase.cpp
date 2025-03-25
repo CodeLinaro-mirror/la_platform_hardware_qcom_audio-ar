@@ -742,8 +742,8 @@ bool CompressPlayback::configureGapLessMetadata() {
             LOG(ERROR) << __func__ << ": failed PAL_PARAM_ID_GAPLESS_MDATA!! ret:" << ret;
             return false;
         }
+        mIsGaplessConfigured = true;
     }
-    mIsGaplessConfigured = true;
     return true;
 }
 
