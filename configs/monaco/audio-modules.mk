@@ -69,8 +69,12 @@ endif
 #AUDIO_TEST += ar_util_in_test_example
 
 
-AUDIO_MODULES := ftm_test_config
-AUDIO_MODULES += ftm_test_config_monaco-idp-snd-card
+AUDIO_MODULES := ftm_test_config_monaco-idp-snd-card
+AUDIO_MODULES += ftm_test_config_monaco-idp-wsa-snd-card
+AUDIO_MODULES += ftm_test_config_monaco-idp-amic-snd-card
+AUDIO_MODULES += ftm_test_config_monaco-idp-slate-snd-card
+AUDIO_MODULES += ftm_test_config_monaco-idp-slate_wsa-snd-card
+AUDIO_MODULES += ftm_test_config_monaco-idp-slate_amic-snd-card
 AUDIO_MODULES += audioadsprpcd
 AUDIO_MODULES += IDP_acdb_cal_monaco_slate.acdb
 AUDIO_MODULES += IDP_workspaceFileXml_monaco_slate.qwsp
