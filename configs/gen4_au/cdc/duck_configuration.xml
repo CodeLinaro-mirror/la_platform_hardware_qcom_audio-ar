@@ -5,7 +5,37 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
 -->
 <CarAudioDuckingConfiguration version="1">
     <priorities>
+        <!-- Gain values below are default values, internally for usecases like NAV_DUCKING &
+        ADAS_DUCKING the attenutation target is read internally, default to be used later as needed -->
+        <!-- For CYBER MUTE & TCU MUTE when active mute value picked from here i.e -9000.0 -->
         <!-- Define a rule where the media bus is ducked when nav2 is incoming -->
         <priority in_src="ASSISTANCE_NAVIGATION_GUIDANCE" running_src="MEDIA" duck="true" Gain="-9000"/>
+        <priority in_src="ROAD_ADAS" running_src="MEDIA" duck="true" Gain="-6750"/>
+        <priority in_src="AM" running_src="MEDIA" duck="true" Gain="-150"/>
+        <priority in_src="FM" running_src="MEDIA" duck="true" Gain="-120"/>
+        <priority in_src="RADIO_AAM_MUTE_ORDER" running_src="MEDIA" duck="true" Gain="-4000"/>
+        <priority in_src="NIGHT_MODE" running_src="MEDIA" duck="true" Gain="-4000"/>
+        <priority in_src="DEVICE_TEMPERATURE_STATUS" running_src="MEDIA" duck="true" Gain="-4000"/>
+        <priority in_src="THERMAL_MITIGATION" running_src="MEDIA" duck="true" Gain="-2250"/>
+        <priority in_src="CYBER" running_src="BUS00_MEDIA" duck="true" Gain="-9000"/>
+        <priority in_src="CYBER" running_src="BUS01_SYS_NOTIFICATION" duck="true" Gain="-9000"/>
+        <priority in_src="CYBER" running_src="BUS02_NAV_GUIDANCE" duck="true" Gain="-9000"/>
+        <priority in_src="CYBER" running_src="BUS03_PHONE" duck="true" Gain="-9000"/>
+        <priority in_src="CYBER" running_src="BUS0F_NAV_GUIDANCE2" duck="true" Gain="-9000"/>
+        <priority in_src="TCU" running_src="BUS00_MEDIA" duck="true" Gain="-9000"/>
+        <priority in_src="TCU" running_src="BUS01_SYS_NOTIFICATION" duck="true" Gain="-9000"/>
+        <priority in_src="TCU" running_src="BUS02_NAV_GUIDANCE" duck="true" Gain="-9000"/>
+        <priority in_src="TCU" running_src="BUS03_PHONE" duck="true" Gain="-9000"/>
+        <priority in_src="TCU" running_src="BUS0F_NAV_GUIDANCE2" duck="true" Gain="-9000"/>
+        <priority in_src="STATIC_POWER_LIMITATION" running_src="BUS00_MEDIA" duck="true" Gain="-9000"/>
+        <priority in_src="STATIC_POWER_LIMITATION" running_src="BUS01_SYS_NOTIFICATION" duck="true" Gain="-9000"/>
+        <priority in_src="STATIC_POWER_LIMITATION" running_src="BUS02_NAV_GUIDANCE" duck="true" Gain="-9000"/>
+        <priority in_src="STATIC_POWER_LIMITATION" running_src="BUS03_PHONE" duck="true" Gain="-9000"/>
+        <priority in_src="STATIC_POWER_LIMITATION" running_src="BUS0F_NAV_GUIDANCE2" duck="true" Gain="-9000"/>
+        <priority in_src="DELIVERY_MODE" running_src="BUS00_MEDIA" duck="true" Gain="-9000"/>
+        <priority in_src="DELIVERY_MODE" running_src="BUS01_SYS_NOTIFICATION" duck="true" Gain="-9000"/>
+        <priority in_src="DELIVERY_MODE" running_src="BUS02_NAV_GUIDANCE" duck="true" Gain="-9000"/>
+        <priority in_src="DELIVERY_MODE" running_src="BUS03_PHONE" duck="true" Gain="-9000"/>
+        <priority in_src="DELIVERY_MODE" running_src="BUS0F_NAV_GUIDANCE2" duck="true" Gain="-9000"/>
     </priorities>
 </CarAudioDuckingConfiguration>

@@ -436,3 +436,58 @@ LOCAL_STATIC_LIBRARIES := \
     android.hardware.automotive.vehicle.property-V3-ndk \
 
 include $(BUILD_SHARED_LIBRARY)
+#-------------------------------------------
+
+ifeq ($(ENABLE_QCOM_HAL_AUDIO_FOCUS),true)
+#-------------------------------------------------
+#            Build HAL Priority extension
+#-------------------------------------------------
+include $(CLEAR_VARS)
+
+LOCAL_MODULE := libaudiohalpriorityextn
+LOCAL_VENDOR_MODULE := true
+
+LOCAL_SRC_FILES:= AudioHalFocusManager.cpp \
+                  BusDuckConfig.cpp
+
+LOCAL_C_INCLUDES := $(LOCAL_PATH)/include
+
+LOCAL_CFLAGS := \
+    -Wall \
+    -Werror \
+    -Wno-unused-function \
+    -Wno-unused-variable \
+    -Wno-missing-field-initializers \
+    -Wunused-parameter \
+    -Wextra \
+
+
+LOCAL_C_INCLUDES := \
+    $(TOP)/vendor/qcom/opensource/audio-hal/primary-hal/hal/core/extensions/include \
+    $(TOP)/system/media/audio_utils/include \
+
+LOCAL_SHARED_LIBRARIES := \
+    libbinder_ndk \
+    libaudioutils \
+    libbase \
+    libcutils \
+    liblog \
+    libutils \
+    libexpat \
+    $(LATEST_ANDROID_MEDIA_AUDIO_COMMON_TYPES) \
+    $(LATEST_ANDROID_HARDWARE_AUDIO_CORE) \
+    alliance.hardware.automotive.audiocontrol.internal-V2-ndk \
+    android.hardware.automotive.audiocontrol-V4-ndk \
+    ampere.hardware.interfaces.automotive.audioparameterparser-V1-ndk \
+    libAudioConfigOem \
+
+
+
+LOCAL_HEADER_LIBRARIES :=  \
+    libaudio_system_headers \
+    libsystem_headers \
+    libarpal_headers \
+
+include $(BUILD_SHARED_LIBRARY)
+#-------------------------------------------------
+endif
