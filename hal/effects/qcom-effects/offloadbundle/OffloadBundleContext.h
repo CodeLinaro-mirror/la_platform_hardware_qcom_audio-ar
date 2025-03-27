@@ -1,8 +1,7 @@
 /*
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023, 2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
-
 #pragma once
 
 #include <android-base/logging.h>
@@ -120,7 +119,7 @@ class OffloadBundleContext : public EffectContext {
   protected:
     std::mutex mMutex;
     const OffloadBundleEffectType mType;
-    pal_stream_handle_t* mPalHandle;
+    pal_stream_handle_t* mPalHandle = nullptr;
     EffectState mState = EffectState::UNINITIALIZED;
     bool isEffectActive() { return mState == EffectState::ACTIVE; }
 };
