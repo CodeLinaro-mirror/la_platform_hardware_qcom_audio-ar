@@ -30,6 +30,8 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_24_BIT" />
             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_32_BIT" />
         </mixPort>
+        <mixPort name="hifi_playback" role="source">
+        </mixPort>
         <mixPort name="bit_perfect_playback" role="source" flags="BIT_PERFECT">
         </mixPort>
         <mixPort name="spatial_out" role="source" flags="SPATIALIZER">
@@ -231,8 +233,8 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <route type="mix" sink="wired_headset" sources="low_latency_out,deep_buffer_out,direct_pcm_out,compress_offload_out,voip_playback,raw_out,mmap_no_irq_out,haptics_out,spatial_out,telephony_rx" />
         <route type="mix" sink="wired_headphones" sources="low_latency_out,deep_buffer_out,direct_pcm_out,compress_offload_out,voip_playback,mmap_no_irq_out,haptics_out,spatial_out,telephony_rx" />
 
-        <route type="mix" sink="usb_device_out" sources="low_latency_out,deep_buffer_out,direct_pcm_out,compress_offload_out,voip_playback,raw_out,mmap_no_irq_out,haptics_out,telephony_rx,bit_perfect_playback" />
-        <route type="mix" sink="usb_headset" sources="low_latency_out,deep_buffer_out,direct_pcm_out,compress_offload_out,voip_playback,raw_out,mmap_no_irq_out,haptics_out,spatial_out,telephony_rx,bit_perfect_playback" />
+        <route type="mix" sink="usb_device_out" sources="low_latency_out,deep_buffer_out,direct_pcm_out,compress_offload_out,voip_playback,raw_out,mmap_no_irq_out,haptics_out,hifi_playback,telephony_rx,bit_perfect_playback" />
+        <route type="mix" sink="usb_headset" sources="low_latency_out,deep_buffer_out,direct_pcm_out,compress_offload_out,voip_playback,raw_out,mmap_no_irq_out,haptics_out,spatial_out,hifi_playback,telephony_rx,bit_perfect_playback" />
 
         <route type="mix" sink="bt_sco_out" sources="low_latency_out,deep_buffer_out,direct_pcm_out,compress_offload_out,voip_playback,raw_out,haptics_out,spatial_out,telephony_rx" />
         <route type="mix" sink="bt_sco_headset" sources="low_latency_out,deep_buffer_out,direct_pcm_out,compress_offload_out,voip_playback,raw_out,haptics_out,spatial_out,telephony_rx" />
