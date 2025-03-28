@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -95,22 +95,31 @@ const static std::string kTranslateRecord{"translate_record"};
  * custom key for FFECNS record based on the setparam.
  **/
 
-// FTM
-const static std::string kFbspCfgWaitTime{"fbsp_cfg_wait_time"};
-const static std::string kFbspFTMWaitTime{"fbsp_cfg_ftm_time"};
-const static std::string kFbspValiWaitTime{"fbsp_v_vali_wait_time"};
-const static std::string kFbspValiValiTime{"fbsp_v_vali_vali_time"};
-const static std::string kTriggerSpeakerCall{"trigger_spkr_cal"};
-const static std::string kFTMParam{"get_ftm_param"};
-const static std::string kFTMSPKRParam{"get_spkr_cal"};
+ /**
+  * This module-level parameter indicates whether the module's stream-out-async supports clip
+  * transition. If the value is set to a valid string like "true", clip transition is supported. If
+  * no value is returned, clip transition is not supported. This parameter becomes redundant when
+  * the AIDL HAL core interface version is above 3, as clip transition is mandatory for HAL core
+  * interface versions above 3.
+  */
+ const static std::string kAOSPClipTransitionSupport{"aosp.clipTransitionSupport"};
 
-// Audio Extn
-const static std::string kFMStatus{"fm_status"};
+ // FTM
+ const static std::string kFbspCfgWaitTime{"fbsp_cfg_wait_time"};
+ const static std::string kFbspFTMWaitTime{"fbsp_cfg_ftm_time"};
+ const static std::string kFbspValiWaitTime{"fbsp_v_vali_wait_time"};
+ const static std::string kFbspValiValiTime{"fbsp_v_vali_vali_time"};
+ const static std::string kTriggerSpeakerCall{"trigger_spkr_cal"};
+ const static std::string kFTMParam{"get_ftm_param"};
+ const static std::string kFTMSPKRParam{"get_spkr_cal"};
 
-// Bluetooth
-const static std::string kA2dpSuspended{"A2dpSuspended"};
+ // Audio Extn
+ const static std::string kFMStatus{"fm_status"};
 
-// Haptics
-const static std::string kHapticsVolume{"haptics_volume"};
-const static std::string kHapticsIntensity{"haptics_intensity"};
+ // Bluetooth
+ const static std::string kA2dpSuspended{"A2dpSuspended"};
+
+ // Haptics
+ const static std::string kHapticsVolume{"haptics_volume"};
+ const static std::string kHapticsIntensity{"haptics_intensity"};
 }; // namespace qti::audio::core::Parameters
