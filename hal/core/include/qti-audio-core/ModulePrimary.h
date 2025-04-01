@@ -30,11 +30,36 @@
 #include <aidl/ampere/hardware/interfaces/automotive/audioparameterparser/RadioVendorParameterExt.h>
 #include <aidl/ampere/hardware/interfaces/automotive/audioparameterparser/CarPlayVendorParameterExt.h>
 #include <aidl/ampere/hardware/interfaces/automotive/audioparameterparser/AudioControlVendorParameterExt.h>
-#endif
 
-#ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
-#include <aidl/android/hardware/audio/focus/IAudioFocusService.h>
-using ::aidl::android::hardware::audio::focus::IAudioFocusService;
+#include <aidl/android/hardware/automotive/audiocontrol/Reasons.h>
+#include <aidl/android/hardware/automotive/audiocontrol/AudioGainConfigInfo.h>
+#include <aidl/ampere/hardware/interfaces/automotive/audioparameterparser/CarPlayVendorParameterExt.h>
+#include <aidl/ampere/hardware/interfaces/automotive/audioparameterparser/RadioVendorParameterExt.h>
+#include <aidl/ampere/hardware/interfaces/automotive/audioparameterparser/AudioControlVendorParameterExt.h>
+
+namespace aidl {
+namespace alliance {
+namespace hardware {
+namespace automotive {
+namespace audiocontrol {
+namespace internal {
+
+class IAudioControlInternal;
+
+} // namespace internal
+} // namespace audiocontrol
+} // namespace automotive
+} // namespace hardware
+} // namespace alliance
+} // namespace aidl
+
+using ::aidl::ampere::hardware::interfaces::automotive::audioparameterparser::CarPlayVendorParameterExt;
+using ::aidl::ampere::hardware::interfaces::automotive::audioparameterparser::AudioControlVendorParameterExt;
+using ::aidl::ampere::hardware::interfaces::automotive::audioparameterparser::RadioVendorParameterExt;
+using RadioAudioSource = ::aidl::ampere::hardware::interfaces::automotive::audioparameterparser::RadioVendorParameterExt::AudioSource;
+using Type = ::aidl::ampere::hardware::interfaces::automotive::audioparameterparser::AudioControlVendorParameterExt::MasterMuteRequest::Type;
+using ::aidl::android::hardware::automotive::audiocontrol::AudioGainConfigInfo;
+using ::aidl::android::hardware::automotive::audiocontrol::Reasons;
 #endif
 
 extern "C" __attribute__((visibility("default"))) void extn_set_mute_config_for_address(char* address, bool muted, float volume);
@@ -49,6 +74,10 @@ extern "C" void extn_in_set_power_policy(uint8_t enable);
 
 
 namespace qti::audio::core {
+
+#ifdef ENABLE_QCOM_AMPERE_AUDIO
+struct FocusSession;
+#endif
 
 class ModulePrimary final : public Module {
   public:
@@ -88,9 +117,9 @@ class ModulePrimary final : public Module {
     ndk::ScopedAStatus getSupportedPlaybackRateFactors(
             SupportedPlaybackRateFactors* _aidl_return) override;
     // #################### end of overriding APIs from IModule ####################
-#ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
-    static std::shared_ptr<IAudioFocusService>  mHalFocusService;
-    static std::shared_ptr<IAudioFocusService> getHalFocusService();
+#ifdef ENABLE_QCOM_AMPERE_AUDIO
+    static std::shared_ptr<::aidl::alliance::hardware::automotive::audiocontrol::internal::IAudioControlInternal> getAudioControlInternalService();
+    static std::shared_ptr<::aidl::alliance::hardware::automotive::audiocontrol::internal::IAudioControlInternal> mAudioControlInternalProxy;
 #endif
     // Mutex for stream lists protection
     static std::mutex outListMutex;
@@ -189,7 +218,6 @@ class ModulePrimary final : public Module {
     static GetParameterToFeatureMap fillGetParameterToFeatureMap();
     static FeatureToGetHandlerMap fillFeatureToGetHandlerMap();
     using FeatureToStringMap = std::map<Feature, std::vector<std::string>>;
-
     // end of Module Parameters
     static std::vector<std::weak_ptr<::qti::audio::core::StreamOut>> mStreamsOut;
     static std::vector<std::weak_ptr<::qti::audio::core::StreamIn>> mStreamsIn;
@@ -222,14 +250,6 @@ class ModulePrimary final : public Module {
     // SetHandler For Haptics
     void onSetHapticsParameters(
             const std::vector<::aidl::android::hardware::audio::core::VendorParameter>&);
-#ifdef ENABLE_QCOM_AMPERE_AUDIO
-    // SetHandler For Carplay
-    void onSetCarplayParameters(
-            const std::vector<::aidl::android::hardware::audio::core::VendorParameter>&);
-    // SetHandler For AudioControl
-    void onSetAudioControlParameters(
-            const std::vector<::aidl::android::hardware::audio::core::VendorParameter>&);
-#endif
 
     std::vector<::aidl::android::hardware::audio::core::VendorParameter> processGetVendorParameters(
             const std::vector<std::string>&);
@@ -253,8 +273,6 @@ class ModulePrimary final : public Module {
             const std::vector<std::string>&);
     // end of module parameters handling
 #ifdef ENABLE_QCOM_AMPERE_AUDIO
-    void onsetRadioVendorParameter(const std::vector<::aidl::android::hardware::audio::core::VendorParameter>& params);
-    ::android::status_t setRadioVendorParameter(const ::aidl::android::hardware::audio::core::VendorParameter& param);
     // GetHandler for Carplay
     std::vector<::aidl::android::hardware::audio::core::VendorParameter> onGetCarplayParams(
             const std::vector<std::string>&);
@@ -262,6 +280,21 @@ class ModulePrimary final : public Module {
     // GetHandler for AudioControl
     std::vector<::aidl::android::hardware::audio::core::VendorParameter> onGetAudioControlParams(
             const std::vector<std::string>&);
+    // SetHandler For Carplay
+    void onSetCarplayParameters(
+            const std::vector<::aidl::android::hardware::audio::core::VendorParameter>&);
+    // SetHandler For AudioControl
+    void onSetAudioControlParameters(
+            const std::vector<::aidl::android::hardware::audio::core::VendorParameter>&);
+    ::android::status_t setAudioControlParameter(
+                        const ::aidl::android::hardware::audio::core::VendorParameter& param);
+
+    void onsetRadioVendorParameter(const std::vector<::aidl::android::hardware::audio::core::VendorParameter>& params);
+    ::android::status_t setRadioVendorParameter(const ::aidl::android::hardware::audio::core::VendorParameter& param);
+
+    ndk::ScopedAStatus handleMasterMute(
+                const AudioControlVendorParameterExt::MasterMuteRequest& request);
+    std::vector<AudioGainConfigInfo> getAudioGainConfigsForSinks();
 #endif
   protected:
     bool mVolumeGaincheck=false;
@@ -277,10 +310,9 @@ class ModulePrimary final : public Module {
 
   private:
 #ifdef ENABLE_QCOM_AMPERE_AUDIO
-    ::android::status_t setAudioControlParameter(
-            const ::aidl::android::hardware::audio::core::VendorParameter&);
     ::android::status_t setCarPlayParameter(
             const ::aidl::android::hardware::audio::core::VendorParameter&);
+    static std::unordered_map<std::string, FocusSession> mActiveFocusDevices;
 #endif
     const std::string mGainVolumecheckProperty{"vendor.audio.feature.oemgainconversion.enable"};
     bool mOffloadSpeedSupported;

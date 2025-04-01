@@ -137,17 +137,13 @@ AUDIO_FEATURE_ENABLED_AUDIO_CONTROL_HAL_AIDL := true
 ENABLE_QCOM_HAL_AUDIO_FOCUS := false
 ifeq ($(ENABLE_QCOM_HAL_AUDIO_FOCUS), true)
 PRODUCT_PACKAGES += \
-    android.hardware.automotive.audiocontrol-service.configurable \
-    android.hardware.audio.focus-service
-$(warning ENABLE_QCOM_HAL_AUDIO_FOCUS is $(ENABLE_QCOM_HAL_AUDIO_FOCUS))
+    android.hardware.automotive.audiocontrol-service.configurable
 endif
 
 ifneq ($(ENABLE_QCOM_HAL_AUDIO_FOCUS), true)
 PRODUCT_PACKAGES += vendor.qti.hardware.automotive.audiocontrol-service
 endif
-# PRODUCT_PACKAGES += \
-    # android.hardware.automotive.audiocontrol-service.configurable \
-    # android.hardware.audio.focus-service
+
 PRODUCT_PACKAGES += libqtiautobundle
 ifeq ($(TARGET_BOARD_AUTO), true)
 ifeq ($(TARGET_USES_RRO), true)
@@ -326,6 +322,11 @@ $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/cdc/duc
 else
 PRODUCT_COPY_FILES += \
 $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_module_config_primary.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_module_config_primary.xml
+endif
+
+ifneq ($(filter $(TARGET_BOARD_DERIVATIVE_SUFFIX), _sdv _cdcsdv),)
+PRODUCT_COPY_FILES += \
+$(TOPDIR)vendor/qcom/opensource/pal/configs/gen4_au/plugin_manager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/plugin_manager.xml
 endif
 
 # cma memory for MDF

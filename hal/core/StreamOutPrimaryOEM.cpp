@@ -270,7 +270,7 @@ void StreamOutPrimaryOEM::configure() {
          LOG(DEBUG) << __func__ << mLogPrefixOEM << ": connected device empty";
     }
 
-    if ((!(mTag == Usecase::VOIP_PLAYBACK && mAudExt.mHalExtension->audio_extn_getEnablement() && bECNRprop_Enable)) && (vocoder_rate < 0 && conn_type < 0)) {
+    if (!(mTag == Usecase::VOIP_PLAYBACK && mAudExt.mHalExtension->audio_extn_getEnablement() && bECNRprop_Enable && (vocoder_rate > 0 && conn_type >= 0))) {
         bECNR_Enable = false;
     } else {
         bECNR_Enable = true;

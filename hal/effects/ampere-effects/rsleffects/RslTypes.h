@@ -131,8 +131,7 @@ static const Descriptor kBassBoostDescriptor = {
 #define PARAM_ID_BASS 0x11112527
 #define PARAM_ID_MID 0x11112528
 #define PARAM_ID_TREBEL 0x11112529
-#define PARAM_ID_BASS_BOOST 0x11112522
-
+#define PARAM_ID_BASS_MANAGER 0x1111252A
 
 #define MAX_SDVC_PROFILE  6
 #define MAX_AMBIANCE_PROFILE 4

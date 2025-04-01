@@ -10,6 +10,9 @@
 #include <android-base/logging.h>
 #include <dlfcn.h>
 #include <extensions/AudioExtension.h>
+#ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
+#include <extensions/AudioHalFocusManager.h>
+#endif
 #include <log/log.h>
 #include <pthread.h>
 #include "PalApi.h"
@@ -382,7 +385,7 @@ void AWX_set_param(pal_awx_param_t* param, effect_type effect) {
 
     memcpy(customPayload->data, data->data, pal_param_size);
 
-    LOG(DEBUG) << __func__ << " param Id: " << customPayload->paramId << " value: "
+    LOG(DEBUG) << __func__ << std::hex << " param Id: " << customPayload->paramId << " value: "
                               << customPayload->data[0] << " param_size: " << pal_param_size;
 
     status = pal_gef_rw_param(PAL_PARAM_ID_UIEFFECT, (void *) pal_payload, payload_size,
@@ -450,7 +453,7 @@ int AWX_get_param(pal_awx_param_t* param, effect_type effect) {
         goto cleanup;
     }
 
-    LOG(DEBUG) << __func__ << " after param Id: " << customPayload->paramId
+    LOG(DEBUG) << __func__ << " after param Id: " << std::hex << customPayload->paramId
                            << " value: " << customPayload->data[0] << " param_size: " << pal_param_size;
 
     memcpy(data->data, customPayload->data, pal_param_size);
@@ -987,5 +990,40 @@ void AutoOemExtension::audio_extn_autooem_set_parameters(struct str_parms* param
         }
     }
 }
+
+#ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
+AutoAudioHALPriorityExtension::AutoAudioHALPriorityExtension():AudioExtensionBase(kAudioHalPriorityLibrary){
+        if (mHandle != nullptr) {
+            requestFocus = (request_focus_t)dlsym(mHandle, "requestFocus");
+            abandonFocus = (abandon_focus_t)dlsym(mHandle, "abandonFocus");
+            updateVolume = (update_volume_t)dlsym(mHandle, "updateVolume");
+            if (!requestFocus || !abandonFocus || !updateVolume) {
+                LOG(ERROR) << __func__ << "dlsym failed";
+                goto feature_disabled;
+            }
+            LOG(INFO) << __func__ << "----- Focus APIs initialized ----";
+            return;
+        }
+feature_disabled:
+    if (mHandle) {
+        dlclose(mHandle);
+        mHandle = NULL;
+    }
+    requestFocus = NULL;
+    abandonFocus = NULL;
+    updateVolume = NULL;
+}
+AutoAudioHALPriorityExtension::~AutoAudioHALPriorityExtension()
+{
+   LOG(INFO) << __func__ << " Enter";
+     if (mHandle) {
+        dlclose(mHandle);
+        mHandle = NULL;
+    }
+    requestFocus = NULL;
+    abandonFocus = NULL;
+    updateVolume = NULL;
+}
+#endif
 
 } // namespace qti::audio::core

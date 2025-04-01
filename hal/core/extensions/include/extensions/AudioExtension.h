@@ -16,8 +16,23 @@
 #include <extensions/hal_ecnr.h>
 #endif
 #include "extensions/battery_listener.h"
+#include <stdint.h>
+#define MAX_VOLUME_VALUE 0
+#define MIN_VOLUME_VALUE -9000
+#define PARAM_ID_VOLUME  0x11112501
+#define SET 0x7F
+
+struct VolumeParams {
+    uint16_t eq_mask;
+    uint16_t status;
+    int32_t value[16];
+};
 
 #define PADDING_8BYTE_ALIGN(x)  ((((x) + 7) & 7) ^ 7)
+
+#ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
+class FocusInfo;
+#endif
 
 typedef struct {
     uint32_t param_id;
@@ -91,7 +106,9 @@ static std::string kFmLibrary = "libfmpal.so";
 static std::string kKarokeLibrary = "dummy.so"; // TODO
 static std::string kGefLibrary = "libqtigefar.so";
 static std::string kAutoOemLibrary = "libautooemextension.so";
-
+#ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
+static std::string kAudioHalPriorityLibrary = "libaudiohalpriorityextn.so";
+#endif
 
 static std::string kBatteryListenerProperty = "vendor.audio.feature.battery_listener.enable";
 static std::string kHfpProperty = "vendor.audio.feature.hfp.enable";
@@ -157,6 +174,11 @@ typedef void (*gef_deinit_t)(void);
 typedef void (*oem_set_parameters_t)(struct str_parms*);
 typedef int (*oem_get_parameters_t)(const std::string&);
 typedef int (*oem_init_t)(void);
+#ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
+typedef int (*request_focus_t)(FocusInfo focusInfo, int64_t* focusId);
+typedef int (*abandon_focus_t)(const int64_t focusId);
+typedef int (*update_volume_t)(const int64_t focusId, const float gain, bool isExternalGain);
+#endif
 extern "C" int autohal_setParameters(struct str_parms *parms);
 
 
@@ -269,7 +291,16 @@ class AutoOemExtension : public AudioExtensionBase {
   oem_init_t oem_init;
 };
 
-
+#ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
+class AutoAudioHALPriorityExtension : public AudioExtensionBase {
+  public:
+    AutoAudioHALPriorityExtension();
+    ~AutoAudioHALPriorityExtension();
+     request_focus_t requestFocus;
+     abandon_focus_t abandonFocus;
+     update_volume_t updateVolume;
+};
+#endif
 
 class KarokeExtension : public AudioExtensionBase {
   public:
@@ -334,6 +365,10 @@ class AudioExtension {
     std::unique_ptr<HfpExtension> mHfpExtension = std::make_unique<HfpExtension>();
     std::unique_ptr<FmExtension> mFmExtension = std::make_unique<FmExtension>();
     std::unique_ptr<AutoOemExtension> mAutoOemExtension = std::make_unique<AutoOemExtension>();
+#ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
+    std::unique_ptr<AutoAudioHALPriorityExtension>
+      mAutoAudioHalPriorityExtension = std::make_unique<AutoAudioHALPriorityExtension>();
+#endif
     std::unique_ptr<KarokeExtension> mKarokeExtension = std::make_unique<KarokeExtension>();
     std::unique_ptr<GefExtension> mGefExtension = std::make_unique<GefExtension>();
     std::unique_ptr<AutohalExtension> mAutohalExtension = std::make_unique<AutohalExtension>();
