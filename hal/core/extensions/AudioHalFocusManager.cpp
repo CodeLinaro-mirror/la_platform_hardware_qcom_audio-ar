@@ -186,7 +186,7 @@ AudioFocusService* mHalFocusService = nullptr;
                     ::qti::audio::oem::config::AudioConfigData configData;
                     ::qti::audio::oem::config ::AudioConfigManager::getInstance().
                                                     getAudioConfigValue(req, &configData);
-                    gain = (float)(configData.minValue);
+                    gain = (float)(configData.defaultValue);
                     LOG(INFO) << "Attenuation info: " << gain;
                 } else {
                     gain = configuration[usage2][usage1];

@@ -135,10 +135,6 @@ AUDIO_FEATURE_ENABLED_AUDIO_PARSERS := true
 AUDIO_FEATURE_ENABLED_AUDIO_CONTROL_HAL_AIDL := true
 
 ENABLE_QCOM_HAL_AUDIO_FOCUS := false
-ifeq ($(ENABLE_QCOM_HAL_AUDIO_FOCUS), true)
-PRODUCT_PACKAGES += \
-    android.hardware.automotive.audiocontrol-service.configurable
-endif
 
 ifneq ($(ENABLE_QCOM_HAL_AUDIO_FOCUS), true)
 PRODUCT_PACKAGES += vendor.qti.hardware.automotive.audiocontrol-service
