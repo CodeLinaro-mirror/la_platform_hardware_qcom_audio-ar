@@ -510,6 +510,8 @@ ndk::ScopedAStatus ModulePrimary::setVendorParameters(
         bool in_async) {
     LOG(VERBOSE) << __func__ << ": parameter count " << in_parameters.size()
                << ", async: " << in_async;
+    char value[256] = {0};
+    int ret;
     for (const auto& p : in_parameters) {
         if (p.id == VendorDebug::kForceTransientBurstName) {
             if (!extractParameter<Boolean>(p, &mVendorDebug.forceTransientBurst)) {
@@ -524,12 +526,34 @@ ndk::ScopedAStatus ModulePrimary::setVendorParameters(
             std::string kvpairs = getkvPairsForVendorParameter(in_parameters);
             if (!kvpairs.empty()) {
                 parms = str_parms_create_str(kvpairs.c_str());
+
+                ret = str_parms_get_str(parms, "pal_plugin_close", value, sizeof(value));
+                if (ret >= 0) {
+                    ret = pal_set_param(PAL_PARAM_ID_PLUGIN_CLOSE, (void*)parms, sizeof(value));
+                    if (ret != 0) {
+                         LOG(ERROR) << __func__ << "pal set stream failed for plugin close";
+                         return  ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
+                    }
+                    goto exit;
+                }
+                ret = str_parms_get_str(parms, "pal_plugin_param", value, sizeof(value));
+                LOG(DEBUG) << __func__ << ": value: " << value;
+                if (ret >= 0) {
+                    ret = pal_set_param(PAL_PARAM_ID_PLUGIN_PARAM, (void*)parms, sizeof(value));
+                   if (ret != 0) {
+                        LOG(ERROR) << __func__ << "pal set stream failed for plugin param";
+                        return  ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
+                   }
+                    goto exit;
+                }
+                /* Handles Mute/Unmute , Duck/Unduck parameters */
                 mAudExt.audio_extn_set_parameters(parms);
             }
 
             mPlatform.setVendorParameters(in_parameters, in_async);
         }
     }
+exit:
     processSetVendorParameters(in_parameters);
     return ndk::ScopedAStatus::ok();
 }
