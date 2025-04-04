@@ -40,6 +40,7 @@ endif
 #PAL Service
 AUDIO_PAL += libpalclient
 AUDIO_PAL += libpalipcservice
+AUDIO_PAL += libpaleventnotifier
 #PAL Stream Modules
 AUDIO_PAL += libstream_compress
 AUDIO_PAL += libstream_incall
@@ -153,6 +154,12 @@ AUDIO_MODULES += reserved_8.pcm
 AUDIO_MODULES += texture_tick.pcm
 AUDIO_MODULES += thud.pcm
 AUDIO_MODULES += tick.pcm
+AUDIO_MODULES += haptics_rx_tuning_0_cdp.bin
+AUDIO_MODULES += haptics_rx_tuning_0_mtp.bin
+AUDIO_MODULES += haptics_rx_tuning_0_qrd.bin
+AUDIO_MODULES += haptics_vi_tuning_0_cdp.bin
+AUDIO_MODULES += haptics_vi_tuning_0_mtp.bin
+AUDIO_MODULES += haptics_vi_tuning_0_qrd.bin
 AUDIO_MODULES += libfmpal
 AUDIO_MODULES += event.eai
 AUDIO_MODULES += music.eai

@@ -77,6 +77,8 @@ Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConf
             static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::VOIP_RX));
     constexpr auto spatialPlaybackFlags =
             static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::SPATIALIZER));
+    constexpr auto bitPerfectFlags =
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::BIT_PERFECT));
     constexpr auto recordVoipFlags =
             static_cast<int32_t>(1 << flagCastToint(AudioInputFlags::VOIP_TX));
     constexpr auto ullPlaybackFlags = static_cast<int32_t>(
@@ -117,6 +119,8 @@ Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConf
             tag = Usecase::MMAP_PLAYBACK;
         } else if (outFlags == inCallMusicFlags) {
             tag = Usecase::IN_CALL_MUSIC;
+        } else if (outFlags == bitPerfectFlags) {
+            tag = Usecase::BIT_PERFECT_PLAYBACK;
         }
     } else if (flagsTag == AudioIoFlags::Tag::input) {
         auto& inFlags = mixPortConfig.flags.value().get<AudioIoFlags::Tag::input>();
@@ -193,6 +197,8 @@ std::string getName(const Usecase tag) {
             return "HOTWORD_RECORD";
         case Usecase::HAPTICS_PLAYBACK:
             return "HAPTICS_PLAYBACK";
+        case Usecase::BIT_PERFECT_PLAYBACK:
+            return "BIT_PERFECT_PLAYBACK";
         default:
             return std::to_string(static_cast<uint16_t>(tag));
     }
@@ -879,6 +885,30 @@ size_t HapticsPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
 }
 
 // [HapticsPlayback End]
+
+// [BitPerfectPlayback Start]
+
+size_t BitPerfectPlayback::getFrameCount(
+        const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig) {
+    const auto frameSize =
+            getFrameSizeInBytes(mixPortConfig.format.value(), mixPortConfig.channelMask.value());
+
+    size_t periodSize =
+            (mixPortConfig.sampleRate.value().value * kPeriodDurationMs * frameSize) / 1000;
+
+    if (periodSize < kMinPeriodSize) {
+        periodSize = kMinPeriodSize;
+    } else if (periodSize > kMaxPeriodSize) {
+        periodSize = kMaxPeriodSize;
+    }
+
+    periodSize = ALIGN(periodSize, (frameSize * 32));
+
+    return periodSize / frameSize;
+}
+
+// [BitPerfectPlayback End]
+
 // [PcmRecord Start]
 size_t PcmRecord::getFrameCount(const AudioPortConfig& mixPortConfig) {
     size_t frameCount = kCaptureDurationMs * getSampleRate(mixPortConfig).value() / 1000;

@@ -75,6 +75,8 @@ StreamOutPrimary::StreamOutPrimary(StreamContext&& context, const SourceMetadata
         mExt.emplace<InCallMusic>();
     } else if (mTag == Usecase::HAPTICS_PLAYBACK) {
         mExt.emplace<HapticsPlayback>();
+    } else if (mTag == Usecase::BIT_PERFECT_PLAYBACK) {
+        mExt.emplace<BitPerfectPlayback>(mMixPortConfig);
     }
 
     mHwVolumeSupported = isHwVolumeSupported();
@@ -93,6 +95,7 @@ StreamOutPrimary::StreamOutPrimary(StreamContext&& context, const SourceMetadata
 
 bool StreamOutPrimary::isHwVolumeSupported() {
     switch (mTag) {
+        //TODO: See how Bitperfect volume support can be added
         case Usecase::COMPRESS_OFFLOAD_PLAYBACK:
         case Usecase::PCM_OFFLOAD_PLAYBACK:
         case Usecase::MMAP_PLAYBACK:
@@ -1013,6 +1016,9 @@ void StreamOutPrimary::configure() {
                << channelLayout.toString();
             return ;
         }
+    } else if (mTag == Usecase::BIT_PERFECT_PLAYBACK) {
+        attr->type = PAL_STREAM_RAW;
+        attr->info.opt_stream_info.isBitPerfect = true;
     } else {
         LOG(ERROR) << __func__ << mLogPrefix << " invalid usecase to configure";
         return;
