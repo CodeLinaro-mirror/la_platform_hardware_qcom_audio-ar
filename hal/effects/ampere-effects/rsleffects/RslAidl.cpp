@@ -238,10 +238,10 @@ namespace aidl::ampere::effects {
         RETURN_IF(!mContext, EX_NULL_POINTER, "nullContext");
         switch (command) {
             case aidl::android::hardware::audio::effect::CommandId::START:
-                mContext->start();
+                mContext->enable();
                 break;
             case aidl::android::hardware::audio::effect::CommandId::STOP:
-                mContext->stop();
+                mContext->disable();
                 break;
             case aidl::android::hardware::audio::effect::CommandId::RESET:
                 mContext->resetBuffer();
@@ -306,9 +306,15 @@ namespace aidl::ampere::effects {
         auto eqTag = eq.getTag();
         switch (eqTag) {
            case Equalizer::bandLevels:
+           LOG(DEBUG) << __func__ << "BMT handled tag: " << toString(eqTag);
                RETURN_IF(mContext->setBMTBandLevels(eq.get<Equalizer::bandLevels>()) !=
                               RetCode::SUCCESS,
                       EX_ILLEGAL_ARGUMENT, "setBandLevelsFailed");
+               return ndk::ScopedAStatus::ok();
+            case Equalizer::preset:
+            LOG(DEBUG) << __func__ << "BMT handled tag: " << toString(eqTag);
+               RETURN_IF(mContext->setEqualizerPreset(eq.get<Equalizer::preset>()) != RetCode::SUCCESS,
+                         EX_ILLEGAL_ARGUMENT, "setEqualizerPresetFailed");
                return ndk::ScopedAStatus::ok();
            default:
                LOG(ERROR) << __func__ << " unsupported parameter " << specific.toString();
@@ -325,12 +331,46 @@ namespace aidl::ampere::effects {
               "EqualizerTagNotSupported");
         RETURN_IF(!mContext, EX_NULL_POINTER, "nullContext");
         Equalizer eqParam;
+        static const std::vector<Equalizer::BandFrequency> kBandFrequencies = {{0, 30000, 120000},
+                                                                       {1, 120001, 460000},
+                                                                       {2, 460001, 1800000}};
+        std::vector<int32_t> result;
+
 
         auto tag = id.get<Equalizer::Id::commonTag>();
+
         switch (tag) {
             case Equalizer::bandLevels: {
+                LOG(ERROR) << __func__ << "BMT handled tag: " << toString(tag);
                 eqParam.set<Equalizer::bandLevels>(mContext->getBMTBandLevels());
                 break;
+            }
+            case Equalizer::preset: {
+                LOG(ERROR) << __func__ << "BMT handled tag: " << toString(tag);
+                eqParam.set<Equalizer::preset>(mContext->getEqualizerPreset());
+                break;
+            }
+            case Equalizer::bandFrequencies: {
+                LOG(ERROR) << __func__ << "BMT handled tag: " << toString(tag);
+                eqParam.set<Equalizer::bandFrequencies>(kBandFrequencies);
+                break;
+            }
+            case Equalizer::presets: {
+                LOG(ERROR) << __func__ << "BMT handled tag: " << toString(tag);
+                eqParam.set<Equalizer::presets>(mContext->getPresets());
+                break;
+            }
+            case Equalizer::centerFreqMh: {
+                LOG(ERROR) << __func__ << "BMT handled tag: " << toString(tag);
+                std::for_each(kBandFrequencies.begin(), kBandFrequencies.end(),
+                  [&](const auto& band) { result.emplace_back((band.minMh + band.maxMh) / 2); });
+                eqParam.set<Equalizer::centerFreqMh>(result);
+                break;
+            }
+            case Equalizer::vendor: {
+                LOG(ERROR) << __func__ << " not handled tag: " << toString(tag);
+                return ndk::ScopedAStatus::fromExceptionCodeWithMessage(EX_ILLEGAL_ARGUMENT,
+                                                                        "unsupportedTag");
             }
             default: {
                 LOG(ERROR) << __func__ << " not handled tag: " << toString(tag);
@@ -351,7 +391,7 @@ namespace aidl::ampere::effects {
         auto bbTag = bb.getTag();
         switch (bbTag) {
             case BassBoost::strengthPm: {
-                RETURN_IF(mContext->setBassBoost(bb.get<BassBoost::strengthPm>()) !=
+                RETURN_IF(mContext->setBassBoostStrength(bb.get<BassBoost::strengthPm>()) !=
                               RetCode::SUCCESS,
                       EX_ILLEGAL_ARGUMENT, "setStrengthFailed");
                 return ndk::ScopedAStatus::ok();
@@ -375,7 +415,7 @@ namespace aidl::ampere::effects {
         auto tag = id.get<BassBoost::Id::commonTag>();
         switch (tag) {
             case BassBoost::strengthPm: {
-                bbParam.set<BassBoost::strengthPm>(mContext->getBassBoost());
+                bbParam.set<BassBoost::strengthPm>(mContext->getBassBoostStrength());
                 break;
             }
             default: {

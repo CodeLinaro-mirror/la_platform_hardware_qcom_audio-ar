@@ -99,7 +99,7 @@ class GlobalRslSession {
         for (const auto& pair : mActiveIoHandles) {
             if (pair.first == ioHandle) {
                 LOG(DEBUG) << "IoHandle is active " << ioHandle << " session " << sessionId;
-                context->start();
+                context->start(pair.second);
             }
         }
         LOG(DEBUG) << "Exit " <<__func__;
@@ -126,14 +126,14 @@ class GlobalRslSession {
     void startEffect(int ioHandle, pal_stream_handle_t* palHandle) {
         std::lock_guard lg(mMutex);
 
-        LOG(DEBUG) << "Enter " << __func__ << " ioHandle " << ioHandle << 
+        LOG(DEBUG) << "Enter " << __func__ << " ioHandle " << ioHandle <<
                     " sessions " << mSessionsMap.size();
         // start the context having same ioHandle
         for (const auto& handles : mSessionsMap) {
             auto& list = handles.second;
             for (const auto& context : list) {
                 if (context->getIoHandle() == ioHandle) {
-                    context->start();
+                context->start(palHandle);
                 }
             }
         mActiveIoHandles[ioHandle] = palHandle;

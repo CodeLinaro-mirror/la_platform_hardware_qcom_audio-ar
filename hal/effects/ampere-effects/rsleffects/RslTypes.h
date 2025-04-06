@@ -21,6 +21,7 @@ using aidl::ampere::hardware::audio::effect::Ambiance;
 using aidl::ampere::hardware::audio::effect::Sdvc;
 using aidl::ampere::hardware::audio::effect::SteadyVolume;
 using aidl::android::hardware::audio::effect::BassBoost;
+using aidl::android::hardware::audio::effect::Equalizer;
 
 namespace aidl::ampere::effects {
 enum class RslEffectType {
@@ -29,7 +30,9 @@ enum class RslEffectType {
     STEADY_VOLUME,
     BMT,
     BASS_BOOST,
+    NONE
 };
+
 
 inline std::ostream& operator<<(std::ostream& out, const RslEffectType& type) {
     out << " Type ";
@@ -57,7 +60,7 @@ static const Descriptor kAmbianceDescriptor = {
                           .hwAcceleratorMode = Flags::HardwareAccelerator::TUNNEL,
                           .deviceIndication = true },
                         .name = kAmbianceEffectName,
-                        .implementor = "Ampere"}
+                        .implementor = "Qualcomm Technologies Inc."}
 };
 
 struct AmbianceParams {
@@ -75,7 +78,7 @@ static const Descriptor kSdvcDescriptor = {
                           .hwAcceleratorMode = Flags::HardwareAccelerator::TUNNEL,
                           .deviceIndication = true },
                         .name = kSdvcEffectName,
-                        .implementor = "Ampere"}
+                        .implementor = "Qualcomm Technologies Inc."}
 };
 
 struct param_type2_t {
@@ -91,8 +94,21 @@ static const Descriptor kSteadyVolumeDescriptor = {
                           .hwAcceleratorMode = Flags::HardwareAccelerator::TUNNEL,
                           .deviceIndication = true },
                         .name = kSteadyVolumeEffectName,
-                        .implementor = "Ampere"}
+                        .implementor = "Qualcomm Technologies Inc."}
 };
+#define MIN_BMT_VALUE -9
+#define MAX_BMT_VALUE  9
+const std::vector<Equalizer::Preset> kPresets = {};
+const std::vector<Range::EqualizerRange> kEqRanges = {
+        MAKE_RANGE(Equalizer, preset, 0, 0),
+        MAKE_RANGE(Equalizer, bandLevels,
+                   std::vector<Equalizer::BandLevel>{
+                           Equalizer::BandLevel({.index = 0, .levelMb = MIN_BMT_VALUE})},
+                   std::vector<Equalizer::BandLevel>{
+                           Equalizer::BandLevel({.index = /* max nb bands= */ 3 - 1,
+                                                 .levelMb = MAX_BMT_VALUE})}),
+        MAKE_RANGE(Equalizer, presets, kPresets, kPresets)};
+static const Capability kEqCap = {.range = kEqRanges};
 
 static const std::string kBMTEffectName = "BASS_MID_TREBEL";
 static const Descriptor kBMTDescriptor = {
@@ -103,7 +119,8 @@ static const Descriptor kBMTDescriptor = {
                           .hwAcceleratorMode = Flags::HardwareAccelerator::TUNNEL,
                           .deviceIndication = true },
                         .name = kBMTEffectName,
-                        .implementor = "Ampere"}
+                        .implementor = "Qualcomm Technologies Inc."},
+                        .capability = kEqCap
 };
 
 enum EffectBMTParams
@@ -112,6 +129,11 @@ enum EffectBMTParams
     EFFECT_BMT_PARAM_MID,
     EFFECT_BMT_PARAM_TREBEL,
 };
+
+const std::vector<Range::BassBoostRange> kBassBoostRanges = {
+         MAKE_RANGE(BassBoost, strengthPm, 2, 0)};
+
+const Capability kBassBoostCap = {.range = {kBassBoostRanges}};
 
 static const std::string kBassBoostEffectName = "BASS_BOOST";
 static const Descriptor kBassBoostDescriptor = {
@@ -122,7 +144,8 @@ static const Descriptor kBassBoostDescriptor = {
                           .hwAcceleratorMode = Flags::HardwareAccelerator::TUNNEL,
                           .deviceIndication = true },
                         .name = kBassBoostEffectName,
-                        .implementor = "Ampere"}
+                        .implementor = "Qualcomm Technologies Inc."},
+                        .capability =  kBassBoostCap
 };
 
 #define PARAM_ID_AMBIANCE 0x11112550

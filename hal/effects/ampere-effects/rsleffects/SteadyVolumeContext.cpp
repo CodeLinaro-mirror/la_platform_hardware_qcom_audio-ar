@@ -10,7 +10,7 @@
 
 #include "RslContext.h"
 #include "RslTypes.h"
-#include "extensions/AudioExtension.h"
+#include "PalParamDelegator.h"
 #include <system/audio_effects/audio_effects_utils.h>
 #include "aidl/android/hardware/audio/effect/DefaultExtension.h"
 #include <system/audio_effect.h>
@@ -24,6 +24,7 @@ using aidl::android::media::audio::common::AudioDeviceDescription;
 using aidl::android::media::audio::common::AudioDeviceType;
 using namespace ::android::effect::utils;
 using aidl::android::hardware::audio::effect::DefaultExtension;
+using namespace ::aidl::qti::awx;
 
 
 SteadyVolumeContext::SteadyVolumeContext(const Parameter::Common& common,
@@ -51,19 +52,14 @@ void SteadyVolumeContext::deInit() {
     stop();
 }
 
-RetCode SteadyVolumeContext::start() {
+RetCode SteadyVolumeContext::start(pal_stream_handle_t* palHandle) {
     LOG(DEBUG) << "Enter " << __func__ << " ioHandle " << getIoHandle();
-
+    mPalHandle = palHandle;
     std::lock_guard lg(mMutex);
-    RetCode code = setSteadyVolume(MIN_STEADY_VOLUME_VALUE);
-    mState = EffectState::ACTIVE;
-    if (RetCode::SUCCESS == code)
-    {
-        LOG(DEBUG) << "Set SteadyVolume is success  " << code ;
-    }
-    else
-    {
-        LOG(DEBUG) << "Set SteadyVolume is failed  " << code ;
+    if (isEffectActive()) {
+        setSteadyVolume(MAX_STEADY_VOLUME_VALUE);
+    } else {
+        LOG(DEBUG) << "Not yet enabled";
     }
     return RetCode::SUCCESS;
 }
@@ -71,20 +67,44 @@ RetCode SteadyVolumeContext::start() {
 RetCode SteadyVolumeContext::stop() {
     std::lock_guard lg(mMutex);
     LOG(DEBUG) << "Enter " << __func__ << " ioHandle " << getIoHandle();
-
     struct param_type2_t steadyVolumeParam = {0}; // by default enable bit is 0
     mState = EffectState::UNINITIALIZED;
-    RetCode code = setSteadyVolume(MIN_STEADY_VOLUME_VALUE);
-    if (RetCode::SUCCESS == code)
-    {
+    setSteadyVolume(MIN_STEADY_VOLUME_VALUE);
+    return RetCode::SUCCESS;
+}
+
+RetCode SteadyVolumeContext::enable() {
+    std::lock_guard lg(mMutex);
+    LOG(DEBUG) << __func__ << " ioHandle " << getIoHandle();
+
+    if (isEffectActive())
+     return RetCode::ERROR_ILLEGAL_PARAMETER;
+
+    RetCode code = setSteadyVolume(MAX_STEADY_VOLUME_VALUE);
+    mState = EffectState::ACTIVE;
+    if (RetCode::SUCCESS == code) {
         LOG(DEBUG) << "Set SteadyVolume is success  " << code ;
+    } else {
+        LOG(DEBUG) << "Set SteadyVolume is failed  " << code ;
     }
-    else
-    {
+
+    return RetCode::SUCCESS;
+}
+
+RetCode SteadyVolumeContext::disable() {
+    std::lock_guard lg(mMutex);
+    LOG(DEBUG) << __func__ << " ioHandle " << getIoHandle();
+    if (!isEffectActive()) return RetCode::ERROR_ILLEGAL_PARAMETER;
+    mState = EffectState::INITIALIZED;
+    RetCode code = setSteadyVolume(MIN_STEADY_VOLUME_VALUE);
+    if (RetCode::SUCCESS == code) {
+        LOG(DEBUG) << "Set SteadyVolume is success  " << code ;
+    } else {
         LOG(DEBUG) << "Set SteadyVolume is failed  " << code ;
     }
     return RetCode::SUCCESS;
 }
+
 
 RetCode SteadyVolumeContext::setSteadyVolume(int value) {
 
@@ -114,8 +134,7 @@ RetCode SteadyVolumeContext::setParameter(const std::vector<uint8_t>& specific)
     }
     LOG(DEBUG) << __func__ << ": Setting SteadyVolume = " << type;
 
-    if (setSteadyVolume(type) != RetCode::SUCCESS)
-    {
+    if (setSteadyVolume(type) != RetCode::SUCCESS) {
         LOG(ERROR) << __func__ << " setSteadyVolume Failed " ;
     }
     LOG(DEBUG) << __func__ << ":  SteadyVolume Exit";
@@ -165,44 +184,6 @@ std::vector<uint8_t> SteadyVolumeContext::getParameter(std::vector<uint8_t> id)
     return replyExt.bytes;
 }
 
-RetCode SteadyVolumeContext::setParameter(uint32_t cmd, int32_t param_value) {
-    std::lock_guard lg(mMutex);
-    LOG(DEBUG) << "Enter " << __func__ << " cmd: " << cmd << " value " << param_value;
-
-    if ( param_value < MIN_STEADY_VOLUME_VALUE || param_value > MAX_STEADY_VOLUME_VALUE ) {
-        LOG(DEBUG) << __func__ << "Error in setting value, not in range 0 to 1 ";
-        return RetCode::ERROR_ILLEGAL_PARAMETER;
-    }
-
-    LOG(DEBUG) << "Exit " << __func__;
-
-    return setSteadyVolume(param_value);
-}
-
-RetCode SteadyVolumeContext::getParameter(effect_param_t* param, uint32_t *size) {
-    LOG(DEBUG) << "Enter " << __func__;
-    std::lock_guard lg(mMutex);
-    uint64_t cmd;
-    memcpy(&cmd, param->data, param->psize);
-
-    int32_t voffset = ((param->psize - 1) / sizeof(int32_t) + 1) * sizeof(int32_t);
-    void *value = param->data + voffset;
-
-    param->status = 0;
-    param->vsize = sizeof(uint64_t);
-    *size = sizeof(effect_param_t) + voffset + param->vsize;
-    *(int32_t *)value = getSteadyVolume();
-
-    if (*(int32_t *)value < MIN_STEADY_VOLUME_VALUE) {
-        LOG(ERROR) << __func__ << " Invalid param value";
-        return RetCode::ERROR_ILLEGAL_PARAMETER;
-    }
-
-    LOG(DEBUG) << " Exit " << __func__;
-
-    return RetCode::SUCCESS;
-}
-
 RetCode SteadyVolumeContext::setOutputDevice(
         const std::vector<aidl::android::media::audio::common::AudioDeviceDescription>& device) {
     LOG(DEBUG) << "Enter " << __func__;
@@ -237,7 +218,7 @@ int SteadyVolumeContext::getSteadyVolume(){
 
     // Defining CAPI param Type
     effect_type type = SYNC_WITHOUT_AUDIO_BUS;
-    ret = ::qti::audio::core::AWX_get_param(&pal_param, type);
+    ret = PalParamDelegator::AWX_get_param(&pal_param, type);
 
     if (ret < 0) {
         LOG(ERROR) << __func__ << "Error while fetching value returned with ret: " << ret;
@@ -269,7 +250,13 @@ int SteadyVolumeContext::updatePalParameters(struct param_type2_t *params) {
     effect_type type = SYNC_WITHOUT_AUDIO_BUS;
     LOG(DEBUG) << __func__ << "Successfully created pal_param";
 
-    ::qti::audio::core::AWX_set_param(pal_param, type);
+
+    if (mPalHandle != NULL) {
+        PalParamDelegator::AWX_set_param_handle(mPalHandle,pal_param, type);
+    } else {
+        PalParamDelegator::AWX_set_param(pal_param, type);
+        LOG(DEBUG) << "PAL handle is NULL " << __func__;
+    }
     LOG(DEBUG) << "Exit " << __func__;
 
     if (pal_param) {

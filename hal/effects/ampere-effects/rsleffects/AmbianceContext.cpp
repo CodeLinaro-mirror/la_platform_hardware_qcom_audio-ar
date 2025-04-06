@@ -10,7 +10,7 @@
 
 #include "RslContext.h"
 #include "RslTypes.h"
-#include "extensions/AudioExtension.h"
+#include "PalParamDelegator.h"
 #include <aidl/ampere/hardware/audio/effect/Ambiance.h>
 #include <system/audio_effects/audio_effects_utils.h>
 #include "aidl/android/hardware/audio/effect/DefaultExtension.h"
@@ -27,6 +27,7 @@ using aidl::android::media::audio::common::AudioDeviceType;
 using aidl::ampere::hardware::audio::effect::Ambiance;
 using namespace ::android::effect::utils;
 using aidl::android::hardware::audio::effect::DefaultExtension;
+using namespace ::aidl::qti::awx;
 
 
 AmbianceContext::AmbianceContext(const Parameter::Common& common,
@@ -55,12 +56,17 @@ void AmbianceContext::deInit() {
     stop();
 }
 
-RetCode AmbianceContext::start() {
+RetCode AmbianceContext::start(pal_stream_handle_t* palHandle) {
     LOG(DEBUG) << "Enter " << __func__ << " ioHandle " << getIoHandle();
 
     std::lock_guard lg(mMutex);
-    mState = EffectState::ACTIVE;
-    setAmbianceProfile(mCurrentProfile);
+    mPalHandle = palHandle;
+
+    if (isEffectActive()) {
+        setAmbianceProfile(mCurrentProfile);
+    } else {
+        LOG(DEBUG) << __func__ << " Effect is not yet active " ;
+    }
 
     return RetCode::SUCCESS;
 }
@@ -70,13 +76,40 @@ RetCode AmbianceContext::stop() {
     LOG(DEBUG) << "Enter " << __func__ << " ioHandle " << getIoHandle();
 
     struct AmbianceParams ambianceParam = {0}; // by default enable bit is 0
-    mState = EffectState::INITIALIZED;
+
+    // Deactivate the Ambiance
+    if (updatePalParameters(&ambianceParam) == 0) {
+        mAsyncTransationStatus = 0;
+    }
+    mPalHandle = NULL;
+    return RetCode::SUCCESS;
+}
+RetCode AmbianceContext::enable() {
+    std::lock_guard lg(mMutex);
+    LOG(DEBUG) << __func__ << " ioHandle " << getIoHandle();
+
+    // Effect cannot be active before disabling
+    if (isEffectActive())
+        return RetCode::ERROR_ILLEGAL_PARAMETER;
+    mState = EffectState::ACTIVE;
+
+    setAmbianceProfile(mCurrentProfile);
+
+    return RetCode::SUCCESS;
+}
+
+RetCode AmbianceContext::disable() {
+    std::lock_guard lg(mMutex);
+    LOG(DEBUG) << __func__ << " ioHandle " << getIoHandle();
+    if (!isEffectActive()) return RetCode::ERROR_ILLEGAL_PARAMETER;
+    struct AmbianceParams ambianceParam = {0}; // by default enable bit is 0
 
     // Deactivate the Ambiance
     if (updatePalParameters(&ambianceParam) == 0) {
         mAsyncTransationStatus = 0;
     }
 
+    mState = EffectState::INITIALIZED;
     return RetCode::SUCCESS;
 }
 
@@ -118,7 +151,8 @@ int AmbianceContext::getAmbianceProfile() {
 
     // Defining CAPI param Type
     effect_type type = ASYNC;
-    ret = ::qti::audio::core::AWX_get_param(&pal_param, type);
+
+    ret = PalParamDelegator::AWX_get_param_handle(mPalHandle,&pal_param, type);
 
     if (ret < 0) {
         LOG(ERROR) << __func__ << "Error while fetching value returned with ret: " << ret;
@@ -251,37 +285,6 @@ std::vector<uint8_t> AmbianceContext::getParameter(std::vector<uint8_t> id) {
     return responseExtension.bytes;
 }
 
-RetCode AmbianceContext::setParameter(uint32_t cmd, int32_t param_value) {
-    LOG(DEBUG) << "Enter " << __func__;
-    std::lock_guard lg(mMutex);
-    return setAmbianceProfile(param_value);
-}
-
-RetCode AmbianceContext::getParameter(effect_param_t* param, uint32_t *size) {
-    LOG(DEBUG) << "Enter " << __func__;
-    std::lock_guard lg(mMutex);
-    uint64_t cmd;
-    memcpy(&cmd, param->data, param->psize);
-    LOG(DEBUG) << __func__ << " cmd: "<< cmd;
-
-    int32_t voffset = ((param->psize - 1) / sizeof(int32_t) + 1) * sizeof(int32_t);
-    void *value = param->data + voffset;
-
-    param->status = 0;
-    param->vsize = sizeof(uint64_t);
-    *size = sizeof(effect_param_t) + voffset + param->vsize;
-    *(int32_t *)value = getAmbianceProfile();
-
-    if (*(int32_t *)value < MIN_PROFILE_VALUE) {
-        LOG(ERROR) << __func__ << " Unsupported parameter ";
-        return RetCode::ERROR_ILLEGAL_PARAMETER;
-    }
-
-    LOG(DEBUG) << "Exit " << __func__;
-
-    return RetCode::SUCCESS;
-}
-
 RetCode AmbianceContext::setOutputDevice(
         const std::vector<aidl::android::media::audio::common::AudioDeviceDescription>& device) {
     LOG(DEBUG) << "Enter " << __func__;
@@ -322,7 +325,14 @@ int AmbianceContext::updatePalParameters(struct AmbianceParams *params) {
     effect_type type = ASYNC;
     LOG(DEBUG) << __func__ << "Successfully created pal_param";
 
-    ::qti::audio::core::AWX_set_param(pal_param, type);
+    //PalParamDelegator::AWX_set_param(pal_param, type);
+    if (mPalHandle != NULL) {
+        PalParamDelegator::AWX_set_param_handle(mPalHandle,pal_param, type);
+    } else {
+        PalParamDelegator::AWX_set_param(pal_param, type);
+        LOG(DEBUG) << "PAL handle is NULL " << __func__;
+    }
+
     if (pal_param) {
         free(pal_param);
     }

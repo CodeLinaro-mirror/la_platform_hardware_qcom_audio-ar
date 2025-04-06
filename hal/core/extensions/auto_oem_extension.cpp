@@ -40,7 +40,7 @@
 #include <string>
 #include <errno.h>
 #include <log/log.h>
-#include <include/extensions/auto_oem_extension.h>
+#include <extensions/auto_oem_extension.h>
 #include "PalApi.h"
 #include <include/extensions/AudioVehicleListener.h>
 #include "include/extensions/AudioConfig.h"
@@ -90,6 +90,13 @@
 
 #define PADDING_8BYTE_ALIGN(x)  ((((x) + 7) & 7) ^ 7)
 
+#define INVALID_INIT_VALUE  -255
+
+static int gs_VehicleSpeed = INVALID_INIT_VALUE ;
+static int gs_audioSourceType = INVALID_INIT_VALUE;
+static int gs_Balance = INVALID_INIT_VALUE;
+static int gs_Fader = INVALID_INIT_VALUE;
+static int gs_FanSpeed = INVALID_INIT_VALUE;
 
 namespace {
 
@@ -204,15 +211,14 @@ int find_source_type(struct str_parms *parms) {
 
 void update_audiosourcedata(struct pal_awx_source_data *source_data) {
     LOG(DEBUG) << "Enter " << __func__;
-    int status = 0;
-    struct pal_awx_param_t *pal_param = (struct pal_awx_param_t *)malloc(sizeof(struct pal_awx_param_t));
+    aidl::qti::awx::pal_awx_param_t *pal_param = (aidl::qti::awx::pal_awx_param_t *)malloc(sizeof(aidl::qti::awx::pal_awx_param_t));
     if (pal_param != NULL && source_data != NULL) {
         pal_param->param_id = EQ_MODE_PARAM_ID;
         pal_param->param_size = sizeof(pal_awx_source_data);
         source_data->eq_mask = EQ_MASK_SOURCE_TYPE;
         pal_param->data = (void *)source_data;
 
-        audiosource_set_param(pal_param);
+        aidl::qti::awx::PalParamDelegator::AWX_set_param(pal_param, aidl::qti::awx::ASYNC);
     }
     else {
         LOG(ERROR) << "pal_param is null";
@@ -227,108 +233,6 @@ void update_audiosourcedata(struct pal_awx_source_data *source_data) {
 exit:
     LOG(DEBUG) << __func__ << ": Exit ";
 }
-void audiosource_set_param(struct pal_awx_param_t* pal_param) {
-    LOG(DEBUG) << __func__ <<": Enter ";
-    int status = 0;
-    size_t padBytes = 0;
-    uint8_t* payloadInfo = NULL;
-    pal_param_payload* pal_payload = nullptr;
-    effect_pal_payload_t* effect_payload = nullptr;
-    pal_effect_custom_payload_t* customPayload = nullptr;
-    pal_awx_param_t* data = pal_param;
-    uint32_t pal_param_size = data->param_size;
-    pal_device_id_t aud_source_effect_device = PAL_DEVICE_OUT_SPEAKER;
-    pal_awx_source_data *dummy_ptr = nullptr;
-    //CAPI param Type
-    param_type capi_param_type = Type3;
-
-    uint32_t payload_size = sizeof(pal_param_payload) + sizeof(effect_pal_payload_t) + sizeof(pal_effect_custom_payload_t) + pal_param_size;
-
-    padBytes = PADDING_8BYTE_ALIGN(payload_size);
-
-    payloadInfo = (uint8_t *) calloc(1, payload_size + padBytes);
-    if (!payloadInfo) {
-        status = -ENOMEM;
-        goto exit;
-    }
-
-    pal_payload = (pal_param_payload*) payloadInfo;
-    effect_payload = (effect_pal_payload_t*) (payloadInfo + sizeof(pal_param_payload));
-    customPayload = (pal_effect_custom_payload_t*) (payloadInfo + sizeof(pal_param_payload) + sizeof(effect_pal_payload_t));
-
-    pal_payload->payload_size = sizeof(effect_pal_payload_t) + sizeof(pal_effect_custom_payload_t) + pal_param_size;
-
-    effect_payload->isTKV = PARAM_NONTKV;
-    effect_payload->tag = AWX_MODULE_CUSTOM_TAG;
-    effect_payload->payloadSize = sizeof(pal_effect_custom_payload_t) + pal_param_size;
-
-    customPayload->paramId = data->param_id;
-
-    if (data->data != NULL) {
-        memcpy(customPayload->data, data->data, pal_param_size);
-    }
-    else {
-        LOG(DEBUG) << __func__ << ": data is invalid";
-        goto exit;
-    }
-
-    dummy_ptr = (pal_awx_source_data *)&(customPayload->data[0]);
-    LOG(DEBUG) << __func__ << " PARAM ID: " << std::hex << customPayload->paramId;
-    LOG(DEBUG) << __func__ << " EQ_mask: " << std::hex << dummy_ptr->eq_mask;
-    LOG(DEBUG) << __func__ << " value[EQ_MASK_SOURCE_VAL]: " << dummy_ptr->value[EQ_MASK_SOURCE_VAL];
-    status = pal_gef_rw_param(PAL_PARAM_ID_UIEFFECT, (void *) pal_payload, payload_size, aud_source_effect_device, PAL_STREAM_PLAYBACK_BUS, GEF_PARAM_WRITE, NULL);
-
-    if (status != 0) {
-        LOG(ERROR) << "Error setting param with error " << status;
-        goto exit;
-    } else {
-        LOG(INFO) << __func__ << ": Set parameter successfully";
-        goto exit;
-    }
-
-exit:
-    if (payloadInfo) {
-        free(payloadInfo);
-    }
-
-    pal_payload = nullptr;
-    effect_payload = nullptr;
-    customPayload = nullptr;
-    data = nullptr;
-    dummy_ptr = nullptr;
-
-    LOG(DEBUG) << __func__ << ": Exit";
-}
-
-int capi_param_type3_handling(int status, pal_param_payload* pal_payload, uint32_t payload_size,
-                            pal_device_id_t aud_source_effect_device, pal_awx_source_data *dummy_ptr) {
-    LOG(DEBUG) << __func__ << ": Enter ";
-    if (status == -1) {
-        bool idle = false;
-        int read_status = 0;
-        int ref_count = 0;
-        while ((!idle) && (ref_count < MAX_REF_COUNT)) {
-            read_status = pal_gef_rw_param(PAL_PARAM_ID_UIEFFECT, (void*) pal_payload, payload_size,
-                                        aud_source_effect_device, PAL_STREAM_PLAYBACK_BUS, GEF_PARAM_READ, NULL);
-            int num = EQ_MASK_SOURCE_TYPE;
-            LOG(DEBUG) << __func__ << " read eq_mask: " << std::hex << num << " done.";
-            num &= MASK;
-            LOG(DEBUG) << __func__ << " read status: " << num << " done.";
-
-            //Check eq_mask status of Harman AWX modules: 0 for idle, 1 for busy
-            if (num == INT_VALUE) {
-                idle = true;
-                status = 0;
-            } else {
-                ref_count++;
-                //Type3 is asynchronous, sleep is required if status is busy
-                sleep(DELAY_MS);
-            }
-        }
-    }
-    LOG(DEBUG) << __func__ << ": Exit ";
-    return status;
-}
 
 int set_oem_audio_source_params(struct str_parms *parms) {
     int ret =0;
@@ -341,6 +245,8 @@ int set_oem_audio_source_params(struct str_parms *parms) {
     {
         LOG(DEBUG) << __func__ << ": valid audio source type" ;
         source_data.value[EQ_MASK_SOURCE_VAL] = ret;
+        // cache the previous source data
+        gs_audioSourceType = ret;
         update_audiosourcedata(&source_data);
     }
     else {
@@ -354,6 +260,9 @@ int set_vehicle_speed(int32_t val)
     struct param_type2_t speed_data;
     memset(&speed_data, 0, sizeof(struct param_type2_t));
     speed_data.value = val;
+    // cache the vehicle Speed.
+    gs_VehicleSpeed = val ;
+
     if (speed_data.value >= MIN__PERF_VEHICLE_SPEED && speed_data.value <= MAX_PERF_VEHICLE_SPEED) {
         update_vehicle_speed_pal_param(&speed_data);
     } else {
@@ -367,6 +276,8 @@ int set_fan_speed(int32_t val) {
     struct param_type2_t speed_data;
     memset(&speed_data, 0, sizeof(struct param_type2_t));
     speed_data.value = val;
+    gs_FanSpeed = val;
+
     if (speed_data.value >= MIN_HVAC_FAN_SPEED && speed_data.value <= MAX_HVAC_FAN_SPEED) {
         update_fan_speed_pal_param(&speed_data);
     } else {
@@ -375,79 +286,12 @@ int set_fan_speed(int32_t val) {
     }
     return EXIT_SUCCESS;
 }
-int AWX_set_param_sync(struct pal_awx_param_t* pal_param) {
-    LOG(DEBUG) << __func__ <<": Enter ";
-    int status = 0;
-    size_t padBytes = 0;
-    uint8_t* payloadInfo = NULL;
-    pal_param_payload* pal_payload = nullptr;
-    effect_pal_payload_t* effect_payload = nullptr;
-    pal_effect_custom_payload_t* customPayload = nullptr;
-    pal_awx_param_t* data = pal_param;
-    uint32_t pal_param_size = data->param_size;
-    pal_device_id_t aud_source_effect_device = PAL_DEVICE_OUT_SPEAKER;
 
-    uint32_t payload_size = sizeof(pal_param_payload) + sizeof(effect_pal_payload_t) + sizeof(pal_effect_custom_payload_t) + pal_param_size;
-
-    padBytes = PADDING_8BYTE_ALIGN(payload_size);
-
-    payloadInfo = (uint8_t *) calloc(1, payload_size + padBytes);
-    if (!payloadInfo) {
-        status = -ENOMEM;
-        goto exit;
-    }
-
-    pal_payload = (pal_param_payload*) payloadInfo;
-    effect_payload = (effect_pal_payload_t*) (payloadInfo + sizeof(pal_param_payload));
-    customPayload = (pal_effect_custom_payload_t*) (payloadInfo + sizeof(pal_param_payload) + sizeof(effect_pal_payload_t));
-
-    pal_payload->payload_size = sizeof(effect_pal_payload_t) + sizeof(pal_effect_custom_payload_t) + pal_param_size;
-
-    effect_payload->isTKV = PARAM_NONTKV;
-    effect_payload->tag = AWX_MODULE_CUSTOM_TAG;
-    effect_payload->payloadSize = sizeof(pal_effect_custom_payload_t) + pal_param_size;
-
-    customPayload->paramId = data->param_id;
-
-    if (data->data != NULL) {
-        memcpy(customPayload->data, data->data, pal_param_size);
-    }
-    else {
-        LOG(ERROR) << __func__ << ": data is invalid";
-        goto exit;
-    }
-
-    LOG(DEBUG) << __func__ << " PARAM ID: " << std::hex << customPayload->paramId <<"PARAM VALUE: " << pal_param->data;
-
-    status = pal_gef_rw_param(PAL_PARAM_ID_UIEFFECT, (void *) pal_payload, payload_size, aud_source_effect_device, PAL_STREAM_PLAYBACK_BUS, GEF_PARAM_WRITE, NULL);
-
-    if (status != 0) {
-        LOG(ERROR) << "Error setting param with error " << status;
-        goto exit;
-    } else {
-        LOG(INFO) << __func__ << ": Set parameter successfully";
-        goto exit;
-    }
-
-exit:
-    if (payloadInfo) {
-        free(payloadInfo);
-    }
-
-    pal_payload = nullptr;
-    effect_payload = nullptr;
-    customPayload = nullptr;
-    data = nullptr;
-
-    LOG(DEBUG) << __func__ << ": Exit";
-    return status;
-}
-
-void update_fan_speed_pal_param(struct param_type2_t *params) {
+void update_fan_speed_pal_param(param_type2_t *params) {
     LOG(DEBUG) << ": Enter " << __func__;
 
-    struct pal_awx_param_t *pal_param = (struct pal_awx_param_t *)malloc(sizeof(struct pal_awx_param_t));
-    int ret;
+    aidl::qti::awx::pal_awx_param_t *pal_param = (aidl::qti::awx::pal_awx_param_t *)malloc(sizeof(aidl::qti::awx::pal_awx_param_t));
+
 
     if (params != NULL) {
         if (pal_param != NULL) {
@@ -455,11 +299,8 @@ void update_fan_speed_pal_param(struct param_type2_t *params) {
             pal_param->param_size = sizeof(param_type2_t);
             pal_param->data = (void *)params;
             LOG(DEBUG) << __func__ << ": Successfully created pal_param";
-            ret = AWX_set_param_sync(pal_param);
-            if (ret != 0)
-            {
-                LOG(WARNING) << __func__ << "AWX_set_param_sync failed ret:"<<ret;
-            }
+
+            aidl::qti::awx::PalParamDelegator::AWX_set_param(pal_param, aidl::qti::awx::SYNC_WITHOUT_AUDIO_BUS);
         }
         else {
             LOG(ERROR) << ": pal_param is null";
@@ -478,11 +319,10 @@ exit:
     LOG(DEBUG) << __func__ << ": Exit ";
 }
 
-void update_vehicle_speed_pal_param(struct param_type2_t *params) {
+void update_vehicle_speed_pal_param(param_type2_t *params) {
     LOG(DEBUG) << "Enter " << __func__;
 
-    struct pal_awx_param_t *pal_param = (struct pal_awx_param_t *)malloc(sizeof(struct pal_awx_param_t));
-    int ret;
+    aidl::qti::awx::pal_awx_param_t *pal_param = (aidl::qti::awx::pal_awx_param_t *)malloc(sizeof(aidl::qti::awx::pal_awx_param_t));
 
     if (params != NULL) {
         if (pal_param != NULL) {
@@ -490,12 +330,7 @@ void update_vehicle_speed_pal_param(struct param_type2_t *params) {
             pal_param->param_size = sizeof(param_type2_t);
             pal_param->data = (void *)params;
             LOG(DEBUG) << __func__ << ": Successfully created pal_param";
-            ret = AWX_set_param_sync(pal_param);
-
-            if (ret != 0)
-            {
-                LOG(WARNING) << __func__ << "AWX_set_param_sync failed ret:"<<ret;
-            }
+            aidl::qti::awx::PalParamDelegator::AWX_set_param(pal_param, aidl::qti::awx::SYNC_WITHOUT_AUDIO_BUS);
         }
         else {
             LOG(ERROR) << "pal_param is null";
@@ -534,11 +369,10 @@ int convertFloatToInt(float value) {
     return intValue;
 }
 
-int  set_type2_param(int paramID, int ParamValue)
+void  set_type2_param(int paramID, int ParamValue)
 {
-    struct pal_awx_param_t *pal_param = (struct pal_awx_param_t *)malloc(sizeof(struct pal_awx_param_t));
+    aidl::qti::awx::pal_awx_param_t *pal_param = (aidl::qti::awx::pal_awx_param_t *)malloc(sizeof(aidl::qti::awx::pal_awx_param_t));
     struct param_type2_t type2params;
-    int ret = -EINVAL ;
 
     LOG(DEBUG) << "Enter " << __func__;
 
@@ -549,13 +383,7 @@ int  set_type2_param(int paramID, int ParamValue)
         type2params.value = ParamValue;
         LOG(DEBUG) << __func__ << ": Successfully created pal_param";
 
-        // Set Param of type 2
-        ret = AWX_set_param_sync(pal_param);
-
-        if (ret != 0)
-        {
-            LOG(WARNING) << __func__ << "AWX_set_param_sync failed ret:"<<ret;
-        }
+        aidl::qti::awx::PalParamDelegator::AWX_set_param(pal_param, aidl::qti::awx::SYNC_WITHOUT_AUDIO_BUS);
     }
     else {
         LOG(ERROR) << "pal_param is null";
@@ -568,7 +396,6 @@ exit:
     }
 
     LOG(DEBUG) << __func__ << ": Exit ";
-    return ret;
 }
 
 
@@ -584,7 +411,6 @@ int setGeometryParam(struct str_parms *parms)
 
         if (ret >= 0)
         {
-
             float valueinFloat;
             char *endptr = NULL;
 
@@ -598,11 +424,8 @@ int setGeometryParam(struct str_parms *parms)
             int awxValue = convertFloatToInt(valueinFloat);
             int paramID = FADER_PARAM_ID;
             LOG(DEBUG) << "Converted  Value " << awxValue << "ParamId " << paramID;
-            ret = set_type2_param(paramID,awxValue);
-            if (ret != 0)
-            {
-                LOG(ERROR) << "set_type2_param Failed ret " <<ret;
-            }
+            gs_Fader = awxValue;
+            set_type2_param(paramID,awxValue);
         }
 
 
@@ -620,12 +443,10 @@ int setGeometryParam(struct str_parms *parms)
 
             int awxValue = convertFloatToInt(valueinFloat);
             int paramID = BALANCE_PARAM_ID;
+            // cache the previous value
+            gs_Balance = awxValue;
             LOG(DEBUG) << "awx Value" << awxValue << "{aramId " << paramID;
-            ret = set_type2_param(paramID,awxValue);
-            if (ret != 0)
-            {
-                LOG(ERROR) << "set_type2_param Failed ret " <<ret;
-            }
+            set_type2_param(paramID,awxValue);
         }
     }
     else
@@ -639,10 +460,10 @@ int setGeometryParam(struct str_parms *parms)
 
 int oem_pal_param_update(const std::string& id) {
     int ret = -1;
-    struct pal_awx_param_t pal_param;
+    aidl::qti::awx::pal_awx_param_t pal_param;
     param_type2_t params;
 
-    memset(&pal_param, 0, sizeof(pal_awx_param_t));
+    memset(&pal_param, 0, sizeof(aidl::qti::awx::pal_awx_param_t));
     memset(&params, 0, sizeof(param_type2_t));
     if (id == "Balance") {
         pal_param.param_id = BALANCE_PARAM_ID;
@@ -658,7 +479,7 @@ int oem_pal_param_update(const std::string& id) {
     // Defining CAPI param Type
     param_type capi_param_type = Type2;
 
-    ret = get_vendor_params(&pal_param, capi_param_type);
+    ret = aidl::qti::awx::PalParamDelegator::AWX_get_param(&pal_param, aidl::qti::awx::SYNC_WITHOUT_AUDIO_BUS); //get_vendor_params(&pal_param, capi_param_type);
     if (ret < 0) {
         LOG(ERROR) << __func__ << "Error while fetching value return: " << ret;
        return ret;
@@ -668,60 +489,6 @@ int oem_pal_param_update(const std::string& id) {
 
     LOG(DEBUG) << "Exit " << __func__;
     return params.value;
-}
-int get_vendor_params(struct pal_awx_param_t* pal_param, param_type capi_param_type) {
-    LOG(DEBUG) << __func__ <<": Enter ";
-    int status = 0;
-    size_t padBytes = 0;
-    uint8_t* payloadInfo = NULL;
-    pal_param_payload* pal_payload = nullptr;
-    effect_pal_payload_t* effect_payload = nullptr;
-    pal_effect_custom_payload_t* customPayload = nullptr;
-    pal_awx_param_t* data = pal_param;
-    uint32_t pal_param_size = data->param_size;
-    pal_device_id_t aud_source_effect_device = PAL_DEVICE_OUT_SPEAKER;
-
-    uint32_t payload_size = sizeof(pal_param_payload) + sizeof(effect_pal_payload_t) + sizeof(pal_effect_custom_payload_t) + pal_param_size;
-
-    padBytes = PADDING_8BYTE_ALIGN(payload_size);
-
-    payloadInfo = (uint8_t *) calloc(1, payload_size + padBytes);
-    if (!payloadInfo) {
-        status = -ENOMEM;
-        goto cleanup;
-    }
-
-    pal_payload = (pal_param_payload*) payloadInfo;
-    effect_payload = (effect_pal_payload_t*) (payloadInfo + sizeof(pal_param_payload));
-    customPayload = (pal_effect_custom_payload_t*) (payloadInfo + sizeof(pal_param_payload) + sizeof(effect_pal_payload_t));
-
-    pal_payload->payload_size = sizeof(effect_pal_payload_t) + sizeof(pal_effect_custom_payload_t) + pal_param_size;
-
-    effect_payload->isTKV = PARAM_NONTKV;
-    effect_payload->tag = AWX_MODULE_CUSTOM_TAG;
-    effect_payload->payloadSize = sizeof(pal_effect_custom_payload_t) + pal_param_size;
-
-    customPayload->paramId = data->param_id;
-
-    LOG(DEBUG) << __func__ << " PARAM ID: " << std::hex << customPayload->paramId;
-
-    status = pal_gef_rw_param(PAL_PARAM_ID_UIEFFECT, (void *) pal_payload, payload_size, aud_source_effect_device, PAL_STREAM_PLAYBACK_BUS, GEF_PARAM_READ, NULL);
-
-    LOG(DEBUG) << __func__ << " value " << customPayload->data[0];
-
-    memcpy(data->data, customPayload->data, pal_param_size);
-
-cleanup:
-    if (payloadInfo) {
-        free(payloadInfo);
-    }
-    pal_payload = nullptr;
-    effect_payload = nullptr;
-    customPayload = nullptr;
-    data = nullptr;
-
-    LOG(DEBUG) << __func__ << ": Exit";
-    return status;
 }
 
 extern "C" __attribute__((visibility("default")))int oem_init(void)
@@ -771,31 +538,21 @@ extern "C" __attribute__((visibility("default")))void oem_set_parameters(struct 
 
     int ret = 0;
     // AudioManager.setvendorparams()
-    if (parms != NULL)
-    {
-        ret = set_oem_audio_source_params(parms);
-
-        // if Source Params are found no need to check for Geometry
-        if (ret != 0)
+       if (parms != NULL)
         {
-            ret = setGeometryParam(parms);
-        }
-    }
-    else
-    {
-        LOG(ERROR) << "audio source params are null, unable to proceed ";
-        goto exit;
-    }
+            ret = set_oem_audio_source_params(parms);
 
-    if (ret != 0)
-    {
-        LOG(WARNING) << "unable set the OEM params with error" << ret;
-        goto exit;
-    }
-    else
-    {
-        LOG(DEBUG) << "set the audio source params done." << ret;
-    }
+            // if Source Params are found no need to check for Geometry
+            if (ret != 0)
+            {
+            setGeometryParam(parms);
+            }
+        }
+        else
+        {
+            LOG(ERROR) << "audio source params are null, unable to proceed ";
+            goto exit;
+        }
 
 exit:
     LOG(DEBUG) << __func__ << ": Exit";
@@ -817,4 +574,33 @@ extern "C" __attribute__((visibility("default")))int oem_get_parameters(const st
     }
     LOG(DEBUG) << __func__ << ": Exit";
     return status;
+}
+
+extern "C" __attribute__((visibility("default"))) void streamInfo(pal_stream_type_t streamType)
+{
+    oemStreamType = streamType;
+    LOG(DEBUG) << __func__ << " oemStreamType: " << oemStreamType;
+
+    if (gs_VehicleSpeed != INVALID_INIT_VALUE )
+    {
+        set_vehicle_speed(gs_VehicleSpeed);
+    }
+    if (gs_audioSourceType != INVALID_INIT_VALUE )
+    {
+        struct pal_awx_source_data source_data;
+        source_data.value[EQ_MASK_SOURCE_VAL] = gs_audioSourceType;
+        update_audiosourcedata(&source_data);
+    }
+    if (gs_Balance != INVALID_INIT_VALUE)
+    {
+        set_type2_param(BALANCE_PARAM_ID,gs_Balance);
+    }
+    if (gs_Fader != INVALID_INIT_VALUE)
+    {
+        set_type2_param(FADER_PARAM_ID,gs_Fader);
+    }
+    if (gs_FanSpeed != INVALID_INIT_VALUE)
+    {
+        set_fan_speed(gs_FanSpeed);
+    }
 }

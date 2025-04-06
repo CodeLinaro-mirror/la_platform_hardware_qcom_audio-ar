@@ -14,6 +14,9 @@ namespace qti::audio::core {
 HalOffloadEffects::HalOffloadEffects() {
     loadLibrary(kOffloadPostProcBundlePath);
     loadLibrary(kOffloadVisualizerPath);
+#ifdef AUDIO_AMPERE_EFFECTS
+    loadLibrary(kOffloadOemEffects);
+#endif
 }
 
 void HalOffloadEffects::loadLibrary(std::string path) {
