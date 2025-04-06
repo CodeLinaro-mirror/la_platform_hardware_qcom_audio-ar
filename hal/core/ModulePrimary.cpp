@@ -319,7 +319,10 @@ ndk::ScopedAStatus qti::audio::core::ModulePrimary::setAudioPortConfig(const ::a
 {
     int list_id,Requsted_id;
     LOG(DEBUG) << "setaudioportconfig module primary";
-    Module::setAudioPortConfig(in_requested,out_suggested,_aidl_return);
+    ndk::ScopedAStatus status = Module::setAudioPortConfig(in_requested,out_suggested,_aidl_return);
+    if (!status.isOk()) {
+            return status;
+        }
     if (in_requested.gain.has_value()) {
         if (in_requested.gain->values.empty()) {
             return ndk::ScopedAStatus::ok();
