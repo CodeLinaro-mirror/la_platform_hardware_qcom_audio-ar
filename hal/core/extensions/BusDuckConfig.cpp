@@ -133,7 +133,8 @@ StreamType getAudioUsageFromString(const std::string& src) {
              src == "BUS02_NAV_GUIDANCE" || src == "BUS03_PHONE" ||
              src == "BUS0F_NAV_GUIDANCE2" || src == "THERMAL_MITIGATION" ||
              src == "RADIO_AAM_MUTE_ORDER" || src == "NIGHT_MODE" ||
-             src == "DEVICE_TEMPERATURE_STATUS" ) return src;
+             src == "DEVICE_TEMPERATURE_STATUS" || src == "CP_DUCK" )
+        return src;
     return AudioUsage::UNKNOWN;
 }
 

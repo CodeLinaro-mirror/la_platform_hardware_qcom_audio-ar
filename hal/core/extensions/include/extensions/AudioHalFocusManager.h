@@ -168,7 +168,8 @@ class AudioFocusService {
                           { Type::STATIC_POWER_LIMITATION, Reasons::TCU_MUTE},
                           { Type::DELIVERY_MODE, Reasons::TCU_MUTE},
                           { Type::CYBER, Reasons::FORCED_MASTER_MUTE},
-                          { "THERMAL_MITIGATION", Reasons::THERMAL_LIMITATION},};
+                          { "THERMAL_MITIGATION", Reasons::THERMAL_LIMITATION},
+                          { "CP_DUCK", Reasons::PROJECTION_DUCKING},};
                         //{ "THERMAL_MITIGATION", Reasons::SUSPEND_EXIT_VOL_LIMITATION},};
         std::map<AudioUsage, RampParams> rampMap = {
             {AudioUsage::NOTIFICATION_TELEPHONY_RINGTONE, {RAMP_SHAPE_EXP, 20,20}},
