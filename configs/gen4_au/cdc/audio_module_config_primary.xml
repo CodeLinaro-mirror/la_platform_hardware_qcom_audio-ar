@@ -174,11 +174,8 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <mixPort name="voip_record" role="sink" flags="VOIP_TX">
             <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_MONO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
-        <mixPort name="vr_in_fast" role="sink" flags="FAST">
-            <profile samplingRates="16000" channelLayouts="LAYOUT_5POINT1" channelMasks="INDEX_MASK_6" formatType="PCM" pcmType="INT_16_BIT" />
-        </mixPort>
         <mixPort name="vr_in" role="sink">
-            <profile samplingRates="16000" channelLayouts="LAYOUT_5POINT1" channelMasks="INDEX_MASK_6" formatType="PCM" pcmType="INT_16_BIT" />
+            <profile samplingRates="16000" channelMasks="INDEX_MASK_6" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
         <mixPort name="mmap_no_irq_in" role="sink" maxOpenCount="1" maxActiveCount="1" flags="MMAP_NOIRQ">
             <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_FRONT_BACK" channelMasks="INDEX_MASK_3" formatType="PCM" pcmType="INT_16_BIT" />
@@ -319,7 +316,6 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <route type="mix" sink="Rear Seat Bus" sources="rear_seat" />
         <route type="mix" sink="Media Bus" sources="media,primary_out,low_latency_out,deep_buffer_out,compress_offload_out,direct_pcm_out,mmap_no_irq_out" />
         <route type="mix" sink="primary_in" sources="built_in_mic,built_in_back_mic,Primary In Bus,Front Passenger In Bus,Rear Seat In Bus" />
-        <route type="mix" sink="vr_in_fast" sources="VR In Bus"/>
         <route type="mix" sink="vr_in" sources="VR In Bus" />
         <route type="mix" sink="compress_in" sources="built_in_mic,built_in_back_mic,wired_headset_mic,bt_sco_headset_mic,fm_tuner_mic,bt_a2dp_mic,echo_reference_mic,bt_le_mic" />
         <route type="mix" sink="telephony_tx_device_out" sources="built_in_mic,built_in_back_mic,wired_headset_mic,bt_sco_headset_mic,fm_tuner_mic,bt_a2dp_mic,echo_reference_mic,bt_le_mic" />
