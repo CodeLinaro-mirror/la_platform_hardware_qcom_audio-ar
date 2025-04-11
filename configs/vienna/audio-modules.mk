@@ -22,6 +22,9 @@ AUDIO_AGM += libagm_compress_plugin
 AUDIO_AGM += agmcompresscap
 AUDIO_AGM += agmvoiceui
 AUDIO_AGM += agmhostless
+AUDIO_AGM += libcodec_interface
+AUDIO_AGM += libcodec_pcm_plugin
+
 
 #PAL Module
 AUDIO_PAL := libar-pal
