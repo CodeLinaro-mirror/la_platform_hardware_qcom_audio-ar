@@ -49,7 +49,7 @@ static void auto_hal_set_mute_state(char* mute_bus_addr, int mute_state) {
     char *saveptr = NULL;
     char address[AUDIO_DEVICE_MAX_ADDRESS_LEN] = {0};
 
-    ALOGE("%s:fp mute_config %s", __func__);
+    ALOGI("%s: fp mute_config", __func__);
     if (!init_config.fp_set_mute_config_for_address) {
         ALOGE("%s: function pointer to set_mute_config is null", __func__);
         return ;
