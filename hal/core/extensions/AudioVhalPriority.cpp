@@ -64,26 +64,26 @@ using namespace ::qti::audio::oem::config;
 
 #ifndef ENABLE_VHAL_TEST_WITH_KITCHENSINK
 #define ENABLE_VHAL_TEST_WITH_KITCHENSINK
-const VehicleProperty MuteRadioOrderByAAMId = VehicleProperty::HVAC_STEERING_WHEEL_HEAT;
+const int32_t ThermalPropertyId = 356517121; //VehicleProperty::HVAC_FAN_DIRECTION
+const int32_t MuteRadioOrderByAAMId = 289408269; //VehicleProperty::HVAC_STEERING_WHEEL_HEAT
 #ifdef ENABLE_QCOM_VHAL_NIGHTMODE
-const VehicleProperty NightModePropertyId = VehicleProperty::HVAC_SIDE_MIRROR_HEAT;
-const VehicleProperty DriverDoorPropertyId = VehicleProperty::DOOR_POS;
-const VehicleProperty FrontPassengerDoorPropertyId = VehicleProperty::HVAC_SEAT_TEMPERATURE;
-const VehicleProperty RearLeftDoorPropertyId = VehicleProperty::HVAC_SEAT_VENTILATION;
-const VehicleProperty RearRightDoorPropertyId = VehicleProperty::WINDOW_POS;
+const int32_t NightModePropertyId = 339739916; //VehicleProperty::HVAC_SIDE_MIRROR_HEAT
+const int32_t DriverDoorPropertyId = 373295872; //VehicleProperty::DOOR_POS
+const int32_t FrontPassengerDoorPropertyId = 356517131; //VehicleProperty::HVAC_SEAT_TEMPERATURE
+const int32_t RearLeftDoorPropertyId = 356517139; //VehicleProperty::HVAC_SEAT_VENTILATION
+const int32_t RearRightDoorPropertyId = 322964416; //VehicleProperty::WINDOW_POS
 #endif
-const VehicleProperty ThermalPropertyId = VehicleProperty::HVAC_FAN_DIRECTION;
 
 #else
-const VehicleProperty MuteRadioOrderByAAMId = VehicleProperty::HVAC_STEERING_WHEEL_HEAT;
+const int32_t ThermalPropertyId = 557909548;
+const int32_t MuteRadioOrderByAAMId = 555747163;
 #ifdef ENABLE_QCOM_VHAL_NIGHTMODE
-const VehicleProperty NightModePropertyId = VehicleProperty::HVAC_SIDE_MIRROR_HEAT;
-const VehicleProperty DriverDoorPropertyId = VehicleProperty::DOOR_POS;
-const VehicleProperty FrontPassengerDoorPropertyId = VehicleProperty::HVAC_SEAT_TEMPERATURE;
-const VehicleProperty RearLeftDoorPropertyId = VehicleProperty::HVAC_SEAT_VENTILATION;
-const VehicleProperty RearRightDoorPropertyId = VehicleProperty::WINDOW_POS;
+const int32_t NightModePropertyId = 339739916;
+const int32_t DriverDoorPropertyId = 373295872;
+const int32_t FrontPassengerDoorPropertyId = 356517131;
+const int32_t RearLeftDoorPropertyId = 356517139;
+const int32_t RearRightDoorPropertyId = 322964416;
 #endif
-const VehicleProperty ThermalPropertyId = VehicleProperty::HVAC_FAN_DIRECTION;
 
 #endif //ENABLE_VHAL_TEST_WITH_KITCHENSINK
 
@@ -155,25 +155,26 @@ struct vhal_data* Vhal_Data::vhal_data = nullptr;
 #endif
 
 // Helper to subscribe to VHal notifications
-bool subscribeToVHal(ISubscriptionClient* client, VehicleProperty propertyId) {
+bool subscribeToVHal(ISubscriptionClient* client, int32_t paramId){
+    // VehicleProperty propertyId) {
     LOG(DEBUG) << __func__ << ": Enter " ;
 
     // Register for vehicle state change callbacks we care about
     std::vector<aidl::android::hardware::automotive::vehicle::SubscribeOptions> options = {
             {
-                    .propId = static_cast<int32_t>(propertyId),
+                    .propId = paramId,
                     .areaIds = {},
             }
     };
     auto result = client->subscribe(options);
     if (!result.ok()) {
-        LOG(ERROR) << "VHAL subscription for property " << static_cast<int32_t>(propertyId)
+        LOG(ERROR) << "VHAL subscription for property " << paramId
                      << "error" << result.error().message();
         return false;
     }
     else
     {
-        LOG(DEBUG) << "VHAL subscription for propertyId = " << static_cast<int32_t>(propertyId) << " Success";
+        LOG(DEBUG) << "VHAL subscription for propertyId = " << paramId << " Success";
     }
     return true;
 }
@@ -195,7 +196,7 @@ void AudioVHALListener::onPropertyEvent(const std::vector<std::unique_ptr<IHalPr
         LOG(DEBUG) << __func__ << ": areaId : " << area;
 
 #ifdef ENABLE_QCOM_VHAL_NIGHTMODE
-        if (value->getPropId() == static_cast<int32_t>(NightModePropertyId)) {
+        if (value->getPropId() == NightModePropertyId) {
             if (value->getInt32Values().size() < 1) {
                 LOG(ERROR) << "Invalid NIGHT_MODE getFloatValues size, empty value :" << value->getInt32Values().size();
                 goto exit;
@@ -206,7 +207,7 @@ void AudioVHALListener::onPropertyEvent(const std::vector<std::unique_ptr<IHalPr
                 handler_vhal();
             }
         }
-        if (value->getPropId() == static_cast<int32_t>(DriverDoorPropertyId)) {
+        if (value->getPropId() == DriverDoorPropertyId) {
             if (value->getInt32Values().size() < 1) {
                 LOG(ERROR) << "Invalid Driver Door getInt32Values size, empty value :" << value->getInt32Values().size();
                 goto exit;
@@ -222,7 +223,7 @@ void AudioVHALListener::onPropertyEvent(const std::vector<std::unique_ptr<IHalPr
                 }
             }
         }
-        if (value->getPropId() == static_cast<int32_t>(FrontPassengerDoorPropertyId)) {
+        if (value->getPropId() == FrontPassengerDoorPropertyId) {
             if (value->getInt32Values().size() < 1) {
                 LOG(ERROR) << "Invalid Front Passenger Door getInt32Values size, empty value :" << value->getInt32Values().size();
                 goto exit;
@@ -237,7 +238,7 @@ void AudioVHALListener::onPropertyEvent(const std::vector<std::unique_ptr<IHalPr
                     handler_vhal();
                 }
             }
-        }if (value->getPropId() == static_cast<int32_t>(RearLeftDoorPropertyId)) {
+        }if (value->getPropId() == RearLeftDoorPropertyId) {
             if (value->getInt32Values().size() < 1) {
                 LOG(ERROR) << "Invalid Rear Left Door getInt32Values size, empty value :" << value->getInt32Values().size();
                 goto exit;
@@ -253,7 +254,7 @@ void AudioVHALListener::onPropertyEvent(const std::vector<std::unique_ptr<IHalPr
                 }
             }
         }
-        if (value->getPropId() == static_cast<int32_t>(RearRightDoorPropertyId)) {
+        if (value->getPropId() == RearRightDoorPropertyId) {
             if (value->getInt32Values().size() < 1) {
                 LOG(ERROR) << "Invalid Rear Right Door getInt32Values size, empty value :" << value->getInt32Values().size();
                 goto exit;
@@ -270,7 +271,7 @@ void AudioVHALListener::onPropertyEvent(const std::vector<std::unique_ptr<IHalPr
             }
         }
 #endif
-        if (value->getPropId() == static_cast<int32_t>(MuteRadioOrderByAAMId)) {
+        if (value->getPropId() == MuteRadioOrderByAAMId) {
             if (value->getInt32Values().size() < 1) {
                 LOG(ERROR) << "Invalid Radio Mute getInt32Values size, empty value :" << value->getInt32Values().size();
                 goto exit;
@@ -284,7 +285,7 @@ void AudioVHALListener::onPropertyEvent(const std::vector<std::unique_ptr<IHalPr
                 }
             }
         }
-        if (value->getPropId() == static_cast<int32_t>(ThermalPropertyId)) {
+        if (value->getPropId() == ThermalPropertyId) {
             if (value->getInt32Values().size() < 1) {
                 LOG(ERROR) << "Invalid Thermal Property size, empty value :" << value->getInt32Values().size();
                 goto exit;
