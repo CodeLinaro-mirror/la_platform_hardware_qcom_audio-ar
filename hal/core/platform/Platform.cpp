@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
- * SPDX-License-Identifier: BSD-3-Clause-Clear
- */
+* Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+* SPDX-License-Identifier: BSD-3-Clause-Clear
+*/
 
 #define LOG_TAG "AHAL_Platform_QTI"
 
@@ -1557,7 +1557,7 @@ void Platform::initUsecaseOpMap() {
     mUsecaseOpMap[Usecase::ULL_PLAYBACK] = makeUsecaseOps<UllPlayback>();
     mUsecaseOpMap[Usecase::MMAP_PLAYBACK] = makeUsecaseOps<MMapPlayback>();
     mUsecaseOpMap[Usecase::COMPRESS_OFFLOAD_PLAYBACK] = makeUsecaseOps<CompressPlayback>();
-    mUsecaseOpMap[Usecase::PCM_OFFLOAD_PLAYBACK] = makeUsecaseOps<PcmOffloadPlayback>();
+    mUsecaseOpMap[Usecase::DIRECT_PCM_PLAYBACK] = makeUsecaseOps<DirectPcmPlayback>();
     mUsecaseOpMap[Usecase::VOIP_PLAYBACK] = makeUsecaseOps<VoipPlayback>();
     mUsecaseOpMap[Usecase::HAPTICS_PLAYBACK] = makeUsecaseOps<HapticsPlayback>();
     mUsecaseOpMap[Usecase::SPATIAL_PLAYBACK] = makeUsecaseOps<SpatialPlayback>();

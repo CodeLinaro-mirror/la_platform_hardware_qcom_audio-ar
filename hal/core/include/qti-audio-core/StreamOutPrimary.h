@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
- * SPDX-License-Identifier: BSD-3-Clause-Clear
- */
+* Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+* SPDX-License-Identifier: BSD-3-Clause-Clear
+*/
 
 #pragma once
 
@@ -143,7 +143,7 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     ::android::status_t hapticsWrite(const void *buffer, size_t frameCount);
 
     std::variant<std::monostate, PrimaryPlayback, DeepBufferPlayback, CompressPlayback,
-                 PcmOffloadPlayback, VoipPlayback, SpatialPlayback, MMapPlayback, UllPlayback,
+                 DirectPcmPlayback, VoipPlayback, SpatialPlayback, MMapPlayback, UllPlayback,
                  InCallMusic, HapticsPlayback, BitPerfectPlayback>
             mExt;
     // references
