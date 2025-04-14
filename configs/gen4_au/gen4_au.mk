@@ -141,6 +141,7 @@ ENABLE_QCOM_HAL_AUDIO_FOCUS := false
 ifneq ($(ENABLE_QCOM_HAL_AUDIO_FOCUS), true)
 PRODUCT_PACKAGES += vendor.qti.hardware.automotive.audiocontrol-service
 endif
+ENABLE_QCOM_VHAL_NIGHTMODE := false
 
 PRODUCT_PACKAGES += libqtiautobundle
 ifeq ($(TARGET_BOARD_AUTO), true)

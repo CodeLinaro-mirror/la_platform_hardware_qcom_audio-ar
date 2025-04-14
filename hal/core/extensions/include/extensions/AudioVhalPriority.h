@@ -16,7 +16,10 @@ namespace {
 extern "C" {
 #endif
 
+#ifdef ENABLE_QCOM_VHAL_NIGHTMODE
 void handler_vhal();
+#endif
+
 void handler_radioMute(int32_t radio_mute_byAAM_value);
 void handler_thermal(int32_t temp);
 
@@ -37,6 +40,7 @@ class FocusHandler {
         int abandonFocus(int64_t focusId);
 };
 
+#ifdef ENABLE_QCOM_VHAL_NIGHTMODE
 // VHAL Night Mode and Door properties struct
 struct vhal_data{
     int32_t nightModeValue;
@@ -76,6 +80,7 @@ public:
         vhal_data = nullptr; // Avoid dangling pointer
     }
 };
+#endif
 
 #ifdef __cplusplus
 }
