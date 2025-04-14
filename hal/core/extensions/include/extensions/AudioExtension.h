@@ -284,6 +284,7 @@ class AudioExtension {
     void audio_extn_set_parameters(struct str_parms* params);
     void audio_extn_get_parameters(struct str_parms* params, struct str_parms* reply);
     void audio_feature_stats_set_parameters(struct str_parms* params);
+    void audio_feature_softStepVolume_set_parameters(struct str_parms* params);
     explicit AudioExtension() = default;
     AudioExtension(const AudioExtension&) = delete;
     AudioExtension& operator=(const AudioExtension& x) = delete;
