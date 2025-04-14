@@ -1074,7 +1074,6 @@ void StreamOutPrimary::configure() {
         LOG(ERROR) << __func__ << mLogPrefix << " invalid usecase to configure";
         return;
     }
-
     LOG(VERBOSE) << __func__ << mLogPrefix << " assigned pal stream type:" << attr->type;
 
     auto palDevices =
@@ -1247,6 +1246,9 @@ void StreamOutPrimary::configure() {
     }
 
     LOG(INFO) << __func__ << mLogPrefix << ": stream is configured";
+    if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK || mTag == Usecase::PCM_OFFLOAD_PLAYBACK || mTag == Usecase::MEDIA_PLAYBACK)
+        mAudExt.mAutoOemExtension->audio_extn_autooem_set_streamType(attr->type);
+
     enableOffloadEffects(true);
     const auto endTime = std::chrono::steady_clock::now();
     using FloatMillis = std::chrono::duration<float, std::milli>;
@@ -1269,9 +1271,12 @@ std::string StreamOutPrimary::getAddress()const
 }
 
 void StreamOutPrimary::enableOffloadEffects(const bool enable) {
-    if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK || mTag == Usecase::PCM_OFFLOAD_PLAYBACK) {
+    if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK || mTag == Usecase::PCM_OFFLOAD_PLAYBACK || mTag == Usecase::MEDIA_PLAYBACK)
+    {
         auto& ioHandle = mMixPortConfig.ext.get<AudioPortExt::Tag::mix>().handle;
+        LOG(INFO) << __func__ <<  "io Handle"  << ioHandle;
         if (enable) {
+            LOG(INFO) << __func__ << "StartEffect" ;
             mHalEffects.startEffect(ioHandle, mPalHandle);
             LOG(VERBOSE) << __func__ << mLogPrefix;
         } else {
@@ -1312,6 +1317,8 @@ ndk::ScopedAStatus StreamOutPrimary::setLatencyMode(
 
 void StreamOutPrimary::shutdown_I() {
     if (mPalHandle != nullptr) {
+        if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK || mTag == Usecase::PCM_OFFLOAD_PLAYBACK || mTag == Usecase::MEDIA_PLAYBACK)
+            mAudExt.mAutoOemExtension->audio_extn_autooem_set_streamType(PAL_STREAM_INVALID);
         enableOffloadEffects(false);
         ::pal_stream_stop(mPalHandle);
         ::pal_stream_close(mPalHandle);

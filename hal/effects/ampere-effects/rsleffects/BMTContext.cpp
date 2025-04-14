@@ -10,15 +10,14 @@
 
 #include "RslContext.h"
 #include "RslTypes.h"
-#include "extensions/AudioExtension.h"
+#include "PalParamDelegator.h"
 
-#define MIN_BMT_VALUE -9
-#define MAX_BMT_VALUE  9
 
 namespace aidl::ampere::effects {
 
 using aidl::android::media::audio::common::AudioDeviceDescription;
 using aidl::android::media::audio::common::AudioDeviceType;
+using namespace ::aidl::qti::awx;
 
 BMTContext::BMTContext(const Parameter::Common& common,
                                    const RslEffectType& type, bool processData)
@@ -44,10 +43,37 @@ void BMTContext::deInit() {
     LOG(DEBUG) << "Enter " << __func__ << " ioHandle " << getIoHandle();
     stop();
 }
+RetCode BMTContext::enable() {
+    std::lock_guard lg(mMutex);
+    LOG(DEBUG) << __func__ << " ioHandle " << getIoHandle();
+    if (isEffectActive())
+     return RetCode::ERROR_ILLEGAL_PARAMETER;
+    mState = EffectState::ACTIVE;
+    // Apply the cached value in case of Session Started Later
+    updatePalParameters(EFFECT_BMT_PARAM_BASS, &mBMTLevel[0]) ;
+    updatePalParameters(EFFECT_BMT_PARAM_MID, &mBMTLevel[1]) ;
+    updatePalParameters(EFFECT_BMT_PARAM_TREBEL, &mBMTLevel[2]) ;
+    return RetCode::SUCCESS;
+}
 
-RetCode BMTContext::start() {
+RetCode BMTContext::disable() {
+    std::lock_guard lg(mMutex);
+
+    struct param_type2_t defaultBMTLevel[MAX_NUM_BANDS] = {0} ;
+
+    LOG(DEBUG) << __func__ << " ioHandle " << getIoHandle();
+    if (!isEffectActive()) return RetCode::ERROR_ILLEGAL_PARAMETER;
+    mState = EffectState::INITIALIZED;
+    // Apply the default value in case of Session Started Later
+    updatePalParameters(EFFECT_BMT_PARAM_BASS, &defaultBMTLevel[0]) ;
+    updatePalParameters(EFFECT_BMT_PARAM_MID, &defaultBMTLevel[1]) ;
+    updatePalParameters(EFFECT_BMT_PARAM_TREBEL, &defaultBMTLevel[2]) ;
+    return RetCode::SUCCESS;
+}
+
+RetCode BMTContext::start(pal_stream_handle_t* palHandle) {
     LOG(DEBUG) << "Enter " << __func__ << " ioHandle " << getIoHandle();
-
+    mPalHandle = palHandle;
     std::lock_guard lg(mMutex);
     struct param_type2_t BMTParams;
     mState = EffectState::ACTIVE;
@@ -67,7 +93,7 @@ RetCode BMTContext::stop() {
     updatePalParameters(EFFECT_BMT_PARAM_BASS, &BMTParams) ;
     updatePalParameters(EFFECT_BMT_PARAM_MID, &BMTParams) ;
     updatePalParameters(EFFECT_BMT_PARAM_TREBEL, &BMTParams) ;
-
+    mPalHandle = nullptr;;
     return RetCode::SUCCESS;
 }
 
@@ -88,46 +114,6 @@ RetCode BMTContext::setOutputDevice(
     return RetCode::SUCCESS;
 }
 
-RetCode BMTContext::setParameter(uint32_t cmd, int32_t param_value) {
-    LOG(DEBUG) << "Enter " << __func__ << " cmd: " << cmd << " value " << param_value;
-
-    std::lock_guard lg(mMutex);
-
-    mBMTParams.value = param_value;
-
-    if (updatePalParameters(cmd, &mBMTParams) == 0) {
-        return RetCode::SUCCESS;
-    }
-
-    LOG(DEBUG) << " Exit " << __func__;
-
-    return RetCode::ERROR_NULL_POINTER;
-}
-
-RetCode BMTContext::getParameter(effect_param_t* param, uint32_t *size) {
-    LOG(DEBUG) << "Enter " << __func__;
-    std::lock_guard lg(mMutex);
-    uint64_t cmd;
-    memcpy(&cmd, param->data, param->psize);
-
-    int32_t voffset = ((param->psize - 1) / sizeof(int32_t) + 1) * sizeof(int32_t);
-    void *value = param->data + voffset;
-
-    param->status = 0;
-    param->vsize = sizeof(uint64_t);
-    *size = sizeof(effect_param_t) + voffset + param->vsize;
-
-    *(int32_t *)value = getValueFromPalParam(cmd);
-
-    if (*(int32_t *)value < (MIN_BMT_VALUE - 1)) {
-        return RetCode::ERROR_ILLEGAL_PARAMETER;
-    }
-
-    LOG(DEBUG) << " Exit " <<  __func__;
-
-    return RetCode::SUCCESS;
-}
-
 RetCode BMTContext::setBMTBandLevels(
         const std::vector<Equalizer::BandLevel>& bandLevels) {
     std::lock_guard lg(mMutex);
@@ -142,8 +128,8 @@ RetCode BMTContext::setBMTBandLevels(
         int level = bandLevel.levelMb;
 
         if ( level < MIN_BMT_VALUE || level > MAX_BMT_VALUE ) {
-            LOG(DEBUG) << __func__ << "Error in setting value, not in range -9 to +9 ";
-            return RetCode::ERROR_ILLEGAL_PARAMETER;
+            LOG(DEBUG) << __func__ << "Error in setting value, not in range -9 to +9 " << level;
+            return RetCode::SUCCESS;
         }
 
         mBMTLevel[bandLevel.index].value = bandLevel.levelMb;
@@ -152,9 +138,7 @@ RetCode BMTContext::setBMTBandLevels(
                      << " refined level" << level;
 
         mBMTParams.value = level;
-        if (updatePalParameters(bandLevel.index, &mBMTParams) != 0) {
-            return RetCode::ERROR_ILLEGAL_PARAMETER;
-        }
+        updatePalParameters(bandLevel.index, &mBMTParams) ;
     }
 
     LOG(DEBUG) << " Exit " <<  __func__;
@@ -200,20 +184,26 @@ int BMTContext::getValueFromPalParam(uint32_t cmd) const {
             break;
         default:
             LOG(ERROR) << __func__ << " Unsupported param ";
-            break;
+            return -EINVAL;
     }
     pal_param.param_size = sizeof(param_type2_t);
     pal_param.data = &params;
 
     // Defining CAPI param Type
     effect_type type = SYNC_WITHOUT_AUDIO_BUS;
-    ret = ::qti::audio::core::AWX_get_param(&pal_param, type);
+
+    if (mPalHandle != NULL){
+        ret = PalParamDelegator::AWX_get_param_handle(mPalHandle,&pal_param, type);
+    } else {
+        LOG(WARNING) << __func__ << " PAL handle is NULL return Cached Value " << mBMTLevel[cmd].value << "for Effect " <<std::to_string(cmd);
+        return mBMTLevel[cmd].value;
+    }
 
     if(ret < 0) {
-        LOG(ERROR) << __func__ << "Error while fetching value returned with ret: " << ret;
-        return (MIN_BMT_VALUE - 1);
+        LOG(ERROR) << __func__ << "Error while fetching value returned with ret: " << ret << "return Cached Value " << mBMTLevel[cmd].value;
+        return mBMTLevel[cmd].value;
     } else {
-        LOG(DEBUG) << __func__ << "Parameter fetched successfully! ret: " << params.value;
+        LOG(DEBUG) << __func__ << "Parameter fetched successfully! ret: " << params.value << "For Effect " <<std::to_string(cmd);
     }
 
     LOG(DEBUG) << "Exit " << __func__;
@@ -251,10 +241,37 @@ int BMTContext::updatePalParameters(uint32_t cmd, struct param_type2_t *params) 
 
     // Defining CAPI param Type
     effect_type type = SYNC_WITHOUT_AUDIO_BUS;
-    ::qti::audio::core::AWX_set_param(pal_param, type);
 
+    if (mPalHandle != NULL){
+        PalParamDelegator::AWX_set_param_handle(mPalHandle,pal_param, type);
+    } else {
+        PalParamDelegator::AWX_set_param(pal_param, type);
+        LOG(DEBUG) << "PAL handle is NULL " << __func__;
+    }
     LOG(DEBUG) << "Exit " << __func__;
 
     return 0;
 }
+
+int BMTContext::getEqualizerPreset() const
+{
+    LOG(WARNING) << __func__ << " Unsupported param ";
+    return mPresetIndex;
+}
+
+RetCode BMTContext::setEqualizerPreset(const std::size_t presetIdx)
+{
+    LOG(WARNING) << __func__ << " Unsupported param by AWX module";
+    mPresetIndex = presetIdx;
+    return RetCode::SUCCESS;
+}
+
+std::vector<Equalizer::Preset> BMTContext::getPresets()
+{
+    std::vector<Equalizer::Preset> kPresets = {};
+    LOG(WARNING) << __func__ << " Unsupported param by AWX module";
+    return kPresets;
+}
+
+
 } // namespace aidl::ampere::effects

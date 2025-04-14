@@ -10,7 +10,7 @@
 
 #include "RslContext.h"
 #include "RslTypes.h"
-#include "extensions/AudioExtension.h"
+#include "PalParamDelegator.h"
 
 #define MIN_BASS_BOOST_VALUE 0
 #define MAX_BASS_BOOST_VALUE 1
@@ -19,6 +19,7 @@ namespace aidl::ampere::effects {
 
 using aidl::android::media::audio::common::AudioDeviceDescription;
 using aidl::android::media::audio::common::AudioDeviceType;
+using namespace ::aidl::qti::awx;
 
 BassBoostContext::BassBoostContext(const Parameter::Common& common,
                                    const RslEffectType& type, bool processData)
@@ -45,25 +46,59 @@ void BassBoostContext::deInit() {
     stop();
 }
 
-RetCode BassBoostContext::start() {
-    LOG(DEBUG) << "Enter " << __func__ << " ioHandle " << getIoHandle();
-
+RetCode BassBoostContext::enable() {
     std::lock_guard lg(mMutex);
+    LOG(DEBUG) << __func__ << " ioHandle " << getIoHandle();
+    if (isEffectActive())
+     return RetCode::ERROR_ILLEGAL_PARAMETER;
     mState = EffectState::ACTIVE;
-    setBassBoost(MAX_BASS_BOOST_VALUE);
-
+    mBassBoostSyncParams.value = MAX_BASS_BOOST_VALUE ;
+    setOffloadParameters();
     return RetCode::SUCCESS;
 }
 
+RetCode BassBoostContext::disable() {
+    std::lock_guard lg(mMutex);
+    LOG(DEBUG) << __func__ << " ioHandle " << getIoHandle();
+    if (!isEffectActive()) return RetCode::ERROR_ILLEGAL_PARAMETER;
+    mState = EffectState::INITIALIZED;
+    mBassBoostSyncParams.value = MAX_BASS_BOOST_VALUE ;
+    setOffloadParameters();
+    return RetCode::SUCCESS;
+}
+
+RetCode BassBoostContext::start(pal_stream_handle_t* palHandle) {
+    std::lock_guard lg(mMutex);
+    LOG(DEBUG) << __func__ << " ioHandle " << getIoHandle() ;
+    mPalHandle = palHandle;
+    if (isEffectActive()) {
+        setOffloadParameters();
+    } else {
+        LOG(DEBUG) << "Not yet enabled";
+    }
+    return RetCode::SUCCESS;
+}
+
+
 RetCode BassBoostContext::stop() {
     std::lock_guard lg(mMutex);
-    LOG(DEBUG) << "Enter " << __func__ << " ioHandle " << getIoHandle();
+    struct param_type2_t BassBoostSyncParams = { 0 }; // Value 0 is disable
 
-    struct param_type2_t bassBoostParam = {0}; // by default enable bit is 0
-    mState = EffectState::INITIALIZED;
-    setBassBoost(MIN_BASS_BOOST_VALUE);
-
+    LOG(DEBUG) << __func__ << " ioHandle " << getIoHandle();
+    updatePalParameters(&BassBoostSyncParams);
+    mPalHandle = nullptr;
     return RetCode::SUCCESS;
+}
+
+int BassBoostContext::setOffloadParameters() {
+
+    if (mPalHandle) {
+        LOG(DEBUG) << " Bass BOOST value " << mBassBoostSyncParams.value;
+        setBassBoost(mBassBoostSyncParams.value);
+    } else {
+        LOG(DEBUG) << " PalHandle not set";
+    }
+    return 0;
 }
 
 RetCode BassBoostContext::setBassBoost(int bass) {
@@ -72,16 +107,24 @@ RetCode BassBoostContext::setBassBoost(int bass) {
 
     mBassBoostSyncParams.value = bass ;
 
-    if (updatePalParameters(&mBassBoostSyncParams) == 0)
-    {
-        return RetCode::SUCCESS;
+    if (updatePalParameters(&mBassBoostSyncParams) == 0) {
+        LOG(DEBUG) << "updatePalParameters Bass Boost Successful ";
     }
 
     LOG(DEBUG) << "Exit " << __func__;
 
-    return RetCode::ERROR_NULL_POINTER;
+    return RetCode::SUCCESS;
 }
 
+int BassBoostContext::getBassBoostStrength(){
+    LOG(DEBUG) << "Enter Strength Not Supported by AWX module return 0 " << __func__;
+
+    return 0;
+}
+RetCode BassBoostContext::setBassBoostStrength(int strength){
+    LOG(DEBUG) << __func__ << " strength not supported by AWX module Do Nothing " << strength;
+    return RetCode::SUCCESS;
+}
 int BassBoostContext::getBassBoost(){
     LOG(DEBUG) << "Enter " << __func__;
 
@@ -100,7 +143,7 @@ int BassBoostContext::getBassBoost(){
 
     // Defining CAPI param Type
     effect_type type = SYNC_WITHOUT_AUDIO_BUS;
-    ret = ::qti::audio::core::AWX_get_param(&pal_param, type);
+    ret = PalParamDelegator::AWX_get_param(&pal_param, type);
 
     if(ret < 0) {
         LOG(ERROR) << __func__ << "Error while fetching value returned with ret: " << ret;
@@ -112,43 +155,6 @@ int BassBoostContext::getBassBoost(){
     LOG(DEBUG) << "Exit " << __func__;
 
     return Bassbootparams.value;
-}
-
-RetCode BassBoostContext::setParameter(uint32_t cmd, int32_t param_value) {
-    LOG(DEBUG) << "Enter " << __func__ << " cmd: " << cmd << " value " << param_value;
-    std::lock_guard lg(mMutex);
-    if (param_value < MIN_BASS_BOOST_VALUE || param_value > MAX_BASS_BOOST_VALUE) {
-        LOG(DEBUG) << __func__ << "Error in setting value, not in range 0 to 3 ";
-        return RetCode::ERROR_ILLEGAL_PARAMETER;
-    }
-
-    LOG(DEBUG) << "Exit " << __func__;
-
-    return setBassBoost(param_value);
-}
-
-RetCode BassBoostContext::getParameter(effect_param_t* param, uint32_t *size) {
-    LOG(DEBUG) << "Enter " << __func__;
-    std::lock_guard lg(mMutex);
-    uint64_t cmd;
-    memcpy(&cmd, param->data, param->psize);
-
-    int32_t voffset = ((param->psize - 1) / sizeof(int32_t) + 1) * sizeof(int32_t);
-    void *value = param->data + voffset;
-
-    param->status = 0;
-    param->vsize = sizeof(uint64_t);
-    *size = sizeof(effect_param_t) + voffset + param->vsize;
-    *(int32_t *)value = getBassBoost();
-
-    if (*(int32_t *)value < MIN_BASS_BOOST_VALUE) {
-        LOG(ERROR) << __func__ << " Unsupported parameter ";
-        return RetCode::ERROR_ILLEGAL_PARAMETER;
-    }
-
-    LOG(DEBUG) << " Exit " << __func__;
-
-    return RetCode::SUCCESS;
 }
 
 RetCode BassBoostContext::setOutputDevice(
@@ -187,7 +193,13 @@ int BassBoostContext::updatePalParameters(struct param_type2_t *params) {
     effect_type type = SYNC_WITHOUT_AUDIO_BUS;
     LOG(DEBUG) << __func__ << "Successfully created pal_param";
 
-    ::qti::audio::core::AWX_set_param(pal_param, type);
+
+    if (mPalHandle != NULL) {
+        PalParamDelegator::AWX_set_param_handle(mPalHandle,pal_param, type);
+    } else {
+        PalParamDelegator::AWX_set_param(pal_param, type);
+        LOG(DEBUG) << "PAL handle is NULL " << __func__;
+    }
 
     if (pal_param) {
         free(pal_param);

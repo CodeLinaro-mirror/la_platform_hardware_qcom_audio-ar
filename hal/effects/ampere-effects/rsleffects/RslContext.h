@@ -51,10 +51,10 @@ class RslContext : public EffectContext {
     // Each effect context needs to implement these methods
     virtual void deInit() = 0;
     virtual void init() = 0;
-    virtual RetCode start() = 0;
+    virtual RetCode start(pal_stream_handle_t* palHandle) = 0;
     virtual RetCode stop() = 0;
-    virtual RetCode setParameter(uint32_t cmd, int32_t param_value) { return RetCode::SUCCESS; }
-    virtual RetCode getParameter(effect_param_t *param, uint32_t *size) { return RetCode::SUCCESS; }
+    virtual RetCode enable() = 0;
+    virtual RetCode disable() = 0;
 
     virtual RetCode setParameter(const std::vector<uint8_t>& params) { return RetCode::SUCCESS; }
     virtual std::vector<uint8_t> getParameter(std::vector<uint8_t> id)  { return id; }
@@ -67,10 +67,24 @@ class RslContext : public EffectContext {
     }
     virtual std::vector<Equalizer::BandLevel> getBMTBandLevels() const { return {}; }
 
+    virtual RetCode setEqualizerPreset(const std::size_t presetIdx)
+    {
+      return RetCode::ERROR_ILLEGAL_PARAMETER;
+    }
+    virtual int getEqualizerPreset() const
+    {
+      return 0;
+    }
+    virtual std::vector<Equalizer::Preset> getPresets()
+    {
+      return {};
+    }
+
     // BassBoost methods, implement in BassBoostContext
     virtual RetCode setBassBoost(int bass) { return RetCode::ERROR_ILLEGAL_PARAMETER; }
     virtual int getBassBoost() { return 0; }
-
+    virtual int getBassBoostStrength() { return 0; }
+    virtual RetCode setBassBoostStrength(int strength) { return RetCode::ERROR_ILLEGAL_PARAMETER; }
     virtual int updatePalParameters(struct param_type2_t *param) { return 0; }
 
     virtual bool deviceSupportsEffect(const std::vector<AudioDeviceDescription>& device) {
@@ -82,6 +96,7 @@ class RslContext : public EffectContext {
     const RslEffectType mType;
     EffectState mState = EffectState::UNINITIALIZED;
     bool isEffectActive() { return mState == EffectState::ACTIVE; }
+    pal_stream_handle_t* mPalHandle = NULL;
 };
 
 class AmbianceContext final : public RslContext {
@@ -91,13 +106,14 @@ class AmbianceContext final : public RslContext {
     ~AmbianceContext() override;
     virtual void deInit() override;
     virtual void init() override;
-    virtual RetCode start() override;
+    virtual RetCode start(pal_stream_handle_t* palHandle) override;
     virtual RetCode stop() override;
-    RetCode setParameter(uint32_t cmd, int32_t param_value) override;
+    virtual RetCode enable() override;
+    virtual RetCode disable() override;
+
     RetCode setOutputDevice(const std::vector<AudioDeviceDescription>& device) override;
     RetCode setAmbianceProfile(int profile) ;
     int getAmbianceProfile() ;
-    RetCode getParameter(effect_param_t *param, uint32_t *size) override;
     int updatePalParameters(struct AmbianceParams *param);
     virtual RetCode setParameter(const std::vector<uint8_t>& params)  override ;
     virtual std::vector<uint8_t> getParameter(std::vector<uint8_t> id)  override;
@@ -117,14 +133,16 @@ class SDVCContext final : public RslContext {
     ~SDVCContext() override;
     virtual void deInit() override;
     virtual void init() override;
-    virtual RetCode start() override;
+    virtual RetCode start(pal_stream_handle_t* palHandle) override;
     virtual RetCode stop() override;
-    RetCode setParameter(uint32_t cmd, int32_t param_value) override;
+    virtual RetCode enable() override;
+    virtual RetCode disable() override;
+
     RetCode setOutputDevice(const std::vector<AudioDeviceDescription>& device) override;
     RetCode setSdvcCurrentProfile(int profile) ;
     int getSdvcCurrentProfile() ;
     int updatePalParameters(struct param_type2_t *param);
-    RetCode getParameter(effect_param_t *param, uint32_t *size) override;
+
     virtual RetCode setParameter(const std::vector<uint8_t>& params)  override ;
     virtual std::vector<uint8_t> getParameter(std::vector<uint8_t> id)  override;
 
@@ -143,14 +161,15 @@ class SteadyVolumeContext final : public RslContext {
     ~SteadyVolumeContext() override;
     virtual void deInit() override;
     virtual void init() override;
-    virtual RetCode start() override;
+    virtual RetCode start(pal_stream_handle_t* palHandle) override;
     virtual RetCode stop() override;
-    RetCode setParameter(uint32_t cmd, int32_t param_value) override;
+    virtual RetCode enable() override;
+    virtual RetCode disable() override;
+
     RetCode setOutputDevice(const std::vector<AudioDeviceDescription>& device) override;
     RetCode setSteadyVolume(int profile) ;
     int getSteadyVolume() ;
     int updatePalParameters(struct param_type2_t *param);
-    RetCode getParameter(effect_param_t *param, uint32_t *size) override;
     virtual RetCode setParameter(const std::vector<uint8_t>& params)  override ;
     virtual std::vector<uint8_t> getParameter(std::vector<uint8_t> id)  override;
 
@@ -166,21 +185,27 @@ class BMTContext final : public RslContext {
     ~BMTContext() override;
     virtual void deInit() override;
     virtual void init() override;
-    virtual RetCode start() override;
+    virtual RetCode start(pal_stream_handle_t* palHandle) override;
     virtual RetCode stop() override;
-    RetCode setParameter(uint32_t cmd, int32_t param_value) override;
+    virtual RetCode enable() override;
+    virtual RetCode disable() override;
+
     RetCode setOutputDevice(const std::vector<AudioDeviceDescription>& device) override;
     int getValueFromPalParam(uint32_t cmd) const override;
     RetCode setBMTBandLevels(const std::vector<Equalizer::BandLevel>& bandLevels) override;
     std::vector<Equalizer::BandLevel> getBMTBandLevels() const override;
     int updatePalParameters(uint32_t cmd, struct param_type2_t *param);
-    RetCode getParameter(effect_param_t *param, uint32_t *size) override;
+
+    RetCode setEqualizerPreset(const std::size_t presetIdx) override;
+    std::vector<Equalizer::Preset> getPresets() override;
+    int getEqualizerPreset() const override ;
 
   private:
     struct param_type2_t mBMTParams;
     bool mTempDisabled = false;
     struct param_type2_t mBMTLevel[MAX_NUM_BANDS];
-};
+    int mPresetIndex = 0;
+  };
 
 class BassBoostContext final : public RslContext {
   public:
@@ -189,14 +214,17 @@ class BassBoostContext final : public RslContext {
     ~BassBoostContext() override;
     virtual void deInit() override;
     virtual void init() override;
-    virtual RetCode start() override;
+    virtual RetCode start(pal_stream_handle_t* palHandle) override;
     virtual RetCode stop() override;
-    RetCode setParameter(uint32_t cmd, int32_t param_value) override;
+    virtual RetCode enable() override;
+    virtual RetCode disable() override;
     RetCode setOutputDevice(const std::vector<AudioDeviceDescription>& device) override;
     RetCode setBassBoost(int bass) override;
     int getBassBoost() override;
+    int getBassBoostStrength() override;
+    RetCode setBassBoostStrength(int strength) override;
     int updatePalParameters(struct param_type2_t *param);
-    RetCode getParameter(effect_param_t *param, uint32_t *size) override;
+    int setOffloadParameters() ;
 
   private:
     struct param_type2_t mBassBoostSyncParams;

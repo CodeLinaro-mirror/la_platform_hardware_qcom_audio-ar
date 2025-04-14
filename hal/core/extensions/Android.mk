@@ -410,8 +410,8 @@ LOCAL_CFLAGS := \
 
 LOCAL_C_INCLUDES := \
     $(TOP)/vendor/qcom/opensource/pal \
-    $(TOP)/vendor/qcom/opensource/audio-hal/primary-hal/hal \
-    $(TOP)/vendor/qcom/opensource/audio-hal/primary-hal/hal/core/extensions/include \
+    $(TOP)/vendor/qcom/opensource/audio-hal-ar/primary-hal/hal \
+    $(TOP)/vendor/qcom/opensource/audio-hal-ar/primary-hal/hal/core/extensions/include \
     $(TOP)/external/expat/lib \
     $(TOP)/system/media/audio_utils/include \
     $(call include-path-for, audio-route) \
@@ -428,7 +428,7 @@ LOCAL_SHARED_LIBRARIES := \
     libar-pal \
     libvhalclient \
     libAudioConfigOem \
-
+    libAWXPAL
 
 
 LOCAL_HEADER_LIBRARIES :=  \
@@ -500,3 +500,39 @@ LOCAL_HEADER_LIBRARIES :=  \
 include $(BUILD_SHARED_LIBRARY)
 #-------------------------------------------------
 endif
+
+#-------------------------------------------
+#            Build CONFIG LIB
+#-------------------------------------------
+include $(CLEAR_VARS)
+
+LOCAL_MODULE := libAWXPAL
+LOCAL_VENDOR_MODULE := true
+
+LOCAL_SRC_FILES:= PalParamDelegator.cpp
+
+LOCAL_CFLAGS += \
+    -Wall \
+    -Werror \
+    -Wno-unused-function \
+    -Wno-unused-variable
+
+LOCAL_SHARED_LIBRARIES := \
+    libaudioroute \
+    libbase \
+    liblog \
+    libaudioutils \
+    libcutils \
+    libdl \
+    liblog \
+    libar-pal
+
+LOCAL_C_INCLUDES := \
+    $(TOP)/vendor/qcom/opensource/pal \
+    $(TOP)/vendor/qcom/opensource/audio-hal-ar/primary-hal/hal/core/extensions/include/extensions \
+    $(call include-path-for, audio-route) \
+
+LOCAL_HEADER_LIBRARIES += libhardware_headers
+LOCAL_HEADER_LIBRARIES += libsystem_headers
+
+include $(BUILD_SHARED_LIBRARY)

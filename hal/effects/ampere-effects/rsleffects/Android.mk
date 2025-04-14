@@ -18,17 +18,16 @@ LOCAL_SRC_FILES:= \
         BMTContext.cpp \
         BassBoostContext.cpp
 
-LOCAL_STATIC_LIBRARIES := libaudioeffecthal_base_impl_static \
-                          libaudiocore.extension
+LOCAL_STATIC_LIBRARIES := libaudioeffecthal_base_impl_static
 
 LOCAL_C_INCLUDES := \
-    $(TOP)/vendor/qcom/opensource/audio-hal-ar/primary-hal/hal/core/extensions/include
+    $(TOP)/vendor/qcom/opensource/audio-hal-ar/primary-hal/hal/core/extensions/include/extensions
 
 LOCAL_SHARED_LIBRARIES:= \
     $(EFFECTS_DEFAULTS_SHARED_LIBRARIES) \
     libar-pal \
     liblog \
-    libaudiocorehal.qti
+    libAWXPAL
 
 LOCAL_HEADER_LIBRARIES:= \
     $(EFFECTS_DEFAULTS_HEADERS_LIBRARIES) \

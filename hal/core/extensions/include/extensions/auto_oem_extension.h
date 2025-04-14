@@ -30,8 +30,11 @@
 * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
 * SPDX-License-Identifier: BSD-3-Clause-Clear
 */
+#ifndef AUTO_OEM_EXTENSION_H
+#define AUTO_OEM_EXTENSION_H
 
 #include <PalApi.h>
+#include <extensions/PalParamDelegator.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,14 +46,6 @@ struct pal_awx_source_data
     uint16_t eq_mask;
     uint16_t status;
     int32_t value[16];
-};
-
-//AWX PAL Param structure
-struct pal_awx_param_t
-{
-    uint32_t param_id;
-    uint32_t param_size;
-    void* data;
 };
 
 /*
@@ -87,19 +82,15 @@ struct param_type2_t
 
 int set_vehicle_speed(int32_t);
 int set_fan_speed(int32_t);
-void update_fan_speed_pal_param(struct param_type2_t *);
+void update_fan_speed_pal_param(param_type2_t *);
 void update_vehicle_speed_pal_param(struct param_type2_t *);
 int set_oem_audio_source_params(struct str_parms *);
 int find_source_type(struct str_parms *);
 int oem_pal_param_update(const std::string&);
 void update_audiosourcedata(struct pal_awx_source_data*);
-void audiosource_set_param(struct pal_awx_param_t*);
-void speed_set_param(struct pal_awx_param_t*);
-int get_vendor_params(struct pal_awx_param_t*, param_type);
-int capi_param_type3_handling(int status, pal_param_payload* pal_payload, uint32_t payload_size, 
-                            pal_device_id_t aud_source_effect_device, pal_awx_source_data* dummy_ptr);
 
 #ifdef __cplusplus
 }
 #endif
 
+#endif // AUTO_OEM_EXTENSION_H
