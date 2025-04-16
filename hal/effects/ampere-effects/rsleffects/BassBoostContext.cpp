@@ -143,7 +143,13 @@ int BassBoostContext::getBassBoost(){
 
     // Defining CAPI param Type
     effect_type type = SYNC_WITHOUT_AUDIO_BUS;
-    ret = PalParamDelegator::AWX_get_param(&pal_param, type);
+
+    if (mPalHandle != NULL) {
+        ret = PalParamDelegator::AWX_get_param_handle(mPalHandle,&pal_param, type);
+    } else {
+        ret = PalParamDelegator::AWX_get_param(&pal_param, type);
+        LOG(DEBUG) << "PAL handle is NULL " << __func__;
+    }
 
     if(ret < 0) {
         LOG(ERROR) << __func__ << "Error while fetching value returned with ret: " << ret;

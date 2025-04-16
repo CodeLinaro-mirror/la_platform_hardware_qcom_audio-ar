@@ -152,7 +152,12 @@ int AmbianceContext::getAmbianceProfile() {
     // Defining CAPI param Type
     effect_type type = ASYNC;
 
-    ret = PalParamDelegator::AWX_get_param_handle(mPalHandle,&pal_param, type);
+    if (mPalHandle != NULL) {
+        ret = PalParamDelegator::AWX_get_param_handle(mPalHandle, &pal_param, type);
+    } else {
+        ret = PalParamDelegator::AWX_get_param(&pal_param, type);
+        LOG(DEBUG) << "PAL handle is NULL " << __func__;
+    }
 
     if (ret < 0) {
         LOG(ERROR) << __func__ << "Error while fetching value returned with ret: " << ret;
@@ -238,13 +243,14 @@ std::vector<uint8_t> AmbianceContext::getParameter(std::vector<uint8_t> id) {
     size_t paramSize = sizeof(paramId);
 
     size_t valueSize;
-    auto ret = getAmbianceProfile();
-    bool profileFailed = (ret < 0);
 
     switch (paramId) {
         case Ambiance::Params::PARAM_CURRENT_PROFILE_ASYNC:
         case Ambiance::Params::PARAM_CURRENT_PROFILE: {
             LOG(DEBUG) << __func__ << " PARAM_CURRENT_PROFILE_ASYNC/PARAM_CURRENT_PROFILE Param ID" << static_cast<int32_t>(paramId);
+
+            auto ret = getAmbianceProfile();
+            bool profileFailed = (ret < 0);
 
             if (!profileFailed) {
                 mCurrentProfile = ret;
