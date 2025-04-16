@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -18,15 +18,17 @@
 #include <ctime>
 
 using aidl::android::hardware::audio::core::ChildInterface;
-
 using aidl::android::hardware::audio::core::internal::AudioPolicyConfigXmlConverter;
-AudioPolicyConfigXmlConverter gAudioPolicyConverter{
-        ::android::audio_get_audio_policy_config_file()};
-
 using AospModule = ::aidl::android::hardware::audio::core::Module;
 using AospModuleConfig = ::aidl::android::hardware::audio::core::Module::Configuration;
 using AospModuleConfigurationPair = std::pair<std::string, std::unique_ptr<AospModuleConfig>>;
 using AospModuleConfigs = std::vector<AospModuleConfigurationPair>;
+
+// init AudioPolicyConverter
+static std::string gAudioPolicyConfigFile = ::android::audio_get_audio_policy_config_file();
+static AudioPolicyConfigXmlConverter gAudioPolicyConverter{gAudioPolicyConfigFile};
+
+// module configs and instances
 static std::unique_ptr<AospModuleConfigs> gModuleConfigs;
 static std::vector<ChildInterface<AospModule>> gModuleInstances;
 static std::shared_ptr<::aidl::android::hardware::audio::core::IConfig> gConfigDefaultAosp;
@@ -70,6 +72,11 @@ void makeIConfigDefaultAosp() {
 }
 
 extern "C" __attribute__((visibility("default"))) int32_t registerServices() {
+    LOG(DEBUG) << __func__ << " from " << gAudioPolicyConfigFile;
+    if (gAudioPolicyConfigFile.empty()) {
+        LOG(ERROR) << __func__ << " no valid configuration file found, check the configs ";
+    }
+
     makeIConfigDefaultAosp();
     const std::string configIntfName =
             std::string().append(gConfigDefaultAosp->descriptor).append("/default");
@@ -77,17 +84,22 @@ extern "C" __attribute__((visibility("default"))) int32_t registerServices() {
                                                         configIntfName.c_str());
     if (status != STATUS_OK) {
         LOG(ERROR) << "failed to register service for \"" << configIntfName << "\"";
+    } else {
+        LOG(INFO) << __func__ << ": registered service for \"" << configIntfName << "\"";
     }
     gModuleConfigs = gAudioPolicyConverter.releaseModuleConfigs();
 
     // check if IModule/default is registered or not
-    const std::string serviceName = std::string(AospModule::descriptor).append("/").append("default");
-    AIBinder* binder = AServiceManager_checkService(serviceName.c_str());
+    const std::string serviceName =
+            std::string(AospModule::descriptor).append("/").append("default");
+    AIBinder *binder = AServiceManager_checkService(serviceName.c_str());
     bool registerStubAsDefault = false;
     if (binder == nullptr) {
-        LOG(INFO) <<"IModule/default is not registered yet";
+        LOG(INFO) << "IModule/default is not registered yet";
         registerStubAsDefault = true;
     }
+
+    std::string registeredModules{};
     for (AospModuleConfigurationPair &configPair : *gModuleConfigs) {
         std::string name = configPair.first;
         if (name == "default") {
@@ -95,19 +107,22 @@ extern "C" __attribute__((visibility("default"))) int32_t registerServices() {
         } else if (name == "stub") {
             if (registerStubAsDefault) {
                 name = "default";
-                LOG(INFO) <<"register stub hal as default hal";
+                LOG(INFO) << __func__ << "register stub hal as default hal";
             } else {
                 continue;
             }
         }
         if (auto instance = createModule(name, std::move(configPair.second)); instance) {
+            registeredModules += name + " , ";
             gModuleInstances.push_back(std::move(instance));
         }
     }
+    LOG(DEBUG) << __func__ << " registered " << gModuleInstances.size() << " modules "
+               << registeredModules << " " << gAudioPolicyConverter.getError();
     return STATUS_OK;
 }
 
-extern "C" __attribute__((visibility("default"))) void* getIConfigDefaultAosp() {
+extern "C" __attribute__((visibility("default"))) void *getIConfigDefaultAosp() {
     makeIConfigDefaultAosp();
     return gConfigDefaultAosp.get();
 }
