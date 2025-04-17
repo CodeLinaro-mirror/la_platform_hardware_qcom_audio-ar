@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -884,4 +884,33 @@ AutoAudioHALPriorityExtension::~AutoAudioHALPriorityExtension()
 }
 #endif
 
+#ifdef ENABLE_AUDIO_DIAGNOSTICS
+AutoAudioDiagnostics::AutoAudioDiagnostics():AudioExtensionBase(kAudioDiagnosticsLibrary){
+        if (mHandle != nullptr) {
+            diagnosticInit = (diagnostic_init_t)dlsym(mHandle, "AudioDiagnosticsInit");
+            if (!diagnosticInit) {
+                LOG(ERROR) << __func__ << "AudioDiagnosticsInit dlsym failed";
+                goto feature_disabled;
+            }
+            diagnosticInit();
+            LOG(INFO) << __func__ << "----- Audio Diagnostic service initialized ----";
+            return;
+        }
+feature_disabled:
+    if (mHandle) {
+        dlclose(mHandle);
+        mHandle = NULL;
+    }
+    diagnosticInit = NULL;
+}
+AutoAudioDiagnostics::~AutoAudioDiagnostics()
+{
+   LOG(INFO) << __func__ << " Enter";
+     if (mHandle) {
+        dlclose(mHandle);
+        mHandle = NULL;
+    }
+    diagnosticInit = NULL;
+}
+#endif
 } // namespace qti::audio::core

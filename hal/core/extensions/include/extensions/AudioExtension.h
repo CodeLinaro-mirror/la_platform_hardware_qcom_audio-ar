@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 #pragma once
@@ -85,6 +85,7 @@ static std::string kAutoOemLibrary = "libautooemextension.so";
 #ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
 static std::string kAudioHalPriorityLibrary = "libaudiohalpriorityextn.so";
 #endif
+static std::string kAudioDiagnosticsLibrary = "libaudiodiagnostics.so";
 
 static std::string kBatteryListenerProperty = "vendor.audio.feature.battery_listener.enable";
 static std::string kHfpProperty = "vendor.audio.feature.hfp.enable";
@@ -149,6 +150,9 @@ typedef int (*request_focus_t)(FocusInfo focusInfo, int64_t* focusId);
 typedef int (*abandon_focus_t)(const int64_t focusId);
 typedef int (*update_volume_t)(const int64_t focusId, const float gain, bool isExternalGain);
 #endif
+typedef void (*diagnostic_init_t)(void);
+
+
 extern "C" int autohal_setParameters(struct str_parms *parms);
 
 
@@ -275,6 +279,15 @@ class AutoAudioHALPriorityExtension : public AudioExtensionBase {
 };
 #endif
 
+#ifdef ENABLE_AUDIO_DIAGNOSTICS
+class AutoAudioDiagnostics : public AudioExtensionBase {
+    diagnostic_init_t diagnosticInit;
+  public:
+    AutoAudioDiagnostics();
+    ~AutoAudioDiagnostics();
+};
+#endif
+
 class KarokeExtension : public AudioExtensionBase {
   public:
     KarokeExtension();
@@ -345,8 +358,14 @@ class AudioExtension {
     std::unique_ptr<KarokeExtension> mKarokeExtension = std::make_unique<KarokeExtension>();
     std::unique_ptr<GefExtension> mGefExtension = std::make_unique<GefExtension>();
     std::unique_ptr<AutohalExtension> mAutohalExtension = std::make_unique<AutohalExtension>();
-
     static std::mutex reconfig_wait_mutex_;
+
+    private:
+#ifdef ENABLE_AUDIO_DIAGNOSTICS
+    std::unique_ptr<AutoAudioDiagnostics>
+      mAutoAudioDiagnostics = std::make_unique<AutoAudioDiagnostics>();
+#endif
+
 };
 } // namespace qti::audio::core
 
