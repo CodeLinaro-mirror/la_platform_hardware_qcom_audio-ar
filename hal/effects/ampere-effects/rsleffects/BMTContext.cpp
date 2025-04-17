@@ -195,8 +195,8 @@ int BMTContext::getValueFromPalParam(uint32_t cmd) const {
     if (mPalHandle != NULL){
         ret = PalParamDelegator::AWX_get_param_handle(mPalHandle,&pal_param, type);
     } else {
-        LOG(WARNING) << __func__ << " PAL handle is NULL return Cached Value " << mBMTLevel[cmd].value << "for Effect " <<std::to_string(cmd);
-        return mBMTLevel[cmd].value;
+        ret = PalParamDelegator::AWX_get_param(&pal_param, type);
+        LOG(DEBUG) << "PAL handle is NULL " << __func__;
     }
 
     if(ret < 0) {
