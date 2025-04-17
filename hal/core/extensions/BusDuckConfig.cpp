@@ -26,6 +26,7 @@ void BusDuckConfigParser::startTagHandler(void* userData, const char* tagName, c
             else if (strcmp(attr[i], "running_src") == 0) parser->temp_property.running_src = attr[i + 1];
             else if (strcmp(attr[i], "duck") == 0) parser->temp_property.duck = (strcmp(attr[i + 1], "true") == 0);
             else if (strcmp(attr[i], "Gain") == 0) parser->temp_property.gain = std::stoi(attr[i + 1]);
+            else if (strcmp(attr[i], "vol_override") == 0) parser->temp_property.vol_override = (strcmp(attr[i + 1], "true") == 0);
         }
     }
 }
@@ -137,13 +138,15 @@ StreamType getAudioUsageFromString(const std::string& src) {
 }
 
 bool BusDuckConfigParser::populateAudioFocusConfig(std::unordered_map<StreamType,
-                                                        std::unordered_map<StreamType, float> > &configMap){
+                                                        std::unordered_map<StreamType, ParseParams> > &configMap){
     for (const auto& property : all_priorities) {
         StreamType inSrcUsage = getAudioUsageFromString(property.in_src);
         StreamType runningSrcUsage = getAudioUsageFromString(property.running_src);
-
         if (property.duck)
-            configMap[inSrcUsage][runningSrcUsage] = property.gain;
+            configMap[inSrcUsage][runningSrcUsage] = ParseParams{
+                                    .gain = static_cast<float>(property.gain),
+                                    .vol_override = property.vol_override,
+                                };
     }
     return true;
 }

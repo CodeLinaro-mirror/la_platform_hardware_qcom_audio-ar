@@ -41,8 +41,13 @@ struct Property {
     std::string running_src;
     bool duck;
     int gain;
+    bool vol_override = false;
 };
 
+struct ParseParams {
+    float gain;
+    bool vol_override = false;
+};
 
 class BusDuckConfigParser {
 public:
@@ -52,7 +57,7 @@ public:
     bool parseConfig(const std::string& xmlFilePath);
     const std::vector<Property>& getProperties() const;
     bool populateAudioFocusConfig(std::unordered_map<StreamType,
-                                                        std::unordered_map<StreamType, float> > &configMap);
+                                                        std::unordered_map<StreamType, ParseParams> > &configMap);
 private:
     static void startTagHandler(void* userData, const char* tagName, const char** attr);
     static void endTagHandler(void* userData, const char* tagName);

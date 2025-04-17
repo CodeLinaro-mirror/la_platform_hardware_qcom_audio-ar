@@ -118,6 +118,7 @@ class ModulePrimary final : public Module {
             SupportedPlaybackRateFactors* _aidl_return) override;
     // #################### end of overriding APIs from IModule ####################
 #ifdef ENABLE_QCOM_AMPERE_AUDIO
+    void setUpPriorityFocus();
     static std::shared_ptr<::aidl::alliance::hardware::automotive::audiocontrol::internal::IAudioControlInternal> getAudioControlInternalService();
     static std::shared_ptr<::aidl::alliance::hardware::automotive::audiocontrol::internal::IAudioControlInternal> mAudioControlInternalProxy;
 #endif

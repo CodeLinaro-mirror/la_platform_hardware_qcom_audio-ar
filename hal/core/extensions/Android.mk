@@ -488,8 +488,8 @@ LOCAL_SHARED_LIBRARIES := \
     alliance.hardware.automotive.audiocontrol.internal-V2-ndk \
     android.hardware.automotive.audiocontrol-V4-ndk \
     ampere.hardware.interfaces.automotive.audioparameterparser-V1-ndk \
-    libAudioConfigOem
-
+    libAudioConfigOem \
+    libAWXPAL
 
 
 LOCAL_HEADER_LIBRARIES :=  \

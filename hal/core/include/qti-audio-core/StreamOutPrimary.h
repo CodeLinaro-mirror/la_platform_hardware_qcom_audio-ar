@@ -99,6 +99,8 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     void onDrainReady() override;
     void onError() override;
 #ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
+    void requestFocus();
+    void abandonFocus();
     FocusSession focusSessionInfo;
 #endif
   protected:
