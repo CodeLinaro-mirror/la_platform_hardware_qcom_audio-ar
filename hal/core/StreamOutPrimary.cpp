@@ -689,63 +689,62 @@ ndk::ScopedAStatus StreamOutPrimary::getHwVolume(std::vector<float>* _aidl_retur
 }
 
 ndk::ScopedAStatus StreamOutPrimary::setHwVolume(const std::vector<float>& in_channelVolumes) {
-    std::vector<float> localVolumes = in_channelVolumes;
-    LOG(DEBUG) << __func__ << "setHwVolume called with localVolumes:  " << ::android::internal::ToString(localVolumes);
-
-    float volume = localVolumes[0];
+    std::vector<float> channelVolumes = in_channelVolumes;
     auto sourceMetadata = std::get<SourceMetadata>(mMetadata);
 
-    if (!sourceMetadata.tracks.empty()) {
-        auto usage = sourceMetadata.tracks[0].usage;
-        if (usage == ::aidl::android::media::audio::common::AudioUsage::MEDIA){
-        std::string str = ModulePrimary::globalAudioSource;
-            for (const auto& [sourceTypeKey, sourceGainValue] : sourceGainTable) {
-                if (sourceTypeKey == str) {
-                    LOG(DEBUG) << "USAGE matched, gain added: " << sourceGainValue << " sourceTypeKey: " << sourceTypeKey;
-                    LOG(DEBUG) << "Initial volume: " << volume;
-                    volume += sourceGainValue;
-                    localVolumes[0] = volume;
-                    localVolumes[1] = volume;
-                    LOG(DEBUG) << "Updated volume is:" << localVolumes[0];
-                    break;
-                } else {
-                    LOG(DEBUG) << "USAGE did not match";
-                }
-            }
-        }
-    }
     mVolumeGaincheck=property_get_bool(mGainVolumecheckProperty.c_str(),false);
     if (!mHwVolumeSupported) {
         return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
     }
 
-    if (mVolumes.size() != localVolumes.size()) {
+    if (mVolumes.size() != channelVolumes.size()) {
         LOG(ERROR) << __func__ << mLogPrefix << " channel count mismatch with port, expected "
-                   << mVolumes.size() << " got " << localVolumes.size();
+                   << mVolumes.size() << " got " << channelVolumes.size();
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
     }
     if (!mVolumeGaincheck) {
         auto isVolumeInRange=[](const std::vector<float>& volumes) {
             return std::all_of(volumes.begin(),volumes.end(),[](float vol) { return (vol >= 0.0f && vol <= 1.0f); });
         };
-        if (!isVolumeInRange(localVolumes)) {
-            LOG(DEBUG) << __func__ << mLogPrefix << "out of range volume " << ::android::internal::ToString(localVolumes);
+        if (!isVolumeInRange(channelVolumes)) {
+            LOG(DEBUG) << __func__ << mLogPrefix << "out of range volume " << ::android::internal::ToString(channelVolumes);
             return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
         }
     }
 
     if (!mPalHandle) {
-        mVolumes = localVolumes;
+        mVolumes = channelVolumes;
         mUseCachedVolume = true;
         LOG(DEBUG) << __func__ << mLogPrefix << " cache volume "
-                   << ::android::internal::ToString(localVolumes);
+                   << ::android::internal::ToString(channelVolumes);
         return ndk::ScopedAStatus::ok();
     }
-    if (int32_t ret = mPlatform.setVolume(mPalHandle, localVolumes); ret) {
+
+    if (!sourceMetadata.tracks.empty()) {
+        auto usage = sourceMetadata.tracks[0].usage;
+        if (usage == ::aidl::android::media::audio::common::AudioUsage::MEDIA) {
+            std::string str = ModulePrimary::globalAudioSource;
+            for (const auto& [sourceTypeKey, sourceGainValue] : sourceGainTable) {
+                if (sourceTypeKey == str) {
+                    LOG(DEBUG) << "USAGE matched, gain added: " << sourceGainValue << " sourceTypeKey: " << sourceTypeKey;
+                    for (float& volume : channelVolumes) {
+                        volume += sourceGainValue;
+                        LOG(DEBUG) << "updated volumes : " << volume;
+                    }
+                    break;
+                } else {
+                    LOG(DEBUG) << "USAGE did not match.";
+                }
+            }
+
+        }
+    }
+
+    if (int32_t ret = mPlatform.setVolume(mPalHandle, channelVolumes); ret) {
         LOG(ERROR) << __func__ << mLogPrefix << " failed to set volume";
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
     }
-    mVolumes = localVolumes;
+    mVolumes = channelVolumes;
 
     LOG(DEBUG) << __func__ << mLogPrefix  << "mVolumes" << ::android::internal::ToString(mVolumes);
     return ndk::ScopedAStatus::ok();
