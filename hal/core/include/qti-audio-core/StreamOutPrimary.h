@@ -30,7 +30,7 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
 
     virtual ~StreamOutPrimary() override;
     int32_t setAggregateSourceMetadata(bool voiceActive) override;
-    std::string getAddress() const;
+    std::string getAddress() { return busAddr; };
     std::string setAddress(std::string Address);
 
     // Methods of 'DriverInterface'.
@@ -90,7 +90,6 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
                                            int32_t* bufferSizeFrames) override;
 
     void onClose() override { defaultOnClose(); }
-
     ndk::ScopedAStatus setLatencyMode(
                            ::aidl::android::media::audio::common::AudioLatencyMode in_mode) override;
     ndk::ScopedAStatus getRecommendedLatencyModes(

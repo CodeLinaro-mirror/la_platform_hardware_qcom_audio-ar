@@ -1388,14 +1388,14 @@ std::vector<MicrophoneDynamicInfo> Platform::getMicrophoneDynamicInfo(
 Platform::Platform() {
     initUsecaseOpMap();
     if (int32_t ret = pal_init(); ret) {
-        LOG(ERROR) << __func__ << "pal_init failed, ret:" << ret;
+        LOG(ERROR) << __func__ << " pal_init failed, ret:" << ret;
         return;
     }
     LOG(VERBOSE) << __func__ << " pal_init successful";
     if (int32_t ret =
                 pal_register_global_callback(&palGlobalCallback, reinterpret_cast<uint64_t>(this));
         ret) {
-        LOG(ERROR) << __func__ << "pal register global callback failed, ret:" << ret;
+        LOG(ERROR) << __func__ << " pal register global callback failed, ret:" << ret;
         return;
     }
     mSndCardStatus = CARD_STATUS_ONLINE;

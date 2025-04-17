@@ -103,6 +103,10 @@ StreamOutPrimary::StreamOutPrimary(StreamContext&& context, const SourceMetadata
     }
     outFlags = mMixPortConfig.flags.value().get<AudioIoFlags::Tag::output>();
     mAudioDevices = audioDevices;
+    if (audioDevices.size() == 1) {
+        busAddr = audioDevices[0].address.get<AudioDeviceAddress::Tag::id>();
+        LOG (VERBOSE) << __func__ << " AudioDeviceAddress: " << busAddr;
+    }
     mHwVolumeSupported = isHwVolumeSupported();
     mVolumes.resize(getChannelCount(mMixPortConfig.channelMask.value()));
     ioHandle_l = mMixPortConfig.ext.get<AudioPortExt::Tag::mix>().handle;
@@ -1287,12 +1291,6 @@ void StreamOutPrimary::configure() {
               << ", ms pal_stream_start: " << palStreamStartTimeTaken << " ms]";
 }
 
-std::string StreamOutPrimary::getAddress()const { return busAddr; }
-std::string StreamOutPrimary::setAddress(std::string Address) 
-{
-    busAddr = Address; 
-    return busAddr;
-}
 
 void StreamOutPrimary::enableOffloadEffects(const bool enable) {
     if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK || mTag == Usecase::PCM_OFFLOAD_PLAYBACK) {
@@ -1367,7 +1365,7 @@ void StreamOutPrimary::shutdown_I() {
 }
 
 ::android::status_t StreamOutPrimary::getHwTimeStamp(::aidl::android::hardware::audio::core::StreamDescriptor::Reply* reply) {
-    LOG(DEBUG) << "Enter :" << __func__;
+    LOG(VERBOSE) << "Enter :" << __func__;
     if (!reply) {
         LOG(ERROR) << "Null in reply - " << "Failed to get hw timestamp";
         return ::android::INVALID_OPERATION;
@@ -1375,7 +1373,7 @@ void StreamOutPrimary::shutdown_I() {
     // for stream out we use the system uptime as the time stamp
     reply->observable.timeNs = ::android::uptimeNanos();
     LOG(VERBOSE) << "android::uptimeNanos() -> TimeStamp - reply->observable.timeNs: " << reply->observable.timeNs;
-    LOG(DEBUG) << "Exit : " << __func__;
+    LOG(VERBOSE) << "Exit : " << __func__;
     return ::android::OK;
 }
 
