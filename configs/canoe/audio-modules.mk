@@ -55,6 +55,7 @@ AUDIO_PAL += libstream_nontunnel
 AUDIO_PAL += libstream_soundtrigger
 AUDIO_PAL += libstream_dummy
 AUDIO_PAL += libstream_asr
+AUDIO_PAL += libstream_calltranslation
 #PAL Sessions Modules
 AUDIO_PAL += libsession_agm
 AUDIO_PAL += libsession_pcm
