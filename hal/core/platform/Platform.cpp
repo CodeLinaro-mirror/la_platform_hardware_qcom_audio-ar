@@ -1189,16 +1189,17 @@ bool Platform::isA2dpSuspended() {
 PlaybackRateStatus Platform::setPlaybackRate(
         pal_stream_handle_t* handle, const Usecase& tag,
         const ::aidl::android::media::audio::common::AudioPlaybackRate& playbackRate) {
-    if (!isValidPlaybackRate(playbackRate)) {
-        return PlaybackRateStatus::ILLEGAL_ARGUMENT;
-    }
 
     if (!usecaseSupportsOffloadSpeed(tag)) {
         return PlaybackRateStatus::UNSUPPORTED;
     }
 
+    if (!isValidPlaybackRate(playbackRate)) {
+        return PlaybackRateStatus::ILLEGAL_ARGUMENT;
+    }
+
     if (!handle) {
-        LOG(DEBUG) << __func__ << " stream inactive ";
+        LOG(DEBUG) << __func__ << " stream inactive for " << getName(tag);
         return PlaybackRateStatus::SUCCESS;
     }
 

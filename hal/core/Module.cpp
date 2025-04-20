@@ -1341,50 +1341,54 @@ ndk::ScopedAStatus Module::resetAudioPortConfig(int32_t in_portConfigId) {
     return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
 }
 
-ndk::ScopedAStatus Module::getMasterMute(bool* _aidl_return) {
-    *_aidl_return = mMasterMute;
-    LOG(DEBUG) << __func__ << ": returning " << *_aidl_return;
-    return ndk::ScopedAStatus::ok();
+ndk::ScopedAStatus Module::getMasterMute(bool* _aidl_return __unused) {
+    // *_aidl_return = mMasterMute;
+    // LOG(DEBUG) << __func__ << ": returning " << *_aidl_return;
+    // return ndk::ScopedAStatus::ok();
+    return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
 }
 
-ndk::ScopedAStatus Module::setMasterMute(bool in_mute) {
-    LOG(DEBUG) << __func__ << ": " << in_mute;
-    auto result = mDebug.simulateDeviceConnections ? ndk::ScopedAStatus::ok()
-                                                   : onMasterMuteChanged(in_mute);
-    if (result.isOk()) {
-        mMasterMute = in_mute;
-    } else {
-        LOG(ERROR) << __func__ << ": failed calling onMasterMuteChanged(" << in_mute
-                   << "), error=" << result;
-        // Reset master mute if it failed.
-        onMasterMuteChanged(mMasterMute);
-    }
-    return std::move(result);
+ndk::ScopedAStatus Module::setMasterMute(bool in_mute __unused) {
+    // LOG(DEBUG) << __func__ << ": " << in_mute;
+    // auto result = mDebug.simulateDeviceConnections ? ndk::ScopedAStatus::ok()
+    //                                                : onMasterMuteChanged(in_mute);
+    // if (result.isOk()) {
+    //     mMasterMute = in_mute;
+    // } else {
+    //     LOG(ERROR) << __func__ << ": failed calling onMasterMuteChanged(" << in_mute
+    //                << "), error=" << result;
+    //     // Reset master mute if it failed.
+    //     onMasterMuteChanged(mMasterMute);
+    // }
+    // return std::move(result);
+    return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
 }
 
-ndk::ScopedAStatus Module::getMasterVolume(float* _aidl_return) {
-    *_aidl_return = mMasterVolume;
-    LOG(DEBUG) << __func__ << ": returning " << *_aidl_return;
-    return ndk::ScopedAStatus::ok();
+ndk::ScopedAStatus Module::getMasterVolume(float* _aidl_return __unused) {
+    // *_aidl_return = mMasterVolume;
+    // LOG(DEBUG) << __func__ << ": returning " << *_aidl_return;
+    // return ndk::ScopedAStatus::ok();
+    return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
 }
 
-ndk::ScopedAStatus Module::setMasterVolume(float in_volume) {
-    LOG(DEBUG) << __func__ << ": " << in_volume;
-    if (in_volume >= 0.0f && in_volume <= 1.0f) {
-        auto result = mDebug.simulateDeviceConnections ? ndk::ScopedAStatus::ok()
-                                                       : onMasterVolumeChanged(in_volume);
-        if (result.isOk()) {
-            mMasterVolume = in_volume;
-        } else {
-            // Reset master volume if it failed.
-            LOG(ERROR) << __func__ << ": failed calling onMasterVolumeChanged(" << in_volume
-                       << "), error=" << result;
-            onMasterVolumeChanged(mMasterVolume);
-        }
-        return std::move(result);
-    }
-    LOG(ERROR) << __func__ << ": invalid master volume value: " << in_volume;
-    return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
+ndk::ScopedAStatus Module::setMasterVolume(float in_volume __unused) {
+    // LOG(DEBUG) << __func__ << ": " << in_volume;
+    // if (in_volume >= 0.0f && in_volume <= 1.0f) {
+    //     auto result = mDebug.simulateDeviceConnections ? ndk::ScopedAStatus::ok()
+    //                                                    : onMasterVolumeChanged(in_volume);
+    //     if (result.isOk()) {
+    //         mMasterVolume = in_volume;
+    //     } else {
+    //         // Reset master volume if it failed.
+    //         LOG(ERROR) << __func__ << ": failed calling onMasterVolumeChanged(" << in_volume
+    //                    << "), error=" << result;
+    //         onMasterVolumeChanged(mMasterVolume);
+    //     }
+    //     return std::move(result);
+    // }
+    // LOG(ERROR) << __func__ << ": invalid master volume value: " << in_volume;
+    // return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
+    return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
 }
 
 ndk::ScopedAStatus Module::getMicMute(bool* _aidl_return) {

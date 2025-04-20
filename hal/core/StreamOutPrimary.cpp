@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -504,7 +504,8 @@ void StreamOutPrimary::resume() {
     return -EINVAL;
 }
 ::android::status_t StreamOutPrimary::hapticsWrite(const void* buffer, size_t frameCount) {
-    int ret = 0;
+    int ret_audio = 0;
+    int ret_haptics = 0;
     bool allocHapticsBuffer = false;
     struct pal_buffer audioBuf;
     struct pal_buffer hapticsBuf;
@@ -554,13 +555,16 @@ void StreamOutPrimary::resume() {
         hapIndex += hapticsFrameSize;
         srcIndex += hapticsFrameSize;
     }
-
     // write audio data
-    ret = ::pal_stream_write(mPalHandle, &audioBuf);
+    ret_audio = ::pal_stream_write(mPalHandle, &audioBuf);
     // write haptics data
-    ret = ::pal_stream_write(mHapticsPalHandle, &hapticsBuf);
+    ret_haptics = ::pal_stream_write(mHapticsPalHandle, &hapticsBuf);
 
-    return (ret < 0 ? ret :  (frameSize*frameCount));
+    if (ret_audio < 0 || ret_haptics < 0) {
+        return (ret_audio < 0) ? ret_audio : ret_haptics;
+    }
+
+    return (frameSize * frameCount);
 }
 
 ::android::status_t StreamOutPrimary::refinePosition(StreamDescriptor::Reply* reply) {
@@ -735,7 +739,7 @@ ndk::ScopedAStatus StreamOutPrimary::getPlaybackRateParameters(AudioPlaybackRate
         return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
     }
 
-    LOG(DEBUG) << __func__ << mPlaybackRate.toString();
+    LOG(DEBUG) << __func__ << mLogPrefix << mPlaybackRate.toString();
     *_aidl_return = mPlaybackRate;
     return ndk::ScopedAStatus::ok();
 }
@@ -745,12 +749,16 @@ ndk::ScopedAStatus StreamOutPrimary::setPlaybackRateParameters(
     auto ret = mPlatform.setPlaybackRate(mPalHandle, mTag, in_playbackRate);
     if (PlaybackRateStatus::SUCCESS == ret) {
         mPlaybackRate = in_playbackRate;
-        LOG(DEBUG) << __func__ << mPlaybackRate.toString();
+        LOG(DEBUG) << __func__ << mLogPrefix << mPlaybackRate.toString();
         return ndk::ScopedAStatus::ok();
     } else if (PlaybackRateStatus::UNSUPPORTED == ret) {
+        LOG(VERBOSE) << __func__ << mLogPrefix << "raise EX_UNSUPPORTED_OPERATION exception for "
+                     << mPlaybackRate.toString();
         return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
     }
 
+    LOG(ERROR) << __func__ << mLogPrefix << "raise EX_ILLEGAL_ARGUMENT exception for "
+                 << mPlaybackRate.toString();
     return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
 }
 
@@ -833,6 +841,7 @@ int32_t StreamOutPrimary::setAggregateSourceMetadata(bool voiceActive) {
             for (auto& item : srcMetadata.tracks) {
                 // check tracks size in this stream metadata not to exceed total count
                 if (totalTracks >= track_count_total) {
+                    LOG(WARNING) << __func__ << mLogPrefix << ": mismatch in total tracks for metadata allocation";
                     break;
                 }
 
