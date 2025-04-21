@@ -61,7 +61,7 @@ using ::aidl::android::hardware::audio::common::isBitPositionFlagSet;
 using ::aidl::android::hardware::audio::common::isValidAudioMode;
 using ::aidl::android::hardware::audio::common::SinkMetadata;
 using ::aidl::android::hardware::audio::common::SourceMetadata;
-
+using ::aidl::android::hardware::audio::common::getChannelCount;
 using ::aidl::android::hardware::audio::core::AudioPatch;
 using ::aidl::android::hardware::audio::core::AudioRoute;
 using ::aidl::android::hardware::audio::core::IStreamIn;
@@ -349,12 +349,18 @@ ndk::ScopedAStatus qti::audio::core::ModulePrimary::setAudioPortConfig(const ::a
     LOG(DEBUG) << "the module list is not empty";
     auto iter = list.begin();
     auto route_portid = route->sourcePortIds.begin();
-    for (iter; (iter != list.end()&& route_portid!=route->sourcePortIds.end()); iter++) {
-       auto outIter = iter->lock();
+    for (iter; route_portid!=route->sourcePortIds.end(); iter++) {
+        if(iter == list.end()) {
+             iter = list.begin();
+             LOG(DEBUG) << __func__ << "port not found " << *route_portid;
+             route_portid++;
+        }
+        auto outIter = iter->lock();
         if (outIter) {
             auto &mcontext = (*outIter).getStreamContext();
             auto &list_audioportconfig = mcontext.getMixPortConfig();
             list_id = list_audioportconfig.portId;
+            int no_of_channels = (int)getChannelCount(list_audioportconfig.channelMask.value());
             float volume;
             if (list_id == (*route_portid)) {
                 std::vector<float> vol;
@@ -375,8 +381,10 @@ ndk::ScopedAStatus qti::audio::core::ModulePrimary::setAudioPortConfig(const ::a
                                       (MAX_VOLUME_GAIN - MIN_VOLUME_GAIN) + MIN_VOLUME_GAIN;
                     }
                 }
-                vol.push_back(volume);
-                vol.push_back(volume);
+                int iter_channel;
+                for(iter_channel = 0; iter_channel<no_of_channels; iter_channel++) {
+                    vol.push_back(volume);
+                }
                 LOG(DEBUG) << "gain is:" << volume;
                 LOG(DEBUG) << "volume is:" << vol[0];
                 (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(outIter))->setAddress(port.device.address.get<AudioDeviceAddress::Tag::id>());
