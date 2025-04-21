@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -110,7 +110,7 @@ const static std::string kIsDirectPCMTrack{"is_direct_pcm_track"};
   * the AIDL HAL core interface version is above 3, as clip transition is mandatory for HAL core
   * interface versions above 3.
   */
- const static std::string kAOSPClipTransitionSupport{"aosp.clipTransitionSupport"};
+ const static std::string kAospClipTransitionSupport{"aosp.clipTransitionSupport"};
 
  // FTM
  const static std::string kFbspCfgWaitTime{"fbsp_cfg_wait_time"};
