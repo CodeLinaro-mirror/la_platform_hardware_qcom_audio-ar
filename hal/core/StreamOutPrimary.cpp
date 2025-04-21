@@ -715,6 +715,12 @@ ndk::ScopedAStatus StreamOutPrimary::setHwVolume(const std::vector<float>& in_ch
     //update focus service volume too if an entry exists
     auto focusId = this->focusSessionInfo.FocusId;
     if (focusId != -1) {
+        float volume = 0.0;
+        if (in_channelVolumes.size()) {
+            volume = in_channelVolumes[0];
+        } else {
+            LOG(ERROR) << __func__ << " Invalid volume!!";
+        }
         mAudExt.mAutoAudioHalPriorityExtension->updateVolume(focusId, volume, false /*internal volume change*/);
     }
 #endif
