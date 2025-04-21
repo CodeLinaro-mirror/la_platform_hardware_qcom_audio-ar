@@ -64,6 +64,7 @@
 
 #include <android/binder_manager.h>
 #include <android/binder_process.h>
+#include "PalParamDelegator.h"
 
 using aidl::android::hardware::audio::common::SinkMetadata;
 using aidl::android::hardware::audio::common::SourceMetadata;
@@ -94,7 +95,6 @@ using ::aidl::android::hardware::audio::core::IBluetooth;
 using ::aidl::android::hardware::audio::core::IBluetoothA2dp;
 using ::aidl::android::hardware::audio::core::IBluetoothLe;
 using ::aidl::android::hardware::audio::core::VendorParameter;
-
 #ifdef ENABLE_QCOM_AMPERE_AUDIO
 using aidl::android::media::audio::common::Float;
 using aidl::ampere::hardware::interfaces::automotive::audioparameterparser::CarPlayVendorParameterExt;
@@ -262,20 +262,20 @@ std::vector<int32_t> getVolumeProfile(uint16_t bus_mask) {
     int ret;
     std::vector<int32_t> volumes(7, -1);
 
-    pal_awx_param_t pal_param;
-    memset(&pal_param, 0, sizeof(pal_awx_param_t));
+    ::aidl::qti::awx::pal_awx_param_t pal_param;
+    memset(&pal_param, 0, sizeof(::aidl::qti::awx::pal_awx_param_t));
 
-    VolumeParams params;
+    ::aidl::qti::awx::VolumeParams params;
     params.eq_mask = bus_mask;
     // params.eq_mask = SET; //setting all bus
-    memset(&params, 0, sizeof(VolumeParams));
+    memset(&params, 0, sizeof(::aidl::qti::awx::VolumeParams));
 
     pal_param.param_id = PARAM_ID_VOLUME ;
-    pal_param.param_size = sizeof(VolumeParams);
+    pal_param.param_size = sizeof(::aidl::qti::awx::VolumeParams);
     pal_param.data = &params;
 
-    effect_type type = SYNC_WITH_AUDIO_BUS;
-    ret = ::qti::audio::core::AWX_get_param(&pal_param, type);
+    aidl::qti::awx::effect_type type = ::aidl::qti::awx::effect_type::SYNC_WITH_AUDIO_BUS;
+    ret = ::aidl::qti::awx::PalParamDelegator::AWX_get_param(&pal_param, type);
 
     std::string busTypes[] = {
         "BUS00_MEDIA",             // bit0

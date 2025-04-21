@@ -3,6 +3,7 @@ PRODUCT_COPY_FILES += \
 
 PRODUCT_PACKAGES += \
     libAudioConfigOem \
+    libAWXPAL \
 
 PRODUCT_ODM_PROPERTIES += \
 vendor.audio.feature.oem_extension.enable=true

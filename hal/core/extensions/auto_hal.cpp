@@ -53,7 +53,7 @@ static void auto_hal_set_mute_state(char* mute_bus_addr, int mute_state) {
     char *saveptr = NULL;
     char address[AUDIO_DEVICE_MAX_ADDRESS_LEN] = {0};
 
-    ALOGE("%s:fp mute_config %s", __func__);
+    ALOGD("Enter %s", __func__);
     if (!init_config.fp_set_mute_config_for_address) {
         ALOGE("%s: function pointer to set_mute_config is null", __func__);
         return ;
@@ -101,29 +101,29 @@ int autohal_setParameters(struct str_parms *parms) {
     char duck_mute_value[128] = {0};
 
     if (parms != NULL) {
-        ALOGE("parms is not null");
+        ALOGD("parms is not null");
 
         ret = str_parms_get_str(parms, AUDIO_PARAMETER_DEVICES_TO_MUTE, duck_mute_value, sizeof(duck_mute_value));
         if (ret >= 0) {
-            ALOGE("mute info: %s", duck_mute_value);
+            ALOGD("mute info: %s", duck_mute_value);
             auto_hal_set_mute_state(duck_mute_value, MUTE);
         }
 
         ret = str_parms_get_str(parms, AUDIO_PARAMETER_DEVICES_TO_UNMUTE, duck_mute_value, sizeof(duck_mute_value));
         if (ret >= 0) {
-            ALOGE("unmute info: %s", duck_mute_value);
+            ALOGD("unmute info: %s", duck_mute_value);
             auto_hal_set_mute_state(duck_mute_value, UNMUTE);
         }
 
         ret = str_parms_get_str(parms, AUDIO_PARAMETER_DEVICES_TO_DUCK, duck_mute_value, sizeof(duck_mute_value));
         if (ret >= 0) {
-            ALOGE("duck info: %s", duck_mute_value);
+            ALOGD("duck info: %s", duck_mute_value);
             auto_hal_set_mute_state(duck_mute_value, DUCK);
         }
 
         ret = str_parms_get_str(parms, AUDIO_PARAMETER_DEVICES_TO_UNDUCK, duck_mute_value, sizeof(duck_mute_value));
         if (ret >= 0) {
-            ALOGE("unduck info: %s", duck_mute_value);
+            ALOGD("unduck info: %s", duck_mute_value);
             auto_hal_set_mute_state(duck_mute_value, UNDUCK);
         }
     } else {

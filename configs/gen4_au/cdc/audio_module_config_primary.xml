@@ -39,22 +39,64 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <mixPort name="primary_out" role="source" flags="PRIMARY">
             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
-        <mixPort name="low_latency_out" role="source" flags="FAST">
-            <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
-        </mixPort>
-        <mixPort name="low_latency_out" role="source" flags="FAST">
+        <mixPort name="low_latency_out_sys" role="source" flags="FAST">
              <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
-        <mixPort name="low_latency_out_8k" role="source" flags="FAST">
+        <mixPort name="low_latency_out_8k_sys" role="source" flags="FAST">
             <profile samplingRates="8000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
         <mixPort name="low_latency_out_16k_sys" role="source" flags="FAST">
             <profile samplingRates="16000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
-        <mixPort name="low_latency_out_24k" role="source" flags="FAST">
+        <mixPort name="low_latency_out_24k_sys" role="source" flags="FAST">
             <profile samplingRates="24000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
-        <mixPort name="low_latency_out_32k" role="source" flags="FAST">
+        <mixPort name="low_latency_out_32k_sys" role="source" flags="FAST">
+            <profile samplingRates="32000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="low_latency_out_nav" role="source" flags="FAST">
+             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="low_latency_out_8k_nav" role="source" flags="FAST">
+            <profile samplingRates="8000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="low_latency_out_16k_nav" role="source" flags="FAST">
+            <profile samplingRates="16000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="low_latency_out_24k_nav" role="source" flags="FAST">
+            <profile samplingRates="24000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="low_latency_out_32k_nav" role="source" flags="FAST">
+            <profile samplingRates="32000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="low_latency_out_phone" role="source" flags="FAST">
+             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="low_latency_out_8k_phone" role="source" flags="FAST">
+            <profile samplingRates="8000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="low_latency_out_16k_phone" role="source" flags="FAST">
+            <profile samplingRates="16000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="low_latency_out_24k_phone" role="source" flags="FAST">
+            <profile samplingRates="24000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="low_latency_out_32k_phone" role="source" flags="FAST">
+            <profile samplingRates="32000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="low_latency_out_nav2" role="source" flags="FAST">
+             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="low_latency_out_8k_nav2" role="source" flags="FAST">
+            <profile samplingRates="8000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="low_latency_out_16k_nav2" role="source" flags="FAST">
+            <profile samplingRates="16000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="low_latency_out_24k_nav2" role="source" flags="FAST">
+            <profile samplingRates="24000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="low_latency_out_32k_nav2" role="source" flags="FAST">
             <profile samplingRates="32000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
         <mixPort name="deep_buffer_out" role="source" flags="DEEP_BUFFER">
@@ -132,11 +174,8 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <mixPort name="voip_record" role="sink" flags="VOIP_TX">
             <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_MONO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
-        <mixPort name="vr_in_fast" role="sink" flags="FAST">
-            <profile samplingRates="16000" channelLayouts="LAYOUT_5POINT1" channelMasks="INDEX_MASK_6" formatType="PCM" pcmType="INT_16_BIT" />
-        </mixPort>
         <mixPort name="vr_in" role="sink">
-            <profile samplingRates="16000" channelLayouts="LAYOUT_5POINT1" channelMasks="INDEX_MASK_6" formatType="PCM" pcmType="INT_16_BIT" />
+            <profile samplingRates="16000" channelMasks="INDEX_MASK_6" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
         <mixPort name="mmap_no_irq_in" role="sink" maxOpenCount="1" maxActiveCount="1" flags="MMAP_NOIRQ">
             <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_FRONT_BACK" channelMasks="INDEX_MASK_3" formatType="PCM" pcmType="INT_16_BIT" />
@@ -269,16 +308,14 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         </devicePort>
     </devicePorts>
     <routes>
-        <route type="mix" sink="Sys Notification Bus" sources="sys_notification,low_latency_out_8k,low_latency_out_16k_sys,low_latency_out_24k,low_latency_out_32k,low_latency_out,mmap_no_irq_out" />
-        <route type="mix" sink="Nav Guidance Bus" sources="nav_guidance,low_latency_out_8k,low_latency_out_16k_sys,low_latency_out_24k,low_latency_out_32k,low_latency_out,mmap_no_irq_out" />
-        <route type="mix" sink="Phone Bus" sources="phone,low_latency_out_8k,low_latency_out_16k_sys,low_latency_out_24k,low_latency_out_32k,low_latency_out,voip_playback,voip_playback_32k,voip_playback_24k,voip_playback_16k,voip_playback_8k,mmap_no_irq_out" />
-        <route type="mix" sink="Alerts Bus" sources="alerts,low_latency_out_8k,low_latency_out_16k_sys,low_latency_out_24k,low_latency_out_32k,low_latency_out" />
-        <route type="mix" sink="Nav Guidance_2 Bus" sources="nav_guidance_2,low_latency_out_8k,low_latency_out_16k_sys,low_latency_out_24k,low_latency_out_32k,low_latency_out,mmap_no_irq_out" />
+        <route type="mix" sink="Sys Notification Bus" sources="sys_notification,low_latency_out_8k_sys,low_latency_out_16k_sys,low_latency_out_24k_sys,low_latency_out_32k_sys,low_latency_out_sys,mmap_no_irq_out" />
+        <route type="mix" sink="Nav Guidance Bus" sources="nav_guidance,low_latency_out_8k_nav,low_latency_out_16k_nav,low_latency_out_24k_nav,low_latency_out_32k_nav,low_latency_out_nav,mmap_no_irq_out" />
+        <route type="mix" sink="Phone Bus" sources="phone,low_latency_out_8k_phone,low_latency_out_16k_phone,low_latency_out_24k_phone,low_latency_out_32k_phone,low_latency_out_phone,voip_playback,voip_playback_32k,voip_playback_24k,voip_playback_16k,voip_playback_8k,mmap_no_irq_out" />
+        <route type="mix" sink="Nav Guidance_2 Bus" sources="nav_guidance_2,low_latency_out_8k_nav2,low_latency_out_16k_nav2,low_latency_out_24k_nav2,low_latency_out_32k_nav2,low_latency_out_nav2,mmap_no_irq_out" />
         <route type="mix" sink="Front Passenger Bus" sources="front_passenger" />
         <route type="mix" sink="Rear Seat Bus" sources="rear_seat" />
         <route type="mix" sink="Media Bus" sources="media,primary_out,low_latency_out,deep_buffer_out,compress_offload_out,direct_pcm_out,mmap_no_irq_out" />
         <route type="mix" sink="primary_in" sources="built_in_mic,built_in_back_mic,Primary In Bus,Front Passenger In Bus,Rear Seat In Bus" />
-        <route type="mix" sink="vr_in_fast" sources="VR In Bus"/>
         <route type="mix" sink="vr_in" sources="VR In Bus" />
         <route type="mix" sink="compress_in" sources="built_in_mic,built_in_back_mic,wired_headset_mic,bt_sco_headset_mic,fm_tuner_mic,bt_a2dp_mic,echo_reference_mic,bt_le_mic" />
         <route type="mix" sink="telephony_tx_device_out" sources="built_in_mic,built_in_back_mic,wired_headset_mic,bt_sco_headset_mic,fm_tuner_mic,bt_a2dp_mic,echo_reference_mic,bt_le_mic" />

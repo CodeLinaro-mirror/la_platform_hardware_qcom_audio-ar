@@ -12,40 +12,16 @@
 #include <string>
 #include <aidl/android/media/audio/common/AudioDevice.h>
 #include <qti-audio-core/Platform.h>
+#include <extensions/PalParamDelegator.h>
+
 #ifdef ECNR_HAL_ENABLE
 #include <extensions/hal_ecnr.h>
 #endif
 #include "extensions/battery_listener.h"
-#include <stdint.h>
-#define MAX_VOLUME_VALUE 0
-#define MIN_VOLUME_VALUE -9000
-#define PARAM_ID_VOLUME  0x11112501
-#define SET 0x7F
-
-struct VolumeParams {
-    uint16_t eq_mask;
-    uint16_t status;
-    int32_t value[16];
-};
-
-#define PADDING_8BYTE_ALIGN(x)  ((((x) + 7) & 7) ^ 7)
 
 #ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
 class FocusInfo;
 #endif
-
-typedef struct {
-    uint32_t param_id;
-    uint32_t param_size;
-    void* data;
-} pal_awx_param_t;
-
-typedef enum {
-    SYNC_WITH_AUDIO_BUS,
-    SYNC_WITHOUT_AUDIO_BUS,
-    ASYNC,
-    OTHER
-} effect_type;
 
 #ifdef __cplusplus
  extern "C" {
@@ -142,14 +118,6 @@ const std::map<int32_t, std::string> reconfigStateName{
         {CHANNEL_STEREO, std::string{"CHANNEL_STEREO"}},
 };
 
-void AWX_set_param(pal_awx_param_t *parms, effect_type effect);
-int AWX_get_param(pal_awx_param_t *parms, effect_type effect);
-int handleEffectASYNC(int status, pal_param_payload* pal_payload, uint32_t payload_size,
-                    pal_device_id_t aud_source_effect_device, pal_effect_custom_payload_t* customPayload);
-void createPayload(uint8_t* payloadInfo, pal_param_payload** pal_payload,
-                       effect_pal_payload_t** effect_payload, pal_effect_custom_payload_t** customPayload,
-                       uint32_t param_id, uint32_t pal_param_size);
-
 typedef void (*batt_listener_init_t)(battery_status_change_fn_t);
 typedef void (*batt_listener_deinit_t)();
 typedef bool (*batt_prop_is_charging_t)();
@@ -174,6 +142,8 @@ typedef void (*gef_deinit_t)(void);
 typedef void (*oem_set_parameters_t)(struct str_parms*);
 typedef int (*oem_get_parameters_t)(const std::string&);
 typedef int (*oem_init_t)(void);
+typedef void (*streamInfo_t) (pal_stream_type_t streamType);
+
 #ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
 typedef int (*request_focus_t)(FocusInfo focusInfo, int64_t* focusId);
 typedef int (*abandon_focus_t)(const int64_t focusId);
@@ -285,9 +255,12 @@ class AutoOemExtension : public AudioExtensionBase {
     ~AutoOemExtension();
     void audio_extn_autooem_set_parameters(struct str_parms* params);
     int audio_extn_autooem_get_parameters(const std::string&);
+    void audio_extn_autooem_set_streamType(pal_stream_type_t params);
+
   private:
   oem_set_parameters_t oem_set_parameters;
   oem_get_parameters_t oem_get_parameters;
+  streamInfo_t streamInfo;
   oem_init_t oem_init;
 };
 

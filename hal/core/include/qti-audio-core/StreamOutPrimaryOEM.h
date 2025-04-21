@@ -10,7 +10,10 @@
 #include <qti-audio-core/Stream.h>
 #include <qti-audio-core/PlatformStreamCallback.h>
 #include <qti-audio-core/StreamOutPrimary.h>
-
+#ifdef ECNR_HAL_SRC_CP
+#include <audio_utils/resampler.h>
+#include "extensions/hal_ringbuffer.h"
+#endif
 
 namespace qti::audio::core {
 
@@ -46,6 +49,12 @@ class StreamOutPrimaryOEM : public StreamOutPrimary {
     size_t ecnr_out_buffer_size{0};
     std::unique_ptr<uint8_t[]> ecnr_in_buffer{nullptr};
     size_t ecnr_in_buffer_size{0};
+#ifdef ECNR_HAL_SRC_CP
+    std::unique_ptr<uint8_t[]> ecnr_src_buffer{nullptr};
+    size_t ecnr_src_buffer_size{0};
+    std::optional<std::unique_ptr<HalRingBuffer<int16_t>>> mOutHalRingBuffer;
+    struct resampler_itfe *resampler{NULL};
+#endif
     tECNR_ProcessData pECNR_ProcessData;
     int mChannels{0};
     int ecnrPeriodSize{512};

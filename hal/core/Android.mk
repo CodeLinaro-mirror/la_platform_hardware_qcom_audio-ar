@@ -9,7 +9,8 @@ LOCAL_VENDOR_MODULE     := true
 LOCAL_MODULE_RELATIVE_PATH := hw
 
 LOCAL_C_INCLUDES    :=  $(LOCAL_PATH)/include \
-                        $(LOCAL_PATH)/extensions/include
+                        $(LOCAL_PATH)/extensions/include \
+                        $(LOCAL_PATH)/extensions/include/extensions
 
 LOCAL_CFLAGS := \
     -DBACKEND_NDK \
@@ -51,11 +52,16 @@ endif
 ifeq ($(ENABLE_QCOM_AMPERE_AUDIO),true)
 LOCAL_CFLAGS += -DENABLE_QCOM_AMPERE_AUDIO
 endif
+ifeq ($(AUDIO_AMPERE_EFFECTS),true)
+LOCAL_CFLAGS += -DAUDIO_AMPERE_EFFECTS
+endif
 
 ifeq ($(AUDIO_FEATURE_ENABLED_ECNR_HAL),true)
 LOCAL_SRC_FILES += StreamOutPrimaryOEM.cpp
 LOCAL_SRC_FILES += StreamInPrimaryOEM.cpp
 LOCAL_CFLAGS += -DECNR_HAL_ENABLE
+# Disabling SRC by default
+#LOCAL_CPPFLAGS += -DECNR_HAL_SRC_CP
 
 ifneq (,$(filter userdebug eng,$(TARGET_BUILD_VARIANT)))
 LOCAL_CPPFLAGS += -DECNR_HAL_TUNE
@@ -107,7 +113,8 @@ LOCAL_SHARED_LIBRARIES := \
     libar-pal \
     libaudioserviceexampleimpl \
     libaudioplatformconverter.qti \
-    qti-audio-types-aidl-V1-ndk
+    qti-audio-types-aidl-V1-ndk \
+    libAWXPAL
 
 ifeq ($(ENABLE_QCOM_HAL_AUDIO_FOCUS),true)
 LOCAL_SHARED_LIBRARIES += \

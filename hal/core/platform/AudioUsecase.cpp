@@ -1252,8 +1252,18 @@ uint32_t CompressCapture::getAACMaxBufferSize() {
 #ifdef ECNR_HAL_ENABLE
 // [VoipPlaybackECNR Start]
 size_t VoipPlaybackECNR::getFrameCount(const AudioPortConfig& mixPortConfig) {
+#ifdef ECNR_HAL_SRC_CP
+    if ((UsecaseConfig::getDLECNRPeriodSize(VoipPlaybackECNR::kSampleRate)*mixPortConfig.sampleRate.value().value) % (VoipPlaybackECNR::kSampleRate)) {
+        kPeriodDurationMs = 8;
+        kPeriodSize = (size_t)(kPeriodDurationMs * (mixPortConfig.sampleRate.value().value/1000));
+    } else {
+        kPeriodSize = ((UsecaseConfig::getDLECNRPeriodSize(VoipPlaybackECNR::kSampleRate)*mixPortConfig.sampleRate.value().value) / (VoipPlaybackECNR::kSampleRate));
+        kPeriodDurationMs = (size_t)(kPeriodSize /(mixPortConfig.sampleRate.value().value/1000)) ;
+    }
+#else
     kPeriodSize = UsecaseConfig::getDLECNRPeriodSize(mixPortConfig.sampleRate.value().value);
     kPeriodDurationMs = (size_t)(kPeriodSize /(mixPortConfig.sampleRate.value().value/1000));
+#endif
 //    LOG(DEBUG) << __func__ << " VoipPlaybackECNR " << kPeriodSize;
     return kPeriodSize;
 }
@@ -1261,8 +1271,18 @@ size_t VoipPlaybackECNR::getFrameCount(const AudioPortConfig& mixPortConfig) {
 // [VoipPlaybackECNR End]
 // [VoipRecordECNR Start]
 size_t VoipRecordECNR::getFrameCount(const AudioPortConfig& mixPortConfig) {
+#ifdef ECNR_HAL_SRC_CP
+    if ((UsecaseConfig::getULECNRPeriodSize(VoipRecordECNR::kSampleRate)*mixPortConfig.sampleRate.value().value) % (VoipRecordECNR::kSampleRate)) {
+        kCaptureDurationMs = 8;
+        kPeriodSize = (size_t)(kCaptureDurationMs * (mixPortConfig.sampleRate.value().value/1000));
+    } else {
+        kPeriodSize = ((UsecaseConfig::getULECNRPeriodSize(VoipRecordECNR::kSampleRate)*mixPortConfig.sampleRate.value().value) / (VoipRecordECNR::kSampleRate));
+        kCaptureDurationMs = (size_t)(kPeriodSize /(mixPortConfig.sampleRate.value().value/1000)) ;
+    }
+#else
     kPeriodSize = UsecaseConfig::getULECNRPeriodSize(mixPortConfig.sampleRate.value().value);
     kCaptureDurationMs = (size_t)((kPeriodSize+1) /(mixPortConfig.sampleRate.value().value/1000));
+#endif
 //    LOG(DEBUG) << __func__ << " VoipRecordECNR " << kPeriodSize;
     return kPeriodSize;
 }

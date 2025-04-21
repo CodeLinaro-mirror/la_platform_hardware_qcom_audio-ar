@@ -21,6 +21,8 @@ LOCAL_SRC_FILES := \
 
 ifeq ($(AUDIO_FEATURE_ENABLED_ECNR_HAL),true)
 LOCAL_CFLAGS += -DECNR_HAL_ENABLE
+# Disabling SRC by default
+#LOCAL_CFLAGS += -DECNR_HAL_SRC_CP
 
 ifneq (,$(filter userdebug eng,$(TARGET_BUILD_VARIANT)))
 LOCAL_CPPFLAGS += -DECNR_HAL_TUNE

@@ -48,6 +48,11 @@ class HalOffloadEffects {
     const std::string kOffloadVisualizerPath = "/vendor/lib/soundfx/libqcomvisualizer.so";
     const std::string kOffloadPostProcBundlePath = "/vendor/lib/soundfx/libqcompostprocbundle.so";
 #endif
+
+#ifdef AUDIO_AMPERE_EFFECTS
+    const std::string kOffloadOemEffects = "/vendor/lib64/soundfx/libampereeffects.so" ;
+#endif
+
     std::vector<EffectLibInfo> mEffects;
 
     HalOffloadEffects();

@@ -10,7 +10,7 @@
 
 #include "RslContext.h"
 #include "RslTypes.h"
-#include "extensions/AudioExtension.h"
+#include "PalParamDelegator.h"
 #include <aidl/ampere/hardware/audio/effect/Ambiance.h>
 #include <system/audio_effects/audio_effects_utils.h>
 #include "aidl/android/hardware/audio/effect/DefaultExtension.h"
@@ -26,6 +26,7 @@ using aidl::android::media::audio::common::AudioDeviceType;
 using aidl::ampere::hardware::audio::effect::Sdvc;
 using namespace ::android::effect::utils;
 using aidl::android::hardware::audio::effect::DefaultExtension;
+using namespace ::aidl::qti::awx;
 
 SDVCContext::SDVCContext(const Parameter::Common& common,
                                    const RslEffectType& type, bool processData)
@@ -52,13 +53,17 @@ void SDVCContext::deInit() {
     stop();
 }
 
-RetCode SDVCContext::start() {
+RetCode SDVCContext::start(pal_stream_handle_t* palHandle) {
     LOG(DEBUG) << "Enter " << __func__ << " ioHandle " << getIoHandle();
 
     std::lock_guard lg(mMutex);
-    mState = EffectState::ACTIVE;
+    mPalHandle = palHandle;
 
-    setSdvcCurrentProfile(mCurrentProfile);
+    if (isEffectActive()) {
+        setSdvcCurrentProfile(mCurrentProfile);
+    } else {
+        LOG(DEBUG) << "Not yet enabled";
+    }
 
     return RetCode::SUCCESS;
 }
@@ -67,12 +72,30 @@ RetCode SDVCContext::stop() {
     std::lock_guard lg(mMutex);
     LOG(DEBUG) << "Enter " << __func__ << " ioHandle " << getIoHandle();
     struct param_type2_t sdvcParam = {0}; // by default enable bit is 0
-    mState = EffectState::INITIALIZED;
-
     setSdvcCurrentProfile(DEFAULT_SDVC_PROFILE);
-
+    mPalHandle = nullptr;
     return RetCode::SUCCESS;
 }
+
+RetCode SDVCContext::enable() {
+    std::lock_guard lg(mMutex);
+    LOG(DEBUG) << __func__ << " ioHandle " << getIoHandle();
+    if (isEffectActive())
+     return RetCode::ERROR_ILLEGAL_PARAMETER;
+    mState = EffectState::ACTIVE;
+    setSdvcCurrentProfile(mCurrentProfile);
+    return RetCode::SUCCESS;
+}
+
+RetCode SDVCContext::disable() {
+    std::lock_guard lg(mMutex);
+    LOG(DEBUG) << __func__ << " ioHandle " << getIoHandle();
+    if (!isEffectActive()) return RetCode::ERROR_ILLEGAL_PARAMETER;
+    mState = EffectState::INITIALIZED;
+    setSdvcCurrentProfile(DEFAULT_SDVC_PROFILE);
+    return RetCode::SUCCESS;
+}
+
 
 RetCode SDVCContext::setSdvcCurrentProfile(int profile) {
 
@@ -208,42 +231,6 @@ std::vector<uint8_t> SDVCContext::getParameter(std::vector<uint8_t> identifier) 
     return responseExtension.bytes;
 }
 
-RetCode SDVCContext::setParameter(uint32_t cmd, int32_t param_value) {
-    std::lock_guard lg(mMutex);
-    LOG(DEBUG) << "Enter " << __func__ << " cmd: " << cmd << " value " << param_value;
-
-    if ( param_value < MIN_SDVC_PROFILE_VALUE || param_value > MAX_SDVC_PROFILE_VALUE ) {
-        LOG(DEBUG) << __func__ << "Error in setting value, not in range 0 to 5 ";
-        return RetCode::ERROR_ILLEGAL_PARAMETER;
-    }
-
-    return setSdvcCurrentProfile(param_value);
-}
-
-RetCode SDVCContext::getParameter(effect_param_t* param, uint32_t *size) {
-    std::lock_guard lg(mMutex);
-    LOG(DEBUG) << " Enter " << __func__;
-
-    uint64_t cmd;
-    memcpy(&cmd, param->data, param->psize);
-
-    int32_t voffset = ((param->psize - 1) / sizeof(int32_t) + 1) * sizeof(int32_t);
-    void *value = param->data + voffset;
-
-    param->status = 0;
-    param->vsize = sizeof(uint64_t);
-    *size = sizeof(effect_param_t) + voffset + param->vsize;
-    *(int32_t *)value = getSdvcCurrentProfile();
-
-    if (*(int32_t *)value < MIN_SDVC_PROFILE_VALUE) {
-        return RetCode::ERROR_ILLEGAL_PARAMETER;
-    }
-
-    LOG(DEBUG) << " Exit " << __func__;
-
-    return RetCode::SUCCESS;
-}
-
 RetCode SDVCContext::setOutputDevice(
         const std::vector<aidl::android::media::audio::common::AudioDeviceDescription>& device) {
     LOG(DEBUG) << "Enter " << __func__;
@@ -278,7 +265,7 @@ int SDVCContext::getSdvcCurrentProfile() {
 
     // Defining CAPI param Type
     effect_type type = SYNC_WITHOUT_AUDIO_BUS;
-    ret = ::qti::audio::core::AWX_get_param(&pal_param, type);
+    ret = PalParamDelegator::AWX_get_param_handle(mPalHandle,&pal_param, type);
 
     if (ret < 0) {
         LOG(ERROR) << __func__ << "Error while fetching value returned with ret: " << ret;
@@ -309,7 +296,14 @@ int SDVCContext::updatePalParameters(struct param_type2_t *params) {
     effect_type type = SYNC_WITHOUT_AUDIO_BUS;
     LOG(DEBUG) << __func__ << "Successfully created pal_param";
 
-    ::qti::audio::core::AWX_set_param(pal_param, type);
+
+    if (mPalHandle != NULL) {
+        PalParamDelegator::AWX_set_param_handle(mPalHandle,pal_param, type);
+    } else {
+        PalParamDelegator::AWX_set_param(pal_param, type);
+        LOG(DEBUG) << "PAL handle is NULL " << __func__;
+    }
+
     if (pal_param) {
         free(pal_param);
     }
