@@ -24,6 +24,7 @@
 #define DIR_DL    1
 #define ECNR_TYPE_VR 0
 #define ECNR_TYPE_TEL 1
+#define ECNR_TYPE_LEGACY_SIRI 2
 #define CP_CONNECTION_USB 0
 #define CP_CONNECTION_WIFI 1
 #define CP_SAMPLERATE "cp_sample"
@@ -75,8 +76,19 @@ typedef enum {
     TEL_CP_48K_WIFI,
     TEL_CP_48K_WIFI_DL,
     VR_16K,        //22
+    LEGACY_SIRI_USB_UL,
+    LEGACY_SIRI_WIFI_UL,
     SCD_TYPE_MAX,
 } scd_type_t;
+
+typedef enum {
+   USECASE_NONE = 0,
+   CALL,
+   FACETIME,
+   SIRI,
+   ESIRI_IN,
+   ESIRI_OUT,
+} cp_type;
 
 typedef struct ecnrMainStruct tECNR_Main;
 
@@ -246,8 +258,11 @@ class HalECNRExtension {
     int audio_extn_cvtformat16_delnterleave_to_interleave(void* deint_buffer, void* int_buffer, int frameSz, int numchannel);
     int get_vocoder_rate() const;
     int get_conn_type() const;
+    int get_cp_type() const;
     void set_vocoder_rate(int data);
     void set_conn_type(int data);
+    void set_cp_type(int data);
+    int carplay_param_converter(char * data);
 #ifdef ECNR_HAL_TUNE
     int audio_extn_setupECNR_TuneIF(tECNR_TuneIFData* pECNR_TuneIFData, int portid);
     int audio_extn_close_TuneIF(tECNR_TuneIFData* pECNR_TuneIFData);

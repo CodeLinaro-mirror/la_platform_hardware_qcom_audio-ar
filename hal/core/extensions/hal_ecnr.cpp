@@ -38,6 +38,8 @@ const char * const scd_file_name_table[SCD_TYPE_MAX] = {
  [TEL_CP_48K_WIFI] = "SSE_CP_Tel_SWB_Wifi_UL",
  [TEL_CP_48K_WIFI_DL] = "SSE_CP_Tel_SWB_Wifi_DL",
  [VR_16K] = "SSE_WuW_BI_ESIRI",
+ [LEGACY_SIRI_USB_UL] = "SSE_CP_Siri_USB_UL",
+ [LEGACY_SIRI_WIFI_UL] = "SSE_CP_Siri_Wifi_UL",
 };
 
 const char * const scd_file_name_table_2nd[SCD_TYPE_MAX] = {
@@ -66,6 +68,8 @@ const char * const scd_file_name_table_2nd[SCD_TYPE_MAX] = {
  [TEL_CP_48K_WIFI] = "dnn_dns_hf-sq_24kHz",
  [TEL_CP_48K_WIFI_DL] = NULL,
  [VR_16K] = "dnn_dns_vr_16kHz",
+ [LEGACY_SIRI_USB_UL] = NULL,
+ [LEGACY_SIRI_WIFI_UL] = NULL,
 };
 
 HalECNRExtension::~HalECNRExtension() {
@@ -302,6 +306,9 @@ HalECNRExtension::HalECNRExtension() {
     int HalECNRExtension::get_conn_type() const {
         return connect_type;
     }
+    int HalECNRExtension::get_cp_type() const {
+        return carplay_type;
+    }
     void HalECNRExtension::set_vocoder_rate(int data) {
         vocoder_sample_rate = data;
         LOG(DEBUG) << __func__ << " vocoder_rate: " << vocoder_sample_rate;
@@ -309,6 +316,25 @@ HalECNRExtension::HalECNRExtension() {
     void HalECNRExtension::set_conn_type(int data) {
         connect_type = data;
         LOG(DEBUG) << __func__ << " connection_type: " << connect_type;
+    }
+    void HalECNRExtension::set_cp_type(int data) {
+        carplay_type = data;
+        LOG(DEBUG) << __func__ << " carplay_type: " << carplay_type;
+    }
+
+    int HalECNRExtension::carplay_param_converter(char * data) {
+        if (strcmp(data, "CALL") == 0)
+            return CALL;
+        else if (strcmp(data, "FACETIME") == 0)
+            return FACETIME;
+        else if (strcmp(data, "SIRI") == 0)
+            return SIRI;
+        else if (strcmp(data, "ESIRI_IN") == 0)
+            return ESIRI_IN;
+        else if (strcmp(data, "ESIRI_OUT") == 0)
+            return ESIRI_OUT;
+        else
+            return USECASE_NONE;
     }
 
     void HalECNRExtension::carplay_set_parameters(struct str_parms *params) {
@@ -318,7 +344,7 @@ HalECNRExtension::HalECNRExtension() {
             carplay_sample_rate = (atoi(value));
             LOG(DEBUG) << __func__ << " carplay sample rate = " << carplay_sample_rate;
         } else if (str_parms_get_str(params, CP_TYPE, value, sizeof(value)) >= 0) {
-            carplay_type = (atoi(value));
+            carplay_type = carplay_param_converter(value);
             LOG(DEBUG) << __func__ << " carplay_type = " << carplay_type;
         } else if (str_parms_get_str(params, CP_VOCODER_SAMPLERATE, value, sizeof(value)) >= 0) {
             vocoder_sample_rate = (atoi(value));
@@ -335,7 +361,7 @@ HalECNRExtension::HalECNRExtension() {
     int HalECNRExtension::audio_extn_getSCDtype(uint32_t sample_rate, uint32_t vocoder_rate, uint32_t ecnr_type, uint32_t connection_type, uint32_t dir) {
 
         int scd_type = SCD_TYPE_INVALID;
-        LOG(DEBUG) << __func__ << " vocoder_samplerate: " << vocoder_rate << " connection_type: " << connection_type ;
+        LOG(DEBUG) << __func__ << " vocoder_samplerate: " << vocoder_rate << " connection_type: " << connection_type << " ecnr_type: " << ecnr_type;
 
         if (ecnr_type == ECNR_TYPE_VR) {
             if (sample_rate == 16000) {
@@ -382,8 +408,13 @@ HalECNRExtension::HalECNRExtension() {
                         break;
                 }
             }
-            if (scd_type < SCD_TYPE_MAX && scd_type > SCD_TYPE_INVALID )
+            if (scd_type < SCD_TYPE_MAX && scd_type > SCD_TYPE_INVALID)
                 scd_type = scd_type + dir;
+        } else if (ecnr_type == ECNR_TYPE_LEGACY_SIRI) {
+            if (connection_type == CP_CONNECTION_WIFI)
+                scd_type = LEGACY_SIRI_WIFI_UL;
+            else
+                scd_type = LEGACY_SIRI_USB_UL;
         } else {
             LOG(ERROR) << __func__ << " invalid ecnr type " << ecnr_type ;
             return SCD_TYPE_INVALID;
