@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+​​​​​Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
+Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
 SPDX-License-Identifier: BSD-3-Clause-Clear
 -->
 <quasar_conf verison="1.0">
@@ -39,4 +40,18 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <param name="QUASAR_COMPRESSOR_RATIO" id="304" value="1.5"/>
         <param name="QUASAR_OVERSHOOT_ENABLED" id="305" value="1.0"/>
     </dynamics_params>
+    <source_metadata>
+        <source index="0" x="0.7071" y="0.7071" z="0.0" type="0"/>
+        <source index="1" x="0.7071" y="-0.7071" z="0.0" type="0"/>
+        <source index="2" x="1.0" y="0.0" z="0.0" type="0" />
+        <source index="3" x="0.683" y="0.683" z="-0.259" type="3"/>
+        <source index="4" x="-0.7071" y="0.7071" z="0.0" type="0"/>
+        <source index="5" x="-0.7071" y="-0.7071" z="0.0" type="0"/>
+        <source index="6" x="0.0" y="1.0" z="0.0" type="0"/>
+        <source index="7" x="0.0" y="-1.0" z="0.0" type="0"/>
+        <source index="8" x="0.5" y="0.5" z="0.7071" type="0"/>
+        <source index="9" x="0.5" y="-0.5" z="0.7071" type="0"/>
+        <source index="10" x="-0.5" y="0.5" z="0.7071" type="0"/>
+        <source index="11" x="-0.5" y="-0.5" z="0.7071" type="0"/>
+    </source_metadata >
 </quasar_conf>
