@@ -31,6 +31,7 @@
 #include <android/binder_ibinder.h>
 #include <android/binder_manager.h>
 #include <error/Result.h>
+#include <cmath>
 #ifdef ENABLE_QCOM_AMPERE_AUDIO
 #include <extensions/AudioHalFocusManager.h>
 #include <aidl/alliance/hardware/automotive/audiocontrol/internal/IAudioControlInternal.h>
@@ -61,6 +62,10 @@
 #define AUDIO_PARAMETER_KEY_BALANCE "Balance"
 #define AUDIO_PARAMETER_KEY_FADER "Fader"
 #define AUDIO_PARAMETER_KEY_ISFADERAVAILABLE "isFaderAvailable"
+#ifdef ENABLE_QCOM_AMPERE_AUDIO
+#define MIN_VOLUME_VALUE_MB -9000
+#define MAX_VOLUME_VALUE_MB 0
+#endif
 
 #include <android/binder_manager.h>
 #include <android/binder_process.h>
@@ -114,6 +119,7 @@ std::unordered_map<std::string, FocusSession> ModulePrimary::mActiveFocusDevices
 std::shared_ptr<::aidl::alliance::hardware::automotive::audiocontrol::internal::IAudioControlInternal> ModulePrimary::mAudioControlInternalProxy = nullptr;
 #define ALL_BUS_VOLUMES 0x7F
 #define BUS_COUNT 7
+#define Vol_to_mdB(X) ((X == 0.0) ? (MIN_VOLUME_VALUE_MB) : lrint(2000 * log10f(X)))
 #endif
 
 std::vector<float> qti::audio::core::MuteConfig::getVol = {-3600.0f, -3600.0f};
@@ -728,9 +734,10 @@ std::string ModulePrimary::carplayParamConverter(CarPlayVendorParameterExt::Rate
 }
 
 ::android::status_t ModulePrimary::setCarPlayParameter(const VendorParameter& param) {
-     struct str_parms* parms = NULL;
+    struct str_parms* parms = NULL;
     std::string kvpairs = "";
     std::string keyvalue;
+    static FocusSession focusSessionInfo = {};
     using Tag = CarPlayVendorParameterExt::Parameter::Tag;
     if (param.id == CarPlayVendorParameterExt::CARPLAY_SAMPLERATE) {
         std::string CarplaySampleRate;
@@ -830,13 +837,33 @@ std::string ModulePrimary::carplayParamConverter(CarPlayVendorParameterExt::Rate
             mAudExt.audio_extn_set_parameters(parms);
         }
     } else if (param.id == CarPlayVendorParameterExt::CARPLAY_DUCK) {
+        FocusInfo focusInfo = {};
         auto p = extractParameter<CarPlayVendorParameterExt, Tag::duckAudio,
                 CarPlayVendorParameterExt::DuckAudio>(param);
         CarPlayVendorParameterExt::DuckAudio aidlDuckAudio = VALUE_OR_RETURN_STATUS(p);
         if (aidlDuckAudio.command == CarPlayVendorParameterExt::DuckAudio::DuckCommand::NONE) {
             return ::android::BAD_VALUE;
         }
-        LOG(DEBUG) << __func__ << " CP Duck command "<< aidlDuckAudio.toString();
+        LOG(DEBUG) << __func__ << " CP Duck command "<< toString(aidlDuckAudio.command);
+
+        if (aidlDuckAudio.command == CarPlayVendorParameterExt::DuckAudio::DuckCommand::DUCK) {
+            if ((aidlDuckAudio.targetVolume < 0 && aidlDuckAudio.targetVolume > 1) || (aidlDuckAudio.rampDurationMs < 0 && aidlDuckAudio.rampDurationMs > 1)) {
+                return ::android::BAD_VALUE;
+            }
+            focusInfo.usage = "CP_DUCK";
+            focusInfo.gain = Vol_to_mdB(aidlDuckAudio.targetVolume);
+            focusInfo.isExternalGain = true;
+            focusInfo.rampDuration = aidlDuckAudio.rampDurationMs * 1000;
+            mAudExt.mAutoAudioHalPriorityExtension->requestFocus(focusInfo, &focusSessionInfo.FocusId);
+            LOG(DEBUG) << __func__ << " FocusId = " <<focusSessionInfo.FocusId << " rampduration: " << focusInfo.rampDuration;
+        } else if (aidlDuckAudio.command == CarPlayVendorParameterExt::DuckAudio::DuckCommand::UNDUCK) {
+            if (aidlDuckAudio.rampDurationMs < 0 && aidlDuckAudio.rampDurationMs > 1) {
+                return ::android::BAD_VALUE;
+            }
+            focusInfo.rampDuration = aidlDuckAudio.rampDurationMs * 1000;
+            LOG(DEBUG) << __func__ <<" rampduration: " << focusInfo.rampDuration;
+            mAudExt.mAutoAudioHalPriorityExtension->abandonFocus(focusSessionInfo.FocusId);
+        }
     } else {
         LOG(ERROR) << __func__ << ": unhandled parameter id " << param.id.c_str();
         return ::android::BAD_VALUE;
@@ -1462,6 +1489,7 @@ ModulePrimary::SetParameterToFeatureMap ModulePrimary::fillSetParameterToFeature
                                  {CarPlayVendorParameterExt::CARPLAY_TYPE, Feature::CARPLAY},
                                  {CarPlayVendorParameterExt::CARPLAY_SAMPLERATE, Feature::CARPLAY},
                                  {CarPlayVendorParameterExt::CARPLAY_VOCODER_SAMPLERATE, Feature::CARPLAY},
+                                 {CarPlayVendorParameterExt::CARPLAY_DUCK, Feature::CARPLAY},
                                  {AudioControlVendorParameterExt::BALANCE, Feature::AUDIOCONTROL},
                                  {AudioControlVendorParameterExt::FADER, Feature::AUDIOCONTROL},
 #endif

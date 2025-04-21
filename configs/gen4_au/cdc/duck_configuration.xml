@@ -37,5 +37,6 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <priority in_src="DELIVERY_MODE" running_src="BUS02_NAV_GUIDANCE" duck="true" Gain="-9000" vol_override="true"/>
         <priority in_src="DELIVERY_MODE" running_src="BUS03_PHONE" duck="true" Gain="-9000" vol_override="true"/>
         <priority in_src="DELIVERY_MODE" running_src="BUS0F_NAV_GUIDANCE2" duck="true" Gain="-9000" vol_override="true"/>
+        <priority in_src="CP_DUCK" running_src="MEDIA" duck="true" Gain="-9000" vol_override="false"/>
     </priorities>
 </CarAudioDuckingConfiguration>
