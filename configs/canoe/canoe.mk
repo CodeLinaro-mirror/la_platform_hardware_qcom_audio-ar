@@ -170,6 +170,10 @@ endif
 PRODUCT_PROPERTY_OVERRIDES += \
    ro.audio.flinger_standbytime_ms=2000
 
+# override usecase validator to true, needed for BT gaming usecases
+PRODUCT_PROPERTY_OVERRIDES += \
+   ro.audio.usecase_validator_enabled=true
+
 # timecheck timeout value for audio in ms
 PRODUCT_PROPERTY_OVERRIDES += \
     vendor.audio_hal.timecheck_timeoutMS=8000
