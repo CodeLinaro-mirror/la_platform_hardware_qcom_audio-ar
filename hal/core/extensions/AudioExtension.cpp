@@ -882,6 +882,45 @@ AutoAudioHALPriorityExtension::~AutoAudioHALPriorityExtension()
     abandonFocus = NULL;
     updateVolume = NULL;
 }
+
+AutoVhalPriorityExtension::AutoVhalPriorityExtension():AudioExtensionBase(kVhalPriorityLibrary){
+
+    if (!(priority_init = (priority_init_t)dlsym(mHandle, "priority_init")))
+        {
+            LOG(ERROR) << __func__ << "VHAL priority_init dlsym failed";
+            if (mHandle) {
+                dlclose(mHandle);
+                mHandle = NULL;
+            }
+            priority_init = NULL;
+        }
+        else {
+            LOG(INFO) << __func__ << "VHAL priority_init dlsym successful";
+        }
+
+        if (priority_init)
+        {
+            LOG(INFO) << __func__ << "VHAL Priority Init call";
+            priority_init();
+        }
+        return;
+
+feature_disabled:
+    if (mHandle) {
+        dlclose(mHandle);
+        mHandle = NULL;
+    }
+}
+
+AutoVhalPriorityExtension::~AutoVhalPriorityExtension()
+{
+   LOG(INFO) << __func__ << " Enter";
+     if (mHandle) {
+        dlclose(mHandle);
+        mHandle = NULL;
+    }
+    priority_init = NULL;
+}
 #endif
 
 #ifdef ENABLE_AUDIO_DIAGNOSTICS
