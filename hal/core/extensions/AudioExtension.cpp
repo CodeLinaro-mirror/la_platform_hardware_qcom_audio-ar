@@ -209,6 +209,7 @@ void AudioExtension::audio_extn_set_parameters(struct str_parms *params) {
     mAutohalExtension->audio_extn_autohal_set_parameters(params);
     mHfpExtension->audio_extn_hfp_set_parameters(params);
     mFmExtension->audio_extn_fm_set_parameters(params);
+    mIccExtension->audio_extn_icc_set_parameters(params);
     audio_feature_stats_set_parameters(params);
 }
 
@@ -596,6 +597,25 @@ FmExtension::FmExtension() : AudioExtensionBase(kFmLibrary) {
     } else {
         fm_set_params = NULL;
         fm_running_status = NULL;
+    }
+}
+
+IccExtension::~IccExtension() {}
+
+void IccExtension::audio_extn_icc_set_parameters(struct str_parms *params) {
+    if (icc_set_params) icc_set_params(params);
+}
+
+IccExtension::IccExtension() : AudioExtensionBase(kIccLibrary, isExtensionEnabled(kIccProperty)) {
+    if (mHandle != nullptr) {
+        icc_set_params = (set_parameters_t)dlsym(mHandle, "icc_set_parameters");
+        if (!icc_set_params) {
+            LOG(ERROR) << "error " << dlerror();
+            dlclose(mHandle);
+            icc_set_params = NULL;
+        }
+    } else {
+        icc_set_params = NULL;
     }
 }
 

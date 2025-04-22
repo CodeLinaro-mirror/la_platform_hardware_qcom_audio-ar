@@ -1,5 +1,4 @@
 /*
- * Changes from Qualcomm Innovation Center are provided under the following license:
  * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
@@ -70,12 +69,14 @@ static std::string kAutohalLibrary = "/vendor/lib/libautohal_pal.so";
 #endif
 static std::string kBatteryListenerLibrary = std::string("libbatterylistener.so");
 static std::string kHfpLibrary = "libhfp_pal.so";
+static std::string kIccLibrary = "libicc_pal.so";
 static std::string kFmLibrary = "libfmpal.so";
 static std::string kKarokeLibrary = "dummy.so"; // TODO
 static std::string kGefLibrary = "libqtigefar.so";
 
 static std::string kBatteryListenerProperty = "vendor.audio.feature.battery_listener.enable";
 static std::string kHfpProperty = "vendor.audio.feature.hfp.enable";
+static std::string kIccProperty = "vendor.audio.feature.icc.enable";
 static std::string kBluetoothProperty = "vendor.audio.feature.a2dp_offload.enable";
 static std::string kAutoHalProperty = "vendor.audio.feature.auto_hal_pal.enable";
 
@@ -120,6 +121,7 @@ typedef int (*hfp_get_usecase_t)();
 typedef int (*hfp_set_mic_mute_t)(bool state);
 typedef int (*hfp_set_mic_mute2_t)(bool state);
 typedef void (*hfp_set_device_t)(struct pal_device *devices);
+
 
 typedef void (*a2dp_bt_audio_pre_init_t)(void);
 typedef void (*register_reconfig_cb_t)(int (*reconfig_cb)(tSESSION_TYPE, int));
@@ -179,6 +181,15 @@ class A2dpExtension : public AudioExtensionBase {
 
     a2dp_bt_audio_pre_init_t a2dp_bt_audio_pre_init = nullptr;
     register_reconfig_cb_t register_reconfig_cb = nullptr;
+};
+
+class IccExtension : public AudioExtensionBase {
+  public:
+    IccExtension();
+    ~IccExtension();
+    set_parameters_t icc_set_params;
+    get_parameters_t icc_get_params;
+    void audio_extn_icc_set_parameters(struct str_parms* params);
 };
 
 class HfpExtension : public AudioExtensionBase {
@@ -284,6 +295,7 @@ class AudioExtension {
     std::unique_ptr<A2dpExtension> mA2dpExtension = std::make_unique<A2dpExtension>();
     std::unique_ptr<HfpExtension> mHfpExtension = std::make_unique<HfpExtension>();
     std::unique_ptr<FmExtension> mFmExtension = std::make_unique<FmExtension>();
+    std::unique_ptr<IccExtension> mIccExtension = std::make_unique<IccExtension>();
     std::unique_ptr<KarokeExtension> mKarokeExtension = std::make_unique<KarokeExtension>();
     std::unique_ptr<GefExtension> mGefExtension = std::make_unique<GefExtension>();
     std::unique_ptr<AutohalExtension> mAutohalExtension = std::make_unique<AutohalExtension>();
