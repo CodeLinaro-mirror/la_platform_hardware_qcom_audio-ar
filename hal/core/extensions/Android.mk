@@ -525,6 +525,9 @@ LOCAL_CFLAGS := \
     -Wunused-parameter \
     -Wextra
 
+ifeq ($(ENABLE_QCOM_VHAL_NIGHTMODE),true)
+LOCAL_CFLAGS += -DENABLE_QCOM_VHAL_NIGHTMODE
+endif
 
 LOCAL_C_INCLUDES := \
     $(TOP)/vendor/qcom/opensource/pal \

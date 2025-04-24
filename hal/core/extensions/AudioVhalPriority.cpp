@@ -65,20 +65,24 @@ using namespace ::qti::audio::oem::config;
 #ifndef ENABLE_VHAL_TEST_WITH_KITCHENSINK
 #define ENABLE_VHAL_TEST_WITH_KITCHENSINK
 const VehicleProperty MuteRadioOrderByAAMId = VehicleProperty::HVAC_STEERING_WHEEL_HEAT;
+#ifdef ENABLE_QCOM_VHAL_NIGHTMODE
 const VehicleProperty NightModePropertyId = VehicleProperty::HVAC_SIDE_MIRROR_HEAT;
 const VehicleProperty DriverDoorPropertyId = VehicleProperty::DOOR_POS;
 const VehicleProperty FrontPassengerDoorPropertyId = VehicleProperty::HVAC_SEAT_TEMPERATURE;
 const VehicleProperty RearLeftDoorPropertyId = VehicleProperty::HVAC_SEAT_VENTILATION;
 const VehicleProperty RearRightDoorPropertyId = VehicleProperty::WINDOW_POS;
+#endif
 const VehicleProperty ThermalPropertyId = VehicleProperty::HVAC_FAN_DIRECTION;
 
 #else
 const VehicleProperty MuteRadioOrderByAAMId = VehicleProperty::HVAC_STEERING_WHEEL_HEAT;
+#ifdef ENABLE_QCOM_VHAL_NIGHTMODE
 const VehicleProperty NightModePropertyId = VehicleProperty::HVAC_SIDE_MIRROR_HEAT;
 const VehicleProperty DriverDoorPropertyId = VehicleProperty::DOOR_POS;
 const VehicleProperty FrontPassengerDoorPropertyId = VehicleProperty::HVAC_SEAT_TEMPERATURE;
 const VehicleProperty RearLeftDoorPropertyId = VehicleProperty::HVAC_SEAT_VENTILATION;
 const VehicleProperty RearRightDoorPropertyId = VehicleProperty::WINDOW_POS;
+#endif
 const VehicleProperty ThermalPropertyId = VehicleProperty::HVAC_FAN_DIRECTION;
 
 #endif //ENABLE_VHAL_TEST_WITH_KITCHENSINK
@@ -146,7 +150,9 @@ float getAttenuationTarget(){
 }
 
 FocusHandler g_focusHandler(PRIORITY_LIB);
+#ifdef ENABLE_QCOM_VHAL_NIGHTMODE
 struct vhal_data* Vhal_Data::vhal_data = nullptr;
+#endif
 
 // Helper to subscribe to VHal notifications
 bool subscribeToVHal(ISubscriptionClient* client, VehicleProperty propertyId) {
@@ -179,14 +185,16 @@ void AudioVHALListener::onPropertyEvent(const std::vector<std::unique_ptr<IHalPr
         LOG(ERROR) << __func__ << ": Received empty property values vector";
         return;
     }
+#ifdef ENABLE_QCOM_VHAL_NIGHTMODE
     struct vhal_data* vhal_data = Vhal_Data::vhal_get_params();
-
+#endif
     for(const auto& value : values) {
         int32_t propId = value->getPropId();
         LOG(DEBUG) << __func__ << ": PropId : " << propId;
         int32_t area = value->getAreaId();
         LOG(DEBUG) << __func__ << ": areaId : " << area;
 
+#ifdef ENABLE_QCOM_VHAL_NIGHTMODE
         if (value->getPropId() == static_cast<int32_t>(NightModePropertyId)) {
             if (value->getInt32Values().size() < 1) {
                 LOG(ERROR) << "Invalid NIGHT_MODE getFloatValues size, empty value :" << value->getInt32Values().size();
@@ -261,6 +269,7 @@ void AudioVHALListener::onPropertyEvent(const std::vector<std::unique_ptr<IHalPr
                 }
             }
         }
+#endif
         if (value->getPropId() == static_cast<int32_t>(MuteRadioOrderByAAMId)) {
             if (value->getInt32Values().size() < 1) {
                 LOG(ERROR) << "Invalid Radio Mute getInt32Values size, empty value :" << value->getInt32Values().size();
@@ -346,6 +355,7 @@ exit:
     LOG(DEBUG) << __func__ << ": Exit ";
 }
 
+#ifdef ENABLE_QCOM_VHAL_NIGHTMODE
 extern "C" __attribute__((visibility("default"))) void handler_vhal(){
 
     LOG(DEBUG) << __func__ << ": Enter " ;
@@ -407,6 +417,7 @@ extern "C" __attribute__((visibility("default"))) void handler_vhal(){
 exit:
     LOG(DEBUG) << __func__ << ": Exit ";
 }
+#endif
 
 extern "C" __attribute__((visibility("default"))) void handler_thermal(int32_t temperature){
     LOG(DEBUG) << __func__ << ": Enter " ;
@@ -487,9 +498,10 @@ extern "C" __attribute__((visibility("default")))int priority_init(void)
     LOG(DEBUG) << __func__ << ": Enter " ;
     // Construct our async helper object
     std::shared_ptr<AudioVHALListener> pAudioListener = std::make_shared<AudioVHALListener>();
-    //Create VHAL DATA struct
+#ifdef ENABLE_QCOM_VHAL_NIGHTMODE
+    //Create NIGHT_MODE VHAL DATA struct
     Vhal_Data::init();
-
+#endif
     // Connect to the Vehicle HAL so we can monitor state
     std::shared_ptr<IVhalClient> pVnet;
     LOG(INFO) << "Connecting to Vehicle HAL";
@@ -509,6 +521,7 @@ extern "C" __attribute__((visibility("default")))int priority_init(void)
         {
             LOG(ERROR) << "Register for RADIO_AAM_MUTE_ORDER done.";
         }
+#ifdef ENABLE_QCOM_VHAL_NIGHTMODE
         if (!subscribeToVHal(subscriptionClient.get(), NightModePropertyId)) {
             LOG(ERROR) << "Didn't register for NIGHT_MODE , Exiting.";
             return EXIT_FAILURE;
@@ -553,6 +566,7 @@ extern "C" __attribute__((visibility("default")))int priority_init(void)
         {
             LOG(ERROR) << "Register for Rear Right Door done.";
         }
+#endif
         if (!subscribeToVHal(subscriptionClient.get(), ThermalPropertyId)) {
             LOG(ERROR) << "Didn't register for Thermal Property, Exiting.";
             return EXIT_FAILURE;
