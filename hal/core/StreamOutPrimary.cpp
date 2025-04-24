@@ -1043,7 +1043,7 @@ void StreamOutPrimary::configure() {
          * metadata */
         // for pcm offload bit_width should be set based on pal configured format.
         // set bit width only when usecase is with compressed format
-        if (!compressPlayback.isPcmOffload()) {
+        if (!compressPlayback.isPcmOffload() && compressPlayback.getBitWidth() != 0) {
             attr->out_media_config.bit_width = compressPlayback.getBitWidth();
         }
         attr->flags = static_cast<pal_stream_flags_t>(PAL_STREAM_FLAG_NON_BLOCKING);
