@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -7,10 +7,9 @@
 
 #include <aidl/android/hardware/audio/effect/BnEffect.h>
 
+#include "VisualizerOffloadContext.h"
 #include "effect-impl/EffectImpl.h"
 #include "effect-impl/EffectUUID.h"
-
-#include "VisualizerOffloadContext.h"
 
 namespace aidl::qti::effects {
 
@@ -20,13 +19,14 @@ class VisualizerOffload final : public EffectImpl {
     static const Capability kCapability;
     static const Descriptor kDescriptor;
     VisualizerOffload();
-    ~VisualizerOffload() { LOG(DEBUG) << __func__; }
+    ~VisualizerOffload();
 
     ndk::ScopedAStatus commandImpl(CommandId command) override;
     ndk::ScopedAStatus getDescriptor(Descriptor* _aidl_return) override;
     ndk::ScopedAStatus setParameterSpecific(const Parameter::Specific& specific) override;
     ndk::ScopedAStatus getParameterSpecific(const Parameter::Id& id,
                                             Parameter::Specific* specific) override;
+
     std::shared_ptr<EffectContext> createContext(const Parameter::Common& common,
                                                  bool processData) override;
     RetCode releaseContext() override;
