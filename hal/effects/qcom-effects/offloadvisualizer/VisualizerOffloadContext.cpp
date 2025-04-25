@@ -1,7 +1,8 @@
 /*
- * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
+
 #define LOG_TAG "AHAL_Effect_VisualizerContextQti"
 #include "VisualizerOffloadContext.h"
 
@@ -10,70 +11,11 @@
 #include <math.h>
 #include <system/audio.h>
 #include <time.h>
+
 #include <algorithm>
 
 namespace aidl::qti::effects {
-void GlobalVisualizerSession::startEffect(int ioHandle) {
-    std::lock_guard lg(mMutex);
-    for (auto context : mCreatedEffectsList) {
-        if (context->getIoHandle() == ioHandle) {
-            if (auto ret = context->startThreadLoop(); ret)
-                LOG(ERROR) << __func__ << " failed to start capture thread loop" << ret;
-            break;
-        }
-    }
-    mActiveOutputsList.push_back(ioHandle);
-}
 
-void GlobalVisualizerSession::stopEffect(int ioHandle) {
-    std::lock_guard lg(mMutex);
-    for (auto context : mCreatedEffectsList) {
-        if (context->getIoHandle() == ioHandle) {
-            if (auto ret = context->stopThreadLoop(); ret)
-                LOG(ERROR) << __func__ << " failed to stop capture thread loop";
-            break;
-        }
-    }
-
-    auto iter = std::find(mActiveOutputsList.begin(), mActiveOutputsList.end(), ioHandle);
-    if (iter != mActiveOutputsList.end()) mActiveOutputsList.erase(iter);
-}
-
-std::shared_ptr<VisualizerOffloadContext> GlobalVisualizerSession::createSession(
-        const Parameter::Common& common, bool processData) {
-    std::lock_guard lg(mMutex);
-    auto context = std::make_shared<VisualizerOffloadContext>(common, processData);
-    RETURN_VALUE_IF(!context, nullptr, "failedToCreateContext");
-    for (auto output : mActiveOutputsList) {
-        if (common.ioHandle == output) {
-            if (auto ret = context->startThreadLoop(); ret)
-                LOG(ERROR) << __func__ << " failed to start capture thread loop";
-            break;
-        }
-    }
-    mCreatedEffectsList.push_back(context);
-    return context;
-}
-
-void GlobalVisualizerSession::releaseSession(std::shared_ptr<VisualizerOffloadContext> context) {
-    std::lock_guard lg(mMutex);
-    if (context) {
-        context->disable();
-        context->resetBuffer();
-        for (auto output : mActiveOutputsList) {
-            if (context->getIoHandle() == output) {
-                if (auto ret = context->stopThreadLoop(); ret)
-                    LOG(ERROR) << __func__ << " failed to stop capture thread loop";
-                break;
-            }
-        }
-    }
-    auto iter = std::find(mCreatedEffectsList.begin(), mCreatedEffectsList.end(), context);
-    if (iter != mCreatedEffectsList.end())
-        mCreatedEffectsList.erase(iter);
-    else
-        LOG(ERROR) << __func__ << " context is not present";
-}
 StreamProxy::StreamProxy() {
     init();
 }
@@ -163,66 +105,107 @@ bool StreamProxy::isStreamStarted() {
     return mStreamStarted;
 }
 
+std::string VisualizerOffloadContext::details() {
+    std::ostringstream os;
+    os << " ";
+    os << this;
+    os << " offload ";
+    os << mOffload;
+    os << " session ";
+    os << getSessionId();
+    os << " ioHandle ";
+    os << getIoHandle();
+    return os.str();
+}
+
+// Note: The thread loop is started upon receiving the setOffload(true) command.
+// At this time, ioHandle might not point to the offload ioHandle.
+// After setOffload, the FWK should update the parameters via setParameter,
+// which would set ioHandle to the offload ioHandle.
+// Therefore, it is possible to start the thread loop with a non-offload handle,
+// which will be updated later.
+// However, the actual ioHandle is not a concern here; we only need the offload indication
+// to determine when the effect needs to be started.
 int VisualizerOffloadContext::startThreadLoop() {
     std::lock_guard lg(mMutex);
+    // we shouldn't run into this, should not get twice
+    if (mCaptureThreadRunning.load()) {
+        LOG(DEBUG) << __func__ << " thread is already running" << details();
+        return -1;
+    }
+    LOG(DEBUG) << __func__ << details();
     mCaptureThreadHandler = std::thread(&VisualizerOffloadContext::captureThreadLoop, this);
     if (!mCaptureThreadHandler.joinable()) {
-        LOG(ERROR) << __func__ << "failed to create captureThreadLoop";
+        LOG(ERROR) << __func__ << "failed to create captureThreadLoop" << details();
         return -EINVAL;
     }
+    mCaptureThreadRunning.store(true);
     mExitThread = false;
     mCaptureThreadCondition.notify_one();
     return 0;
 }
 
 int VisualizerOffloadContext::stopThreadLoop() {
-    if (mCaptureThreadHandler.joinable()) {
-        {
-            std::lock_guard lg(mMutex);
-            mExitThread = true;
-        }
-        mCaptureThreadCondition.notify_one();
-        mCaptureThreadHandler.join();
-        LOG(DEBUG) << __func__ << " capture thread joined";
+    // not an error if thread is not running
+    if (!mCaptureThreadRunning.load()) {
+        LOG(VERBOSE) << __func__ << " thread is not running " << details();
+        return -1;
     }
+
+    LOG(DEBUG) << __func__ << details();
+    {
+        std::lock_guard lg(mMutex);
+        mExitThread = true;
+    }
+
+    mCaptureThreadCondition.notify_one();
+
+    if (mCaptureThreadHandler.joinable()) {
+        mCaptureThreadHandler.join();
+        LOG(DEBUG) << __func__ << " capture thread joined " << details();
+    }
+    mCaptureThreadRunning.store(false);
     return 0;
 }
 
 void VisualizerOffloadContext::captureThreadLoop() {
+    LOG(INFO) << __func__ << " entering threadloop " << details();
     int status = 0;
     bool captureEnabled = false;
     StreamProxy streamProxy;
 
-    if (!streamProxy.isStreamStarted()) return;
-    LOG(INFO) << __func__ << " entering threadloop ";
+    if (!streamProxy.isStreamStarted()) {
+        LOG(ERROR) << __func__ << " failed to start proxy stream, exit " << details();
+        return;
+    }
 
     while (true) {
         {
             std::unique_lock<std::mutex> lck(mMutex);
-            LOG(VERBOSE) << __func__ << " waiting for active state";
+            //LOG(VERBOSE) << __func__ << " waiting for active state" << details();
             mCaptureThreadCondition.wait(lck,
                                          [this] { return mState == State::ACTIVE || mExitThread; });
-            LOG(VERBOSE) << __func__ << " done waiting for active state";
+            //LOG(VERBOSE) << __func__ << " done waiting for active state" << details();
 
             if (mExitThread) {
-                LOG(INFO) << __func__ << " Exiting threadloop";
+                LOG(INFO) << __func__ << " Exiting threadloop" << details();
                 break;
             }
         }
         process(streamProxy.read());
     }
 
-    LOG(DEBUG) << __func__ << " completed threadloop";
+    LOG(DEBUG) << __func__ << " completed threadloop" << details();
 }
 
 VisualizerOffloadContext::VisualizerOffloadContext(
         const aidl::android::hardware::audio::effect::Parameter::Common& common, bool processData)
     : EffectContext(common, processData) {
     std::lock_guard lg(mMutex);
-    LOG(DEBUG) << __func__ << " ioHandle " << getIoHandle();
+    LOG(DEBUG) << __func__ << details();
     if (common.input != common.output) {
         LOG(ERROR) << __func__ << " mismatch input: " << common.input.toString()
-                   << " and output: " << common.output.toString();
+                   << " and output: " << common.output.toString() << details();
     }
     mState = State::INITIALIZED;
     auto channelCount = getChannelCount(common.input.base.channelMask);
@@ -230,7 +213,7 @@ VisualizerOffloadContext::VisualizerOffloadContext(
 }
 
 VisualizerOffloadContext::~VisualizerOffloadContext() {
-    LOG(DEBUG) << __func__ << " ioHandle " << getIoHandle();
+    LOG(DEBUG) << __func__ << details();
     {
         std::lock_guard lg(mMutex);
         mState = State::UNINITIALIZED;
@@ -238,8 +221,26 @@ VisualizerOffloadContext::~VisualizerOffloadContext() {
     stopThreadLoop();
 }
 
+// When setOffload is set true ->FWK is starting a offload thread
+// start the capture thread to read data.
+// When setOffload is set false ->FWK is stopping a offload thread
+// stop the capture thread to read data.
+RetCode VisualizerOffloadContext::setOffload(bool offload) {
+    if (offload != mOffload) {
+        mOffload = offload;
+        LOG(DEBUG) << __func__ << " changed to " << offload << details();
+        if (offload) {
+            startThreadLoop();
+        } else {
+            stopThreadLoop();
+        }
+    }
+
+    return RetCode::SUCCESS;
+}
+
 RetCode VisualizerOffloadContext::enable() {
-    LOG(DEBUG) << __func__ << " ioHandle " << getIoHandle();
+    LOG(DEBUG) << __func__ << details();
     std::lock_guard lg(mMutex);
     if (mState != State::INITIALIZED) {
         return RetCode::ERROR_EFFECT_LIB_ERROR;
@@ -250,7 +251,7 @@ RetCode VisualizerOffloadContext::enable() {
 }
 
 RetCode VisualizerOffloadContext::disable() {
-    LOG(DEBUG) << __func__ << " ioHandle " << getIoHandle();
+    LOG(DEBUG) << __func__ << details();
     std::lock_guard lg(mMutex);
     if (mState != State::ACTIVE) {
         return RetCode::ERROR_EFFECT_LIB_ERROR;
@@ -337,7 +338,8 @@ Visualizer::Measurement VisualizerOffloadContext::getMeasure() {
         // measurements aren't relevant anymore and shouldn't bias the new one)
         const uint32_t delayMs = getDeltaTimeMsFromUpdatedTime_l();
         if (delayMs > kDiscardMeasurementsTimeMs) {
-            LOG(INFO) << __func__ << " Discarding " << delayMs << " ms old measurements";
+            LOG(INFO) << __func__ << " Discarding " << delayMs << " ms old measurements "
+                      << details();
             for (uint32_t i = 0; i < mMeasurementWindowSizeInBuffers; i++) {
                 mPastMeasurements[i].mIsValid = false;
                 mPastMeasurements[i].mPeakU16 = 0;
@@ -365,7 +367,7 @@ Visualizer::Measurement VisualizerOffloadContext::getMeasure() {
     measure.rms = (rms < 0.000016f) ? -9600 : (int32_t)(2000 * log10(rms / 32767.0f));
     measure.peak = (peakU16 == 0) ? -9600 : (int32_t)(2000 * log10(peakU16 / 32767.0f));
     LOG(DEBUG) << __func__ << " peak " << peakU16 << " (" << measure.peak << "mB), rms " << rms
-               << " (" << measure.rms << "mB)";
+               << " (" << measure.rms << "mB)" << details();
     return measure;
 }
 
@@ -383,7 +385,7 @@ std::vector<uint8_t> VisualizerOffloadContext::capture() {
     // clear the capture buffer to return silence
     if ((mLastCaptureIdx == mCaptureIdx) && (mBufferUpdateTime.tv_sec != 0) &&
         (deltaMs > kMaxStallTimeMs)) {
-        LOG(DEBUG) << __func__ << " capture going to idle";
+        LOG(DEBUG) << __func__ << " capture going to idle" << details();
         mBufferUpdateTime.tv_sec = 0;
         return result;
     }
@@ -481,9 +483,10 @@ int VisualizerOffloadContext::process(int16_t* inBuffer) {
         mBufferUpdateTime.tv_sec = 0;
     }
     if (mState != State::ACTIVE) {
-        LOG(DEBUG) << __func__ << "DONE inactive";
+        LOG(DEBUG) << __func__ << "DONE inactive " << details();
         return -ENODATA;
     }
     return 0;
 }
+
 } // namespace aidl::qti::effects
