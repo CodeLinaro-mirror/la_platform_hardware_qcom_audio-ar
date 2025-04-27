@@ -33,7 +33,7 @@ AUDIO_PAL += libaudiochargerlistener
 AUDIO_PAL += libhfp_pal
 ifneq ($(call soong_config_get, qtiaudio, hy11), true)
 ifneq ($(call soong_config_get, qtiaudio, hy22), true)
-#AUDIO_PAL += catf
+AUDIO_PAL += catf
 endif
 endif
 
