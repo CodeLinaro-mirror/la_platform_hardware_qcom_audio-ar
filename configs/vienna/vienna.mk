@@ -131,7 +131,7 @@ PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/codec2/service/1.0/c2audio.vendor.ext-arm.policy:vendor/etc/seccomp_policy/c2audio.vendor.ext-arm.policy \
     $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/codec2/service/1.0/c2audio.vendor.ext-arm64.policy:vendor/etc/seccomp_policy/c2audio.vendor.ext-arm64.policy
 PRODUCT_COPY_FILES += \
-    $(CONFIG_HAL_SRC_DIR)/vendor_audio_interfaces.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/vendor_audio_interfaces.xml
+    $(CONFIG_HAL_SRC_DIR)/vendor_audio_interfaces.xml:$(CONFIG_SKU_OUT_DIR)/vendor_audio_interfaces.xml
 
 ifneq (,$(filter userdebug eng, $(TARGET_BUILD_VARIANT)))
 PRODUCT_COPY_FILES += \
@@ -238,7 +238,9 @@ vendor.audio.feature.a2dp_offload.enable=true \
 vendor.audio.feature.battery_listener.enable=true \
 vendor.audio.feature.hfp.enable=true \
 vendor.audio.feature.kpi_optimize.enable=true \
-vendor.audio.feature.dmabuf.cma.memory.enable=false
+vendor.audio.feature.dmabuf.cma.memory.enable=false \
+vendor.audio.gsl.shmem.dmaheap.uncached = true
+
 
 AUDIO_FEATURE_ENABLED_GKI := true
 BUILD_AUDIO_TECHPACK_SOURCE := true
