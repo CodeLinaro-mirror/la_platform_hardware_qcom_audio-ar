@@ -40,6 +40,10 @@ const char * const scd_file_name_table[SCD_TYPE_MAX] = {
  [VR_16K] = "SSE_WuW_BI_ESIRI",
  [LEGACY_SIRI_USB_UL] = "SSE_CP_Siri_USB_UL",
  [LEGACY_SIRI_WIFI_UL] = "SSE_CP_Siri_Wifi_UL",
+ [FACETIME_USB] = "SSE_CP_FT_USB_UL",
+ [FACETIME_USB_DL] = "SSE_CP_FT_USB_DL",
+ [FACETIME_WIFI] = "SSE_CP_FT_WIFI_UL",
+ [FACETIME_WIFI_DL] = "SSE_CP_FT_WIFI_DL",
 };
 
 const char * const scd_file_name_table_2nd[SCD_TYPE_MAX] = {
@@ -70,6 +74,10 @@ const char * const scd_file_name_table_2nd[SCD_TYPE_MAX] = {
  [VR_16K] = "dnn_dns_vr_16kHz",
  [LEGACY_SIRI_USB_UL] = NULL,
  [LEGACY_SIRI_WIFI_UL] = NULL,
+ [FACETIME_USB] = "dnn_dns_hf-sq_24kHz",
+ [FACETIME_USB_DL] = NULL,
+ [FACETIME_WIFI] = "dnn_dns_hf-sq_24kHz",
+ [FACETIME_WIFI_DL] = NULL,
 };
 
 HalECNRExtension::~HalECNRExtension() {
@@ -376,6 +384,9 @@ HalECNRExtension::HalECNRExtension() {
                     case 48000 :
                         scd_type = TEL_CP_48K_WIFI;
                         break;
+                    case 32000 :
+                        scd_type = TEL_CP_48K_WIFI;
+                        break;
                     case 24000 :
                         scd_type = TEL_CP_24K_WIFI;
                         break;
@@ -391,6 +402,9 @@ HalECNRExtension::HalECNRExtension() {
                     }
             } else {
                 switch (vocoder_rate) {
+                    case 48000 :
+                        scd_type = TEL_CP_32K_USB;
+                        break;
                     case 32000 :
                         scd_type = TEL_CP_32K_USB;
                         break;
@@ -415,6 +429,13 @@ HalECNRExtension::HalECNRExtension() {
                 scd_type = LEGACY_SIRI_WIFI_UL;
             else
                 scd_type = LEGACY_SIRI_USB_UL;
+        } else if (ecnr_type == ECNR_TYPE_FACETIME) {
+            if (connection_type == CP_CONNECTION_WIFI)
+                scd_type = FACETIME_WIFI;
+            else
+                scd_type = FACETIME_USB;
+            if (scd_type < SCD_TYPE_MAX && scd_type > SCD_TYPE_INVALID)
+                scd_type = scd_type + dir;
         } else {
             LOG(ERROR) << __func__ << " invalid ecnr type " << ecnr_type ;
             return SCD_TYPE_INVALID;

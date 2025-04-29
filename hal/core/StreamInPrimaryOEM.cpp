@@ -343,14 +343,22 @@ void StreamInPrimaryOEM::configure() {
                 portid = ECNR_PORT_ID_VR_TX_2016;
 #endif
             }
-        } else if (conn_type >= 0 && cp_type == SIRI){
+        } else if (conn_type >= 0) {
             bECNR_Enable = true;
             LOG(INFO) << __func__ << " bECNR_Enable " << bECNR_Enable;
             attr->type = PAL_STREAM_VOIP_TX;
-            pECNR_ProcessData.ecnr_type = ECNR_TYPE_LEGACY_SIRI;
+            if (cp_type == SIRI)
+                pECNR_ProcessData.ecnr_type = ECNR_TYPE_LEGACY_SIRI;
+            else if (cp_type == FACETIME)
+                pECNR_ProcessData.ecnr_type = ECNR_TYPE_FACETIME;
 #ifdef ECNR_HAL_TUNE
             portid = ECNR_PORT_ID_VOIP_TX_2014;
 #endif
+        } else {
+            LOG(ERROR) << __func__ << mLogPrefixOEM << " Invalid ECNR type";
+            pECNR_ProcessData.ecnr_type = INVALID;
+            bECNR_Enable = false;
+            goto skip_ecnr_configuration;
         }
         pECNR_ProcessData.scd_type = mAudExt.mHalExtension->audio_extn_getSCDtype(ecnrSampleRate, vocoder_rate, pECNR_ProcessData.ecnr_type, conn_type, DIR_UL);
         if (mAudExt.mHalExtension->audio_extn_getSCDdata(&pECNR_ProcessData)) {
