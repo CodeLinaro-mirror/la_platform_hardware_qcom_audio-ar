@@ -382,7 +382,7 @@ static int32_t stop_hfp() {
 
     pal_param_device_connection_t param_device_connection;
 
-    param_device_connection.id = PAL_DEVICE_IN_BLUETOOTH_SCO_HEADSET;
+    param_device_connection.id = hfp_dev_in;
     param_device_connection.connection_state = false;
     ret = pal_set_param(PAL_PARAM_ID_DEVICE_CONNECTION, (void *)&param_device_connection,
                         sizeof(pal_param_device_connection_t));
@@ -391,7 +391,7 @@ static int32_t stop_hfp() {
                    << param_device_connection.id << " failed";
     }
 
-    param_device_connection.id = PAL_DEVICE_OUT_BLUETOOTH_SCO;
+    param_device_connection.id = hfp_dev_out;
     param_device_connection.connection_state = false;
     ret = pal_set_param(PAL_PARAM_ID_DEVICE_CONNECTION, (void *)&param_device_connection,
                         sizeof(pal_param_device_connection_t));
