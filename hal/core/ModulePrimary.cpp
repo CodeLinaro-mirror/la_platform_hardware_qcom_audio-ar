@@ -850,6 +850,11 @@ std::vector<VendorParameter> ModulePrimary::onGetGenericParams(
             std::string value = (mOffloadSpeedSupported ? "true" : "false");
             auto param = makeVendorParameter(id, value);
             results.push_back(param);
+        } else if (id == Parameters::kAOSPClipTransitionSupport) {
+            LOG(DEBUG) << __func__ << " supports " << id;
+            std::string value = "true";
+            auto param = makeVendorParameter(id, value);
+            results.push_back(param);
         }
     }
     return results;
