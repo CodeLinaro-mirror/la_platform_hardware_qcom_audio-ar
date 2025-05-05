@@ -1,7 +1,8 @@
 /*
- * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
- * SPDX-License-Identifier: BSD-3-Clause-Clear
- */
+* Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+* SPDX-License-Identifier: BSD-3-Clause-Clear
+*/
+
 #define LOG_TAG "AHAL_Usecase_QTI"
 
 
@@ -71,7 +72,7 @@ Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConf
     constexpr auto lowLatencyPlaybackFlags =
             static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::PRIMARY) |
                                  1 << flagCastToint(AudioOutputFlags::FAST));
-    constexpr auto pcmOffloadPlaybackFlags =
+    constexpr auto directPcmPlaybackFlags =
             static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DIRECT));
     constexpr auto voipPlaybackFlags =
             static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::VOIP_RX));
@@ -107,8 +108,8 @@ Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConf
             tag = Usecase::LOW_LATENCY_PLAYBACK;
         } else if (outFlags == compressOffloadPlaybackFlags) {
             tag = Usecase::COMPRESS_OFFLOAD_PLAYBACK;
-        } else if (outFlags == pcmOffloadPlaybackFlags) {
-            tag = Usecase::PCM_OFFLOAD_PLAYBACK;
+        } else if (outFlags == directPcmPlaybackFlags) {
+            tag = Usecase::DIRECT_PCM_PLAYBACK;
         } else if (outFlags == voipPlaybackFlags) {
             tag = Usecase::VOIP_PLAYBACK;
         } else if (outFlags == spatialPlaybackFlags) {
@@ -171,8 +172,8 @@ std::string getName(const Usecase tag) {
             return "COMPRESS_OFFLOAD_PLAYBACK";
         case Usecase::COMPRESS_CAPTURE:
             return "COMPRESS_CAPTURE";
-        case Usecase::PCM_OFFLOAD_PLAYBACK:
-            return "PCM_OFFLOAD_PLAYBACK";
+        case Usecase::DIRECT_PCM_PLAYBACK:
+            return "DIRECT_PCM_PLAYBACK";
         case Usecase::VOIP_PLAYBACK:
             return "VOIP_PLAYBACK";
         case Usecase::SPATIAL_PLAYBACK:
@@ -809,9 +810,9 @@ void CompressPlayback::onFlush() {
 
 // [CompressPlayback End]
 
-// [PcmOffloadPlayback Start]
+// [DirectPcmPlayback Start]
 
-size_t PcmOffloadPlayback::getFrameCount(
+size_t DirectPcmPlayback::getFrameCount(
         const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig) {
     const auto frameSize =
             getFrameSizeInBytes(mixPortConfig.format.value(), mixPortConfig.channelMask.value());
@@ -837,7 +838,7 @@ size_t PcmOffloadPlayback::getFrameCount(
     return periodSize / frameSize;
 }
 
-int64_t PcmOffloadPlayback::getPositionInFrames(pal_stream_handle_t* palHandle) {
+int64_t DirectPcmPlayback::getPositionInFrames(pal_stream_handle_t* palHandle) {
     if (palHandle == nullptr) {
         return mTotalDSPFrames + mPrevFrames;
     }
@@ -867,13 +868,13 @@ int64_t PcmOffloadPlayback::getPositionInFrames(pal_stream_handle_t* palHandle) 
     return mTotalDSPFrames + mPrevFrames;
 }
 
-void PcmOffloadPlayback::onFlush() {
+void DirectPcmPlayback::onFlush() {
     // on flush SPR module is reset to 0. Hence, we cache the DSP frames
     mTotalDSPFrames = mTotalDSPFrames + mPrevFrames;
     mPrevFrames = 0;
 }
 
-// [PcmOffloadPlayback End]
+// [DirectPcmPlayback End]
 
 // [SpatialPlayback Start]
 size_t SpatialPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
- * SPDX-License-Identifier: BSD-3-Clause-Clear
- */
+* Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+* SPDX-License-Identifier: BSD-3-Clause-Clear
+*/
 
 #pragma once
 
@@ -42,7 +42,7 @@ enum class Usecase : uint16_t {
     ULL_PLAYBACK,
     MMAP_PLAYBACK,
     COMPRESS_OFFLOAD_PLAYBACK,
-    PCM_OFFLOAD_PLAYBACK,
+    DIRECT_PCM_PLAYBACK,
     VOIP_PLAYBACK,
     HAPTICS_PLAYBACK,
     SPATIAL_PLAYBACK,
@@ -347,9 +347,9 @@ class CompressPlayback : public UsecaseConfig<CompressPlayback> {
     bool mPcmOffload = false;
 };
 
-class PcmOffloadPlayback : public UsecaseConfig<PcmOffloadPlayback> {
+class DirectPcmPlayback : public UsecaseConfig<DirectPcmPlayback> {
   public:
-    explicit PcmOffloadPlayback(
+    explicit DirectPcmPlayback(
             const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig)
         : mMixPortConfig(mixPortConfig) {}
     constexpr static size_t kPeriodDurationMs = 80;
