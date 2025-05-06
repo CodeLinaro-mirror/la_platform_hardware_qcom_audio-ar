@@ -25,6 +25,7 @@
 #define ECNR_TYPE_VR 0
 #define ECNR_TYPE_TEL 1
 #define ECNR_TYPE_LEGACY_SIRI 2
+#define ECNR_TYPE_FACETIME 3
 #define CP_CONNECTION_USB 0
 #define CP_CONNECTION_WIFI 1
 #define CP_SAMPLERATE "cp_sample"
@@ -78,6 +79,10 @@ typedef enum {
     VR_16K,        //22
     LEGACY_SIRI_USB_UL,
     LEGACY_SIRI_WIFI_UL,
+    FACETIME_USB,
+    FACETIME_USB_DL,
+    FACETIME_WIFI,
+    FACETIME_WIFI_DL,
     SCD_TYPE_MAX,
 } scd_type_t;
 
