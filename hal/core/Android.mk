@@ -118,7 +118,8 @@ LOCAL_SHARED_LIBRARIES := \
     libaudioserviceexampleimpl \
     libaudioplatformconverter.qti \
     qti-audio-types-aidl-V1-ndk \
-    libAWXPAL
+    libAWXPAL \
+    libAudioCalibOem
 
 ifeq ($(ENABLE_QCOM_HAL_AUDIO_FOCUS),true)
 LOCAL_SHARED_LIBRARIES += \

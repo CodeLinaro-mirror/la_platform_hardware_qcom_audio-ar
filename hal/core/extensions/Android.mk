@@ -60,7 +60,8 @@ LOCAL_SHARED_LIBRARIES := \
     $(LATEST_ANDROID_MEDIA_AUDIO_COMMON_TYPES) \
     $(LATEST_ANDROID_HARDWARE_AUDIO_CORE) \
     qti-audio-types-aidl-V1-ndk \
-    libar-pal
+    libar-pal \
+    libAudioCalibOem
 
 ifeq ($(ENABLE_QCOM_HAL_AUDIO_FOCUS),true)
 LOCAL_CFLAGS += -DENABLE_QCOM_HAL_AUDIO_FOCUS
@@ -160,7 +161,8 @@ LOCAL_SHARED_LIBRARIES := \
     libdl \
     libexpat \
     liblog \
-    libar-pal
+    libar-pal \
+    libAudioCalibOem
 
 
 LOCAL_C_INCLUDES := \
