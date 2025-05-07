@@ -98,6 +98,26 @@ std::string  AudioCalibManager::getAudioCalibPath(std::string stringId)
     return retString;
 }
 
+std::string  AudioCalibManager::getAudiocrc(std::string stringId)
+{
+    std::string retString;
+
+    auto it = std::find_if(mCalibDataList.begin(), mCalibDataList.end(), [&stringId](const AudioCalibData& configingId){return configingId.stringId == stringId;});
+
+    if (it != mCalibDataList.end())
+    {
+        LOG(DEBUG) << __func__ <<"Calib value returned is " << it->crc;
+        return it->crc;
+    }
+    else
+    {
+       LOG(DEBUG) << __func__ <<"Requested SCD id  not found " << stringId;
+    }
+
+    LOG(DEBUG) << __func__ <<"Calib value returned is  " << retString;
+    return retString;
+}
+
 void AudioCalibManager::end(void *userData, const char *name) {
 
      if (std::string(name) == "Calibration") {
@@ -126,6 +146,9 @@ void AudioCalibManager::value(void *userData, const char *val, int len) {
     }else if (mCurrentElement == "name") {
         LOG(VERBOSE) << __func__ << "name:" << val;
         mCurrentData.stringId = data;
+    } else if (mCurrentElement == "crc") {
+        LOG(VERBOSE) << __func__ << "crc:" << val;
+        mCurrentData.crc = data;
     }
 }
 
@@ -176,7 +199,7 @@ void AudioCalibManager::Init() {
 
 void AudioCalibManager::printXMLData() {
      for (const auto& data : mCalibDataList) {
-        LOG(DEBUG) << __func__ << " ID: " << data.id  << ", name : " << data.stringId<< ", Key: " << data.key << ", Default Path: " << data.default_path<< std::endl;
+        LOG(DEBUG) << __func__ << " ID: " << data.id  << ", name : " << data.stringId<< ", Key: " << data.key << ", Default Path: " << data.default_path<< " crc: "<< data.crc << std::endl;
      }
 }
 }// qti::audio::oem::calib
