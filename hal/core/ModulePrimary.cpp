@@ -15,8 +15,8 @@
  */
 
 /*
- * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
- * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -65,6 +65,7 @@
 #ifdef ENABLE_QCOM_AMPERE_AUDIO
 #define MIN_VOLUME_VALUE_MB -9000
 #define MAX_VOLUME_VALUE_MB 0
+#define BALANCE_FADER_SCALE 5.0
 #endif
 
 #include <android/binder_manager.h>
@@ -847,20 +848,20 @@ std::string ModulePrimary::carplayParamConverter(CarPlayVendorParameterExt::Rate
         LOG(DEBUG) << __func__ << " CP Duck command "<< toString(aidlDuckAudio.command);
 
         if (aidlDuckAudio.command == CarPlayVendorParameterExt::DuckAudio::DuckCommand::DUCK) {
-            if ((aidlDuckAudio.targetVolume < 0 && aidlDuckAudio.targetVolume > 1) || (aidlDuckAudio.rampDurationMs < 0 && aidlDuckAudio.rampDurationMs > 1)) {
+            if ((aidlDuckAudio.targetVolume < 0 && aidlDuckAudio.targetVolume > 1) || (aidlDuckAudio.rampDurationSec < 0 && aidlDuckAudio.rampDurationSec > 1)) {
                 return ::android::BAD_VALUE;
             }
             focusInfo.usage = "CP_DUCK";
             focusInfo.gain = Vol_to_mdB(aidlDuckAudio.targetVolume);
             focusInfo.isExternalGain = true;
-            focusInfo.rampDuration = aidlDuckAudio.rampDurationMs * 1000;
+            focusInfo.rampDuration = aidlDuckAudio.rampDurationSec * 1000;
             mAudExt.mAutoAudioHalPriorityExtension->requestFocus(focusInfo, &focusSessionInfo.FocusId);
             LOG(DEBUG) << __func__ << " FocusId = " <<focusSessionInfo.FocusId << " rampduration: " << focusInfo.rampDuration;
         } else if (aidlDuckAudio.command == CarPlayVendorParameterExt::DuckAudio::DuckCommand::UNDUCK) {
-            if (aidlDuckAudio.rampDurationMs < 0 && aidlDuckAudio.rampDurationMs > 1) {
+            if (aidlDuckAudio.rampDurationSec < 0 && aidlDuckAudio.rampDurationSec > 1) {
                 return ::android::BAD_VALUE;
             }
-            focusInfo.rampDuration = aidlDuckAudio.rampDurationMs * 1000;
+            focusInfo.rampDuration = aidlDuckAudio.rampDurationSec * 1000;
             LOG(DEBUG) << __func__ <<" rampduration: " << focusInfo.rampDuration;
             mAudExt.mAutoAudioHalPriorityExtension->abandonFocus(focusSessionInfo.FocusId);
         }
@@ -877,18 +878,6 @@ void ModulePrimary::onSetAudioControlParameters(const std::vector<::aidl::androi
             LOG(ERROR) << __func__ << ": FAILED to extract value from " << param.id.c_str();
         }
     }
-}
-
-std::vector<VendorParameter> ModulePrimary::onGetAudioControlParams(
-        const std::vector<std::string>& ids) {
-    bool allParametersKnown = true;
-    std::vector<VendorParameter> results{};
-    for (const auto& id : ids) {
-    }
-    if (!allParametersKnown) {
-        LOG(ERROR) << __func__ << ": unhandled parameter dispatched to AudioControl";
-    }
-    return results;
 }
 
 const std::map<int,int> volumeMap = {
@@ -1531,7 +1520,9 @@ ndk::ScopedAStatus ModulePrimary::getVendorParameters(
             VendorParameter forceSynchronousDrain{.id = id};
             forceSynchronousDrain.ext.setParcelable(Boolean{mVendorDebug.forceSynchronousDrain});
             _aidl_return->push_back(std::move(forceSynchronousDrain));
-        } else if ((id == AUDIO_PARAMETER_KEY_BALANCE) || (id == AUDIO_PARAMETER_KEY_FADER)) {
+        }
+        #ifndef ENABLE_QCOM_AMPERE_AUDIO
+         else if ((id == AUDIO_PARAMETER_KEY_BALANCE) || (id == AUDIO_PARAMETER_KEY_FADER)) {
             LOG(DEBUG) << __func__ << ": " << id;
             auto value = mAudExt.audio_extn_get_parameters(id);
             result.emplace_back(makeVendorParameter(id, std::to_string(value)));
@@ -1550,6 +1541,7 @@ ndk::ScopedAStatus ModulePrimary::getVendorParameters(
             *_aidl_return = result;
             return ndk::ScopedAStatus::ok();
         }
+        #endif
     }
 
     auto results = processGetVendorParameters(in_ids);
@@ -1630,6 +1622,55 @@ std::vector<VendorParameter> ModulePrimary::onGetCarplayParams(
         LOG(ERROR) << __func__ << ": unhandled parameter dispatched to CarPlay";
     }
     return results;
+}
+
+std::vector<::aidl::android::hardware::audio::core::VendorParameter> ModulePrimary::onGetAudioControlParams(
+    const std::vector<std::string>& ids) {
+    LOG(DEBUG) << __func__ << "Entry";
+    bool allParametersKnown = true;
+    std::vector<VendorParameter> results{};
+    for (const auto& id : ids) {
+
+    if (id == AudioControlVendorParameterExt::FADER_AVAILABILITY) {
+        auto faderAvailability  = mAudExt.audio_extn_get_parameters(id) ;
+        bool faderValue = static_cast<bool>(faderAvailability);
+        LOG(DEBUG) << __func__ << "faderAvailability Value " << faderValue ;
+        VendorParameter parameter{.id = AudioControlVendorParameterExt::FADER_AVAILABILITY};
+        AudioControlVendorParameterExt myExtension;
+        myExtension.value = AudioControlVendorParameterExt::Parameter::make<AudioControlVendorParameterExt::Parameter::Tag::faderAvailable>(faderValue);
+        parameter.ext.setParcelable(myExtension);
+        results.push_back(parameter);
+        return results;
+    } else if (id == AudioControlVendorParameterExt::FADER) {
+        auto fader  = mAudExt.audio_extn_get_parameters(id) ;
+        float faderLevel = fader/BALANCE_FADER_SCALE;
+        LOG(DEBUG) << __func__ << "faderLevel Value " << faderLevel ;
+        VendorParameter parameter{.id = AudioControlVendorParameterExt::FADER};
+        AudioControlVendorParameterExt myExtension;
+        myExtension.value = AudioControlVendorParameterExt::Parameter::make<AudioControlVendorParameterExt::Parameter::Tag::fader>(faderLevel);
+        parameter.ext.setParcelable(myExtension);
+        results.push_back(parameter);
+        return results;
+
+    }
+    else if (id == AudioControlVendorParameterExt::BALANCE) {
+        auto balance  = mAudExt.audio_extn_get_parameters(id) ;
+        float balanceLevel = balance/BALANCE_FADER_SCALE;
+        LOG(DEBUG) << __func__ << "balanceLevel Value " << balanceLevel ;
+        VendorParameter parameter{.id = AudioControlVendorParameterExt::BALANCE};
+        AudioControlVendorParameterExt myExtension;
+        myExtension.value = AudioControlVendorParameterExt::Parameter::make<AudioControlVendorParameterExt::Parameter::Tag::balance>(balanceLevel);
+        parameter.ext.setParcelable(myExtension);
+        results.push_back(parameter);
+    }
+    else
+    {
+        LOG(ERROR) << __func__ << ": unhandled parameter dispatched to AudioControl";
+    }
+}
+
+LOG(DEBUG) << __func__ << "Exit";
+return results;
 }
 #endif
 
@@ -1846,6 +1887,9 @@ ModulePrimary::GetParameterToFeatureMap ModulePrimary::fillGetParameterToFeature
                                  {CarPlayVendorParameterExt::CARPLAY_VOCODER_SAMPLERATE, Feature::CARPLAY},
                                  {CarPlayVendorParameterExt::CARPLAY_STATUS, Feature::CARPLAY},
                                  {CarPlayVendorParameterExt::CARPLAY_DUCK, Feature::CARPLAY},
+                                 {AudioControlVendorParameterExt::BALANCE, Feature::AUDIOCONTROL},
+                                 {AudioControlVendorParameterExt::FADER, Feature::AUDIOCONTROL},
+                                 {AudioControlVendorParameterExt::FADER_AVAILABILITY, Feature::AUDIOCONTROL},
 #endif
     };
     return map;

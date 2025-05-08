@@ -305,7 +305,9 @@ PRODUCT_COPY_FILES += \
 
 ifeq ($(AUDIO_AMPERE_EFFECTS),true)
 PRODUCT_COPY_FILES += \
-$(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_effects_config_rn.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects_config.xml
+$(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_effects_config_rn.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects_config.xml \
+$(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/cdc/audio_effects_config_entry.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects_config_entry.xml \
+$(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/cdc/audio_effects_config_mid.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects_config_mid.xml
 else
 PRODUCT_COPY_FILES += \
      $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_effects_config.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects_config.xml

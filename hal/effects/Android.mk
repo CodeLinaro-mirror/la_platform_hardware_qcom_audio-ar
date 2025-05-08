@@ -41,6 +41,13 @@ LOCAL_MODULE_OWNER := qti
 LOCAL_MODULE_RELATIVE_PATH := hw
 
 LOCAL_C_FLAGS += -Werror -Wall -Wextra
+ifeq ($(AUDIO_AMPERE_EFFECTS),true)
+LOCAL_CPPFLAGS += -D ENABLE_DYNAMIC_EFFECT_CONFIG=1
+LOCAL_C_INCLUDES += \
+    $(TOP)/vendor/qcom/opensource/audio-hal-ar/primary-hal/hal \
+    $(TOP)/vendor/qcom/opensource/audio-hal-ar/primary-hal/hal/core/extensions/include
+endif
+
 
 LOCAL_SRC_FILES:= \
         EffectConfig.cpp \

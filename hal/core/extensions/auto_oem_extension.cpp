@@ -26,8 +26,8 @@
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -44,6 +44,7 @@
 #include "PalApi.h"
 #include <include/extensions/AudioVehicleListener.h>
 #include "include/extensions/AudioConfig.h"
+#include "include/extensions/AudioCalib.h"
 #include <cmath> // For round function
 
 
@@ -66,6 +67,7 @@
 #define HVAC_FAN_SPEED_PARAM_ID 0x11112525
 #define FADER_PARAM_ID 0x11112520
 #define BALANCE_PARAM_ID 0x11112521
+#define SPATIALISATION_PARAM_ID 0x11112505
 
 #define AWX_MODULE_CUSTOM_TAG 0XC0000057
 
@@ -118,6 +120,19 @@ const VehicleProperty HVACpropertyId = VehicleProperty::HVAC_RECIRC_ON;
 const VehicleProperty SpeedpropertyId = VehicleProperty::PERF_VEHICLE_SPEED;
 const VehicleProperty HVACpropertyId = VehicleProperty::HVAC_FAN_SPEED;
 #endif //ENABLE_VHAL_TEST_WITH_KITCHENSINK
+
+
+std::map<std::string, int> SpeakerMap = {
+    {"FrontCenter",0},
+    {"FrontLeft",1},
+    {"FrontRight",2},
+    {"Center",3},
+    {"Rear",4},
+    {"RearLeft",5},
+    {"RearRight", 6},
+    {"Right", 7},
+    {"Left", 8},
+};
 
 // Helper to subscribe to VHal notifications
 bool subscribeToVHal(ISubscriptionClient* client, VehicleProperty propertyId) {
@@ -180,6 +195,38 @@ void AudioVehicleListener::onPropertyEvent(const std::vector<std::unique_ptr<IHa
 
 exit:
     LOG(DEBUG) << __func__ << ": Exit ";
+}
+void  set_spatilisation(struct str_parms *parms)
+{
+    char value[256];
+    LOG(DEBUG) << __func__ << ": parameters : " << str_parms_to_str(parms);
+    int ret = str_parms_get_str(parms, "spacialization_area", value, sizeof(value));
+    if (ret >= 0)
+    {
+        LOG(DEBUG)<< __func__<<": value:"<< value;
+        std::string key(value);
+        auto it = SpeakerMap.find(key);
+
+        if (it != SpeakerMap.end()) {
+            LOG(DEBUG) << __func__ << "Found: " << it->first << " -> " << it->second << std::endl;
+            ::aidl::qti::awx::VolumeParams spparams;
+            ::aidl::qti::awx::pal_awx_param_t *pal_param = (aidl::qti::awx::pal_awx_param_t *)malloc(sizeof(aidl::qti::awx::pal_awx_param_t));
+            if (pal_param != NULL)
+            {
+                pal_param->param_id = SPATIALISATION_PARAM_ID;
+                spparams.eq_mask = 0x7E ; // Set for all bus
+                spparams.value[0] = it->second;
+                pal_param->param_size = sizeof(::aidl::qti::awx::VolumeParams);
+                pal_param->data = &spparams;
+                ::aidl::qti::awx::PalParamDelegator::AWX_set_param(pal_param, aidl::qti::awx::SYNC_WITH_AUDIO_BUS);
+                free(pal_param);
+            }
+
+        } else {
+            LOG(DEBUG) << "spacialization_area not found: " << key << std::endl;
+        }
+
+    }
 }
 
 int find_source_type(struct str_parms *parms) {
@@ -423,7 +470,7 @@ int setGeometryParam(struct str_parms *parms)
 
             int awxValue = convertFloatToInt(valueinFloat);
             int paramID = FADER_PARAM_ID;
-            LOG(DEBUG) << "Converted  Value " << awxValue << "ParamId " << paramID;
+            LOG(DEBUG) << "Fader Converted  Value " << awxValue << "ParamId " << paramID;
             gs_Fader = awxValue;
             set_type2_param(paramID,awxValue);
         }
@@ -445,7 +492,7 @@ int setGeometryParam(struct str_parms *parms)
             int paramID = BALANCE_PARAM_ID;
             // cache the previous value
             gs_Balance = awxValue;
-            LOG(DEBUG) << "awx Value" << awxValue << "{aramId " << paramID;
+            LOG(DEBUG) << "Balance awx Value" << awxValue << "ParamId " << paramID;
             set_type2_param(paramID,awxValue);
         }
     }
@@ -462,14 +509,29 @@ int oem_pal_param_update(const std::string& id) {
     int ret = -1;
     aidl::qti::awx::pal_awx_param_t pal_param;
     param_type2_t params;
+    int cachedValue = 0;
 
     memset(&pal_param, 0, sizeof(aidl::qti::awx::pal_awx_param_t));
     memset(&params, 0, sizeof(param_type2_t));
     if (id == "Balance") {
         pal_param.param_id = BALANCE_PARAM_ID;
-    } else if ((id == "Fader") || (id == "isFaderAvailable")) {
+        if (gs_Balance != INVALID_INIT_VALUE)
+            cachedValue = gs_Balance;
+    } else if (id == "Fader") {
         pal_param.param_id = FADER_PARAM_ID;
-    } else {
+        if (gs_Fader != INVALID_INIT_VALUE)
+            cachedValue = gs_Fader;
+    }
+    else if (id == "isFaderAvailable")
+    {
+        ::qti::audio::oem::config::AudioConfigType req = AUDIO_CONFIG_FADER_AVAILABLITY ;
+        ::qti::audio::oem::config::AudioConfigData configData;
+        ::qti::audio::oem::config::AudioConfigManager::getInstance().getAudioConfigValue(req,&configData);
+        std::string s = std::to_string(configData.defaultValue);
+        LOG(DEBUG) << "String " << s << " Integer " << configData.defaultValue;
+        return configData.defaultValue;
+    }
+    else {
         LOG(ERROR) << __func__ << ": invalid audio parameter id";
         return ret;
     }
@@ -481,7 +543,8 @@ int oem_pal_param_update(const std::string& id) {
 
     ret = aidl::qti::awx::PalParamDelegator::AWX_get_param(&pal_param, aidl::qti::awx::SYNC_WITHOUT_AUDIO_BUS); //get_vendor_params(&pal_param, capi_param_type);
     if (ret < 0) {
-        LOG(ERROR) << __func__ << "Error while fetching value return: " << ret;
+        ret = cachedValue;
+        LOG(WARNING) << __func__ << "Error while fetching value return: returning Cached Value" << ret;
        return ret;
     } else {
         LOG(DEBUG) << __func__ << ": Parameter fetched successfully! get_param return val: " << params.value;
@@ -493,6 +556,7 @@ int oem_pal_param_update(const std::string& id) {
 
 extern "C" __attribute__((visibility("default")))int oem_init(void)
 {
+    int retValue = EXIT_SUCCESS ;
     // Construct our async helper object
     std::shared_ptr<AudioVehicleListener> pAudioListener = std::make_shared<AudioVehicleListener>();
     // Connect to the Vehicle HAL so we can monitor state
@@ -501,36 +565,40 @@ extern "C" __attribute__((visibility("default")))int oem_init(void)
     pVnet = IVhalClient::create();
     if (pVnet == nullptr) {
         LOG(ERROR) << "Vehicle HAL getService returned NULL.  Exiting.";
-        return EXIT_FAILURE;
+        retValue = EXIT_FAILURE;
     } else {
         auto subscriptionClient = pVnet->getSubscriptionClient(pAudioListener);
         // Register for vehicle state change callbacks we care about
         // Changes in these values are what will trigger a reconfiguration.
+        LOG(DEBUG) << "Subscribing VHAL property Speed " << static_cast<int32_t>(SpeedpropertyId);
         if (!subscribeToVHal(subscriptionClient.get(), SpeedpropertyId)) {
             LOG(ERROR) << "Didn't register for PERF_VEHICLE_SPEED , Exiting.";
-            return EXIT_FAILURE;
+            retValue = EXIT_FAILURE;
         }
         else
         {
-            LOG(ERROR) << "regiter for PERF_VEHICLE_SPEED done.";
+            LOG(DEBUG) << "regiter for PERF_VEHICLE_SPEED done.";
         }
 
+        LOG(DEBUG) << "Subscribing VHAL property HVAC " << static_cast<int32_t>(HVACpropertyId);
         if (!subscribeToVHal(subscriptionClient.get(), HVACpropertyId)) {
             LOG(ERROR) << "Didn't register for  HVAC_FAN_SPEED notification, Exiting.";
-            return EXIT_FAILURE;
+            retValue = EXIT_FAILURE;
         }
         else
         {
-            LOG(ERROR) << "Register for HVAC_FAN_SPEED done.";
+            LOG(DEBUG) << "Register for HVAC_FAN_SPEED done.";
         }
     }
+
     ::qti::audio::oem::config::AudioConfigType req = AUDIO_CONFIG_MAX_VOL_STARTUP ;
     ::qti::audio::oem::config::AudioConfigData configData;
     ::qti::audio::oem::config::AudioConfigManager::getInstance().getAudioConfigValue(req,&configData);
     std::string s = std::to_string(configData.defaultValue);
     LOG(ERROR) << "String " << s << " Integer " << configData.defaultValue;
     property_set("persist.vendor.max_vol_startup",s.c_str());
-    return EXIT_SUCCESS;
+
+    return retValue;
 
 }
 
@@ -545,7 +613,8 @@ extern "C" __attribute__((visibility("default")))void oem_set_parameters(struct 
             // if Source Params are found no need to check for Geometry
             if (ret != 0)
             {
-            setGeometryParam(parms);
+              setGeometryParam(parms);
+              set_spatilisation(parms);
             }
         }
         else

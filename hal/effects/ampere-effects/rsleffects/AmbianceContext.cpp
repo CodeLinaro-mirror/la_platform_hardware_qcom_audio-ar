@@ -1,5 +1,5 @@
  /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -15,6 +15,7 @@
 #include <system/audio_effects/audio_effects_utils.h>
 #include "aidl/android/hardware/audio/effect/DefaultExtension.h"
 #include <system/audio_effect.h>
+#include "AudioConfig.h"
 
 #define MAX_PROFILE_VALUE 3
 #define MIN_PROFILE_VALUE 0
@@ -48,7 +49,11 @@ AmbianceContext::~AmbianceContext() {
 void AmbianceContext::init() {
     LOG(DEBUG) << "Enter " << __func__ << " ioHandle " << getIoHandle();
     memset(&mAmbianceParams, 0, sizeof(struct AmbianceParams));
-    mCurrentProfile = DEFAULT_AMBIANCE_PROFILE;
+    ::qti::audio::oem::config::AudioConfigType req = ::qti::audio::oem::config::AUDIO_CONFIG_TONE_CONTROLLER_BANDS ;
+    ::qti::audio::oem::config::AudioConfigData ambianceConfig;
+    ::qti::audio::oem::config::AudioConfigManager::getInstance().getAudioConfigValue(req,&ambianceConfig);
+    mCurrentProfile = ambianceConfig.defaultValue;
+    LOG(DEBUG) << "Default Value of Ambiance  " << mCurrentProfile;
 }
 
 void AmbianceContext::deInit() {

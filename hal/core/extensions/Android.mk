@@ -1,4 +1,53 @@
 LOCAL_PATH := $(call my-dir)
+
+
+#-------------------------------------------
+#            Build CONFIG LIB
+#-------------------------------------------
+include $(CLEAR_VARS)
+
+LOCAL_MODULE := libAudioCalibOem
+LOCAL_VENDOR_MODULE := true
+LOCAL_SRC_FILES:= AudioCalib.cpp
+
+ifeq ($(ENABLE_CONFIGHUB),true)
+LOCAL_CFLAGS += -DENABLE_CONFIGHUB
+LOCAL_SHARED_LIBRARIES += vendor.alliance.hardware.automotive.confighub@2.0 \
+    libprotobuf-cpp-lite \
+    libprotobuf_utils_meta \
+    libprotobuf_aivi2 \
+    libhidlbase \
+    libbinder_ndk
+endif
+
+LOCAL_CFLAGS += \
+    -Wall \
+    -Werror \
+    -Wno-unused-function \
+    -Wno-unused-variable
+
+LOCAL_SHARED_LIBRARIES += \
+    libaudioroute \
+    libbase \
+    liblog \
+    libaudioutils \
+    libcutils \
+    libdl \
+    libexpat \
+    libcutils \
+    libutils \
+    liblog
+
+LOCAL_C_INCLUDES := \
+    $(TOP)/external/expat/lib \
+    $(TOP)/system/media/audio_utils/include \
+    $(call include-path-for, audio-route) \
+
+LOCAL_HEADER_LIBRARIES += libhardware_headers
+LOCAL_HEADER_LIBRARIES += libsystem_headers
+
+include $(BUILD_SHARED_LIBRARY)
+
 include $(CLEAR_VARS)
 LOCAL_MODULE            := libaudiocore.extension
 LOCAL_VENDOR_MODULE     := true
@@ -311,7 +360,6 @@ LOCAL_STATIC_LIBRARIES := libhealthhalutils
 include $(BUILD_SHARED_LIBRARY)
 
 
-
 #-------------------------------------------
 #            Build CONFIG LIB
 #-------------------------------------------
@@ -337,7 +385,19 @@ LOCAL_SHARED_LIBRARIES := \
     libdl \
     libexpat \
     liblog \
+    libcutils \
+    libutils \
     libar-pal
+
+ifeq ($(ENABLE_CONFIGHUB),true)
+LOCAL_CFLAGS += -DENABLE_CONFIGHUB
+LOCAL_SHARED_LIBRARIES += vendor.alliance.hardware.automotive.confighub@2.0 \
+    libprotobuf-cpp-lite \
+    libprotobuf_utils_meta \
+    libprotobuf_aivi2 \
+    libhidlbase \
+    libbinder_ndk
+endif
 
 LOCAL_C_INCLUDES := \
     $(TOP)/vendor/qcom/opensource/pal \
@@ -432,6 +492,7 @@ LOCAL_SHARED_LIBRARIES := \
     libar-pal \
     libvhalclient \
     libAudioConfigOem \
+    libAudioCalibOem \
     libAWXPAL
 
 

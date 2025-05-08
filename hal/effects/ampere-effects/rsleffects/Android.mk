@@ -25,6 +25,7 @@ LOCAL_C_INCLUDES := \
 
 LOCAL_SHARED_LIBRARIES:= \
     $(EFFECTS_DEFAULTS_SHARED_LIBRARIES) \
+    libexpat \
     libar-pal \
     liblog \
     libAWXPAL

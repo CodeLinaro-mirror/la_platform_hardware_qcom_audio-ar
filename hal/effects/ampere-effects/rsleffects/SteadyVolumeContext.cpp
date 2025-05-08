@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -14,6 +14,7 @@
 #include <system/audio_effects/audio_effects_utils.h>
 #include "aidl/android/hardware/audio/effect/DefaultExtension.h"
 #include <system/audio_effect.h>
+#include "AudioConfig.h"
 
 #define MIN_STEADY_VOLUME_VALUE 0
 #define MAX_STEADY_VOLUME_VALUE 1
@@ -44,7 +45,12 @@ SteadyVolumeContext::~SteadyVolumeContext() {
 
 void SteadyVolumeContext::init() {
     LOG(DEBUG) << "Enter " << __func__ << " ioHandle " << getIoHandle();
+    ::qti::audio::oem::config::AudioConfigType req = ::qti::audio::oem::config::AUDIO_CONFIG_DEFAULT_AGC_STATE ;
+    ::qti::audio::oem::config::AudioConfigData agcConfig;
+    ::qti::audio::oem::config::AudioConfigManager::getInstance().getAudioConfigValue(req,&agcConfig);
+    LOG(DEBUG) << "Default Value of Defautl AGC/Steady Voluem  " << agcConfig.defaultValue;
     memset(&mSteadyVolumeParams, 0, sizeof(struct param_type2_t));
+    mSteadyVolumeParams.value = agcConfig.defaultValue;
 }
 
 void SteadyVolumeContext::deInit() {

@@ -1,5 +1,5 @@
  /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -162,5 +162,6 @@ static const Descriptor kBassBoostDescriptor = {
 #define DEFAULT_AMBIANCE_PROFILE 2
 
 constexpr inline size_t MAX_NUM_BANDS = 3;
+constexpr inline size_t MAX_NUM_BANDS_8 = 8;
 
 } // namespace aidl::ampere::effects
