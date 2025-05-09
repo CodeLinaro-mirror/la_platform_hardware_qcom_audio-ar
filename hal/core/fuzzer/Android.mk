@@ -56,7 +56,8 @@ LOCAL_SHARED_LIBRARIES := \
     libbinder \
     libaudiocorehal.qti \
     libaudiocorehal.default \
-    libclang_rt.ubsan_standalone
+    libclang_rt.ubsan_standalone \
+    libAudioCalibOem
 
 LOCAL_STATIC_LIBRARIES += libbinder_random_parcel
 

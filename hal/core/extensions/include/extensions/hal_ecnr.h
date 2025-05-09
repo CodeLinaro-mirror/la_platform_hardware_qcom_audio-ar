@@ -30,7 +30,7 @@
 #define CP_CONNECTION_WIFI 1
 #define CP_SAMPLERATE "cp_sample"
 #define CP_TYPE "cp_type"
-#define CP_VOCODER_SAMPLERATE "vocoder_sampler"
+#define CP_VOCODER_SAMPLERATE "vocoder_sample"
 #define CP_TRANSPORT "cp_connection"
 
 
@@ -46,7 +46,7 @@
 #define ECNR_DUMP_FEATURE_PROP "vendor.audio.feature.ecnr.dump"
 #define VARIANT_PROP "vendor.audio.variant"
 #define TUNE_MODE_PROP "vendor.audio.ecnr.tune_mode"
-#define SCD_PATH "/vendor/etc/audio/"
+#define SCD_PATH "/data/audio/"
 #define SCD_PATH_BK "/vendor/etc/ecnr_scd/"
 #define MAX_PARAM_FILES 2
 
@@ -255,7 +255,7 @@ class HalECNRExtension {
     int audio_extn_ecnrSetConfigData(tECNR_Main*   pMain, const void* const pCfgData, const unsigned int uCfgDataSize);
     int audio_extn_getSCDtype(uint32_t sample_Rate, uint32_t vocoder_rate, uint32_t ecnr_type, uint32_t connection_type, uint32_t dir);
     int audio_extn_fillSCDbuffer(char * scd_file_name, uint32_t** scd_buffer, uint32_t* scd_buffer_size);
-    int audio_extn_getSCDdata(tECNR_ProcessData* pECNR_ProcessData);
+    int audio_extn_getSCDdata(tECNR_ProcessData* pECNR_ProcessData, uint32_t dir);
     int audio_extn_setupECNR( tECNR_ProcessData* pECNR_ProcessData);
     int audio_extn_setupIOBuffer(tECNR_ProcessData* pECNR_ProcessData, int dir, int in_ch, int out_ch, int framesize, void* in_buffer, void* out_buffer);
     int audio_extn_resetIOBuffer(tECNR_ProcessData* pECNR_ProcessData);

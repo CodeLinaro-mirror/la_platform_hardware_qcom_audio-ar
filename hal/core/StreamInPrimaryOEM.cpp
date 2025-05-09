@@ -361,7 +361,7 @@ void StreamInPrimaryOEM::configure() {
             goto skip_ecnr_configuration;
         }
         pECNR_ProcessData.scd_type = mAudExt.mHalExtension->audio_extn_getSCDtype(ecnrSampleRate, vocoder_rate, pECNR_ProcessData.ecnr_type, conn_type, DIR_UL);
-        if (mAudExt.mHalExtension->audio_extn_getSCDdata(&pECNR_ProcessData)) {
+        if (mAudExt.mHalExtension->audio_extn_getSCDdata(&pECNR_ProcessData, DIR_UL)) {
             LOG(ERROR) << __func__ << mLogPrefixOEM << " failed to get scd information, disabling ecnr processing";
             bECNR_Enable = false;
             goto skip_ecnr_configuration;
@@ -551,6 +551,7 @@ void StreamInPrimaryOEM::shutdown_I() {
         mAudExt.mHalExtension->set_cp_type(INVALID);
     }
     bECNR_Enable = false;
+    property_set("vendor.audio.ecnr.scd.ul", "");
 
 
     if (ecnr_ecmx_buffer) {
