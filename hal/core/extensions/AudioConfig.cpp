@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * ​​​​​Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -20,11 +20,18 @@
 
 #define LOG_NDDEBUG 0
 
+#ifdef ENABLE_CONFIGHUB
+#include <vendor/alliance/hardware/automotive/confighub/2.0/IConfigHub.h>
+#include <vendor/alliance/hardware/automotive/confighub/2.0/types.h>
+#include <cockpit/multimedia/concal/audio_config.pb.h>
+#endif
+
 namespace qti::audio::oem::config {
 // Initialise Static Members
 AudioConfigData AudioConfigManager::sgconfigElement = {};
 AudioConfigType AudioConfigManager::sgconfigType = AUDIO_CONFIG_MAX;
 std::map<AudioConfigType, AudioConfigData> AudioConfigManager::sgconfigDataMap;
+bool AudioConfigManager::sgAudioConfigInitialized = false;
 
 AudioConfigData AudioConfigManager::sgLoadDefaultconfig[MAX_CONFIG] = {
     {EV_ESE_FEATURE_STR, TYPE_INT, FEATURE_DISABLED, FEATURE_ENABLED, FEATURE_DISABLED},
@@ -40,7 +47,7 @@ AudioConfigData AudioConfigManager::sgLoadDefaultconfig[MAX_CONFIG] = {
 };
 
 
-AudioConfigManager::AudioConfigManager() : sgAudioConfigInitialized(false) {
+AudioConfigManager::AudioConfigManager() {
     LOG(DEBUG) << __func__ <<"Entry"<<std::endl;
     memset(&sgconfigElement, 0, sizeof(sgconfigElement));
     sgconfigType = AUDIO_CONFIG_MAX;
@@ -123,9 +130,104 @@ void AudioConfigManager::value(void *userData, const char *val, int len) {
     memset(data->temp_data, 0, sizeof(data->temp_data));
 }
 
-void AudioConfigManager::readConfigHUB() {
+void AudioConfigManager::readConfigHUB()
+{
+
+    #ifdef ENABLE_CONFIGHUB
     // Update Default Values from ConfigHUB;
     // Read from Config HUB Later Once LGE provides the contract
+    LOG(DEBUG) << "initialiseConfigHUB";
+    auto configHub = vendor::alliance::hardware::automotive::confighub::V2_0::IConfigHub::getService();
+    if (configHub == nullptr)
+    {
+        return ;
+    }
+
+        ::com::sdv::ampere::cdc_ivi::cockpit::sdv::ccs::multimedia::audio::AudioConfig configObj{};
+
+        bool done{false};
+        auto parseAudioBlob = [&](android::hardware::hidl_vec<uint8_t> data) {
+            GOOGLE_PROTOBUF_VERIFY_VERSION;
+
+            google::protobuf::io::ArrayInputStream is(std::data(data), std::size(data));
+            done = configObj.ParseFromZeroCopyStream(&is);
+
+            google::protobuf::ShutdownProtobufLibrary();
+        };
+
+    android::hardware::Return<void> ret = configHub->getParameterBlobFromLid("audio_config", parseAudioBlob);
+
+    if (!done || !ret.isOk()) {
+        LOG(ERROR) << __func__ << " getParameterBlobFromLid read error for HMI blob";
+        return ;
+    }
+
+    vendor::alliance::hardware::automotive::confighub::V2_0::CalibrationData inputData;
+
+    const auto audioFeature = configObj.audio();
+
+    LOG(DEBUG) << __func__ <<"Fader Config Value is "<<audioFeature.fader();
+    LOG(DEBUG) << __func__ <<"RANC Config Value is " <<audioFeature.r_anc_feature();
+    LOG(DEBUG) << __func__ <<"output Information Value is " <<audioFeature.output_information();
+    LOG(DEBUG) << __func__ <<"max Volume startup Value is " <<audioFeature.max_volume_startup();
+    LOG(DEBUG) << __func__ <<"Attenuation Target Value is " <<audioFeature.attenuation_target();
+    LOG(DEBUG) << __func__ <<"Tone Controller Value is " <<audioFeature.tone_controller_bands();
+    LOG(DEBUG) << __func__ <<"Sound stage Value is " <<audioFeature.sound_stage();
+    LOG(DEBUG) << __func__ <<"Default Ambiance Value is " <<audioFeature.default_ambiance();
+
+    int configValue = 0;
+    bool configValuevalid = false;
+    for (auto& mapElement : sgconfigDataMap)
+    {
+        switch (mapElement.first)
+        {
+        case AUDIO_CONFIG_R_ANC:
+            configValue = audioFeature.r_anc_feature();
+            configValuevalid = true;
+            break;
+        case AUDIO_CONFIG_OUTPUT_INFORMATION:
+            configValue = audioFeature.output_information();
+            configValuevalid = true;
+            break;
+        case AUDIO_CONFIG_MAX_VOL_STARTUP:
+            configValue = audioFeature.max_volume_startup();
+            configValuevalid = true;
+            break;
+        case AUDIO_CONFIG_ATTENUATION_TARGET:
+            configValue = audioFeature.attenuation_target();
+            configValuevalid = true;
+            break;
+        case AUDIO_CONFIG_FADER_AVAILABLITY:
+            configValue = audioFeature.fader();
+            configValuevalid = true;
+            break;
+        case AUDIO_CONFIG_TONE_CONTROLLER_BANDS:
+            configValue = audioFeature.tone_controller_bands();
+            configValuevalid = true;
+            break;
+        case AUDIO_CONFIG_SOUND_STAGE:
+            configValue = audioFeature.sound_stage();
+            configValuevalid = true;
+            break;
+        case AUDIO_CONFIG_DEFAULT_AMBIANCE:
+            configValue = audioFeature.default_ambiance();
+            configValuevalid = true;
+            break;
+        case AUDIO_CONFIG_DEFAULT_AGC_STATE:
+            configValue = audioFeature.agc_state();
+            configValuevalid = true;
+            break;
+        default:
+            configValuevalid = false;
+            break;
+        }
+        // Check the value returned is in valid range
+        if ((configValuevalid == true) && (mapElement.second.minValue<=configValue) && (mapElement.second.maxValue>=configValue))
+        {
+            mapElement.second.defaultValue = configValue;
+        }
+    }
+    #endif
 }
 
 bool AudioConfigManager::readDefaultXMLConfig() {

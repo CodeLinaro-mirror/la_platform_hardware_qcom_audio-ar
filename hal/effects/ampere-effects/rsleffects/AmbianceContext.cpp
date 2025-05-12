@@ -1,5 +1,5 @@
  /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -15,6 +15,7 @@
 #include <system/audio_effects/audio_effects_utils.h>
 #include "aidl/android/hardware/audio/effect/DefaultExtension.h"
 #include <system/audio_effect.h>
+#include "AudioConfig.h"
 
 #define MAX_PROFILE_VALUE 3
 #define MIN_PROFILE_VALUE 0
@@ -48,7 +49,11 @@ AmbianceContext::~AmbianceContext() {
 void AmbianceContext::init() {
     LOG(DEBUG) << "Enter " << __func__ << " ioHandle " << getIoHandle();
     memset(&mAmbianceParams, 0, sizeof(struct AmbianceParams));
-    mCurrentProfile = DEFAULT_AMBIANCE_PROFILE;
+    ::qti::audio::oem::config::AudioConfigType req = ::qti::audio::oem::config::AUDIO_CONFIG_TONE_CONTROLLER_BANDS ;
+    ::qti::audio::oem::config::AudioConfigData ambianceConfig;
+    ::qti::audio::oem::config::AudioConfigManager::getInstance().getAudioConfigValue(req,&ambianceConfig);
+    mCurrentProfile = ambianceConfig.defaultValue;
+    LOG(DEBUG) << "Default Value of Ambiance  " << mCurrentProfile;
 }
 
 void AmbianceContext::deInit() {
@@ -152,7 +157,12 @@ int AmbianceContext::getAmbianceProfile() {
     // Defining CAPI param Type
     effect_type type = ASYNC;
 
-    ret = PalParamDelegator::AWX_get_param_handle(mPalHandle,&pal_param, type);
+    if (mPalHandle != NULL) {
+        ret = PalParamDelegator::AWX_get_param_handle(mPalHandle, &pal_param, type);
+    } else {
+        ret = PalParamDelegator::AWX_get_param(&pal_param, type);
+        LOG(DEBUG) << "PAL handle is NULL " << __func__;
+    }
 
     if (ret < 0) {
         LOG(ERROR) << __func__ << "Error while fetching value returned with ret: " << ret;
@@ -238,13 +248,14 @@ std::vector<uint8_t> AmbianceContext::getParameter(std::vector<uint8_t> id) {
     size_t paramSize = sizeof(paramId);
 
     size_t valueSize;
-    auto ret = getAmbianceProfile();
-    bool profileFailed = (ret < 0);
 
     switch (paramId) {
         case Ambiance::Params::PARAM_CURRENT_PROFILE_ASYNC:
         case Ambiance::Params::PARAM_CURRENT_PROFILE: {
             LOG(DEBUG) << __func__ << " PARAM_CURRENT_PROFILE_ASYNC/PARAM_CURRENT_PROFILE Param ID" << static_cast<int32_t>(paramId);
+
+            auto ret = getAmbianceProfile();
+            bool profileFailed = (ret < 0);
 
             if (!profileFailed) {
                 mCurrentProfile = ret;

@@ -134,11 +134,14 @@ AUDIO_FEATURE_ENABLED_POWER_POLICY := true
 AUDIO_FEATURE_ENABLED_AUDIO_PARSERS := true
 AUDIO_FEATURE_ENABLED_AUDIO_CONTROL_HAL_AIDL := true
 
+ENABLE_QCOM_AUDIO_DIAGNOSTICS := false
+
 ENABLE_QCOM_HAL_AUDIO_FOCUS := false
 
 ifneq ($(ENABLE_QCOM_HAL_AUDIO_FOCUS), true)
 PRODUCT_PACKAGES += vendor.qti.hardware.automotive.audiocontrol-service
 endif
+ENABLE_QCOM_VHAL_NIGHTMODE := false
 
 PRODUCT_PACKAGES += libqtiautobundle
 ifeq ($(TARGET_BOARD_AUTO), true)
@@ -302,7 +305,9 @@ PRODUCT_COPY_FILES += \
 
 ifeq ($(AUDIO_AMPERE_EFFECTS),true)
 PRODUCT_COPY_FILES += \
-$(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_effects_config_rn.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects_config.xml
+$(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_effects_config_rn.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects_config.xml \
+$(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/cdc/audio_effects_config_entry.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects_config_entry.xml \
+$(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/cdc/audio_effects_config_mid.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects_config_mid.xml
 else
 PRODUCT_COPY_FILES += \
      $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_effects_config.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects_config.xml
@@ -313,7 +318,8 @@ endif
 ifeq ($(TARGET_USES_CDC_HW), true)
 PRODUCT_COPY_FILES += \
 $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/cdc/audio_module_config_primary.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_module_config_primary.xml \
-$(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/cdc/duck_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/duck_configuration.xml
+$(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/cdc/duck_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/duck_configuration.xml \
+$(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/cdc/thermal_config.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/thermal_config.xml
 
 else
 PRODUCT_COPY_FILES += \
@@ -322,7 +328,8 @@ endif
 
 ifneq ($(filter $(TARGET_BOARD_DERIVATIVE_SUFFIX), _sdv _cdcsdv),)
 PRODUCT_COPY_FILES += \
-$(TOPDIR)vendor/qcom/opensource/pal/configs/gen4_au/plugin_manager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/plugin_manager.xml
+$(TOPDIR)vendor/qcom/opensource/pal/configs/gen4_au/plugin_manager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/plugin_manager.xml \
+$(TOPDIR)vendor/qcom/opensource/harry-pal/bike_bell.wav:$(TARGET_COPY_OUT_VENDOR)/etc/bike_bell.wav
 endif
 
 # cma memory for MDF

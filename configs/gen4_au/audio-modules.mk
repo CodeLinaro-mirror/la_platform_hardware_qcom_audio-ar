@@ -40,6 +40,8 @@ AUDIO_PAL += libaudiochargerlistener
 AUDIO_PAL += libhfp_pal
 AUDIO_PAL += libautooemextension
 AUDIO_PAL += libaudiohalpriorityextn
+AUDIO_PAL += libaudiodiagnostics
+AUDIO_PAL += libvhalpriorityextension
 
 AUDIO_PAL += lib_default_plugin_controls
 ifeq ($(TARGET_USES_CDC_HW), true)

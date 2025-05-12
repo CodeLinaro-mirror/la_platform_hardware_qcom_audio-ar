@@ -49,6 +49,10 @@ ifeq ($(ENABLE_QCOM_HAL_AUDIO_FOCUS),true)
 LOCAL_CFLAGS += -DENABLE_QCOM_HAL_AUDIO_FOCUS
 endif
 
+ifeq ($(ENABLE_QCOM_AUDIO_DIAGNOSTICS),true)
+LOCAL_CFLAGS += -DENABLE_AUDIO_DIAGNOSTICS
+endif
+
 ifeq ($(ENABLE_QCOM_AMPERE_AUDIO),true)
 LOCAL_CFLAGS += -DENABLE_QCOM_AMPERE_AUDIO
 endif
@@ -114,7 +118,8 @@ LOCAL_SHARED_LIBRARIES := \
     libaudioserviceexampleimpl \
     libaudioplatformconverter.qti \
     qti-audio-types-aidl-V1-ndk \
-    libAWXPAL
+    libAWXPAL \
+    libAudioCalibOem
 
 ifeq ($(ENABLE_QCOM_HAL_AUDIO_FOCUS),true)
 LOCAL_SHARED_LIBRARIES += \

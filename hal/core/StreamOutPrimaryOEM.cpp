@@ -282,14 +282,15 @@ skip_write :
 }
 
 void StreamOutPrimaryOEM::configure() {
-    int ret = 0, vocoder_rate, conn_type;
+    int ret = 0, vocoder_rate, conn_type, cp_type;
     ecnrSampleRate = mMixPortConfig.sampleRate.value().value;
     ecnrPeriodSize = mPlatform.getFrameCount(mMixPortConfig, mTag);
     mChannels = getChannelCount(mMixPortConfig.channelMask.value());
     bECNRprop_Enable = property_get_bool(ECNR_FEATURE_PROP, false);
     vocoder_rate =  mAudExt.mHalExtension->get_vocoder_rate();
     conn_type = mAudExt.mHalExtension->get_conn_type();
-    LOG(DEBUG) << __func__ << " Vocoder_samplerate : " << vocoder_rate << " connection_type : " << conn_type;
+    cp_type = mAudExt.mHalExtension->get_cp_type();
+    LOG(DEBUG) << __func__ << " Vocoder_samplerate : " << vocoder_rate << " connection_type : " << conn_type << " carplay_type : " << cp_type;
 
     const auto startTime = std::chrono::steady_clock::now();
     auto attr = mPlatform.getPalStreamAttributes(mMixPortConfig, false);
@@ -311,7 +312,7 @@ void StreamOutPrimaryOEM::configure() {
          LOG(DEBUG) << __func__ << mLogPrefixOEM << ": connected device empty";
     }
 
-    if (!(mTag == Usecase::VOIP_PLAYBACK && mAudExt.mHalExtension->audio_extn_getEnablement() && bECNRprop_Enable && (vocoder_rate > 0 && conn_type >= 0))) {
+    if (!(mTag == Usecase::VOIP_PLAYBACK && mAudExt.mHalExtension->audio_extn_getEnablement() && bECNRprop_Enable && (vocoder_rate > 0 || conn_type >= 0))) {
         bECNR_Enable = false;
     } else {
         bECNR_Enable = true;
@@ -330,8 +331,18 @@ void StreamOutPrimaryOEM::configure() {
         ecnrPeriodSize = UsecaseConfig<VoipPlaybackECNR>::getDLECNRPeriodSize(VoipPlaybackECNR::kSampleRate);
         LOG(INFO) << __func__ << mLogPrefixOEM << " ecnrSampleRate:  " << ecnrSampleRate << " encrPeriodSize: "<< ecnrPeriodSize;
 #endif
-        pECNR_ProcessData.scd_type = mAudExt.mHalExtension->audio_extn_getSCDtype( ecnrSampleRate, vocoder_rate, ECNR_TYPE_TEL, conn_type, DIR_DL);
-        if (mAudExt.mHalExtension->audio_extn_getSCDdata(&pECNR_ProcessData)) {
+        if (vocoder_rate > 0 && conn_type >= 0) {
+            pECNR_ProcessData.ecnr_type = ECNR_TYPE_TEL;
+        } else if (conn_type >=0 && cp_type == FACETIME) {
+            pECNR_ProcessData.ecnr_type = ECNR_TYPE_FACETIME;
+        } else {
+            LOG(ERROR) << __func__ << mLogPrefixOEM << " Invalid ECNR type";
+            pECNR_ProcessData.ecnr_type = INVALID;
+            bECNR_Enable = false;
+            goto skip_ecnr_configuration;
+        }
+        pECNR_ProcessData.scd_type = mAudExt.mHalExtension->audio_extn_getSCDtype( ecnrSampleRate, vocoder_rate, pECNR_ProcessData.ecnr_type, conn_type, DIR_DL);
+        if (mAudExt.mHalExtension->audio_extn_getSCDdata(&pECNR_ProcessData, DIR_DL)) {
             LOG(ERROR) << __func__ << mLogPrefixOEM << " failed to get scd information, disabling ecnr processing";
             bECNR_Enable = false;
             goto skip_ecnr_configuration;
@@ -516,8 +527,10 @@ void StreamOutPrimaryOEM::shutdown_I() {
     if (bECNR_Enable && (mTag == Usecase::VOIP_PLAYBACK)) {
         mAudExt.mHalExtension->set_vocoder_rate(INVALID);
         mAudExt.mHalExtension->set_conn_type(INVALID);
+        mAudExt.mHalExtension->set_cp_type(INVALID);
     }
     bECNR_Enable = false;
+    property_set("vendor.audio.ecnr.scd.dl", "");
 
     if (ecnr_out_buffer) {
         ecnr_out_buffer.reset();

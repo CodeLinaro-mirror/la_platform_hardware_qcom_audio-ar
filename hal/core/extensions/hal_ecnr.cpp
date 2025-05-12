@@ -11,61 +11,74 @@
 #include <log/log.h>
 #include "PalApi.h"
 #include <extensions/hal_ecnr.h>
+#include "extensions/AudioCalib.h"
 
 const char * const scd_file_name_table[SCD_TYPE_MAX] = {
  [TEL_BT_NB_UL] = "SSE_BT_HF_NB_UL",
  [TEL_BT_NB_DL] = "SSE_BT_HF_NB_DL",
  [TEL_BT_WB_UL] = "SSE_BT_HF_WB_UL",
  [TEL_BT_WB_DL] = "SSE_BT_HF_WB_DL",
- [TEL_CP_8K_USB] = "SSE_CP_Tel_NB_USB_UL",
- [TEL_CP_8K_USB_DL] = "SSE_CP_Tel_NB_USB_DL",
- [TEL_CP_16K_USB] = "SSE_CP_Tel_WB_USB_UL",
- [TEL_CP_16K_USB_DL] = "SSE_CP_Tel_WB_USB_DL",
- [TEL_CP_32K_USB] = "SSE_CP_Tel_SWB_USB_UL",
- [TEL_CP_32K_USB_DL] = "SSE_CP_Tel_SWB_USB_DL",
+ [TEL_CP_8K_USB] = "SSE_CP_TEL_NB_USB_UL",
+ [TEL_CP_8K_USB_DL] = "SSE_CP_TEL_NB_USB_DL",
+ [TEL_CP_16K_USB] = "SSE_CP_TEL_WB_USB_UL",
+ [TEL_CP_16K_USB_DL] = "SSE_CP_TEL_WB_USB_DL",
+ [TEL_CP_32K_USB] = "SSE_CP_TEL_SWB_USB_UL",
+ [TEL_CP_32K_USB_DL] = "SSE_CP_TEL_SWB_USB_DL",
  [TEL_CP_24K_USB] = "SSE_CP_FT_USB_UL",
  [TEL_CP_24K_USB_DL] = "SSE_CP_FT_USB_DL",
- [TEL_CP_48K_USB] = "SSE_CP_Tel_SWB_Wifi_UL",
- [TEL_CP_48K_USB_DL] = "SSE_CP_Tel_SWB_Wifi_DL",
- [TEL_CP_8K_WIFI] = "SSE_CP_Tel_NB_Wifi_UL",
- [TEL_CP_8K_WIFI_DL] = "SSE_CP_Tel_NB_Wifi_DL",
- [TEL_CP_16K_WIFI] = "SSE_CP_Tel_WB_Wifi_UL",
- [TEL_CP_16K_WIFI_DL] = "SSE_CP_Tel_WB_Wifi_DL",
- [TEL_CP_32K_WIFI] = "SSE_CP_Tel_SWB_Wifi_UL",
- [TEL_CP_32K_WIFI_DL] = "SSE_CP_Tel_SWB_Wifi_DL",
- [TEL_CP_24K_WIFI] = "SSE_CP_FT_Wifi_UL",
- [TEL_CP_24K_WIFI_DL] = "SSE_CP_FT_Wifi_DL",
- [TEL_CP_48K_WIFI] = "SSE_CP_Tel_SWB_Wifi_UL",
- [TEL_CP_48K_WIFI_DL] = "SSE_CP_Tel_SWB_Wifi_DL",
- [VR_16K] = "SSE_WuW_BI_ESIRI",
+ [TEL_CP_48K_USB] = "SSE_CP_TEL_SWB_USB_UL",
+ [TEL_CP_48K_USB_DL] = "SSE_CP_TEL_SWB_USB_DL",
+ [TEL_CP_8K_WIFI] = "SSE_CP_TEL_NB_WIFI_UL",
+ [TEL_CP_8K_WIFI_DL] = "SSE_CP_TEL_NB_WIFI_DL",
+ [TEL_CP_16K_WIFI] = "SSE_CP_TEL_WB_WIFI_UL",
+ [TEL_CP_16K_WIFI_DL] = "SSE_CP_TEL_WB_WIFI_DL",
+ [TEL_CP_32K_WIFI] = "SSE_CP_TEL_SWB_WIFI_UL",
+ [TEL_CP_32K_WIFI_DL] = "SSE_CP_TEL_SWB_WIFI_DL",
+ [TEL_CP_24K_WIFI] = "SSE_CP_FT_WIFI_UL",
+ [TEL_CP_24K_WIFI_DL] = "SSE_CP_FT_WIFI_DL",
+ [TEL_CP_48K_WIFI] = "SSE_CP_TEL_SWB_WIFI_UL",
+ [TEL_CP_48K_WIFI_DL] = "SSE_CP_TEL_SWB_WIFI_DL",
+ [VR_16K] = "SSE_WUW_BI_ESIRI_UL",
+ [LEGACY_SIRI_USB_UL] = "SSE_CP_SIRI_USB_UL",
+ [LEGACY_SIRI_WIFI_UL] = "SSE_CP_SIRI_WIFI_UL",
+ [FACETIME_USB] = "SSE_CP_FT_USB_UL",
+ [FACETIME_USB_DL] = "SSE_CP_FT_USB_DL",
+ [FACETIME_WIFI] = "SSE_CP_FT_WIFI_UL",
+ [FACETIME_WIFI_DL] = "SSE_CP_FT_WIFI_DL",
 };
 
 const char * const scd_file_name_table_2nd[SCD_TYPE_MAX] = {
  [TEL_BT_NB_UL] = NULL,
  [TEL_BT_NB_DL] = NULL,
- [TEL_BT_WB_UL] = "dnn_dns_hf-sq_16kHz",
+ [TEL_BT_WB_UL] = "DNN_DNS_HFSQ_16KHZ",
  [TEL_BT_WB_DL] = NULL,
  [TEL_CP_8K_USB] = NULL,
  [TEL_CP_8K_USB_DL] = NULL,
- [TEL_CP_16K_USB] = "dnn_dns_hf-sq_24kHz",
+ [TEL_CP_16K_USB] = "DNN_DNS_HFSQ_24KHZ",
  [TEL_CP_16K_USB_DL] = NULL,
- [TEL_CP_32K_USB] = "dnn_dns_hf-sq_16kHz",
+ [TEL_CP_32K_USB] = "DNN_DNS_HFSQ_16KHZ",
  [TEL_CP_32K_USB_DL] = NULL,
- [TEL_CP_24K_USB] = "dnn_dns_hf-sq_24kHz",
+ [TEL_CP_24K_USB] = "DNN_DNS_HFSQ_24KHZ",
  [TEL_CP_24K_USB_DL] = NULL,
  [TEL_CP_48K_USB] = NULL,
  [TEL_CP_48K_USB_DL] = NULL,
  [TEL_CP_8K_WIFI] = NULL,
  [TEL_CP_8K_WIFI_DL] = NULL,
- [TEL_CP_16K_WIFI] = "dnn_dns_hf-sq_24kHz",
+ [TEL_CP_16K_WIFI] = "DNN_DNS_HFSQ_24KHZ",
  [TEL_CP_16K_WIFI_DL] = NULL,
  [TEL_CP_32K_WIFI] = NULL,
  [TEL_CP_32K_WIFI_DL] = NULL,
- [TEL_CP_24K_WIFI] = "dnn_dns_hf-sq_24kHz",
+ [TEL_CP_24K_WIFI] = "DNN_DNS_HFSQ_24KHZ",
  [TEL_CP_24K_WIFI_DL] = NULL,
- [TEL_CP_48K_WIFI] = "dnn_dns_hf-sq_24kHz",
+ [TEL_CP_48K_WIFI] = "DNN_DNS_HFSQ_24KHZ",
  [TEL_CP_48K_WIFI_DL] = NULL,
- [VR_16K] = "dnn_dns_vr_16kHz",
+ [VR_16K] = "DNN_DNS_VR_16KHZ",
+ [LEGACY_SIRI_USB_UL] = NULL,
+ [LEGACY_SIRI_WIFI_UL] = NULL,
+ [FACETIME_USB] = "DNN_DNS_HFSQ_24KHZ",
+ [FACETIME_USB_DL] = NULL,
+ [FACETIME_WIFI] = "DNN_DNS_HFSQ_24KHZ",
+ [FACETIME_WIFI_DL] = NULL,
 };
 
 HalECNRExtension::~HalECNRExtension() {
@@ -302,6 +315,9 @@ HalECNRExtension::HalECNRExtension() {
     int HalECNRExtension::get_conn_type() const {
         return connect_type;
     }
+    int HalECNRExtension::get_cp_type() const {
+        return carplay_type;
+    }
     void HalECNRExtension::set_vocoder_rate(int data) {
         vocoder_sample_rate = data;
         LOG(DEBUG) << __func__ << " vocoder_rate: " << vocoder_sample_rate;
@@ -309,6 +325,25 @@ HalECNRExtension::HalECNRExtension() {
     void HalECNRExtension::set_conn_type(int data) {
         connect_type = data;
         LOG(DEBUG) << __func__ << " connection_type: " << connect_type;
+    }
+    void HalECNRExtension::set_cp_type(int data) {
+        carplay_type = data;
+        LOG(DEBUG) << __func__ << " carplay_type: " << carplay_type;
+    }
+
+    int HalECNRExtension::carplay_param_converter(char * data) {
+        if (strcmp(data, "CALL") == 0)
+            return CALL;
+        else if (strcmp(data, "FACETIME") == 0)
+            return FACETIME;
+        else if (strcmp(data, "SIRI") == 0)
+            return SIRI;
+        else if (strcmp(data, "ESIRI_IN") == 0)
+            return ESIRI_IN;
+        else if (strcmp(data, "ESIRI_OUT") == 0)
+            return ESIRI_OUT;
+        else
+            return USECASE_NONE;
     }
 
     void HalECNRExtension::carplay_set_parameters(struct str_parms *params) {
@@ -318,7 +353,7 @@ HalECNRExtension::HalECNRExtension() {
             carplay_sample_rate = (atoi(value));
             LOG(DEBUG) << __func__ << " carplay sample rate = " << carplay_sample_rate;
         } else if (str_parms_get_str(params, CP_TYPE, value, sizeof(value)) >= 0) {
-            carplay_type = (atoi(value));
+            carplay_type = carplay_param_converter(value);
             LOG(DEBUG) << __func__ << " carplay_type = " << carplay_type;
         } else if (str_parms_get_str(params, CP_VOCODER_SAMPLERATE, value, sizeof(value)) >= 0) {
             vocoder_sample_rate = (atoi(value));
@@ -335,7 +370,7 @@ HalECNRExtension::HalECNRExtension() {
     int HalECNRExtension::audio_extn_getSCDtype(uint32_t sample_rate, uint32_t vocoder_rate, uint32_t ecnr_type, uint32_t connection_type, uint32_t dir) {
 
         int scd_type = SCD_TYPE_INVALID;
-        LOG(DEBUG) << __func__ << " vocoder_samplerate: " << vocoder_rate << " connection_type: " << connection_type ;
+        LOG(DEBUG) << __func__ << " vocoder_samplerate: " << vocoder_rate << " connection_type: " << connection_type << " ecnr_type: " << ecnr_type;
 
         if (ecnr_type == ECNR_TYPE_VR) {
             if (sample_rate == 16000) {
@@ -348,6 +383,9 @@ HalECNRExtension::HalECNRExtension() {
             if (connection_type == CP_CONNECTION_WIFI) {
                 switch (vocoder_rate) {
                     case 48000 :
+                        scd_type = TEL_CP_48K_WIFI;
+                        break;
+                    case 32000 :
                         scd_type = TEL_CP_48K_WIFI;
                         break;
                     case 24000 :
@@ -365,6 +403,9 @@ HalECNRExtension::HalECNRExtension() {
                     }
             } else {
                 switch (vocoder_rate) {
+                    case 48000 :
+                        scd_type = TEL_CP_32K_USB;
+                        break;
                     case 32000 :
                         scd_type = TEL_CP_32K_USB;
                         break;
@@ -382,7 +423,19 @@ HalECNRExtension::HalECNRExtension() {
                         break;
                 }
             }
-            if (scd_type < SCD_TYPE_MAX && scd_type > SCD_TYPE_INVALID )
+            if (scd_type < SCD_TYPE_MAX && scd_type > SCD_TYPE_INVALID)
+                scd_type = scd_type + dir;
+        } else if (ecnr_type == ECNR_TYPE_LEGACY_SIRI) {
+            if (connection_type == CP_CONNECTION_WIFI)
+                scd_type = LEGACY_SIRI_WIFI_UL;
+            else
+                scd_type = LEGACY_SIRI_USB_UL;
+        } else if (ecnr_type == ECNR_TYPE_FACETIME) {
+            if (connection_type == CP_CONNECTION_WIFI)
+                scd_type = FACETIME_WIFI;
+            else
+                scd_type = FACETIME_USB;
+            if (scd_type < SCD_TYPE_MAX && scd_type > SCD_TYPE_INVALID)
                 scd_type = scd_type + dir;
         } else {
             LOG(ERROR) << __func__ << " invalid ecnr type " << ecnr_type ;
@@ -438,7 +491,7 @@ HalECNRExtension::HalECNRExtension() {
         }
         return 0;
     }
-    int HalECNRExtension::audio_extn_getSCDdata(tECNR_ProcessData* pECNR_ProcessData) {
+    int HalECNRExtension::audio_extn_getSCDdata(tECNR_ProcessData* pECNR_ProcessData, uint32_t dir) {
 
         long filesize = 0;
         long numsize = 0;
@@ -467,21 +520,56 @@ HalECNRExtension::HalECNRExtension() {
             pECNR_ProcessData->scd_buffer[i] = NULL;
             pECNR_ProcessData->scd_buffer_size[i] = 0;
         }
+        std::string calibReq(scd_file_name_table[i_scd_type]);
+        std::string retCalibPath =::qti::audio::oem::calib::AudioCalibManager::getInstance().getAudioCalibPath(calibReq);
+        LOG(VERBOSE) << "getAudioCalibPath returned  " << retCalibPath;
+        std::string scd_crc =::qti::audio::oem::calib::AudioCalibManager::getInstance().getAudiocrc(calibReq);
+        LOG(VERBOSE) << "getAudiocrc returned  " << scd_crc;
+        calibReq = calibReq + " + " + scd_crc;
+        LOG(VERBOSE) << "calibReq  " << calibReq;
+        if(dir)
+            property_set("vendor.audio.ecnr.scd.dl", calibReq.c_str());
+        else
+            property_set("vendor.audio.ecnr.scd.ul", calibReq.c_str());
         if (scd_file_name_table[i_scd_type] != NULL) {
             if (strlen(hw_variant) == 0) {
                 snprintf(scd_file_name, sizeof(scd_file_name), "%s%s",scd_file_name_table[i_scd_type],".scd");
             } else {
                 snprintf(scd_file_name, sizeof(scd_file_name), "%s_%s%s",scd_file_name_table[i_scd_type],hw_variant,".scd");
             }
-            if (!tuning_mode) {
-                snprintf(scd_file_path, sizeof(scd_file_path), "%s%s", SCD_PATH ,scd_file_name);
-                ret = audio_extn_fillSCDbuffer(scd_file_path, &(pECNR_ProcessData->scd_buffer[0]),&(pECNR_ProcessData->scd_buffer_size[0]));
+            if (tuning_mode) {
+                snprintf(scd_file_path, sizeof(scd_file_path), "%s%s", SCD_PATH, scd_file_name);
+                ret = audio_extn_fillSCDbuffer(scd_file_path, &(pECNR_ProcessData->scd_buffer[0]), &(pECNR_ProcessData->scd_buffer_size[0]));
+                if(ret) {
+                    LOG(ERROR) << __func__ << " Invalid scd path";
+                    if(dir)
+                        property_set("vendor.audio.ecnr.scd.dl", "");
+                    else
+                        property_set("vendor.audio.ecnr.scd.ul", "");
+                    return ret;
+                }
             } else {
-                ret = tuning_mode;
-            }
-            if (ret) {
-                snprintf(scd_file_path, sizeof(scd_file_path), "%s%s", SCD_PATH_BK , scd_file_name);
-                ret = audio_extn_fillSCDbuffer(scd_file_path, &(pECNR_ProcessData->scd_buffer[0]),&(pECNR_ProcessData->scd_buffer_size[0]));
+                snprintf(scd_file_path, sizeof(scd_file_path), "%s%s", retCalibPath.c_str() ,scd_file_name);
+                ret = audio_extn_fillSCDbuffer(scd_file_path, &(pECNR_ProcessData->scd_buffer[0]), &(pECNR_ProcessData->scd_buffer_size[0]));
+                if(ret) {
+                    LOG(ERROR) << __func__ << " Couldn't find scd file";
+                    snprintf(scd_file_path, sizeof(scd_file_path), "%s%s", SCD_PATH, scd_file_name);
+                    ret = audio_extn_fillSCDbuffer(scd_file_path, &(pECNR_ProcessData->scd_buffer[0]), &(pECNR_ProcessData->scd_buffer_size[0]));
+
+                    if(ret) {
+                        LOG(ERROR) << __func__ << " Invalid scd path";
+                        snprintf(scd_file_path, sizeof(scd_file_path), "%s%s", SCD_PATH_BK, scd_file_name);
+                        ret = audio_extn_fillSCDbuffer(scd_file_path, &(pECNR_ProcessData->scd_buffer[0]), &(pECNR_ProcessData->scd_buffer_size[0]));
+                        if(ret) {
+                            LOG(ERROR) << __func__ << " Couldn't find scd file";
+                            if(dir)
+                                property_set("vendor.audio.ecnr.scd.dl", "");
+                            else
+                                property_set("vendor.audio.ecnr.scd.ul", "");
+                            return ret;
+                        }
+                    }
+                }
             }
         }
         if (!ret && scd_file_name_table_2nd[i_scd_type] != NULL) {
@@ -490,15 +578,32 @@ HalECNRExtension::HalECNRExtension() {
             } else {
                 snprintf(scd_file_name, sizeof(scd_file_name), "%s_%s%s",scd_file_name_table_2nd[i_scd_type],hw_variant,".scd");
             }
-            if (!tuning_mode) {
+            if (tuning_mode) {
                 snprintf(scd_file_path, sizeof(scd_file_path), "%s%s", SCD_PATH, scd_file_name);
-                ret = audio_extn_fillSCDbuffer(scd_file_path, &(pECNR_ProcessData->scd_buffer[1]),&(pECNR_ProcessData->scd_buffer_size[1]));
+                ret = audio_extn_fillSCDbuffer(scd_file_path, &(pECNR_ProcessData->scd_buffer[1]), &(pECNR_ProcessData->scd_buffer_size[1]));
+                if(ret) {
+                    LOG(ERROR) << __func__ << " Invalid scd path";
+                    return ret;
+                }
             } else {
-                ret = tuning_mode;
-            }
-            if (ret) {
-                snprintf(scd_file_path, sizeof(scd_file_path), "%s%s",SCD_PATH_BK, scd_file_name);
-                ret = audio_extn_fillSCDbuffer(scd_file_path, &(pECNR_ProcessData->scd_buffer[1]),&(pECNR_ProcessData->scd_buffer_size[1]));
+                snprintf(scd_file_path, sizeof(scd_file_path), "%s%s", retCalibPath.c_str() ,scd_file_name);
+                ret = audio_extn_fillSCDbuffer(scd_file_path, &(pECNR_ProcessData->scd_buffer[1]), &(pECNR_ProcessData->scd_buffer_size[1]));
+
+                if(ret) {
+                    LOG(ERROR) << __func__ << " Couldn't find scd file";
+                    snprintf(scd_file_path, sizeof(scd_file_path), "%s%s", SCD_PATH, scd_file_name);
+                    ret = audio_extn_fillSCDbuffer(scd_file_path, &(pECNR_ProcessData->scd_buffer[1]), &(pECNR_ProcessData->scd_buffer_size[1]));
+                    if(ret) {
+                        LOG(ERROR) << __func__ << " Invalid scd path";
+
+                        snprintf(scd_file_path, sizeof(scd_file_path), "%s%s", SCD_PATH_BK, scd_file_name);
+                        ret = audio_extn_fillSCDbuffer(scd_file_path, &(pECNR_ProcessData->scd_buffer[1]), &(pECNR_ProcessData->scd_buffer_size[1]));
+                        if(ret) {
+                            LOG(ERROR) << __func__ << " Couldn't find scd file";
+                            return ret;
+                        }
+                    }
+                }
             }
         }
         return ret;

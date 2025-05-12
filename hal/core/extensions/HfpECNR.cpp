@@ -632,10 +632,10 @@ static int32_t start_hfp(struct str_parms *parms __unused) {
         int scd_ret = 0;
         if (hfpmod.sample_rate == 8000) {
             hfpmod.p_DL_ECNR_ProcessData.scd_type = TEL_BT_NB_DL;
-            scd_ret = hfpmod.mHalExtension->audio_extn_getSCDdata(&(hfpmod.p_DL_ECNR_ProcessData));
+            scd_ret = hfpmod.mHalExtension->audio_extn_getSCDdata(&(hfpmod.p_DL_ECNR_ProcessData), DIR_DL);
         } else {
             hfpmod.p_DL_ECNR_ProcessData.scd_type = TEL_BT_WB_DL;
-            scd_ret = hfpmod.mHalExtension->audio_extn_getSCDdata(&(hfpmod.p_DL_ECNR_ProcessData));
+            scd_ret = hfpmod.mHalExtension->audio_extn_getSCDdata(&(hfpmod.p_DL_ECNR_ProcessData), DIR_DL);
         }
         if (scd_ret) {
             hfpmod.bECNR_DL_Enable = false;
@@ -647,14 +647,15 @@ static int32_t start_hfp(struct str_parms *parms __unused) {
                 LOG(ERROR) << __func__ << " failed to allocate DL_TX_stream_buffer";
                 hfpmod.bECNR_DL_Enable = false;
                 hfpmod.DL_TX_stream_buffer_size = 0;
+                property_set("vendor.audio.ecnr.scd.dl", "");
             }
         }
         if (hfpmod.sample_rate == 8000) {
             hfpmod.p_UL_ECNR_ProcessData.scd_type = TEL_BT_NB_UL;
-            scd_ret = hfpmod.mHalExtension->audio_extn_getSCDdata(&(hfpmod.p_UL_ECNR_ProcessData));
+            scd_ret = hfpmod.mHalExtension->audio_extn_getSCDdata(&(hfpmod.p_UL_ECNR_ProcessData), DIR_UL);
         } else {
             hfpmod.p_UL_ECNR_ProcessData.scd_type = TEL_BT_WB_UL;
-            scd_ret = hfpmod.mHalExtension->audio_extn_getSCDdata(&(hfpmod.p_UL_ECNR_ProcessData));
+            scd_ret = hfpmod.mHalExtension->audio_extn_getSCDdata(&(hfpmod.p_UL_ECNR_ProcessData), DIR_UL);
         }
         if (scd_ret) {
             hfpmod.bECNR_UL_Enable = false;
@@ -666,6 +667,7 @@ static int32_t start_hfp(struct str_parms *parms __unused) {
                 LOG(ERROR) << __func__ << " failed to allocate UL_TX_stream_buffer";
                 hfpmod.bECNR_UL_Enable = false;
                 hfpmod.UL_TX_stream_buffer_size =0;
+                property_set("vendor.audio.ecnr.scd.ul", "");
                 goto start_setup_paths;
             }
             hfpmod.UL_ECMX_stream_buffer_size= hfpmod.UL_TX_stream_buffer_size;
@@ -678,6 +680,7 @@ static int32_t start_hfp(struct str_parms *parms __unused) {
                 free(hfpmod.UL_TX_stream_buffer);
                 hfpmod.UL_TX_stream_buffer = NULL;
                 hfpmod.UL_TX_stream_buffer_size = 0;
+                property_set("vendor.audio.ecnr.scd.ul", "");
                 goto start_setup_paths;
             }
         }
@@ -688,6 +691,7 @@ start_setup_paths:
         ret = hfpmod.mHalExtension->audio_extn_setupECNR(&(hfpmod.p_DL_ECNR_ProcessData));
         if (ret) {
             hfpmod.bECNR_DL_Enable = false;
+            property_set("vendor.audio.ecnr.scd.dl", "");
         }
 #ifdef ECNR_HAL_TUNE
         else
@@ -699,6 +703,7 @@ start_setup_paths:
         ret = hfpmod.mHalExtension->audio_extn_setupECNR(&(hfpmod.p_UL_ECNR_ProcessData));
         if (ret) {
             hfpmod.bECNR_UL_Enable = false;
+            property_set("vendor.audio.ecnr.scd.ul", "");
         }
 #ifdef ECNR_HAL_TUNE
         else
@@ -731,6 +736,7 @@ start_setup_paths:
             &hfpmod.tx_dl_stream_handle);
     if (ret != 0) {
         LOG(ERROR) << __func__ << " HFP downlink stream (BT SCO TX ) open failed rc " << ret;
+        property_set("vendor.audio.ecnr.scd.dl", "");
         return ret;
     }
     inBufCfg.buf_size = hfpmod.DL_RX_stream_buffer_size;
@@ -746,6 +752,7 @@ start_setup_paths:
         LOG(ERROR) << __func__ << " HFP downlink stream (BT SCO TX) start failed, rc " << ret;
         pal_stream_close(hfpmod.tx_dl_stream_handle);
         hfpmod.tx_dl_stream_handle=NULL;
+        property_set("vendor.audio.ecnr.scd.dl", "");
         return ret;
     }
     stream_attr.type = PAL_STREAM_PLAYBACK_BUS;
@@ -774,6 +781,7 @@ start_setup_paths:
         pal_stream_stop(hfpmod.tx_dl_stream_handle);
         pal_stream_close(hfpmod.tx_dl_stream_handle);
         hfpmod.tx_dl_stream_handle=NULL;
+        property_set("vendor.audio.ecnr.scd.dl", "");
         return ret;
     }
     outBufCfg.buf_size = hfpmod.DL_RX_stream_buffer_size;
@@ -792,6 +800,8 @@ start_setup_paths:
         pal_stream_close(hfpmod.rx_stream_handle);
         hfpmod.tx_dl_stream_handle=NULL;
         hfpmod.rx_stream_handle=NULL;
+        property_set("vendor.audio.ecnr.scd.dl", "");
+        property_set("vendor.audio.ecnr.scd.ul", "");
         return ret;
     }
 
@@ -835,6 +845,8 @@ start_setup_paths:
         pal_stream_close(hfpmod.rx_stream_handle);
         hfpmod.tx_dl_stream_handle = NULL;
         hfpmod.rx_stream_handle = NULL;
+        property_set("vendor.audio.ecnr.scd.dl", "");
+        property_set("vendor.audio.ecnr.scd.ul", "");
         return ret;
     }
     if (hfpmod.bECNR_UL_Enable) {
@@ -859,6 +871,8 @@ start_setup_paths:
         hfpmod.rx_stream_handle = NULL;
         hfpmod.tx_dl_stream_handle = NULL;
         hfpmod.tx_stream_handle = NULL;
+        property_set("vendor.audio.ecnr.scd.dl", "");
+        property_set("vendor.audio.ecnr.scd.ul", "");
         return ret;
     }
 
@@ -898,6 +912,8 @@ start_setup_paths:
         hfpmod.rx_stream_handle = NULL;
         hfpmod.tx_dl_stream_handle = NULL;
         hfpmod.tx_stream_handle = NULL;
+        property_set("vendor.audio.ecnr.scd.dl", "");
+        property_set("vendor.audio.ecnr.scd.ul", "");
         return ret;
     }
     outBufCfg.buf_size = hfpmod.UL_RX_stream_buffer_size;
@@ -921,6 +937,8 @@ start_setup_paths:
         hfpmod.rx_stream_handle = NULL;
         hfpmod.tx_stream_handle = NULL;
         hfpmod.rx_ul_stream_handle= NULL;
+        property_set("vendor.audio.ecnr.scd.dl", "");
+        property_set("vendor.audio.ecnr.scd.ul", "");
         return ret;
     }
     hfpmod.mic_mute = false;
@@ -964,6 +982,8 @@ static int32_t stop_hfp() {
         hfpmod.rx_ul_stream_handle = NULL;
     }
 
+    property_set("vendor.audio.ecnr.scd.dl", "");
+    property_set("vendor.audio.ecnr.scd.ul", "");
     pal_param_btsco_t param_btsco;
 
     param_btsco.is_bt_hfp = true;

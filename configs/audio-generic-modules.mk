@@ -13,6 +13,8 @@ endif
 
 ifeq ($(AUDIO_AMPERE_EFFECTS),true)
 CUSTOM_AMPERE_HARDWARE_AUDIO_EFFECT := ampere.hardware.audio.effect-V1-ndk
+CUSTOM_AMPERE_HARDWARE_AUDIO_CONFIG := libAudioConfigOem \
+                                       libexpat
 AUDIO_GENERIC_MODULES += libampereeffects
 endif
 # to have similar to cc_defaults in make files
@@ -22,6 +24,7 @@ EFFECTS_DEFAULTS_SHARED_LIBRARIES := \
     $(LATEST_ANDROID_MEDIA_AUDIO_COMMON_TYPES) \
     $(LATEST_ANDROID_HARDWARE_COMMON_FMQ) \
     $(CUSTOM_AMPERE_HARDWARE_AUDIO_EFFECT) \
+    $(CUSTOM_AMPERE_HARDWARE_AUDIO_CONFIG) \
     android.hardware.audio.core-V2-ndk \
     libaudioaidlcommon \
     libbase \

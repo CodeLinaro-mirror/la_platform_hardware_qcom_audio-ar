@@ -24,11 +24,13 @@
 #define DIR_DL    1
 #define ECNR_TYPE_VR 0
 #define ECNR_TYPE_TEL 1
+#define ECNR_TYPE_LEGACY_SIRI 2
+#define ECNR_TYPE_FACETIME 3
 #define CP_CONNECTION_USB 0
 #define CP_CONNECTION_WIFI 1
 #define CP_SAMPLERATE "cp_sample"
 #define CP_TYPE "cp_type"
-#define CP_VOCODER_SAMPLERATE "vocoder_sampler"
+#define CP_VOCODER_SAMPLERATE "vocoder_sample"
 #define CP_TRANSPORT "cp_connection"
 
 
@@ -44,7 +46,7 @@
 #define ECNR_DUMP_FEATURE_PROP "vendor.audio.feature.ecnr.dump"
 #define VARIANT_PROP "vendor.audio.variant"
 #define TUNE_MODE_PROP "vendor.audio.ecnr.tune_mode"
-#define SCD_PATH "/vendor/etc/audio/"
+#define SCD_PATH "/data/audio/"
 #define SCD_PATH_BK "/vendor/etc/ecnr_scd/"
 #define MAX_PARAM_FILES 2
 
@@ -75,8 +77,23 @@ typedef enum {
     TEL_CP_48K_WIFI,
     TEL_CP_48K_WIFI_DL,
     VR_16K,        //22
+    LEGACY_SIRI_USB_UL,
+    LEGACY_SIRI_WIFI_UL,
+    FACETIME_USB,
+    FACETIME_USB_DL,
+    FACETIME_WIFI,
+    FACETIME_WIFI_DL,
     SCD_TYPE_MAX,
 } scd_type_t;
+
+typedef enum {
+   USECASE_NONE = 0,
+   CALL,
+   FACETIME,
+   SIRI,
+   ESIRI_IN,
+   ESIRI_OUT,
+} cp_type;
 
 typedef struct ecnrMainStruct tECNR_Main;
 
@@ -238,7 +255,7 @@ class HalECNRExtension {
     int audio_extn_ecnrSetConfigData(tECNR_Main*   pMain, const void* const pCfgData, const unsigned int uCfgDataSize);
     int audio_extn_getSCDtype(uint32_t sample_Rate, uint32_t vocoder_rate, uint32_t ecnr_type, uint32_t connection_type, uint32_t dir);
     int audio_extn_fillSCDbuffer(char * scd_file_name, uint32_t** scd_buffer, uint32_t* scd_buffer_size);
-    int audio_extn_getSCDdata(tECNR_ProcessData* pECNR_ProcessData);
+    int audio_extn_getSCDdata(tECNR_ProcessData* pECNR_ProcessData, uint32_t dir);
     int audio_extn_setupECNR( tECNR_ProcessData* pECNR_ProcessData);
     int audio_extn_setupIOBuffer(tECNR_ProcessData* pECNR_ProcessData, int dir, int in_ch, int out_ch, int framesize, void* in_buffer, void* out_buffer);
     int audio_extn_resetIOBuffer(tECNR_ProcessData* pECNR_ProcessData);
@@ -246,8 +263,11 @@ class HalECNRExtension {
     int audio_extn_cvtformat16_delnterleave_to_interleave(void* deint_buffer, void* int_buffer, int frameSz, int numchannel);
     int get_vocoder_rate() const;
     int get_conn_type() const;
+    int get_cp_type() const;
     void set_vocoder_rate(int data);
     void set_conn_type(int data);
+    void set_cp_type(int data);
+    int carplay_param_converter(char * data);
 #ifdef ECNR_HAL_TUNE
     int audio_extn_setupECNR_TuneIF(tECNR_TuneIFData* pECNR_TuneIFData, int portid);
     int audio_extn_close_TuneIF(tECNR_TuneIFData* pECNR_TuneIFData);

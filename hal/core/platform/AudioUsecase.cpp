@@ -1264,7 +1264,6 @@ size_t VoipPlaybackECNR::getFrameCount(const AudioPortConfig& mixPortConfig) {
     kPeriodSize = UsecaseConfig::getDLECNRPeriodSize(mixPortConfig.sampleRate.value().value);
     kPeriodDurationMs = (size_t)(kPeriodSize /(mixPortConfig.sampleRate.value().value/1000));
 #endif
-//    LOG(DEBUG) << __func__ << " VoipPlaybackECNR " << kPeriodSize;
     return kPeriodSize;
 }
 
@@ -1283,7 +1282,6 @@ size_t VoipRecordECNR::getFrameCount(const AudioPortConfig& mixPortConfig) {
     kPeriodSize = UsecaseConfig::getULECNRPeriodSize(mixPortConfig.sampleRate.value().value);
     kCaptureDurationMs = (size_t)((kPeriodSize+1) /(mixPortConfig.sampleRate.value().value/1000));
 #endif
-//    LOG(DEBUG) << __func__ << " VoipRecordECNR " << kPeriodSize;
     return kPeriodSize;
 }
 
@@ -1298,7 +1296,6 @@ size_t PcmRecordECNR::getFrameCount(const AudioPortConfig& mixPortConfig) {
     // Adjusting to frameCount as atleast kFMQMinFrameSize (160).
     // Todo check the sanity of this requirement in the VTS test.
     kPeriodSize = std::max(frameCount, kFMQMinFrameSize);
-//    LOG(DEBUG) << __func__ << " PcmRecordECNR " << kPeriodSize;
     return kPeriodSize;
 }
 // [PcmRecordECNR End]
@@ -1309,7 +1306,6 @@ size_t FastRecordECNR::getFrameCount(const AudioPortConfig& mixPortConfig) {
             getFrameSizeInBytes(mixPortConfig.format.value(), mixPortConfig.channelMask.value());
     size_t size = frameCount * frameSize;
     size = getNearestMultiple(size, std::lcm(32, frameSize));
-//    LOG(DEBUG) << __func__ << " FastRecordECNR " << frameCount;
     return size / frameSize;
 }
 

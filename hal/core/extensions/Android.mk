@@ -1,4 +1,53 @@
 LOCAL_PATH := $(call my-dir)
+
+
+#-------------------------------------------
+#            Build CONFIG LIB
+#-------------------------------------------
+include $(CLEAR_VARS)
+
+LOCAL_MODULE := libAudioCalibOem
+LOCAL_VENDOR_MODULE := true
+LOCAL_SRC_FILES:= AudioCalib.cpp
+
+ifeq ($(ENABLE_CONFIGHUB),true)
+LOCAL_CFLAGS += -DENABLE_CONFIGHUB
+LOCAL_SHARED_LIBRARIES += vendor.alliance.hardware.automotive.confighub@2.0 \
+    libprotobuf-cpp-lite \
+    libprotobuf_utils_meta \
+    libprotobuf_aivi2 \
+    libhidlbase \
+    libbinder_ndk
+endif
+
+LOCAL_CFLAGS += \
+    -Wall \
+    -Werror \
+    -Wno-unused-function \
+    -Wno-unused-variable
+
+LOCAL_SHARED_LIBRARIES += \
+    libaudioroute \
+    libbase \
+    liblog \
+    libaudioutils \
+    libcutils \
+    libdl \
+    libexpat \
+    libcutils \
+    libutils \
+    liblog
+
+LOCAL_C_INCLUDES := \
+    $(TOP)/external/expat/lib \
+    $(TOP)/system/media/audio_utils/include \
+    $(call include-path-for, audio-route) \
+
+LOCAL_HEADER_LIBRARIES += libhardware_headers
+LOCAL_HEADER_LIBRARIES += libsystem_headers
+
+include $(BUILD_SHARED_LIBRARY)
+
 include $(CLEAR_VARS)
 LOCAL_MODULE            := libaudiocore.extension
 LOCAL_VENDOR_MODULE     := true
@@ -17,6 +66,10 @@ LOCAL_CFLAGS := -Wall -Wextra -Werror -Wthread-safety
 LOCAL_SRC_FILES := \
     AudioExtension.cpp \
     auto_hal.cpp
+
+ifeq ($(ENABLE_QCOM_AUDIO_DIAGNOSTICS),true)
+LOCAL_CFLAGS += -DENABLE_AUDIO_DIAGNOSTICS
+endif
 
 ifeq ($(AUDIO_FEATURE_ENABLED_ECNR_HAL),true)
 LOCAL_CFLAGS += -DECNR_HAL_ENABLE
@@ -56,7 +109,8 @@ LOCAL_SHARED_LIBRARIES := \
     $(LATEST_ANDROID_MEDIA_AUDIO_COMMON_TYPES) \
     $(LATEST_ANDROID_HARDWARE_AUDIO_CORE) \
     qti-audio-types-aidl-V1-ndk \
-    libar-pal
+    libar-pal \
+    libAudioCalibOem
 
 ifeq ($(ENABLE_QCOM_HAL_AUDIO_FOCUS),true)
 LOCAL_CFLAGS += -DENABLE_QCOM_HAL_AUDIO_FOCUS
@@ -156,7 +210,8 @@ LOCAL_SHARED_LIBRARIES := \
     libdl \
     libexpat \
     liblog \
-    libar-pal
+    libar-pal \
+    libAudioCalibOem
 
 
 LOCAL_C_INCLUDES := \
@@ -307,7 +362,6 @@ LOCAL_STATIC_LIBRARIES := libhealthhalutils
 include $(BUILD_SHARED_LIBRARY)
 
 
-
 #-------------------------------------------
 #            Build CONFIG LIB
 #-------------------------------------------
@@ -333,7 +387,19 @@ LOCAL_SHARED_LIBRARIES := \
     libdl \
     libexpat \
     liblog \
+    libcutils \
+    libutils \
     libar-pal
+
+ifeq ($(ENABLE_CONFIGHUB),true)
+LOCAL_CFLAGS += -DENABLE_CONFIGHUB
+LOCAL_SHARED_LIBRARIES += vendor.alliance.hardware.automotive.confighub@2.0 \
+    libprotobuf-cpp-lite \
+    libprotobuf_utils_meta \
+    libprotobuf_aivi2 \
+    libhidlbase \
+    libbinder_ndk
+endif
 
 LOCAL_C_INCLUDES := \
     $(TOP)/vendor/qcom/opensource/pal \
@@ -428,6 +494,7 @@ LOCAL_SHARED_LIBRARIES := \
     libar-pal \
     libvhalclient \
     libAudioConfigOem \
+    libAudioCalibOem \
     libAWXPAL
 
 
@@ -488,14 +555,84 @@ LOCAL_SHARED_LIBRARIES := \
     alliance.hardware.automotive.audiocontrol.internal-V2-ndk \
     android.hardware.automotive.audiocontrol-V4-ndk \
     ampere.hardware.interfaces.automotive.audioparameterparser-V1-ndk \
-    libAudioConfigOem
-
+    libAudioConfigOem \
+    libAWXPAL
 
 
 LOCAL_HEADER_LIBRARIES :=  \
     libaudio_system_headers \
     libsystem_headers \
     libarpal_headers
+
+include $(BUILD_SHARED_LIBRARY)
+
+#-------------------------------------------------
+#            Build Auto VHAL Priority extension
+#-------------------------------------------------
+include $(CLEAR_VARS)
+
+LOCAL_MODULE := libvhalpriorityextension
+LOCAL_VENDOR_MODULE := true
+
+LOCAL_SRC_FILES:= AudioVhalPriority.cpp \
+                    ThermalConfig.cpp
+
+LOCAL_C_INCLUDES := $(LOCAL_PATH)/include
+
+LOCAL_CFLAGS := \
+    -Wall \
+    -Werror \
+    -Wno-unused-function \
+    -Wno-unused-variable \
+    -Wno-missing-field-initializers \
+    -Wunused-parameter \
+    -Wextra
+
+ifeq ($(ENABLE_QCOM_VHAL_NIGHTMODE),true)
+LOCAL_CFLAGS += -DENABLE_QCOM_VHAL_NIGHTMODE
+endif
+
+LOCAL_C_INCLUDES := \
+    $(TOP)/vendor/qcom/opensource/pal \
+    $(TOP)/vendor/qcom/opensource/audio-hal/primary-hal/hal \
+    $(TOP)/vendor/qcom/opensource/audio-hal/primary-hal/hal/core/extensions/include \
+    $(TOP)/external/expat/lib \
+    $(TOP)/system/media/audio_utils/include \
+    $(call include-path-for, audio-route)
+
+LOCAL_SHARED_LIBRARIES := \
+    libbinder_ndk \
+    libaudioutils \
+    libbase \
+    libcutils \
+    libdl \
+    libhidlbase \
+    liblog \
+    libutils \
+    libar-pal \
+    libvhalclient \
+    libexpat \
+    libAudioConfigOem \
+    $(LATEST_ANDROID_MEDIA_AUDIO_COMMON_TYPES) \
+    $(LATEST_ANDROID_HARDWARE_AUDIO_CORE) \
+    android.hardware.audio.focus-V1-ndk \
+    alliance.hardware.automotive.audiocontrol.internal-V2-ndk \
+    android.hardware.audio.core.sounddose-V1-ndk \
+    android.hardware.automotive.audiocontrol-V4-ndk \
+    ampere.hardware.interfaces.automotive.audioparameterparser-V1-ndk
+
+LOCAL_HEADER_LIBRARIES :=  \
+    libaudio_system_headers \
+    libsystem_headers \
+    libarpal_headers
+
+LOCAL_STATIC_LIBRARIES := \
+    VehicleHalUtils \
+    android-automotive-large-parcelable-lib \
+    android.hardware.automotive.vehicle@2.0 \
+    libmath \
+    android.hardware.automotive.vehicle-V3-ndk \
+    android.hardware.automotive.vehicle.property-V3-ndk
 
 include $(BUILD_SHARED_LIBRARY)
 #-------------------------------------------------
@@ -536,3 +673,62 @@ LOCAL_HEADER_LIBRARIES += libhardware_headers
 LOCAL_HEADER_LIBRARIES += libsystem_headers
 
 include $(BUILD_SHARED_LIBRARY)
+
+
+ifeq ($(ENABLE_QCOM_AUDIO_DIAGNOSTICS),true)
+#-------------------------------------------------
+#            Build Audio Diagnostic extension
+#-------------------------------------------------
+include $(CLEAR_VARS)
+
+LOCAL_MODULE := libaudiodiagnostics
+LOCAL_VENDOR_MODULE := true
+
+LOCAL_SRC_FILES:= AudioDiagnostics.cpp
+
+LOCAL_C_INCLUDES := $(LOCAL_PATH)/include
+
+LOCAL_CFLAGS := \
+    -Wall \
+    -Werror \
+    -Wno-unused-function \
+    -Wno-unused-variable \
+    -Wno-missing-field-initializers \
+    -Wunused-parameter \
+    -Wextra \
+
+
+LOCAL_C_INCLUDES := \
+    $(TOP)/vendor/qcom/opensource/audio-hal/primary-hal/hal/core/extensions/include \
+    $(TOP)/system/media/audio_utils/include \
+
+
+LOCAL_SHARED_LIBRARIES := \
+    libbinder_ndk \
+    libaudioutils \
+    libbase \
+    libcutils \
+    liblog \
+    libutils \
+    libexpat \
+    $(LATEST_ANDROID_MEDIA_AUDIO_COMMON_TYPES) \
+    $(LATEST_ANDROID_HARDWARE_AUDIO_CORE) \
+    libvhalclient
+
+LOCAL_STATIC_LIBRARIES := \
+    libmath \
+    android.hardware.automotive.vehicle-V4-ndk \
+    android.hardware.automotive.vehicle@2.0 \
+    VehicleHalUtils \
+    android-automotive-large-parcelable-lib \
+    android.hardware.automotive.vehicle.property-V3-ndk
+
+
+LOCAL_HEADER_LIBRARIES :=  \
+    libaudio_system_headers \
+    libsystem_headers \
+    libarpal_headers
+
+include $(BUILD_SHARED_LIBRARY)
+#-------------------------------------------------
+endif

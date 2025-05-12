@@ -15,8 +15,8 @@
  */
 
 /*
- * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * ​​​​​Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -30,9 +30,57 @@
 #include <android-base/properties.h>
 #include <system/audio_config.h>
 
+#if ENABLE_DYNAMIC_EFFECT_CONFIG
+#include "extensions/AudioConfig.h"
+#endif
 /** Default name of effect configuration file. */
 static const char* kDefaultConfigName = "audio_effects_config.xml";
 static const char* kStubConfigName = "audio_effects_config_stub.xml";
+
+#if ENABLE_DYNAMIC_EFFECT_CONFIG
+static const char* kCDCEntryConfigName = "audio_effects_config_entry.xml";
+static const char* kCDCMidConfigName = "audio_effects_config_mid.xml";
+
+using namespace qti::audio::oem::config;
+
+static inline std::string getCDCEffectConfig() {
+    auto stubmode = ::android::base::GetIntProperty<int8_t>("vendor.audio.hal.stubmode", 0);
+    ::qti::audio::oem::config::AudioConfigType req = AUDIO_CONFIG_SOUND_STAGE ;
+    ::qti::audio::oem::config::AudioConfigData SoundStageConfig;
+    ::qti::audio::oem::config::AudioConfigData OutputinformationConfig;
+    ::qti::audio::oem::config::AudioConfigManager::getInstance().getAudioConfigValue(req,&SoundStageConfig);
+
+    req = AUDIO_CONFIG_OUTPUT_INFORMATION ;
+    ::qti::audio::oem::config::AudioConfigManager::getInstance().getAudioConfigValue(req,&OutputinformationConfig);
+
+    if (stubmode) {
+        LOG(INFO) << __func__ << " using effects in stub mode";
+        return android::audio_find_readable_configuration_file(kStubConfigName);
+    }
+
+    if ((OutputinformationConfig.defaultValue == OUTPUT_INFO_4CH) || (OutputinformationConfig.defaultValue == OUTPUT_INFO_8CH))
+    {
+        if (SoundStageConfig.defaultValue == SOUND_STAGE_ENTRY )
+        {
+            LOG(INFO) << __func__ << " using effects in entry Config";
+            return android::audio_find_readable_configuration_file(kCDCEntryConfigName);
+        }
+        else if (SoundStageConfig.defaultValue == SOUND_STAGE_MID)
+        {
+            LOG(INFO) << __func__ << " using effects in Mid Config";
+            return android::audio_find_readable_configuration_file(kCDCMidConfigName);
+        }
+        else
+        {
+            LOG(INFO) << __func__ << " using effects in default Config";
+            android::audio_find_readable_configuration_file(kDefaultConfigName);
+        }
+    }
+
+    return android::audio_find_readable_configuration_file(kDefaultConfigName);
+}
+
+#endif
 
 static inline std::string getEffectConfig() {
     auto stubmode = ::android::base::GetIntProperty<int8_t>("vendor.audio.hal.stubmode", 0);
@@ -45,7 +93,11 @@ static inline std::string getEffectConfig() {
 }
 
 extern "C" __attribute__((visibility("default"))) binder_status_t registerService() {
+#if ENABLE_DYNAMIC_EFFECT_CONFIG
+    auto configFile = getCDCEffectConfig();
+#else
     auto configFile = getEffectConfig();
+#endif
     if (configFile == "") {
         LOG(ERROR) << __func__ << ": config file " << kDefaultConfigName << " not found!";
         return EXIT_FAILURE;

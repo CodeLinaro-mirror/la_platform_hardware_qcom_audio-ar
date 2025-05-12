@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 #pragma once
@@ -24,13 +24,19 @@
 #define MIN_ATTENAUATION_TARGET -9000
 #define DEFAULT_ATTENUATION_TARGET -4000
 
-#define MIN_TONE_CONTROLLER_BANDS 3
-#define MAX_TONE_CONTROLLER_BANDS 8
+#define MIN_TONE_CONTROLLER_BANDS 0
+#define MAX_TONE_CONTROLLER_BANDS 1
 
 #define SOUND_STAGE_ENTRY 0
 #define SOUND_STAGE_MID 1
 #define SOUND_STAGE_PREMIUM 2
 #define SOUND_STAGE_SUPER_PREM 3
+
+
+#define OUTPUT_INFO_4CH 0
+#define OUTPUT_INFO_8CH 1
+#define OUTPUT_INFO_12CH 2
+#define OUTPUT_INFO_16CH 3
 
 #define AMBIANCE_LEVEL_1 1
 #define AMBIANCE_LEVEL_2 2
@@ -88,7 +94,7 @@ const std::map<std::string,AudioConfigType> ConfigkeyMap =
     {ATTENUATION_TARGET_STR,AUDIO_CONFIG_ATTENUATION_TARGET},
     {FADER_AVAILABILITY_STR,AUDIO_CONFIG_FADER_AVAILABLITY},
     {TONE_CONTROLLER_STR,AUDIO_CONFIG_TONE_CONTROLLER_BANDS},
-    {SOUND_STAGE_STR,AUDIO_CONFIG_TONE_CONTROLLER_BANDS},
+    {SOUND_STAGE_STR,AUDIO_CONFIG_SOUND_STAGE},
     {DEFAULT_AMBIANCE_STR,AUDIO_CONFIG_DEFAULT_AMBIANCE},
     {DEFAULT_AGC_STATE_STR,AUDIO_CONFIG_DEFAULT_AGC_STATE}
 
@@ -113,7 +119,7 @@ class AudioConfigManager {
 
         static AudioConfigData sgconfigElement;
         static AudioConfigType sgconfigType;
-        bool sgAudioConfigInitialized;
+        static bool sgAudioConfigInitialized;
         static std::map<AudioConfigType, AudioConfigData> sgconfigDataMap;
 
         static AudioConfigData sgLoadDefaultconfig[MAX_CONFIG];

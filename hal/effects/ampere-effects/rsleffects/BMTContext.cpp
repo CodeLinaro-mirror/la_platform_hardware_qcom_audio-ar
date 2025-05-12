@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -11,7 +11,7 @@
 #include "RslContext.h"
 #include "RslTypes.h"
 #include "PalParamDelegator.h"
-
+#include "AudioConfig.h"
 
 namespace aidl::ampere::effects {
 
@@ -36,6 +36,22 @@ BMTContext::~BMTContext() {
 
 void BMTContext::init() {
     LOG(DEBUG) << "Enter " << __func__ << " ioHandle " << getIoHandle();
+    ::qti::audio::oem::config::AudioConfigType req = ::qti::audio::oem::config::AUDIO_CONFIG_TONE_CONTROLLER_BANDS ;
+    ::qti::audio::oem::config::AudioConfigData ToneControllerConfig;
+
+    ::qti::audio::oem::config::AudioConfigManager::getInstance().getAudioConfigValue(req,&ToneControllerConfig);
+
+    LOG(DEBUG) << "Default Value of BMT Tone Controller Bands  " << ToneControllerConfig.defaultValue;
+
+    if (ToneControllerConfig.defaultValue == MAX_TONE_CONTROLLER_BANDS)
+    {
+        mMaxBandLevel = MAX_NUM_BANDS_8;
+    }
+    else
+    {
+        mMaxBandLevel = MAX_NUM_BANDS;
+    }
+
     memset(&mBMTParams, 0, sizeof(struct param_type2_t));
 }
 
@@ -150,9 +166,10 @@ std::vector<Equalizer::BandLevel> BMTContext::getBMTBandLevels() const {
     LOG(DEBUG) << "Enter " << __func__;
 
     std::vector<Equalizer::BandLevel> bandLevels;
-    bandLevels.reserve(MAX_NUM_BANDS);
+    LOG(DEBUG) << "BandLevel " << mMaxBandLevel;
+    bandLevels.reserve(mMaxBandLevel);
 
-    for (std::size_t i = 0; i < MAX_NUM_BANDS; i++) {
+    for (std::size_t i = 0; i < mMaxBandLevel; i++) {
         bandLevels.emplace_back(
                 Equalizer::BandLevel{static_cast<int32_t>(i), getValueFromPalParam(i)});
     }
@@ -195,8 +212,8 @@ int BMTContext::getValueFromPalParam(uint32_t cmd) const {
     if (mPalHandle != NULL){
         ret = PalParamDelegator::AWX_get_param_handle(mPalHandle,&pal_param, type);
     } else {
-        LOG(WARNING) << __func__ << " PAL handle is NULL return Cached Value " << mBMTLevel[cmd].value << "for Effect " <<std::to_string(cmd);
-        return mBMTLevel[cmd].value;
+        ret = PalParamDelegator::AWX_get_param(&pal_param, type);
+        LOG(DEBUG) << "PAL handle is NULL " << __func__;
     }
 
     if(ret < 0) {

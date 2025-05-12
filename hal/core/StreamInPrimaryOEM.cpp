@@ -282,14 +282,15 @@ void StreamInPrimaryOEM::shutdown() {
 
 void StreamInPrimaryOEM::configure() {
     LOG(INFO) << __func__ << mLogPrefixOEM;
-    int ret = 0, vocoder_rate, conn_type;
+    int ret = 0, vocoder_rate, conn_type, cp_type;
     ecnrSampleRate = mMixPortConfig.sampleRate.value().value;
     ecnrPeriodSize = mPlatform.getFrameCount(mMixPortConfig, mTag);
     mChannels = getChannelCount(mMixPortConfig.channelMask.value());
     bECNRprop_Enable = property_get_bool(ECNR_FEATURE_PROP, false);
     vocoder_rate =  mAudExt.mHalExtension->get_vocoder_rate();
     conn_type = mAudExt.mHalExtension->get_conn_type();
-    LOG(DEBUG) << __func__ << " Vocoder_samplerate : " << vocoder_rate << " connection_type : " << conn_type;
+    cp_type = mAudExt.mHalExtension->get_cp_type();
+    LOG(DEBUG) << __func__ << " Vocoder_samplerate : " << vocoder_rate << " connection_type : " << conn_type << " carplay_type : " << cp_type;
 
 #ifdef ECNR_HAL_TUNE
     int portid = ECNR_PORT_ID_VR_TX_2016;
@@ -312,38 +313,55 @@ void StreamInPrimaryOEM::configure() {
 
     auto bufConfig = getBufferConfigOEM();
     if (mAudExt.mHalExtension->audio_extn_getEnablement() && bECNRprop_Enable &&
-        ((strcmp(attr->bus_addr, "BUS_INPUT_3rdpartyvr0") == 0) || ((mTag == Usecase::VOIP_RECORD) &&
-        (vocoder_rate > 0 && conn_type >= 0)))) {
-        bECNR_Enable = true;
-        LOG(INFO) << __func__ << " bECNR_Enable " << bECNR_Enable;
-        if (mTag == Usecase::VOIP_RECORD) {
-             attr->type = PAL_STREAM_VOIP_TX;
-             pECNR_ProcessData.ecnr_type = ECNR_TYPE_TEL;
+        ((strcmp(attr->bus_addr, "BUS_INPUT_3rdpartyvr0") == 0) || (mTag == Usecase::VOIP_RECORD))) {
+        if (vocoder_rate > 0 && conn_type >= 0) {
+            bECNR_Enable = true;
+            LOG(INFO) << __func__ << " bECNR_Enable " << bECNR_Enable;
+            if (mTag == Usecase::VOIP_RECORD) {
+                attr->type = PAL_STREAM_VOIP_TX;
+                pECNR_ProcessData.ecnr_type = ECNR_TYPE_TEL;
 #ifdef ECNR_HAL_SRC_CP
-        if((vocoder_rate == 8000) || (vocoder_rate == 16000) || (vocoder_rate == 24000)) {
-            ecnrSampleRate = 24000;
-        } else if(vocoder_rate == 32000) {
-            ecnrSampleRate = 32000;
-        } else if(vocoder_rate == 48000) {
-            ecnrSampleRate = 48000;
-        }
-        VoipRecordECNR::kSampleRate = ecnrSampleRate;
-        ecnrPeriodSize = UsecaseConfig<VoipRecordECNR>::getULECNRPeriodSize(VoipRecordECNR::kSampleRate);
-        LOG(INFO) << __func__ << mLogPrefixOEM << " ecnrSampleRate:  " << ecnrSampleRate << " encrPeriodSize: "<< ecnrPeriodSize;
+                if((vocoder_rate == 8000) || (vocoder_rate == 16000) || (vocoder_rate == 24000)) {
+                    ecnrSampleRate = 24000;
+                } else if(vocoder_rate == 32000) {
+                    ecnrSampleRate = 32000;
+                } else if(vocoder_rate == 48000) {
+                    ecnrSampleRate = 48000;
+                }
+                VoipRecordECNR::kSampleRate = ecnrSampleRate;
+                ecnrPeriodSize = UsecaseConfig<VoipRecordECNR>::getULECNRPeriodSize(VoipRecordECNR::kSampleRate);
+                LOG(INFO) << __func__ << mLogPrefixOEM << " ecnrSampleRate:  " << ecnrSampleRate << " encrPeriodSize: "<< ecnrPeriodSize;
 
 #endif
 #ifdef ECNR_HAL_TUNE
-        portid = ECNR_PORT_ID_VOIP_TX_2014;
+                portid = ECNR_PORT_ID_VOIP_TX_2014;
+#endif
+            } else {
+                attr->type = PAL_STREAM_CAPTURE_BUS;
+                pECNR_ProcessData.ecnr_type = ECNR_TYPE_VR;
+#ifdef ECNR_HAL_TUNE
+                portid = ECNR_PORT_ID_VR_TX_2016;
+#endif
+            }
+        } else if (conn_type >= 0) {
+            bECNR_Enable = true;
+            LOG(INFO) << __func__ << " bECNR_Enable " << bECNR_Enable;
+            attr->type = PAL_STREAM_VOIP_TX;
+            if (cp_type == SIRI)
+                pECNR_ProcessData.ecnr_type = ECNR_TYPE_LEGACY_SIRI;
+            else if (cp_type == FACETIME)
+                pECNR_ProcessData.ecnr_type = ECNR_TYPE_FACETIME;
+#ifdef ECNR_HAL_TUNE
+            portid = ECNR_PORT_ID_VOIP_TX_2014;
 #endif
         } else {
-            attr->type = PAL_STREAM_CAPTURE_BUS;
-            pECNR_ProcessData.ecnr_type = ECNR_TYPE_VR;
-#ifdef ECNR_HAL_TUNE
-            portid = ECNR_PORT_ID_VR_TX_2016;
-#endif
+            LOG(ERROR) << __func__ << mLogPrefixOEM << " Invalid ECNR type";
+            pECNR_ProcessData.ecnr_type = INVALID;
+            bECNR_Enable = false;
+            goto skip_ecnr_configuration;
         }
         pECNR_ProcessData.scd_type = mAudExt.mHalExtension->audio_extn_getSCDtype(ecnrSampleRate, vocoder_rate, pECNR_ProcessData.ecnr_type, conn_type, DIR_UL);
-        if (mAudExt.mHalExtension->audio_extn_getSCDdata(&pECNR_ProcessData)) {
+        if (mAudExt.mHalExtension->audio_extn_getSCDdata(&pECNR_ProcessData, DIR_UL)) {
             LOG(ERROR) << __func__ << mLogPrefixOEM << " failed to get scd information, disabling ecnr processing";
             bECNR_Enable = false;
             goto skip_ecnr_configuration;
@@ -530,8 +548,10 @@ void StreamInPrimaryOEM::shutdown_I() {
     if (bECNR_Enable && (mTag == Usecase::VOIP_RECORD)) {
         mAudExt.mHalExtension->set_vocoder_rate(INVALID);
         mAudExt.mHalExtension->set_conn_type(INVALID);
+        mAudExt.mHalExtension->set_cp_type(INVALID);
     }
     bECNR_Enable = false;
+    property_set("vendor.audio.ecnr.scd.ul", "");
 
 
     if (ecnr_ecmx_buffer) {

@@ -15,8 +15,8 @@
  */
 
 /*
- * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
- * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -31,6 +31,7 @@
 #include <android/binder_ibinder.h>
 #include <android/binder_manager.h>
 #include <error/Result.h>
+#include <cmath>
 #ifdef ENABLE_QCOM_AMPERE_AUDIO
 #include <extensions/AudioHalFocusManager.h>
 #include <aidl/alliance/hardware/automotive/audiocontrol/internal/IAudioControlInternal.h>
@@ -61,6 +62,11 @@
 #define AUDIO_PARAMETER_KEY_BALANCE "Balance"
 #define AUDIO_PARAMETER_KEY_FADER "Fader"
 #define AUDIO_PARAMETER_KEY_ISFADERAVAILABLE "isFaderAvailable"
+#ifdef ENABLE_QCOM_AMPERE_AUDIO
+#define MIN_VOLUME_VALUE_MB -9000
+#define MAX_VOLUME_VALUE_MB 0
+#define BALANCE_FADER_SCALE 5.0
+#endif
 
 #include <android/binder_manager.h>
 #include <android/binder_process.h>
@@ -107,13 +113,14 @@ namespace qti::audio::core {
 
 std::vector<std::weak_ptr<::qti::audio::core::StreamOut>> ModulePrimary::mStreamsOut;
 std::vector<std::weak_ptr<::qti::audio::core::StreamIn>> ModulePrimary::mStreamsIn;
-std::string qti::audio::core::ModulePrimary::globalAudioSource;
+std::string qti::audio::core::ModulePrimary::globalAudioSource = "other";
 
 #ifdef ENABLE_QCOM_AMPERE_AUDIO
 std::unordered_map<std::string, FocusSession> ModulePrimary::mActiveFocusDevices;
 std::shared_ptr<::aidl::alliance::hardware::automotive::audiocontrol::internal::IAudioControlInternal> ModulePrimary::mAudioControlInternalProxy = nullptr;
 #define ALL_BUS_VOLUMES 0x7F
 #define BUS_COUNT 7
+#define Vol_to_mdB(X) ((X == 0.0) ? (MIN_VOLUME_VALUE_MB) : lrint(2000 * log10f(X)))
 #endif
 
 std::vector<float> qti::audio::core::MuteConfig::getVol = {-3600.0f, -3600.0f};
@@ -127,15 +134,45 @@ ndk::ScopedAStatus qti::audio::core::ModulePrimary::setAudioPortConfig(const ::a
     LOG(DEBUG) << "setaudioportconfig module primary";
     mVolumeGaincheck = property_get_bool(mGainVolumecheckProperty.c_str(),false);
     Module::setAudioPortConfig(in_requested,out_suggested,_aidl_return);
+    float volume;
     if (in_requested.gain.has_value()) {
         if (in_requested.gain->values.empty()) {
             return ndk::ScopedAStatus::ok();
         }
-        LOG(DEBUG) << __func__ << ": requested " << in_requested.toString();
-    }
-    else {
-        return ndk::ScopedAStatus::ok();
+        if (!mVolumeGaincheck) {
+            if (in_requested.gain->values[0] >= MAX_VOLUME_GAIN_MB) {
+                volume = MAX_VOLUME_GAIN;
+            } else {
+                if (in_requested.gain->values[0] <= MIN_VOLUME_GAIN_MB) {
+                    volume = MIN_VOLUME_GAIN;
+                } else {
+                    volume=pow(10,(((float)(in_requested.gain->values[0]))-600)/2200);
+                }
+            }
+        } else {
+            volume = (static_cast<float>(in_requested.gain->values[0]));
         }
+#ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
+        LOG(DEBUG) << __func__ << ": requested " << in_requested.toString();
+        if (in_requested.ext.getTag() == AudioPortExt::device) {
+            if (auto devicePort = in_requested.ext.get<AudioPortExt::device>();
+                    (devicePort.device.type.type == AudioDeviceType::OUT_BUS &&
+                     devicePort.device.type.connection.empty())) {
+                if (auto address = devicePort.device.address.get<AudioDeviceAddress::Tag::id>();
+                        !address.empty()) {
+                    setUpPriorityFocus();
+                    if (mActiveFocusDevices.find(address) != mActiveFocusDevices.end()) {
+                        mAudExt.mAutoAudioHalPriorityExtension->updateVolume(mActiveFocusDevices[address].FocusId, volume, false /*internal volume change*/);
+                    } else {
+                        LOG(ERROR) << "Volume update failed for BUS: " << address;
+                    }
+                }
+            }
+        }
+#endif
+    } else {
+        return ndk::ScopedAStatus::ok();
+    }
     auto list = getOutStreams();
     if (list.empty()) {
         LOG(DEBUG) << "the module list is empty";
@@ -164,42 +201,17 @@ ndk::ScopedAStatus qti::audio::core::ModulePrimary::setAudioPortConfig(const ::a
             auto &list_audioportconfig = mcontext.getMixPortConfig();
             list_id = list_audioportconfig.portId;
             int no_of_channels = (int)getChannelCount(list_audioportconfig.channelMask.value());
-            float volume;
             if (list_id == (*route_portid)) {
                 std::vector<float> vol;
                 LOG(DEBUG) << "Found the stream at id" << list_id;
-                if (!mVolumeGaincheck) {
-                    if (in_requested.gain->values[0] >= MAX_VOLUME_GAIN_MB) {
-                        volume = MAX_VOLUME_GAIN;
-                    }
-                    else {
-                        if (in_requested.gain->values[0] <= MIN_VOLUME_GAIN_MB) {
-                            volume = MIN_VOLUME_GAIN;
-                    }
-                        else {
-                            volume=pow(10,(((float)(in_requested.gain->values[0]))-600)/2200);
-                        }
-                    }
-                }
-                else {
-                    volume = (static_cast<float>(in_requested.gain->values[0]));
-                }
                 int iter_channel;
                 for(iter_channel = 0; iter_channel<no_of_channels; iter_channel++) {
                     vol.push_back(volume);
                 }
                 LOG(DEBUG) << "gain is:" << volume;
                 LOG(DEBUG) << "volume is:" << vol[0];
-                //(std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(outIter))->setHwVolume(vol);
                 auto streamObj = std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(outIter);
                 streamObj->setHwVolume(vol);
-#ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
-                //update focus service volume too if an entry exists
-                auto focusId = streamObj->focusSessionInfo.FocusId;
-                if (focusId != -1) {
-                    mAudExt.mAutoAudioHalPriorityExtension->updateVolume(focusId, volume, false /*internal volume change*/);
-                }
-#endif
                 LOG(DEBUG) << "volume set :" << vol[0];
                 route_portid++;
             }
@@ -723,9 +735,10 @@ std::string ModulePrimary::carplayParamConverter(CarPlayVendorParameterExt::Rate
 }
 
 ::android::status_t ModulePrimary::setCarPlayParameter(const VendorParameter& param) {
-     struct str_parms* parms = NULL;
+    struct str_parms* parms = NULL;
     std::string kvpairs = "";
     std::string keyvalue;
+    static FocusSession focusSessionInfo = {};
     using Tag = CarPlayVendorParameterExt::Parameter::Tag;
     if (param.id == CarPlayVendorParameterExt::CARPLAY_SAMPLERATE) {
         std::string CarplaySampleRate;
@@ -825,13 +838,33 @@ std::string ModulePrimary::carplayParamConverter(CarPlayVendorParameterExt::Rate
             mAudExt.audio_extn_set_parameters(parms);
         }
     } else if (param.id == CarPlayVendorParameterExt::CARPLAY_DUCK) {
+        FocusInfo focusInfo = {};
         auto p = extractParameter<CarPlayVendorParameterExt, Tag::duckAudio,
                 CarPlayVendorParameterExt::DuckAudio>(param);
         CarPlayVendorParameterExt::DuckAudio aidlDuckAudio = VALUE_OR_RETURN_STATUS(p);
         if (aidlDuckAudio.command == CarPlayVendorParameterExt::DuckAudio::DuckCommand::NONE) {
             return ::android::BAD_VALUE;
         }
-        LOG(DEBUG) << __func__ << " CP Duck command "<< aidlDuckAudio.toString();
+        LOG(DEBUG) << __func__ << " CP Duck command "<< toString(aidlDuckAudio.command);
+
+        if (aidlDuckAudio.command == CarPlayVendorParameterExt::DuckAudio::DuckCommand::DUCK) {
+            if ((aidlDuckAudio.targetVolume < 0 && aidlDuckAudio.targetVolume > 1) || (aidlDuckAudio.rampDurationSec < 0 && aidlDuckAudio.rampDurationSec > 1)) {
+                return ::android::BAD_VALUE;
+            }
+            focusInfo.usage = "CP_DUCK";
+            focusInfo.gain = Vol_to_mdB(aidlDuckAudio.targetVolume);
+            focusInfo.isExternalGain = true;
+            focusInfo.rampDuration = aidlDuckAudio.rampDurationSec * 1000;
+            mAudExt.mAutoAudioHalPriorityExtension->requestFocus(focusInfo, &focusSessionInfo.FocusId);
+            LOG(DEBUG) << __func__ << " FocusId = " <<focusSessionInfo.FocusId << " rampduration: " << focusInfo.rampDuration;
+        } else if (aidlDuckAudio.command == CarPlayVendorParameterExt::DuckAudio::DuckCommand::UNDUCK) {
+            if (aidlDuckAudio.rampDurationSec < 0 && aidlDuckAudio.rampDurationSec > 1) {
+                return ::android::BAD_VALUE;
+            }
+            focusInfo.rampDuration = aidlDuckAudio.rampDurationSec * 1000;
+            LOG(DEBUG) << __func__ <<" rampduration: " << focusInfo.rampDuration;
+            mAudExt.mAutoAudioHalPriorityExtension->abandonFocus(focusSessionInfo.FocusId);
+        }
     } else {
         LOG(ERROR) << __func__ << ": unhandled parameter id " << param.id.c_str();
         return ::android::BAD_VALUE;
@@ -845,18 +878,6 @@ void ModulePrimary::onSetAudioControlParameters(const std::vector<::aidl::androi
             LOG(ERROR) << __func__ << ": FAILED to extract value from " << param.id.c_str();
         }
     }
-}
-
-std::vector<VendorParameter> ModulePrimary::onGetAudioControlParams(
-        const std::vector<std::string>& ids) {
-    bool allParametersKnown = true;
-    std::vector<VendorParameter> results{};
-    for (const auto& id : ids) {
-    }
-    if (!allParametersKnown) {
-        LOG(ERROR) << __func__ << ": unhandled parameter dispatched to AudioControl";
-    }
-    return results;
 }
 
 const std::map<int,int> volumeMap = {
@@ -887,11 +908,7 @@ int getNearestIndex(int gain) {
     }
 }
 
-ndk::ScopedAStatus ModulePrimary::handleMasterMute(
-        const AudioControlVendorParameterExt::MasterMuteRequest& request) {
-    LOG(ERROR) << __func__ << ": request " << request.toString();
-
-
+void ModulePrimary::setUpPriorityFocus() {
     auto &mActiveFocusDevices = ModulePrimary::mActiveFocusDevices;
     const auto& configs = getConfig().portConfigs;
     for (const auto& portConfig : configs) {
@@ -916,18 +933,18 @@ ndk::ScopedAStatus ModulePrimary::handleMasterMute(
         }
     }
 
+}
+
+ndk::ScopedAStatus ModulePrimary::handleMasterMute(
+        const AudioControlVendorParameterExt::MasterMuteRequest& request) {
+    LOG(ERROR) << __func__ << ": request " << request.toString();
+    ModulePrimary::setUpPriorityFocus();
     std::vector<AudioGainConfigInfo> agcis = getAudioGainConfigsForSinks();
 
     std::vector<Reasons> reasons{};
     static FocusSession focusSessionInfo;
 
     if (request.state == AudioControlVendorParameterExt::MasterMuteRequest::State::ACTIVATED) {
-        // reasons.push_back(ahaaudiocontrol::Reasons::FORCED_MASTER_MUTE);
-        // TODO: Put the min (not 0) since index must be in a valid range to process the
-        //  GainCallback. Blocking and index are not orthogonal
-        // for (auto& agci : agcis) {
-        //     agci.volumeIndex = 5;
-        // }
         {
             FocusInfo focusInfo;
             focusInfo.usage = request.type;
@@ -937,40 +954,6 @@ ndk::ScopedAStatus ModulePrimary::handleMasterMute(
         }
 
     } else {
-        //get bus volumes for all buses
-        std::string busTypes[] = {
-            "BUS00_MEDIA",             // bit0
-            "BUS01_SYS_NOTIFICATION",  // bit1
-            "BUS02_NAV_GUIDANCE",      // bit2
-            "BUS03_PHONE",             // bit3
-            "BUS0F_NAV_GUIDANCE2",     // bit4
-            "BUS01_no_ASIL",           // bit5
-            "BUS02_Road_ADAS"          // bit6
-        };
-        std::vector<int32_t> busVolumes = getVolumeProfile(ALL_BUS_VOLUMES);
-
-        reasons.push_back(Reasons::EXTERNAL_AMP_VOL_FEEDBACK);
-        for (auto& agci : agcis) {
-            for (int i = 0; i < BUS_COUNT; i++) {
-                if (busTypes[i] == agci.devicePortAddress) {
-                    agci.volumeIndex = getNearestIndex((int)busVolumes[i]);
-                    LOG(INFO) << "Restoring volume for bus "
-                        << agci.devicePortAddress << " to " << busVolumes[i] << "(index: " << agci.volumeIndex << ")";
-                    break;
-                }
-            }
-        }
-        if (getAudioControlInternalService() == nullptr) {
-            LOG(ERROR) << __func__ << ": Unable to report audio gain changed - "
-                                    "IAudioControlInternal not registered";
-            return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
-        }
-        auto ret = getAudioControlInternalService()->reportAudioDeviceGainChanged(reasons, agcis);
-        if (not ret.isOk()) {
-            LOG(ERROR) << __func__ << ": Unable to report audio gain changed ";
-            return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
-        }
-
         LOG(INFO) << __func__ << "Abandoning focus for mastermute, focus id: " << focusSessionInfo.FocusId;
         mAudExt.mAutoAudioHalPriorityExtension->abandonFocus(focusSessionInfo.FocusId);
     }
@@ -1495,6 +1478,7 @@ ModulePrimary::SetParameterToFeatureMap ModulePrimary::fillSetParameterToFeature
                                  {CarPlayVendorParameterExt::CARPLAY_TYPE, Feature::CARPLAY},
                                  {CarPlayVendorParameterExt::CARPLAY_SAMPLERATE, Feature::CARPLAY},
                                  {CarPlayVendorParameterExt::CARPLAY_VOCODER_SAMPLERATE, Feature::CARPLAY},
+                                 {CarPlayVendorParameterExt::CARPLAY_DUCK, Feature::CARPLAY},
                                  {AudioControlVendorParameterExt::BALANCE, Feature::AUDIOCONTROL},
                                  {AudioControlVendorParameterExt::FADER, Feature::AUDIOCONTROL},
 #endif
@@ -1536,7 +1520,9 @@ ndk::ScopedAStatus ModulePrimary::getVendorParameters(
             VendorParameter forceSynchronousDrain{.id = id};
             forceSynchronousDrain.ext.setParcelable(Boolean{mVendorDebug.forceSynchronousDrain});
             _aidl_return->push_back(std::move(forceSynchronousDrain));
-        } else if ((id == AUDIO_PARAMETER_KEY_BALANCE) || (id == AUDIO_PARAMETER_KEY_FADER)) {
+        }
+        #ifndef ENABLE_QCOM_AMPERE_AUDIO
+         else if ((id == AUDIO_PARAMETER_KEY_BALANCE) || (id == AUDIO_PARAMETER_KEY_FADER)) {
             LOG(DEBUG) << __func__ << ": " << id;
             auto value = mAudExt.audio_extn_get_parameters(id);
             result.emplace_back(makeVendorParameter(id, std::to_string(value)));
@@ -1555,6 +1541,7 @@ ndk::ScopedAStatus ModulePrimary::getVendorParameters(
             *_aidl_return = result;
             return ndk::ScopedAStatus::ok();
         }
+        #endif
     }
 
     auto results = processGetVendorParameters(in_ids);
@@ -1635,6 +1622,55 @@ std::vector<VendorParameter> ModulePrimary::onGetCarplayParams(
         LOG(ERROR) << __func__ << ": unhandled parameter dispatched to CarPlay";
     }
     return results;
+}
+
+std::vector<::aidl::android::hardware::audio::core::VendorParameter> ModulePrimary::onGetAudioControlParams(
+    const std::vector<std::string>& ids) {
+    LOG(DEBUG) << __func__ << "Entry";
+    bool allParametersKnown = true;
+    std::vector<VendorParameter> results{};
+    for (const auto& id : ids) {
+
+    if (id == AudioControlVendorParameterExt::FADER_AVAILABILITY) {
+        auto faderAvailability  = mAudExt.audio_extn_get_parameters(id) ;
+        bool faderValue = static_cast<bool>(faderAvailability);
+        LOG(DEBUG) << __func__ << "faderAvailability Value " << faderValue ;
+        VendorParameter parameter{.id = AudioControlVendorParameterExt::FADER_AVAILABILITY};
+        AudioControlVendorParameterExt myExtension;
+        myExtension.value = AudioControlVendorParameterExt::Parameter::make<AudioControlVendorParameterExt::Parameter::Tag::faderAvailable>(faderValue);
+        parameter.ext.setParcelable(myExtension);
+        results.push_back(parameter);
+        return results;
+    } else if (id == AudioControlVendorParameterExt::FADER) {
+        auto fader  = mAudExt.audio_extn_get_parameters(id) ;
+        float faderLevel = fader/BALANCE_FADER_SCALE;
+        LOG(DEBUG) << __func__ << "faderLevel Value " << faderLevel ;
+        VendorParameter parameter{.id = AudioControlVendorParameterExt::FADER};
+        AudioControlVendorParameterExt myExtension;
+        myExtension.value = AudioControlVendorParameterExt::Parameter::make<AudioControlVendorParameterExt::Parameter::Tag::fader>(faderLevel);
+        parameter.ext.setParcelable(myExtension);
+        results.push_back(parameter);
+        return results;
+
+    }
+    else if (id == AudioControlVendorParameterExt::BALANCE) {
+        auto balance  = mAudExt.audio_extn_get_parameters(id) ;
+        float balanceLevel = balance/BALANCE_FADER_SCALE;
+        LOG(DEBUG) << __func__ << "balanceLevel Value " << balanceLevel ;
+        VendorParameter parameter{.id = AudioControlVendorParameterExt::BALANCE};
+        AudioControlVendorParameterExt myExtension;
+        myExtension.value = AudioControlVendorParameterExt::Parameter::make<AudioControlVendorParameterExt::Parameter::Tag::balance>(balanceLevel);
+        parameter.ext.setParcelable(myExtension);
+        results.push_back(parameter);
+    }
+    else
+    {
+        LOG(ERROR) << __func__ << ": unhandled parameter dispatched to AudioControl";
+    }
+}
+
+LOG(DEBUG) << __func__ << "Exit";
+return results;
 }
 #endif
 
@@ -1851,6 +1887,9 @@ ModulePrimary::GetParameterToFeatureMap ModulePrimary::fillGetParameterToFeature
                                  {CarPlayVendorParameterExt::CARPLAY_VOCODER_SAMPLERATE, Feature::CARPLAY},
                                  {CarPlayVendorParameterExt::CARPLAY_STATUS, Feature::CARPLAY},
                                  {CarPlayVendorParameterExt::CARPLAY_DUCK, Feature::CARPLAY},
+                                 {AudioControlVendorParameterExt::BALANCE, Feature::AUDIOCONTROL},
+                                 {AudioControlVendorParameterExt::FADER, Feature::AUDIOCONTROL},
+                                 {AudioControlVendorParameterExt::FADER_AVAILABILITY, Feature::AUDIOCONTROL},
 #endif
     };
     return map;
