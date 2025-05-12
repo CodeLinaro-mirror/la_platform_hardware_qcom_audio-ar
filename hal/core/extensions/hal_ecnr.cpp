@@ -100,7 +100,8 @@ HalECNRExtension::HalECNRExtension() {
             }
         }
         LOG(INFO) << __func__ << " Enter";
-        int vocoder_sample_rate = -1, connection_type = -1;
+        vocoder_sample_rate = -1;
+        connect_type = -1;
 
         if (mHandle != nullptr) {
             if (!(ecnrCreate = (ecnrCreate_t)dlsym(
@@ -367,7 +368,7 @@ HalECNRExtension::HalECNRExtension() {
         }
    }
 
-    int HalECNRExtension::audio_extn_getSCDtype(uint32_t sample_rate, uint32_t vocoder_rate, uint32_t ecnr_type, uint32_t connection_type, uint32_t dir) {
+    int HalECNRExtension::audio_extn_getSCDtype(uint32_t sample_rate, int vocoder_rate, uint32_t ecnr_type, int connection_type, uint32_t dir) {
 
         int scd_type = SCD_TYPE_INVALID;
         LOG(DEBUG) << __func__ << " vocoder_samplerate: " << vocoder_rate << " connection_type: " << connection_type << " ecnr_type: " << ecnr_type;

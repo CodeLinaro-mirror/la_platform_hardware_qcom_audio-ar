@@ -314,35 +314,35 @@ void StreamInPrimaryOEM::configure() {
     auto bufConfig = getBufferConfigOEM();
     if (mAudExt.mHalExtension->audio_extn_getEnablement() && bECNRprop_Enable &&
         ((strcmp(attr->bus_addr, "BUS_INPUT_3rdpartyvr0") == 0) || (mTag == Usecase::VOIP_RECORD))) {
-        if (vocoder_rate > 0 && conn_type >= 0) {
+        if (strcmp(attr->bus_addr, "BUS_INPUT_3rdpartyvr0") == 0) {
             bECNR_Enable = true;
             LOG(INFO) << __func__ << " bECNR_Enable " << bECNR_Enable;
-            if (mTag == Usecase::VOIP_RECORD) {
-                attr->type = PAL_STREAM_VOIP_TX;
-                pECNR_ProcessData.ecnr_type = ECNR_TYPE_TEL;
+            attr->type = PAL_STREAM_CAPTURE_BUS;
+            pECNR_ProcessData.ecnr_type = ECNR_TYPE_VR;
+#ifdef ECNR_HAL_TUNE
+            portid = ECNR_PORT_ID_VR_TX_2016;
+#endif
+        } else if (vocoder_rate > 0 && conn_type >= 0 && mTag == Usecase::VOIP_RECORD) {
+            bECNR_Enable = true;
+            LOG(INFO) << __func__ << " bECNR_Enable " << bECNR_Enable;
+            attr->type = PAL_STREAM_VOIP_TX;
+            pECNR_ProcessData.ecnr_type = ECNR_TYPE_TEL;
 #ifdef ECNR_HAL_SRC_CP
-                if((vocoder_rate == 8000) || (vocoder_rate == 16000) || (vocoder_rate == 24000)) {
-                    ecnrSampleRate = 24000;
-                } else if(vocoder_rate == 32000) {
-                    ecnrSampleRate = 32000;
-                } else if(vocoder_rate == 48000) {
-                    ecnrSampleRate = 48000;
-                }
-                VoipRecordECNR::kSampleRate = ecnrSampleRate;
-                ecnrPeriodSize = UsecaseConfig<VoipRecordECNR>::getULECNRPeriodSize(VoipRecordECNR::kSampleRate);
-                LOG(INFO) << __func__ << mLogPrefixOEM << " ecnrSampleRate:  " << ecnrSampleRate << " encrPeriodSize: "<< ecnrPeriodSize;
+            if((vocoder_rate == 8000) || (vocoder_rate == 16000) || (vocoder_rate == 24000)) {
+                ecnrSampleRate = 24000;
+            } else if(vocoder_rate == 32000) {
+                ecnrSampleRate = 32000;
+            } else if(vocoder_rate == 48000) {
+                ecnrSampleRate = 48000;
+            }
+            VoipRecordECNR::kSampleRate = ecnrSampleRate;
+            ecnrPeriodSize = UsecaseConfig<VoipRecordECNR>::getULECNRPeriodSize(VoipRecordECNR::kSampleRate);
+            LOG(INFO) << __func__ << mLogPrefixOEM << " ecnrSampleRate:  " << ecnrSampleRate << " encrPeriodSize: "<< ecnrPeriodSize;
 
 #endif
 #ifdef ECNR_HAL_TUNE
-                portid = ECNR_PORT_ID_VOIP_TX_2014;
+            portid = ECNR_PORT_ID_VOIP_TX_2014;
 #endif
-            } else {
-                attr->type = PAL_STREAM_CAPTURE_BUS;
-                pECNR_ProcessData.ecnr_type = ECNR_TYPE_VR;
-#ifdef ECNR_HAL_TUNE
-                portid = ECNR_PORT_ID_VR_TX_2016;
-#endif
-            }
         } else if (conn_type >= 0) {
             bECNR_Enable = true;
             LOG(INFO) << __func__ << " bECNR_Enable " << bECNR_Enable;

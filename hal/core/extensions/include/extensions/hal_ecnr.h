@@ -253,7 +253,7 @@ class HalECNRExtension {
 
     void audio_extn_ecnrGetVersion();
     int audio_extn_ecnrSetConfigData(tECNR_Main*   pMain, const void* const pCfgData, const unsigned int uCfgDataSize);
-    int audio_extn_getSCDtype(uint32_t sample_Rate, uint32_t vocoder_rate, uint32_t ecnr_type, uint32_t connection_type, uint32_t dir);
+    int audio_extn_getSCDtype(uint32_t sample_Rate, int vocoder_rate, uint32_t ecnr_type, int connection_type, uint32_t dir);
     int audio_extn_fillSCDbuffer(char * scd_file_name, uint32_t** scd_buffer, uint32_t* scd_buffer_size);
     int audio_extn_getSCDdata(tECNR_ProcessData* pECNR_ProcessData, uint32_t dir);
     int audio_extn_setupECNR( tECNR_ProcessData* pECNR_ProcessData);
