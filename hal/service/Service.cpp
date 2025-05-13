@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -16,6 +16,9 @@
 #include <string>
 #include <vector>
 
+#include <thread>
+#include <mutex>
+
 #include <android-base/logging.h>
 #include <android-base/properties.h>
 #include <android/binder_ibinder_platform.h>
@@ -27,6 +30,40 @@
 
 #define REGISTER_RETRY_COUNT 10
 #define SLEEP_TIME_SECONDS 1
+
+#define AHAL_INIT_TIMEOUT 30
+
+enum class StubMode {
+    STUB_DISABLED = 0,
+    STUB_ENABLED = 1 << 0,
+    AUTO_RECOVERY_ENABLED = 1 << 2,
+};
+
+static void dumpAudioStatus()
+{
+    const char* dump_path[] = { "/d/asoc/components",
+                                "/proc/asound/cards"};
+    FILE *fp;
+    char dumpString[1024];
+
+    for (size_t i = 0; i < sizeof(dump_path) / sizeof(dump_path[0]); i++) {
+        fp = fopen(dump_path[i], "r");
+        if (fp == NULL) {
+            ALOGE("Failed to open path: %s", dump_path[i]);
+            continue;
+        }
+        ALOGI("Dump of %s", dump_path[i]);
+        while (fgets(dumpString, sizeof(dumpString), fp) != NULL) {
+            ALOGI("%s", dumpString);
+        }
+        fclose(fp);
+    }
+}
+
+static bool isStubMode(StubMode stubMode)
+{
+    return stubMode == StubMode::STUB_ENABLED;
+}
 
 static bool registerServiceImplementation(const Interface& interface) {
     auto libraryName = interface.libraryName;
@@ -86,6 +123,7 @@ bool registerFromConfigs() {
 
 /*
 * Don't modify default entries unless the library is a must for stub mode bootup.
+* These interfaces will be loaded when vendor.audio.hal.stubmode is 1
 */
 void registerDefaultInterfaces() {
     Interfaces defaultInterfaces = {
@@ -97,6 +135,10 @@ void registerDefaultInterfaces() {
              .libraryName = "libaudioeffecthal.qti.so",
              .method = "registerService",
              .mandatory = true},
+            {.name = "soundtriggerhal",
+             .libraryName = "libsoundtriggerhal.qti.so",
+             .method = "createISoundTriggerFactory",
+             .mandatory = true},
             {.name = "bthal",
              .libraryName = "android.hardware.bluetooth.audio_sw.so",
              .method = "registerIModuleBluetoothSWQti",
@@ -107,8 +149,8 @@ void registerDefaultInterfaces() {
 }
 
 void registerAvailableInterfaces() {
-    auto stubmode = ::android::base::GetIntProperty<int8_t>("vendor.audio.hal.stubmode", 0);
-    if (stubmode || !registerFromConfigs()) {
+    StubMode stubmode = (StubMode)::android::base::GetIntProperty("vendor.audio.hal.stubmode", 0);
+    if (isStubMode(stubmode) || !registerFromConfigs()) {
         ALOGI("registerDefaultInterfaces stub mode %d", stubmode);
         registerDefaultInterfaces();
     }
@@ -121,16 +163,47 @@ void setLogSeverity() {
     android::base::SetMinimumLogSeverity(static_cast<::android::base::LogSeverity>(logLevel));
 }
 
+static std::mutex halInitMutex;
+static std::condition_variable halInitCv;
+static bool isHalInit = false;
+
+void halMonitorThread() {
+    std::unique_lock<std::mutex> lck(halInitMutex);
+    while (!isHalInit) {
+        std::cv_status status =
+             halInitCv.wait_for(lck,std::chrono::seconds(AHAL_INIT_TIMEOUT));
+        if (status == std::cv_status::timeout) {
+            dumpAudioStatus();
+            StubMode stubmode = (StubMode)
+                ::android::base::GetIntProperty("vendor.audio.hal.stubmode", 0);
+            if (stubmode == StubMode::AUTO_RECOVERY_ENABLED) {
+                android::base::SetProperty("vendor.audio.hal.stubmode",
+                    std::to_string((int)StubMode::STUB_ENABLED));
+                LOG(ERROR) << __func__ << ": Enable Stub Audio";
+            }
+            LOG_ALWAYS_FATAL("AHAL init took more than %d S, rebooting...", AHAL_INIT_TIMEOUT);
+        }
+    }
+}
+
 int main() {
     auto startTime = std::chrono::steady_clock::now();
     // Random values are used in the implementation.
     std::srand(std::time(nullptr));
+    std::thread monitorThread(halMonitorThread);
     setLogSeverity();
 
     ABinderProcess_setThreadPoolMaxThreadCount(16);
     ABinderProcess_startThreadPool();
 
     registerAvailableInterfaces();
+
+    halInitMutex.lock();
+    isHalInit = true;
+    halInitMutex.unlock();
+    halInitCv.notify_one();
+    monitorThread.join();
+
     auto endTime = std::chrono::steady_clock::now();
     float timeTaken =
             std::chrono::duration_cast<std::chrono::duration<float>>(endTime - startTime).count();
