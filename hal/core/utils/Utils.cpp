@@ -130,6 +130,11 @@ bool hasBluetoothA2dpDevice(const std::vector<AudioDevice>& devices) noexcept {
     return itr != devices.cend();
 }
 
+bool isBluetoothLEBroadcastDevice(const AudioDevice& device) noexcept {
+    return (device.type.type ==  AudioDeviceType::OUT_BROADCAST &&
+            device.type.connection == AudioDeviceDescription::CONNECTION_BT_LE);
+}
+
 bool hasInputMMapFlag(const AudioIoFlags& ioFlags) noexcept {
     if (ioFlags.getTag() == AudioIoFlags::Tag::input) {
         constexpr auto inputMMapFlag = static_cast<int32_t>(

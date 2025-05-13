@@ -293,8 +293,9 @@ void Telephony::onExternalDeviceConnectionChanged(const AudioDevice& extDevice,
                                                   const bool& connect) {
     std::scoped_lock lock{mLock};
     // Placeholder for telephony to act upon external device connection
-    if (isBluetoothSCODevice(extDevice) || isBluetoothA2dpDevice(extDevice)) {
-        LOG(VERBOSE) << __func__ << ": sco/a2dp no change";
+    if (isBluetoothSCODevice(extDevice) || isBluetoothA2dpDevice(extDevice) ||
+        isBluetoothLEBroadcastDevice(extDevice)) {
+        LOG(VERBOSE) << __func__ << ": sco/a2dp/ble broadcast no change";
         return;
     }
     if (isAnyCallActive() || mAudioMode == AudioMode::IN_CALL) {
