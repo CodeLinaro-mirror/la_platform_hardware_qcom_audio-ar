@@ -956,9 +956,11 @@ pal_stream_handle_t* HotwordRecord::getPalHandle(
         return nullptr;
     }
 
-    mIsStRecord = true;
-    LOG(DEBUG) << __func__ << ": sound trigger pal handle " << stCaptureInfo.pal_handle
-               << " for IOHandle  " << ioHandle;
+    if (!mIsStRecord) {
+        mIsStRecord = true;
+        LOG(DEBUG) << __func__ << ": sound trigger pal handle " << stCaptureInfo.pal_handle
+                << " for IOHandle  " << ioHandle;
+    }
 
     return stCaptureInfo.pal_handle;
 }
