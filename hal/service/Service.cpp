@@ -107,6 +107,7 @@ void setLogSeverity() {
 }
 
 int main() {
+    float timeTaken = 0.0f;
     auto startTime = std::chrono::steady_clock::now();
     // Random values are used in the implementation.
     std::srand(std::time(nullptr));
@@ -117,7 +118,7 @@ int main() {
 
     registerAvailableInterfaces();
     auto endTime = std::chrono::steady_clock::now();
-    float timeTaken =
+    timeTaken =
             std::chrono::duration_cast<std::chrono::duration<float>>(endTime - startTime).count();
     ALOGI("registration took %.2f seconds ", timeTaken);
     ABinderProcess_joinThreadPool();
