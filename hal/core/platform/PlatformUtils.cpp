@@ -265,4 +265,37 @@ bool makePalDeviceAddress(const AudioDeviceAddress& address, pal_device* const p
     return true;
 }
 
+bool compare(const pal_device& device1, const pal_device& device2) {
+    if (device1.id != device2.id) {
+        return false;
+    }
+
+    PalAddressTag tag1 = getAddressTag(device2.id);
+    PalAddressTag tag2 = getAddressTag(device2.id);
+
+    if (tag1 != tag2) {
+        return false;
+    }
+
+    switch (tag1) {
+        case PalAddressTag::ID:
+            return std::memcmp(device1.addressV1.id, device2.addressV1.id,
+                               sizeof(device1.addressV1.id)) == 0;
+        case PalAddressTag::MAC:
+            return std::memcmp(device1.addressV1.mac, device2.addressV1.mac,
+                               sizeof(device1.addressV1.mac)) == 0;
+        case PalAddressTag::ALSA:
+            return std::memcmp(device1.addressV1.alsa, device2.addressV1.alsa,
+                               sizeof(device1.addressV1.alsa)) == 0;
+        case PalAddressTag::IPv4:
+            return std::memcmp(device1.addressV1.ipv4, device2.addressV1.ipv4,
+                               sizeof(device1.addressV1.ipv4)) == 0;
+        case PalAddressTag::IPv6:
+            return std::memcmp(device1.addressV1.ipv6, device2.addressV1.ipv6,
+                               sizeof(device1.addressV1.ipv6)) == 0;
+        default:
+            return false;
+    }
+}
+
 } // namespace qti::audio::core
