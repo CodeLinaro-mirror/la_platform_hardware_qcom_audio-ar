@@ -218,6 +218,53 @@ bool Telephony::isValidDevice(const AudioDevice& rxDevice) {
     return true;
 }
 
+bool Telephony::isUsbDeviceConnected(const AudioDevice& usbDevice) {
+    const auto& deviceAddress = usbDevice.address;
+    if (deviceAddress.getTag() != AudioDeviceAddress::Tag::alsa) {
+        LOG(ERROR) << __func__ << " no alsa address provided for the AudioPort "
+                   << usbDevice.toString();
+        return false;
+    }
+
+    const auto& deviceAddressAlsa = deviceAddress.get<AudioDeviceAddress::Tag::alsa>();
+    if (!isValidAlsaAddr(deviceAddressAlsa)) {
+        LOG(ERROR) << __func__ << " failed to find alsa address for given usb device ";
+        return false;
+    }
+    const auto cardId = deviceAddressAlsa[0];
+    const auto deviceId = deviceAddressAlsa[1];
+    auto deviceCapability = std::make_unique<pal_param_device_capability_t>();
+    if (!deviceCapability) {
+        LOG(ERROR) << __func__ << ": allocation failed ";
+        return false;
+     }
+    auto dynamicMediaConfig = std::make_unique<dynamic_media_config_t>();
+    if (!dynamicMediaConfig) {
+         LOG(ERROR) << __func__ << ": allocation failed ";
+         return false;
+    }
+    size_t payloadSize = 0;
+    deviceCapability->addr.card_id = cardId;
+    deviceCapability->addr.device_num = deviceId;
+    deviceCapability->config = dynamicMediaConfig.get();
+    if (isOutputDevice(usbDevice)) {
+        deviceCapability->id = PAL_DEVICE_OUT_USB_HEADSET;
+        deviceCapability->is_playback = true;
+    } else {
+        deviceCapability->id = PAL_DEVICE_IN_USB_HEADSET;
+        deviceCapability->is_playback = false;
+    }
+
+    void* deviceCapabilityPtr = deviceCapability.get();
+    if (int32_t ret = pal_get_param(PAL_PARAM_ID_DEVICE_CAPABILITY, &deviceCapabilityPtr,
+                                    &payloadSize, nullptr);
+        ret != 0) {
+        LOG(ERROR) << __func__ << " PAL get param failed for PAL_PARAM_ID_DEVICE_CAPABILITY" << ret;
+        return false;
+    }
+    return true;
+}
+
 void Telephony::resetDevices(const bool resetRx) {
     std::scoped_lock lock{mLock};
     LOG(VERBOSE) <<__func__<<": ignore reset device ";
@@ -237,12 +284,15 @@ void Telephony::setDevices(const std::vector<AudioDevice>& devices, const bool u
         mTxDevice = getMatchingTxDevice(mRxDevice);
         updateDevices();
     } else {
-        /* TX devices update only when call already start. Because Rx
-         * devices patch is set first to setup call.
+        /* USB TX capability is ready may later then USB RX devices. Here is to update
+         * TX device if voice call already start on USB RX devices.
          */
         if (isAnyCallActive() &&
             (mTxDevice.type.type != devices[0].type.type)) {
-            mTxDevice = devices[0];
+            if (isUsbDevice(devices[0]) && isUsbDevice(mRxDevice)) {
+                if (isUsbDeviceConnected(devices[0]))
+                    mTxDevice = devices[0];
+            }
             updateDevices();
        }
     }
@@ -463,11 +513,17 @@ AudioDevice Telephony::getMatchingTxDevice(const AudioDevice& rxDevice) {
     } else if ((rxDevice.type.type == AudioDeviceType::OUT_DEVICE ||
                 rxDevice.type.type == AudioDeviceType::OUT_HEADSET) &&
                rxDevice.type.connection == AudioDeviceDescription::CONNECTION_USB) {
-        if (mPlatform.getUSBCapEnable()) {
-            return AudioDevice{.type.type = AudioDeviceType::IN_HEADSET,
-                               .type.connection = AudioDeviceDescription::CONNECTION_USB,
-                               .address = rxDevice.address};
+        if (isUsbDeviceConnected(rxDevice)) {
+            if (mPlatform.getUSBCapEnable()) {
+                return AudioDevice{.type.type = AudioDeviceType::IN_HEADSET,
+                                   .type.connection = AudioDeviceDescription::CONNECTION_USB,
+                                   .address = rxDevice.address};
+            } else {
+                return AudioDevice{.type.type = AudioDeviceType::IN_MICROPHONE};
+            }
         } else {
+            LOG(DEBUG) << __func__ << ": usb device is not connected ";
+            mRxDevice = kDefaultRxDevice;
             return AudioDevice{.type.type = AudioDeviceType::IN_MICROPHONE};
         }
     } else if (rxDevice.type.type == AudioDeviceType::OUT_HEARING_AID) {
