@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 #define LOG_TAG "AHAL_Usecase_QTI"
@@ -19,7 +19,7 @@ using ::aidl::android::media::audio::common::AudioIoFlags;
 using ::aidl::android::media::audio::common::AudioInputFlags;
 using ::aidl::android::media::audio::common::AudioOutputFlags;
 using ::aidl::android::media::audio::common::AudioSource;
-using ::aidl::android::media::audio::common::AudioStreamType;
+using ::aidl::android::media::audio::common::AudioFormatType;
 using ::aidl::android::media::audio::common::AudioPortConfig;
 using ::aidl::android::media::audio::common::AudioPortExt;
 using ::aidl::android::media::audio::common::AudioPortMixExtUseCase;
@@ -378,18 +378,21 @@ CompressPlayback::CompressPlayback(
 
 void CompressPlayback::configureDefault() {
     mSampleRate = mOffloadInfo.base.sampleRate;
-    mCompressFormat = mOffloadInfo.base.format;
+    mFormat = mOffloadInfo.base.format;
     mChannelLayout = mOffloadInfo.base.channelMask;
     mBitWidth = mOffloadInfo.bitWidth;
+    if (mFormat.type == AudioFormatType::PCM) {
+        mPcmOffload = true;
+    }
 
-    if (mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_MP4 ||
-        mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_ADIF ||
-        mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_ADTS ||
-        mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC ||
-        mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_HE_V1 ||
-        mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_HE_V2 ||
-        mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_ADTS_LC ||
-        mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_LC) {
+    if (mFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_MP4 ||
+        mFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_ADIF ||
+        mFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_ADTS ||
+        mFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC ||
+        mFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_HE_V1 ||
+        mFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_HE_V2 ||
+        mFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_ADTS_LC ||
+        mFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_LC) {
         mPalSndDec.aac_dec.audio_obj_type = 29;
         mPalSndDec.aac_dec.pce_bits_size = 0;
     }
@@ -451,9 +454,9 @@ ndk::ScopedAStatus CompressPlayback::setVendorParameters(
         const std::vector<::aidl::android::hardware::audio::core::VendorParameter>& in_parameters,
         bool in_async) {
     LOG(VERBOSE) << __func__ << ": parameter count:" << in_parameters.size() << " parsing for "
-                 << mCompressFormat.encoding;
+                 << mFormat.encoding;
     bool isCompressMetadataAvail = false;
-    if (mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_FLAC) {
+    if (mFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_FLAC) {
         if (auto value = getIntValueFromVString(in_parameters, Flac::kMinBlockSize); value) {
             mPalSndDec.flac_dec.min_blk_size = value.value();
             isCompressMetadataAvail = true;
@@ -472,7 +475,7 @@ ndk::ScopedAStatus CompressPlayback::setVendorParameters(
         }
         // exception
         mPalSndDec.flac_dec.sample_size = (mBitWidth == 32) ? 24 : mBitWidth;
-    } else if (mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_ALAC) {
+    } else if (mFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_ALAC) {
         if (auto value = getIntValueFromVString(in_parameters, Alac::kFrameLength); value) {
             mPalSndDec.alac_dec.frame_length = value.value();
             isCompressMetadataAvail = true;
@@ -521,19 +524,19 @@ ndk::ScopedAStatus CompressPlayback::setVendorParameters(
             mPalSndDec.alac_dec.channel_layout_tag = value.value();
             isCompressMetadataAvail = true;
         }
-    } else if (mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_MP4 ||
-               mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_ADIF ||
-               mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_ADTS ||
-               mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC) {
+    } else if (mFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_MP4 ||
+               mFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_ADIF ||
+               mFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_ADTS ||
+               mFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC) {
         mPalSndDec.aac_dec.audio_obj_type = 29;
         mPalSndDec.aac_dec.pce_bits_size = 0;
         isCompressMetadataAvail = true;
-    } else if (mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_VORBIS) {
+    } else if (mFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_VORBIS) {
         if (auto value = getIntValueFromVString(in_parameters, Vorbis::kBitStreamFormat); value) {
             mPalSndDec.vorbis_dec.bit_stream_fmt = value.value();
             isCompressMetadataAvail = true;
         }
-    } else if (mCompressFormat.encoding == "audio/x-ape") {
+    } else if (mFormat.encoding == "audio/x-ape") {
         if (auto value = getIntValueFromVString(in_parameters, Ape::kCompatibleVersion); value) {
             mPalSndDec.ape_dec.compatible_version = value.value();
             isCompressMetadataAvail = true;
@@ -574,8 +577,8 @@ ndk::ScopedAStatus CompressPlayback::setVendorParameters(
             mPalSndDec.ape_dec.seek_table_present = value.value();
             isCompressMetadataAvail = true;
         }
-    } else if (mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_WMA ||
-               mCompressFormat.encoding == "audio/x-ms-wma.pro") {
+    } else if (mFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_WMA ||
+               mFormat.encoding == "audio/x-ms-wma.pro") {
         if (auto value = getIntValueFromVString(in_parameters, Wma::kFormatTag); value) {
             mPalSndDec.wma_dec.fmt_tag = value.value();
             isCompressMetadataAvail = true;
@@ -608,7 +611,7 @@ ndk::ScopedAStatus CompressPlayback::setVendorParameters(
             mPalSndDec.wma_dec.encodeopt2 = value.value();
             isCompressMetadataAvail = true;
         }
-    } else if (mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_OPUS) {
+    } else if (mFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_OPUS) {
         if (auto value = getIntValueFromVString(in_parameters, Opus::kBitStreamFormat); value) {
             mPalSndDec.opus_dec.bitstream_format = value.value();
             isCompressMetadataAvail = true;
