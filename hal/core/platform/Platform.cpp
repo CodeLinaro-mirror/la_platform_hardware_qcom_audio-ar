@@ -330,6 +330,19 @@ std::vector<pal_device> Platform::convertToPalDevices(
             } else {
                 return {};
             }
+        } else if (isBluetoothDevice(device)) {
+            const auto& deviceAddress = device.address;
+            if (deviceAddress.getTag() != AudioDeviceAddress::Tag::mac) {
+                LOG(ERROR) << __func__ << " failed to find mac address for given bt device "
+                           << device.toString();
+                return {};
+            }
+            const auto& deviceAddressMac = deviceAddress.get<AudioDeviceAddress::Tag::mac>();
+            if (!isValidMacAddr(deviceAddressMac))
+                return {};
+            if (auto p = this->mPlatformGlobalCallback;p != nullptr) {
+                p->updateActiveDevicesMap(device.address,palDeviceId);
+            }
         }
         i++;
     }
@@ -1147,6 +1160,22 @@ bool Platform::isSoundCardDown() const noexcept {
     return false;
 }
 
+bool Platform::isValidMacAddr(const std::vector<uint8_t>& macAddress) const noexcept {
+    if (macAddress.size() != 6) {
+        LOG(ERROR) << __func__ << ": malformed MAC address: "
+                               << ::android::internal::ToString(macAddress);
+        return false;
+    }
+    for (const auto& byte : macAddress) {
+        if (byte < 0 || byte > 255) {
+            LOG(ERROR) << __func__ << ": invalid byte in MAC address: "
+                       << static_cast<int>(byte);
+            return false;
+        }
+    }
+    return true;
+}
+
 uint32_t Platform::getBluetoothLatencyMs(const std::vector<AudioDevice>& bluetoothDevices) {
     pal_param_bta2dp_t btConfig{};
     pal_param_bta2dp_t *param_bt_a2dp_ptr = &btConfig;
@@ -1412,10 +1441,17 @@ std::string Platform::toString() const {
 // static
 int Platform::palGlobalCallback(uint32_t event_id, uint32_t* event_data, uint64_t cookie) {
     auto platform = reinterpret_cast<Platform*>(cookie);
+    void* const eventData = static_cast<void*>(event_data);
     switch (event_id) {
         case PAL_SND_CARD_STATE:
             platform->mSndCardStatus = static_cast<card_status_t>(*event_data);
             LOG(INFO) << __func__ << " card status changed to " << platform->mSndCardStatus;
+            break;
+        case PAL_SOUND_DOSE_INFO:
+            LOG(INFO) << __func__ << "received Sound Dose event";
+            if (auto p = platform->mPlatformGlobalCallback;p != nullptr) {
+                p->onSoundDose(event_data);
+            }
             break;
         default:
             LOG(ERROR) << __func__ << " invalid event id" << event_id;
@@ -1490,6 +1526,10 @@ Platform& Platform::getInstance() {
         return std::move(platform);
     }();
     return *(kPlatform.get());
+}
+
+void Platform::registerPlatformGlobalCallBack(PlatformGlobalCallback* platformGlobalCallback) {
+    mPlatformGlobalCallback = platformGlobalCallback;
 }
 
 } // namespace qti::audio::core

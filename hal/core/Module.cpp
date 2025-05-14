@@ -33,7 +33,6 @@
 #include <error/expected_utils.h>
 
 #include <qti-audio-core/Module.h>
-#include <qti-audio-core/SoundDose.h>
 #include <qti-audio-core/Utils.h>
 
 using aidl::android::hardware::audio::common::SinkMetadata;

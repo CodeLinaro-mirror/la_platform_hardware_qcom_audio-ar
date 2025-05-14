@@ -33,11 +33,11 @@
 #include <qti-audio-core/ModuleConfig.h>
 #include <qti-audio-core/Stream.h>
 #include <qti-audio-core/Telephony.h>
+#include <qti-audio-core/SoundDose.h>
 
 namespace qti::audio::core {
 
-class Module : public ::aidl::android::hardware::audio::core::BnModule,
-               public std::enable_shared_from_this<Module> {
+class Module : public ::aidl::android::hardware::audio::core::BnModule {
   public:
     enum Type : int { DEFAULT, R_SUBMIX, STUB, USB };
 
@@ -172,7 +172,7 @@ class Module : public ::aidl::android::hardware::audio::core::BnModule,
     Patches mPatches;
     bool mMasterMute = false;
     float mMasterVolume = 1.0f;
-    ChildInterface<::aidl::android::hardware::audio::core::sounddose::ISoundDose> mSoundDose;
+    ChildInterface<SoundDose> mSoundDose;
     std::optional<bool> mIsMmapSupported;
 
   protected:

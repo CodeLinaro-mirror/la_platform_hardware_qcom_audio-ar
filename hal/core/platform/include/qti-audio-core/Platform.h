@@ -16,6 +16,7 @@
 #include <aidl/android/media/audio/common/MicrophoneDynamicInfo.h>
 #include <aidl/android/media/audio/common/MicrophoneInfo.h>
 #include <qti-audio-core/AudioUsecase.h>
+#include <qti-audio-core/PlatformGlobalCallback.h>
 #include <system/audio.h>
 
 #include <unordered_map>
@@ -96,6 +97,7 @@ class Platform {
             getMicrophoneDynamicInfo(
                     const std::vector<::aidl::android::media::audio::common::AudioDevice>& devices);
 
+    void registerPlatformGlobalCallBack(PlatformGlobalCallback* cb);
     bool setParameter(const std::string& key, const std::string& value);
     bool setBluetoothParameters(const char* kvpairs);
     bool setVendorParameters(
@@ -108,6 +110,7 @@ class Platform {
     bool isSoundCardUp() const noexcept;
     bool isSoundCardDown() const noexcept;
 
+    bool isValidMacAddr(const std::vector<uint8_t>& macAddress) const noexcept;
     size_t getMinimumStreamSizeFrames(
             const std::vector<::aidl::android::media::audio::common::AudioPortConfig*>& sources,
             const std::vector<::aidl::android::media::audio::common::AudioPortConfig*>& sinks);
@@ -371,5 +374,6 @@ class Platform {
     // proxy related info
     size_t mProxyRecordFMQSize{0};
     std::weak_ptr<::aidl::android::hardware::audio::core::ITelephony> mTelephony;
+    PlatformGlobalCallback* mPlatformGlobalCallback = nullptr;
 };
 } // namespace qti::audio::core
