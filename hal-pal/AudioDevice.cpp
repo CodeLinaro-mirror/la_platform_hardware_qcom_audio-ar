@@ -2135,6 +2135,39 @@ int AudioDevice::SetParameters(const char *kvpairs) {
             sizeof(pal_param_bta2dp_t));
     }
 
+    ret = str_parms_get_str(parms, "asrc_start", value, sizeof(value));
+    if (ret >= 0) {
+        AHAL_DBG("Getting ASRC parameters starts! ");
+        typedef struct {
+            uint32_t effective;
+            uint32_t ratio;
+            uint32_t ramp;
+        } asrc_ratio_t;
+        asrc_ratio_t asrc_ratio = {0,0,0};
+
+        ret = str_parms_get_str(parms, "asrc_effective", value, sizeof(value));
+        if (ret >= 0) {
+            sscanf(value, "%x", &(asrc_ratio.effective));
+            AHAL_DBG("asrc eff = %x", asrc_ratio.effective);
+        }
+
+        ret = str_parms_get_str(parms, "asrc_ratio", value, sizeof(value));
+        if (ret >= 0) {
+            sscanf(value, "%x", &(asrc_ratio.ratio));
+            AHAL_DBG("asrc ratio = %x", asrc_ratio.ratio);
+        }
+
+        ret = str_parms_get_str(parms, "asrc_ramp", value, sizeof(value));
+        if (ret >= 0) {
+            sscanf(value, "%x", &(asrc_ratio.ramp));
+            AHAL_DBG("asrc ramp = %x", asrc_ratio.ramp);
+        }
+
+        ret = pal_set_param(PAL_PARAM_ID_ASRC, &asrc_ratio, sizeof(asrc_ratio));
+            str_parms_destroy(parms);
+            goto exit;
+    }
+
     str_parms_destroy(parms);
 
 exit:
