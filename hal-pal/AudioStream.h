@@ -611,7 +611,7 @@ public:
     int RouteStream(const std::set<audio_devices_t>& new_devices);
     int64_t GetSourceLatency(audio_input_flags_t halStreamFlags);
     uint64_t GetFramesRead(int64_t *time);
-    int GetPalDeviceIds(pal_device_id_t *palDevIds, int *numPalDevs);
+    int GetPalDeviceIds(pal_device_id_t *palDevIds, int *numPalDevs, const char *address);
 protected:
     struct timespec readAt;
     uint32_t fragments_ = 0;

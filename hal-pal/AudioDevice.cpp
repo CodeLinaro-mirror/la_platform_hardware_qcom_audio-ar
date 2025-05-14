@@ -2385,7 +2385,7 @@ int AudioDevice::GetPalDeviceIds(const std::set<audio_devices_t> &hal_device_ids
                 pal_device_id[device_count] = PAL_DEVICE_IN_HANDSET_MIC;
             }
             AHAL_DBG("Found haldeviceId: %x and PAL Device ID %d",
-                     AUDIO_DEVICE_OUT_BUS, pal_device_id[device_count]);
+                     AUDIO_DEVICE_IN_BUS, pal_device_id[device_count]);
             ++device_count;
             continue;
         }
@@ -2572,6 +2572,7 @@ int32_t AudioDevice::get_microphones(struct audio_microphone_characteristic_t *m
 void AudioDevice::process_microphone_characteristics(const XML_Char **attr)
 {
     struct audio_microphone_characteristic_t microphone;
+    microphone.device = AUDIO_DEVICE_NONE;
     uint32_t curIdx = 0;
     uint32_t valid_mask;
 
