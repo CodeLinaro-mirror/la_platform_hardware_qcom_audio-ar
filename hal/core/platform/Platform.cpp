@@ -312,16 +312,21 @@ std::vector<pal_device> Platform::convertToPalDevices(
         palDevices[i].config.bit_width = kDefaultPCMBidWidth;
         palDevices[i].config.aud_fmt_id = kDefaultPalPCMFormat;
 
+        const auto& deviceAddress = device.address;
+        // validate devices and fillAddress
+        if (!makePalDeviceAddress(deviceAddress, &palDevices[i])) {
+            LOG(ERROR) << __func__ << " failed to validate address for " << device.toString();
+            return {};
+        }
+
         if (isUsbDevice(device)) {
-            const auto& deviceAddress = device.address;
             if (deviceAddress.getTag() != AudioDeviceAddress::Tag::alsa) {
                 LOG(ERROR) << __func__ << " failed to find alsa address for given usb device "
                            << device.toString();
                 return {};
             }
             const auto& deviceAddressAlsa = deviceAddress.get<AudioDeviceAddress::Tag::alsa>();
-            if (!isValidAlsaAddr(deviceAddressAlsa))
-                return {};
+
             palDevices[i].address.card_id = deviceAddressAlsa[0];
             palDevices[i].address.device_num = deviceAddressAlsa[1];
         } else if (isHdmiDevice(device)) {
@@ -338,12 +343,12 @@ std::vector<pal_device> Platform::convertToPalDevices(
                 return {};
             }
             const auto& deviceAddressMac = deviceAddress.get<AudioDeviceAddress::Tag::mac>();
-            if (!isValidMacAddr(deviceAddressMac))
-                return {};
-            if (auto p = this->mPlatformGlobalCallback;p != nullptr) {
-                p->updateActiveDevicesMap(device.address,palDeviceId);
+
+            if (auto p = this->mPlatformGlobalCallback; p != nullptr) {
+                p->updateActiveDevicesMap(device.address, palDeviceId);
             }
         }
+
         i++;
     }
     if (devices.size() == 2 && isHdmiDevice(devices[0]) && isHdmiDevice(devices[1])) {
@@ -584,7 +589,6 @@ int Platform::handleDeviceConnectionChange(const AudioPort& deviceAudioPort,
         return -EINVAL;
     }
 
-    void* v = nullptr;
     const auto deviceConnection = std::make_unique<pal_param_device_connection_t>();
     if (!deviceConnection) {
         LOG(ERROR) << __func__ << ": allocation failed ";
@@ -594,18 +598,28 @@ int Platform::handleDeviceConnectionChange(const AudioPort& deviceAudioPort,
     deviceConnection->connection_state = isConnect;
     deviceConnection->id = palDeviceId;
 
+    const auto& deviceAddress = devicePortExt.device.address;
+    const auto& addressTag = devicePortExt.device.address.getTag();
+
+    // validate devices and fillAddress
+    if (!makePalDeviceAddress(deviceAddress, &(deviceConnection.get()->device))) {
+        LOG(ERROR) << __func__ << ": failed to validate address for " << deviceAudioPort.toString();
+        return -EINVAL;
+    }
+
     if (isUsbDevice(devicePortExt.device)) {
-        const auto& addressTag = devicePortExt.device.address.getTag();
         if (addressTag != AudioDeviceAddress::Tag::alsa) {
             LOG(ERROR) << __func__ << ": no alsa address provided for the AudioPort"
                        << deviceAudioPort.toString();
             return -EINVAL;
         }
+
+        // makePalDeviceAddress validates the address, so we can safely use it here
+        // TODO move away from using card_id/device_num once we can directly use new
+        // address fields.
         const auto& deviceAddressAlsa =
                 devicePortExt.device.address.get<AudioDeviceAddress::Tag::alsa>();
-        if (!isValidAlsaAddr(deviceAddressAlsa)) {
-            return -EINVAL;
-        }
+
         const auto cardId = deviceAddressAlsa[0];
         const auto deviceId = deviceAddressAlsa[1];
         deviceConnection->device_config.usb_addr.card_id = cardId;
@@ -619,14 +633,15 @@ int Platform::handleDeviceConnectionChange(const AudioPort& deviceAudioPort,
         } else {
             return -EINVAL;
         }
-    }  else if (isIPDevice(devicePortExt.device)) {
-           if (!isIPAsProxyDeviceConnected()) {
-                return -EINVAL;
-           }
+    } else if (isIPDevice(devicePortExt.device)) {
+        if (!isIPAsProxyDeviceConnected()) {
+            return -EINVAL;
+        }
     }
 
-    v = deviceConnection.get();
-    if (int32_t ret = ::pal_set_param(PAL_PARAM_ID_DEVICE_CONNECTION, v,
+    void* devConnectionPtr = deviceConnection.get();
+
+    if (int32_t ret = ::pal_set_param(PAL_PARAM_ID_DEVICE_CONNECTION, devConnectionPtr,
                                       sizeof(pal_param_device_connection_t));
         ret != 0) {
         LOG(ERROR) << __func__ << ": pal_set_param failed for PAL_PARAM_ID_DEVICE_CONNECTION for "
@@ -1158,22 +1173,6 @@ bool Platform::isSoundCardDown() const noexcept {
         return true;
     }
     return false;
-}
-
-bool Platform::isValidMacAddr(const std::vector<uint8_t>& macAddress) const noexcept {
-    if (macAddress.size() != 6) {
-        LOG(ERROR) << __func__ << ": malformed MAC address: "
-                               << ::android::internal::ToString(macAddress);
-        return false;
-    }
-    for (const auto& byte : macAddress) {
-        if (byte < 0 || byte > 255) {
-            LOG(ERROR) << __func__ << ": invalid byte in MAC address: "
-                       << static_cast<int>(byte);
-            return false;
-        }
-    }
-    return true;
 }
 
 uint32_t Platform::getBluetoothLatencyMs(const std::vector<AudioDevice>& bluetoothDevices) {
