@@ -84,6 +84,9 @@ std::vector<std::weak_ptr<::qti::audio::core::StreamIn>> ModulePrimary::mStreams
 
 std::vector<float> qti::audio::core::MuteConfig::getVol = {0.3f, 0.3f};
 
+// changed to global to make use of LPM and SSR usecases
+bool is_muted = false;
+
 std::mutex ModulePrimary::outListMutex;
 std::mutex ModulePrimary::inListMutex;
 
@@ -624,7 +627,6 @@ void ModulePrimary::onSetGenericParameters(const std::vector<VendorParameter>& p
 
 void MuteConfig::set_mute_config_for_address(char* address, bool muted, float volume) {
     LOG(DEBUG) << __func__ << ": Enter, muted: " << muted << ", address: " << address;
-    bool is_muted = false;
 
     ModulePrimary::outListMutex.lock();
 
@@ -650,6 +652,10 @@ void MuteConfig::set_mute_config_for_address(char* address, bool muted, float vo
                     (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(stream))->setHwVolume(vol);
                     LOG(DEBUG)<<"volume set :"<<vol[0];
                } else {
+                    if((getVol == std::vector<float>{0.0f,0.0f}) && is_muted) {
+                        LOG(DEBUG)<<"getVol need to update to default value after LPM";
+                        getVol = {0.3f,0.3f};
+                    }
                     (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(stream))->setHwVolume(getVol);
                     is_muted  = false;
                 }
