@@ -41,17 +41,25 @@ SOONG_CONFIG_qtiaudio_var00 := false
 SOONG_CONFIG_qtiaudio_var11 := false
 SOONG_CONFIG_qtiaudio_var22 := false
 SOONG_CONFIG_qtiaudio_hwasan := false
+SOONG_CONFIG_qtiaudio_hy00 := false
+SOONG_CONFIG_qtiaudio_hy11 := false
+SOONG_CONFIG_qtiaudio_hy22 := false
 
 ifneq ($(BUILD_AUDIO_TECHPACK_SOURCE), true)
     SOONG_CONFIG_qtiaudio_var00 := true
     SOONG_CONFIG_qtiaudio_var11 := true
     SOONG_CONFIG_qtiaudio_var22 := true
+	SOONG_CONFIG_qtiaudio_hy00 := true
+	SOONG_CONFIG_qtiaudio_hy11 := true
+	SOONG_CONFIG_qtiaudio_hy22 := true
 endif
 ifeq (,$(wildcard $(QCPATH)/mm-audio-noship))
     SOONG_CONFIG_qtiaudio_var11 := true
+	SOONG_CONFIG_qtiaudio_hy11 := true
 endif
 ifeq (,$(wildcard $(QCPATH)/mm-audio))
     SOONG_CONFIG_qtiaudio_var22 := true
+	SOONG_CONFIG_qtiaudio_hy22 := true
 endif
 
 ifneq ($(filter hwaddress,$(SANITIZE_TARGET)),)
