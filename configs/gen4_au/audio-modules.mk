@@ -88,11 +88,11 @@ AUDIO_ACDB := workspaceFileXml.qwsp
 AUDIO_ACDB += acdb_cal.acdb
 AUDIO_ACDB += acdb_cal.acdbdelta
 
-AUDIO_MODULES += $(AUDIO_PAL)
-AUDIO_MODULES += $(AUDIO_ACDB)
 ifneq ($(TARGET_USES_GY),true)
 AUDIO_MODULES := $(AUDIO_AGM)
 endif
+AUDIO_MODULES += $(AUDIO_PAL)
+AUDIO_MODULES += $(AUDIO_ACDB)
 
 # AWE PAL PLUGIN and dependency packages
 ifeq ($(TARGET_USES_GY), true)
