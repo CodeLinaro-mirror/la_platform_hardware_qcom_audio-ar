@@ -1082,7 +1082,30 @@ void StreamOutPrimary::configure() {
         mPalHandle = nullptr;
         return;
     }
-
+    if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK || mTag == Usecase::PCM_OFFLOAD_PLAYBACK) {
+        //get volume from primary media playback stream
+        ModulePrimary::outListMutex.lock();
+        auto &outStreams = ModulePrimary::getOutStreams();
+        for (auto itr = outStreams.begin(); itr != outStreams.end(); ) {
+            if (itr->expired()) {
+                itr = outStreams.erase(itr);
+            } else {
+                auto stream = itr->lock();
+                if (stream) {
+                    auto streamOutPrimary = std::static_pointer_cast<StreamOutPrimary>(stream);
+                    if (streamOutPrimary->isStreamOutPrimary()) {
+                        streamOutPrimary->getHwVolume(&this->mVolumes);
+                        LOG(INFO) << __func__ << " Overriding Offload Volume";
+                        break;
+                    }
+                } else {
+                    LOG(ERROR) << __func__ << " Stream Obj NULL";
+                }
+                ++itr;
+            }
+        }
+        ModulePrimary::outListMutex.unlock();
+    }
     setHwVolume(mVolumes);
 #ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
     requestFocus();
