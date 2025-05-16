@@ -87,7 +87,7 @@ PRODUCT_PACKAGES += fai__3.0.0_0.0__eai_5.3.0_enpuv6.pmd
 # Audio configuration xml's related to Kaanapali
 QCV_FAMILY_SKUS := canoe
 DEVICE_SKU := canoe
-UV_WRAPPER2 := true
+UV_WRAPPER2 := false
 
 CONFIG_PAL_SRC_DIR := vendor/qcom/opensource/pal/configs/qcom/$(BA_NAME)/canoe
 CONFIG_HAL_SRC_DIR := vendor/qcom/opensource/audio-hal/primary-hal/configs/canoe
