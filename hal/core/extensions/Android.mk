@@ -615,7 +615,6 @@ LOCAL_SHARED_LIBRARIES := \
     libAudioConfigOem \
     $(LATEST_ANDROID_MEDIA_AUDIO_COMMON_TYPES) \
     $(LATEST_ANDROID_HARDWARE_AUDIO_CORE) \
-    android.hardware.audio.focus-V1-ndk \
     alliance.hardware.automotive.audiocontrol.internal-V2-ndk \
     android.hardware.audio.core.sounddose-V1-ndk \
     android.hardware.automotive.audiocontrol-V4-ndk \
