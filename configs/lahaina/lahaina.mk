@@ -550,3 +550,5 @@ PRODUCT_PACKAGES_DEBUG += \
 endif
 
 AUDIO_FEATURE_ENABLED_GKI := true
+
+include vendor/qcom/opensource/audio-hal/primary-hal/configs/lahaina/audio-properties.mk
