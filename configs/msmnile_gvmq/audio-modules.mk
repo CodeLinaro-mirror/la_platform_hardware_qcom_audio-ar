@@ -8,6 +8,9 @@ endif
 #Packages that should not be installed in QMAA are enabled here
 ifneq ($(TARGET_IS_HEADLESS),true)
 
+# Qti GEF AR
+AUDIO_MODULES += libqtigefar
+
 #AGM
 AUDIO_AGM := libagmclient
 AUDIO_AGM += libagmipcservice
