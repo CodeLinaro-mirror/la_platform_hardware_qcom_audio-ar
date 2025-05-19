@@ -61,7 +61,7 @@ using ::aidl::android::hardware::audio::common::isBitPositionFlagSet;
 using ::aidl::android::hardware::audio::common::isValidAudioMode;
 using ::aidl::android::hardware::audio::common::SinkMetadata;
 using ::aidl::android::hardware::audio::common::SourceMetadata;
-
+using ::aidl::android::hardware::audio::common::getChannelCount;
 using ::aidl::android::hardware::audio::core::AudioPatch;
 using ::aidl::android::hardware::audio::core::AudioRoute;
 using ::aidl::android::hardware::audio::core::IStreamIn;
@@ -319,7 +319,10 @@ ndk::ScopedAStatus qti::audio::core::ModulePrimary::setAudioPortConfig(const ::a
 {
     int list_id,Requsted_id;
     LOG(DEBUG) << "setaudioportconfig module primary";
-    Module::setAudioPortConfig(in_requested,out_suggested,_aidl_return);
+    ndk::ScopedAStatus status = Module::setAudioPortConfig(in_requested,out_suggested,_aidl_return);
+    if (!status.isOk()) {
+            return status;
+        }
     if (in_requested.gain.has_value()) {
         if (in_requested.gain->values.empty()) {
             return ndk::ScopedAStatus::ok();
@@ -346,12 +349,18 @@ ndk::ScopedAStatus qti::audio::core::ModulePrimary::setAudioPortConfig(const ::a
     LOG(DEBUG) << "the module list is not empty";
     auto iter = list.begin();
     auto route_portid = route->sourcePortIds.begin();
-    for (iter; (iter != list.end()&& route_portid!=route->sourcePortIds.end()); iter++) {
-       auto outIter = iter->lock();
+    for (iter; route_portid!=route->sourcePortIds.end(); iter++) {
+        if(iter == list.end()) {
+             iter = list.begin();
+             LOG(DEBUG) << __func__ << "port not found " << *route_portid;
+             route_portid++;
+        }
+        auto outIter = iter->lock();
         if (outIter) {
             auto &mcontext = (*outIter).getStreamContext();
             auto &list_audioportconfig = mcontext.getMixPortConfig();
             list_id = list_audioportconfig.portId;
+            int no_of_channels = (int)getChannelCount(list_audioportconfig.channelMask.value());
             float volume;
             if (list_id == (*route_portid)) {
                 std::vector<float> vol;
@@ -362,13 +371,20 @@ ndk::ScopedAStatus qti::audio::core::ModulePrimary::setAudioPortConfig(const ::a
                 else {
                     if (in_requested.gain->values[0] <= MIN_VOLUME_GAIN_MB) {
                         volume = MIN_VOLUME_GAIN;
-                }
-                    else {
-                        volume=pow(10,((float)(in_requested.gain->values[0]))/2000);
+                    } else {
+                        /* converting gain from range of -6000MB to 600MB to this range to 0.0f to 1.0f
+                        this formula converts gain value to pal_stream_volume linearly
+                        new_value = ( (old_range_value - old_range_min) / (old_range_max - old_range_min) ) * (new_range_max - new_range_min) + new_range_min */
+                        LOG(DEBUG) << "Gain in MB: " << in_requested.gain->values[0];
+                        volume = (((float)(in_requested.gain->values[0]) - MIN_VOLUME_GAIN_MB) /
+                                  (MAX_VOLUME_GAIN_MB - MIN_VOLUME_GAIN_MB)) *
+                                      (MAX_VOLUME_GAIN - MIN_VOLUME_GAIN) + MIN_VOLUME_GAIN;
                     }
                 }
-                vol.push_back(volume);
-                vol.push_back(volume);
+                int iter_channel;
+                for(iter_channel = 0; iter_channel<no_of_channels; iter_channel++) {
+                    vol.push_back(volume);
+                }
                 LOG(DEBUG) << "gain is:" << volume;
                 LOG(DEBUG) << "volume is:" << vol[0];
                 (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(outIter))->setAddress(port.device.address.get<AudioDeviceAddress::Tag::id>());
@@ -505,6 +521,8 @@ ndk::ScopedAStatus ModulePrimary::setVendorParameters(
         bool in_async) {
     LOG(VERBOSE) << __func__ << ": parameter count " << in_parameters.size()
                << ", async: " << in_async;
+    char value[256] = {0};
+    int ret;
     for (const auto& p : in_parameters) {
         if (p.id == VendorDebug::kForceTransientBurstName) {
             if (!extractParameter<Boolean>(p, &mVendorDebug.forceTransientBurst)) {
@@ -519,12 +537,34 @@ ndk::ScopedAStatus ModulePrimary::setVendorParameters(
             std::string kvpairs = getkvPairsForVendorParameter(in_parameters);
             if (!kvpairs.empty()) {
                 parms = str_parms_create_str(kvpairs.c_str());
+
+                ret = str_parms_get_str(parms, "pal_plugin_close", value, sizeof(value));
+                if (ret >= 0) {
+                    ret = pal_set_param(PAL_PARAM_ID_PLUGIN_CLOSE, (void*)parms, sizeof(value));
+                    if (ret != 0) {
+                         LOG(ERROR) << __func__ << "pal set stream failed for plugin close";
+                         return  ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
+                    }
+                    goto exit;
+                }
+                ret = str_parms_get_str(parms, "pal_plugin_param", value, sizeof(value));
+                LOG(DEBUG) << __func__ << ": value: " << value;
+                if (ret >= 0) {
+                    ret = pal_set_param(PAL_PARAM_ID_PLUGIN_PARAM, (void*)parms, sizeof(value));
+                   if (ret != 0) {
+                        LOG(ERROR) << __func__ << "pal set stream failed for plugin param";
+                        return  ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
+                   }
+                    goto exit;
+                }
+                /* Handles Mute/Unmute , Duck/Unduck parameters */
                 mAudExt.audio_extn_set_parameters(parms);
             }
 
             mPlatform.setVendorParameters(in_parameters, in_async);
         }
     }
+exit:
     processSetVendorParameters(in_parameters);
     return ndk::ScopedAStatus::ok();
 }

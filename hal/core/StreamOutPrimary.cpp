@@ -58,8 +58,8 @@ StreamOutPrimary::StreamOutPrimary(StreamContext&& context, const SourceMetadata
       mTag(getUsecaseTag(getContext().getMixPortConfig(), audioDevices)),
       mTagName(getName(mTag)),
       mFrameSizeBytes(getContext().getFrameSize()),
-      mMixPortConfig(getContext().getMixPortConfig()),
-      mPlaybackRate(sDefaultPlaybackRate) {
+      mPlaybackRate(sDefaultPlaybackRate),
+      mMixPortConfig(getContext().getMixPortConfig()) {
     if (mTag == Usecase::PRIMARY_PLAYBACK) {
         mExt.emplace<PrimaryPlayback>();
     } else if (mTag == Usecase::DEEP_BUFFER_PLAYBACK) {
@@ -714,6 +714,8 @@ ndk::ScopedAStatus StreamOutPrimary::getHwVolume(std::vector<float>* _aidl_retur
 }
 
 ndk::ScopedAStatus StreamOutPrimary::setHwVolume(const std::vector<float>& in_channelVolumes) {
+    struct str_parms* hfp_parms = nullptr;
+    std::string kvpairs = "";
     if (!mHwVolumeSupported) {
         return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
     }
@@ -740,6 +742,14 @@ ndk::ScopedAStatus StreamOutPrimary::setHwVolume(const std::vector<float>& in_ch
         mUseCachedVolume = true;
         LOG(DEBUG) << __func__ << mLogPrefix << " cache volume "
                    << ::android::internal::ToString(in_channelVolumes);
+        if (busAddr.compare("BUS03_PHONE") == 0) {
+            LOG(DEBUG) << "In call volume change triggered - trying to set hfp volume";
+            kvpairs = "hfp_volume=" + std::to_string(in_channelVolumes[0]) + ";";
+            hfp_parms = str_parms_create_str(kvpairs.c_str());
+            mAudExt.mHfpExtension->audio_extn_hfp_set_parameters(hfp_parms);
+            LOG(DEBUG) << __func__ << "HFP volume" << in_channelVolumes[0];
+            "set to Downlink Stream";
+        }
         return ndk::ScopedAStatus::ok();
     }
 

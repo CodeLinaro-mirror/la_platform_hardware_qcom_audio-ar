@@ -9,6 +9,7 @@ endif
 ifneq ($(AUDIO_MODULES_DISABLED),true)
 
 #AGM
+ifneq ($(TARGET_USES_GY),true)
 AUDIO_AGM := libagmclient
 AUDIO_AGM += libagmipcservice
 AUDIO_AGM += libagm
@@ -22,6 +23,7 @@ AUDIO_AGM += libagm_compress_plugin
 AUDIO_AGM += agmcompresscap
 AUDIO_AGM += agmvoiceui
 AUDIO_AGM += agmhostless
+endif
 
 #PAL Module
 AUDIO_PAL := libar-pal
@@ -32,6 +34,8 @@ AUDIO_PAL += catf
 AUDIO_PAL += PalTest
 AUDIO_PAL += libaudiochargerlistener
 AUDIO_PAL += libhfp_pal
+AUDIO_PAL += lib_default_plugin_controls
+AUDIO_PAL += libautohal_pal
 #PAL Service
 AUDIO_PAL += libpalclient
 AUDIO_PAL += libpalipcservice
@@ -84,9 +88,22 @@ AUDIO_ACDB := workspaceFileXml.qwsp
 AUDIO_ACDB += acdb_cal.acdb
 AUDIO_ACDB += acdb_cal.acdbdelta
 
+ifneq ($(TARGET_USES_GY),true)
 AUDIO_MODULES := $(AUDIO_AGM)
+endif
 AUDIO_MODULES += $(AUDIO_PAL)
 AUDIO_MODULES += $(AUDIO_ACDB)
+
+# AWE PAL PLUGIN and dependency packages
+ifeq ($(TARGET_USES_GY), true)
+AUDIO_AWE += libsession_awe
+AUDIO_AWE += libvui_intf
+AUDIO_AWE += libcustomva_intf
+AUDIO_AWE += libhotword_intf
+AUDIO_AWE += libarmemlog
+AUDIO_AWE += libtinyalsav2
+AUDIO_MODULES += $(AUDIO_AWE)
+endif
 
  # sound trigger aidl library
 #AUDIO_MODULES += libsoundtriggerhal.qti

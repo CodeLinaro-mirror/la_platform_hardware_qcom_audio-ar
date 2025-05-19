@@ -977,8 +977,8 @@ bool CompressPlayback::configureGapLessMetadata() {
             LOG(ERROR) << __func__ << ": failed PAL_PARAM_ID_GAPLESS_MDATA!! ret:" << ret;
             return false;
         }
+        mIsGaplessConfigured = true;
     }
-    mIsGaplessConfigured = true;
     return true;
 }
 
@@ -1030,7 +1030,7 @@ int64_t CompressPlayback::getPositionInFrames(pal_stream_handle_t* palHandle) {
     uint64_t sessionTimeUs =
             ((static_cast<decltype(sessionTimeUs)>(tstamp.session_time.value_msw)) << 32 |
              tstamp.session_time.value_lsw);
-    const auto& sampleRate = getSampleRate(mMixPortConfig).value();
+    const auto sampleRate = getSampleRate(mMixPortConfig).value();
     // sessionTimeUs to frames
     // try to convert the session to frames without loss of precision.
     mPrevFrames = static_cast<int64_t>((sessionTimeUs / 1000) * sampleRate / 1000);
@@ -1096,7 +1096,7 @@ int64_t PcmOffloadPlayback::getPositionInFrames(pal_stream_handle_t* palHandle) 
     uint64_t sessionTimeUs =
             ((static_cast<decltype(sessionTimeUs)>(tstamp.session_time.value_msw)) << 32 |
              tstamp.session_time.value_lsw);
-    const auto& sampleRate = getSampleRate(mMixPortConfig).value();
+    const auto sampleRate = getSampleRate(mMixPortConfig).value();
     // sessionTimeUs to frames
     // try to convert the session to frames without loss of precision.
     mPrevFrames = static_cast<int64_t>((sessionTimeUs / 1000) * sampleRate / 1000);

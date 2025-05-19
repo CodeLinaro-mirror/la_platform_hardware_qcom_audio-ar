@@ -17,7 +17,8 @@ EFFECTS_DEFAULTS_SHARED_LIBRARIES := \
     libbinder_ndk \
     libcutils \
     libfmq \
-    libutils
+    libutils \
+    lib_default_plugin_controls
 
 EFFECTS_DEFAULTS_HEADERS_LIBRARIES := \
     libaudioeffectsaidlqti_headers \

@@ -20,6 +20,7 @@
 #define CODEC_BACKEND_DEFAULT_BIT_WIDTH 16
 #define AFS_PARAMETER_QVA_VERSION "qva.version"
 
+#define NUM_OF_KEY_VALUE_PAIR 1
 #define AUDIO_PARAMETER_KEY_CAN_OPEN_PROXY "can_open_proxy"
 
 #ifdef __LP64__
@@ -41,7 +42,7 @@ std::mutex AudioExtension::reconfig_wait_mutex_;
 bool BatteryListenerExtension::isCharging;
 
 AudioExtensionBase::AudioExtensionBase(std::string library, bool enabled)
-    : mLibraryName(library), mEnabled(enabled) {
+    : mEnabled(enabled), mLibraryName(library) {
     LOG(INFO) << __func__ << " opening " << mLibraryName.c_str() << " enabled " << enabled;
     if (mEnabled) {
         mHandle = dlopen(mLibraryName.c_str(), RTLD_LAZY);
@@ -209,7 +210,93 @@ void AudioExtension::audio_extn_set_parameters(struct str_parms *params) {
     mAutohalExtension->audio_extn_autohal_set_parameters(params);
     mHfpExtension->audio_extn_hfp_set_parameters(params);
     mFmExtension->audio_extn_fm_set_parameters(params);
+    mIccExtension->audio_extn_icc_set_parameters(params);
     audio_feature_stats_set_parameters(params);
+    audio_feature_softStepVolume_set_parameters(params);
+}
+
+void AudioExtension::audio_feature_softStepVolume_set_parameters(struct str_parms *params) {
+    int ret = 0;
+    char value[50] = {0};
+    ret = str_parms_get_str(params, "effect_control", value, sizeof(value));
+    if (ret >= 0 && (strncmp(value, "volume", 6) == 0)) {
+        uint32_t effect_tag = 0;
+        uint32_t effect_tag_key = 0;
+        uint32_t effect_tkv = 0;
+        pal_device_id_t softvol_effect_device = PAL_DEVICE_OUT_SPEAKER;
+        pal_key_value_pair_t pal_key_vector_pair;
+        pal_param_payload *pal_payload = NULL;
+        effect_pal_payload_t *effect_payload = NULL;
+        uint8_t *payload = NULL;
+        pal_key_vector_t *pal_key_vector = NULL;
+        uint32_t no_of_kvps = NUM_OF_KEY_VALUE_PAIR;
+        uint32_t payload_size = (sizeof(pal_param_payload) + sizeof(effect_pal_payload_t) +
+                                sizeof(pal_key_vector_t) + (no_of_kvps * sizeof(pal_key_value_pair_t)));
+
+        str_parms_del(params, "effect_control");
+        ret = str_parms_get_str(params, "effect_tag", value, sizeof(value));
+        if (ret >= 0) {
+            str_parms_del(params, "effect_tag");
+            effect_tag = strtoul(value, NULL, 0);
+        } //effect_tag
+
+        ret = str_parms_get_str(params, "effect_tag_key", value, sizeof(value));
+        if (ret >= 0) {
+            str_parms_del(params, "effect_tag_key");
+            effect_tag_key = strtoul(value, NULL, 0);
+        } //effect_tag_key
+
+        ret = str_parms_get_str(params, "effect_tkv", value, sizeof(value));
+        if (ret >= 0) {
+            str_parms_del(params, "effect_tkv");
+            effect_tkv = strtoul(value, NULL, 0);
+        } //effect_tkv
+
+        payload = (uint8_t*) calloc (1, payload_size);
+
+        if (!payload) {
+            LOG(ERROR) << __func__ << "Failed to alloc payload buffer for size " << payload_size ;
+            ret = -ENOMEM;
+            return;
+        }
+        //create payload to be sent to GEF
+
+        pal_payload = (pal_param_payload *) payload;
+        pal_payload->payload_size = sizeof(effect_pal_payload_t) +
+                                sizeof(pal_key_vector_t) + (no_of_kvps * sizeof(pal_key_value_pair_t));
+        effect_payload = (effect_pal_payload_t *)(payload + sizeof(pal_param_payload));
+        effect_payload->isTKV = PARAM_TKV;
+        effect_payload->tag = effect_tag;
+        effect_payload->payloadSize = sizeof(pal_key_vector_t) +
+                                      no_of_kvps * sizeof(pal_key_value_pair_t);
+
+        pal_key_vector = (pal_key_vector_t *)(payload + sizeof(pal_param_payload) +
+                                             sizeof(effect_pal_payload_t));
+        pal_key_vector->num_tkvs = no_of_kvps;
+
+        //there is only one tkv
+        pal_key_vector_pair.key = effect_tag_key;
+        pal_key_vector_pair.value = effect_tkv;
+
+        memcpy(pal_key_vector->kvp, &pal_key_vector_pair, (no_of_kvps * sizeof(pal_key_value_pair_t)));
+
+        ret = pal_gef_rw_param(PAL_PARAM_ID_VOLUME_SOFT_PARAMS, (void*) pal_payload, payload_size,  softvol_effect_device, PAL_STREAM_PLAYBACK_BUS, GEF_PARAM_WRITE, NULL);
+
+        free(payload);
+        payload = NULL;
+        pal_payload = NULL;
+        effect_payload = NULL;
+        pal_key_vector = NULL;
+
+        if (ret != 0) {
+            LOG(ERROR) << __func__ << "Error setting param with error " << ret ;
+            return;
+        } else {
+            LOG(ERROR) << __func__ << "Set parameter succesfully " ;
+            return;
+        }
+    }
+
 }
 
 void AudioExtension::audio_feature_stats_set_parameters(struct str_parms *params) {
@@ -596,6 +683,25 @@ FmExtension::FmExtension() : AudioExtensionBase(kFmLibrary) {
     } else {
         fm_set_params = NULL;
         fm_running_status = NULL;
+    }
+}
+
+IccExtension::~IccExtension() {}
+
+void IccExtension::audio_extn_icc_set_parameters(struct str_parms *params) {
+    if (icc_set_params) icc_set_params(params);
+}
+
+IccExtension::IccExtension() : AudioExtensionBase(kIccLibrary, isExtensionEnabled(kIccProperty)) {
+    if (mHandle != nullptr) {
+        icc_set_params = (set_parameters_t)dlsym(mHandle, "icc_set_parameters");
+        if (!icc_set_params) {
+            LOG(ERROR) << "error " << dlerror();
+            dlclose(mHandle);
+            icc_set_params = NULL;
+        }
+    } else {
+        icc_set_params = NULL;
     }
 }
 

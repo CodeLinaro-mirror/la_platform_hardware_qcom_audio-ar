@@ -92,6 +92,50 @@ LOCAL_HEADER_LIBRARIES += libsystem_headers
 include $(BUILD_SHARED_LIBRARY)
 
 #-------------------------------------------
+#            Build ICC LIB
+#-------------------------------------------
+include $(CLEAR_VARS)
+
+LOCAL_MODULE := libicc_pal
+LOCAL_VENDOR_MODULE := true
+
+ifeq ($(TARGET_BOARD_AUTO),true)
+  LOCAL_CFLAGS += -DPLATFORM_AUTO
+endif
+
+LOCAL_SRC_FILES:= Icc.cpp
+
+LOCAL_CFLAGS += \
+    -Wall \
+    -Werror \
+    -Wno-unused-function \
+    -Wno-unused-variable
+
+LOCAL_SHARED_LIBRARIES := \
+    libaudioroute \
+    libbase \
+    liblog \
+    libaudioutils \
+    libcutils \
+    libdl \
+    libexpat \
+    liblog \
+    libar-pal
+
+LOCAL_C_INCLUDES := \
+    $(TOP)/vendor/qcom/opensource/pal \
+    $(TOP)/vendor/qcom/opensource/audio-hal/primary-hal/hal \
+    $(TOP)/external/expat/lib \
+    $(TOP)/system/media/audio_utils/include \
+    $(call include-path-for, audio-route) \
+
+
+LOCAL_HEADER_LIBRARIES += libhardware_headers
+LOCAL_HEADER_LIBRARIES += libsystem_headers
+
+include $(BUILD_SHARED_LIBRARY)
+
+#-------------------------------------------
 #            Build FM LIB
 #-------------------------------------------
 include $(CLEAR_VARS)

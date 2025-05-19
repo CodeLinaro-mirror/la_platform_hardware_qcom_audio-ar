@@ -32,7 +32,9 @@ AUDIO_PAL += catf
 AUDIO_PAL += PalTest
 AUDIO_PAL += libaudiochargerlistener
 AUDIO_PAL += libhfp_pal
+AUDIO_PAL += libicc_pal
 AUDIO_PAL += lib_default_plugin_controls
+AUDIO_PAL += lib_default_set_param_plugin_controls
 AUDIO_PAL += libautohal_pal
 #PAL Service
 AUDIO_PAL += libpalclient

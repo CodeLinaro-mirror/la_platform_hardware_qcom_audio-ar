@@ -79,6 +79,7 @@ LOCAL_SHARED_LIBRARIES := \
     libdl \
     libhidlbase \
     libhardware \
+    libhfp_pal \
     libfmq \
     libmedia_helper \
     libstagefright_foundation \

@@ -423,7 +423,7 @@ endif
 ifeq ($(ENABLE_HYP), true)
 ifeq ($(TARGET_GVMGH_SPECIFIC), false)
 PRODUCT_PROPERTY_OVERRIDES += \
-persist.bluetooth.a2dp_offload.disabled=true
+persist.bluetooth.a2dp_offload.disabled=false
 else
 PRODUCT_PROPERTY_OVERRIDES += \
 persist.bluetooth.a2dp_offload.disabled=false
@@ -532,6 +532,7 @@ vendor.audio.feature.fm.enable=false \
 vendor.audio.feature.hdmi_edid.enable=false \
 vendor.audio.feature.hdmi_passthrough.enable=false \
 vendor.audio.feature.hfp.enable=true  \
+vendor.audio.feature.icc.enable=true \
 vendor.audio.feature.hifi_audio.enable=false \
 vendor.audio.feature.hwdep_cal.enable=false  \
 vendor.audio.feature.keep_alive.enable=false \
@@ -597,6 +598,7 @@ vendor.audio.feature.fm.enable=true \
 vendor.audio.feature.hdmi_edid.enable=true \
 vendor.audio.feature.hdmi_passthrough.enable=true \
 vendor.audio.feature.hfp.enable=true \
+vendor.audio.feature.icc.enable=true \
 vendor.audio.feature.hifi_audio.enable=false \
 vendor.audio.feature.hwdep_cal.enable=false \
 vendor.audio.feature.keep_alive.enable=true \
@@ -654,6 +656,15 @@ PRODUCT_PACKAGES += \
     vendor.qti.hardware.automotive.audiocontrol@1.0-service \
     android.hardware.automotive.audiocontrol@1.0
 endif
+
+PRODUCT_PROPERTY_OVERRIDES += \
+persist.vendor.service.bt.a2dp.sink=true
+
+PRODUCT_PROPERTY_OVERRIDES += \
+ro.bluetooth.a2dp_offload.supported=true
+
+PRODUCT_ODM_PROPERTIES += \
+vendor.audio.feature.a2dp_offload.enable=true
 
 # for AudioReach HAL
 PRODUCT_PACKAGES += \

@@ -114,12 +114,12 @@ class StreamContext {
           mFormat(format),
           mChannelLayout(channelLayout),
           mSampleRate(sampleRate),
+          mMixPortConfig(mixPortConfig),
           mDataMQ(std::move(dataMQ)),
           mAsyncCallback(asyncCallback),
           mOutEventCallback(outEventCallback),
-          mMixPortConfig(mixPortConfig),
-          mNominalLatency(nominalLatency),
           mDebugParameters(debugParameters),
+          mNominalLatency(nominalLatency),
           mTelephony(telephony) {}
     StreamContext(StreamContext&& other)
         : mCommandMQ(std::move(other.mCommandMQ)),
@@ -128,10 +128,10 @@ class StreamContext {
           mFormat(other.mFormat),
           mChannelLayout(other.mChannelLayout),
           mSampleRate(other.mSampleRate),
+          mMixPortConfig(std::move(other.mMixPortConfig)),
           mDataMQ(std::move(other.mDataMQ)),
           mAsyncCallback(std::move(other.mAsyncCallback)),
           mOutEventCallback(std::move(other.mOutEventCallback)),
-          mMixPortConfig(std::move(other.mMixPortConfig)),
           mDebugParameters(std::move(other.mDebugParameters)),
           mFrameCount(other.mFrameCount),
           mNominalLatency(other.mNominalLatency),
@@ -143,10 +143,10 @@ class StreamContext {
         mFormat = std::move(other.mFormat);
         mChannelLayout = std::move(other.mChannelLayout);
         mSampleRate = other.mSampleRate;
+        mMixPortConfig = std::move(other.mMixPortConfig);
         mDataMQ = std::move(other.mDataMQ);
         mAsyncCallback = std::move(other.mAsyncCallback);
         mOutEventCallback = std::move(other.mOutEventCallback);
-        mMixPortConfig = std::move(other.mMixPortConfig);
         mDebugParameters = std::move(other.mDebugParameters);
         mFrameCount = other.mFrameCount;
         mNominalLatency =  other.mNominalLatency;
