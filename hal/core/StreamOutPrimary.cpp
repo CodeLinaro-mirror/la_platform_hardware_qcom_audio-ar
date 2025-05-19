@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
- * SPDX-License-Identifier: BSD-3-Clause-Clear
- */
+* Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+* SPDX-License-Identifier: BSD-3-Clause-Clear
+*/
 
 #include <cmath>
 
@@ -61,8 +61,8 @@ StreamOutPrimary::StreamOutPrimary(StreamContext&& context, const SourceMetadata
     } else if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK) {
         mExt.emplace<CompressPlayback>(offloadInfo.value(), this,
                                        mMixPortConfig);
-    } else if (mTag == Usecase::PCM_OFFLOAD_PLAYBACK) {
-        mExt.emplace<PcmOffloadPlayback>(mMixPortConfig);
+    } else if (mTag == Usecase::DIRECT_PCM_PLAYBACK) {
+        mExt.emplace<DirectPcmPlayback>(mMixPortConfig);
     } else if (mTag == Usecase::VOIP_PLAYBACK) {
         mExt.emplace<VoipPlayback>();
     } else if (mTag == Usecase::SPATIAL_PLAYBACK) {
@@ -97,7 +97,7 @@ bool StreamOutPrimary::isHwVolumeSupported() {
     switch (mTag) {
         //TODO: See how Bitperfect volume support can be added
         case Usecase::COMPRESS_OFFLOAD_PLAYBACK:
-        case Usecase::PCM_OFFLOAD_PLAYBACK:
+        case Usecase::DIRECT_PCM_PLAYBACK:
         case Usecase::MMAP_PLAYBACK:
         case Usecase::VOIP_PLAYBACK:
             return true;
@@ -110,7 +110,7 @@ bool StreamOutPrimary::isHwVolumeSupported() {
 bool StreamOutPrimary::isHwFlushSupported() {
     switch (mTag) {
         case Usecase::COMPRESS_OFFLOAD_PLAYBACK:
-        case Usecase::PCM_OFFLOAD_PLAYBACK:
+        case Usecase::DIRECT_PCM_PLAYBACK:
             return true;
         default:
             break;
@@ -121,7 +121,7 @@ bool StreamOutPrimary::isHwFlushSupported() {
 bool StreamOutPrimary::isHwPauseSupported() {
     switch (mTag) {
         case Usecase::COMPRESS_OFFLOAD_PLAYBACK:
-        case Usecase::PCM_OFFLOAD_PLAYBACK:
+        case Usecase::DIRECT_PCM_PLAYBACK:
             return true;
         default:
             break;
@@ -267,7 +267,7 @@ ndk::ScopedAStatus StreamOutPrimary::configureMMapStream(int32_t* fd, int64_t* b
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
     }
 
-    LOG(INFO) << __func__ << mLogPrefix << ": stream is configured";
+    LOG(INFO) << __func__ << mLogPrefix << ": stream is configured with " << mConnectedDevices;
 
     setHwVolume(mVolumes);
 
@@ -328,8 +328,8 @@ ndk::ScopedAStatus StreamOutPrimary::configureMMapStream(int32_t* fd, int64_t* b
     // and cache it.
     if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK) {
         std::get<CompressPlayback>(mExt).getPositionInFrames(mPalHandle);
-    } else if (mTag == Usecase::PCM_OFFLOAD_PLAYBACK) {
-        std::get<PcmOffloadPlayback>(mExt).getPositionInFrames(mPalHandle);
+    } else if (mTag == Usecase::DIRECT_PCM_PLAYBACK) {
+        std::get<DirectPcmPlayback>(mExt).getPositionInFrames(mPalHandle);
     }
 
     if (int32_t ret = ::pal_stream_flush(mPalHandle); ret) {
@@ -340,8 +340,8 @@ ndk::ScopedAStatus StreamOutPrimary::configureMMapStream(int32_t* fd, int64_t* b
     // after flush operation
     if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK) {
         std::get<CompressPlayback>(mExt).onFlush();
-    } else if (mTag == Usecase::PCM_OFFLOAD_PLAYBACK) {
-        std::get<PcmOffloadPlayback>(mExt).onFlush();
+    } else if (mTag == Usecase::DIRECT_PCM_PLAYBACK) {
+        std::get<DirectPcmPlayback>(mExt).onFlush();
     }
 
     LOG(DEBUG) << __func__ << mLogPrefix;
@@ -574,9 +574,9 @@ void StreamOutPrimary::resume() {
 
     if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK) {
         reply->observable.frames = std::get<CompressPlayback>(mExt).getPositionInFrames(mPalHandle);
-    } else if (mTag == Usecase::PCM_OFFLOAD_PLAYBACK) {
+    } else if (mTag == Usecase::DIRECT_PCM_PLAYBACK) {
         reply->observable.frames =
-                std::get<PcmOffloadPlayback>(mExt).getPositionInFrames(mPalHandle);
+                std::get<DirectPcmPlayback>(mExt).getPositionInFrames(mPalHandle);
     } else if (mTag == Usecase::MMAP_PLAYBACK) {
         int32_t ret = std::get<MMapPlayback>(mExt).getMMapPosition(&(reply->hardware.frames),
                                                                        &(reply->hardware.timeNs));
@@ -891,7 +891,7 @@ ndk::ScopedAStatus StreamOutPrimary::getVendorParameters(
                 _aidl_return->push_back(makeVendorParameter(id, "1"));
             }
         } else if (id == Parameters::kIsDirectPCMTrack) {
-            if (mTag == Usecase::PCM_OFFLOAD_PLAYBACK) {
+            if (mTag == Usecase::DIRECT_PCM_PLAYBACK) {
                 _aidl_return->push_back(makeVendorParameter(id, "true"));
             }
         }
@@ -991,7 +991,7 @@ void StreamOutPrimary::configure() {
         }
     } else if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK) {
         attr->type = PAL_STREAM_COMPRESSED;
-    } else if (mTag == Usecase::PCM_OFFLOAD_PLAYBACK) {
+    } else if (mTag == Usecase::DIRECT_PCM_PLAYBACK) {
         attr->type = PAL_STREAM_PCM_OFFLOAD;
     } else if (mTag == Usecase::VOIP_PLAYBACK) {
         attr->type = PAL_STREAM_VOIP_RX;
@@ -1043,7 +1043,7 @@ void StreamOutPrimary::configure() {
          * metadata */
         // for pcm offload bit_width should be set based on pal configured format.
         // set bit width only when usecase is with compressed format
-        if (!compressPlayback.isPcmOffload()) {
+        if (!compressPlayback.isPcmOffload() && compressPlayback.getBitWidth() != 0) {
             attr->out_media_config.bit_width = compressPlayback.getBitWidth();
         }
         attr->flags = static_cast<pal_stream_flags_t>(PAL_STREAM_FLAG_NON_BLOCKING);
@@ -1197,7 +1197,7 @@ void StreamOutPrimary::configure() {
         mPlatform.setPlaybackRate(mPalHandle, mTag, mPlaybackRate);
     }
 
-    LOG(INFO) << __func__ << mLogPrefix << ": stream is configured";
+    LOG(INFO) << __func__ << mLogPrefix << ": stream is configured with " << mConnectedDevices;
     enableOffloadEffects(true);
     const auto endTime = std::chrono::steady_clock::now();
     using FloatMillis = std::chrono::duration<float, std::milli>;
@@ -1214,7 +1214,7 @@ void StreamOutPrimary::configure() {
 }
 
 void StreamOutPrimary::enableOffloadEffects(const bool enable) {
-    if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK || mTag == Usecase::PCM_OFFLOAD_PLAYBACK) {
+    if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK || mTag == Usecase::DIRECT_PCM_PLAYBACK) {
         auto& ioHandle = mMixPortConfig.ext.get<AudioPortExt::Tag::mix>().handle;
         if (enable) {
             mHalEffects.startEffect(ioHandle, mPalHandle);

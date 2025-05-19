@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
- * SPDX-License-Identifier: BSD-3-Clause-Clear
- */
+* Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+* SPDX-License-Identifier: BSD-3-Clause-Clear
+*/
 
 #define LOG_TAG "AHAL_StreamIn_QTI"
 
@@ -252,7 +252,7 @@ ndk::ScopedAStatus StreamInPrimary::configureMMapStream(int32_t* fd, int64_t* bu
         setStreamMicMute(true);
     }
 
-    LOG(INFO) << __func__ << mLogPrefix << ": stream is configured";
+    LOG(INFO) << __func__ << mLogPrefix << ": stream is configured with " << mConnectedDevices;
 
     return ndk::ScopedAStatus::ok();
 }
@@ -820,7 +820,7 @@ void StreamInPrimary::configure() {
     if (!mEffectsApplied)
         applyEffects();
 
-    LOG(DEBUG) << __func__ << mLogPrefix << " : stream is configured";
+    LOG(DEBUG) << __func__ << mLogPrefix << " : stream is configured with " << mConnectedDevices;
 
     const auto endTime = std::chrono::steady_clock::now();
     using FloatMillis = std::chrono::duration<float, std::milli>;
