@@ -15,8 +15,8 @@
  */
 
 /*
- * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -133,6 +133,12 @@ std::string StreamWorkerCommonLogic::init() {
     if (::android::status_t status = mDriver->init(); status != STATUS_OK) {
         return "Failed to initialize the driver: " + std::to_string(status);
     }
+    constexpr int kThreadNameMaxLen = 15;
+    const auto& threadName = mContext->getStreamName().substr(0, kThreadNameMaxLen);
+    if (int errCode = pthread_setname_np(pthread_self(), threadName.c_str()); errCode != 0) {
+        LOG(WARNING) << ": Failed to set name for stream worker thread: " << strerror(errCode)
+                     << " " << threadName;
+    }
     return "";
 }
 
@@ -171,8 +177,6 @@ void StreamWorkerCommonLogic::populateReplyWrongState(
     reply->status = STATUS_INVALID_OPERATION;
 }
 
-const std::string StreamInWorkerLogic::kThreadName = "reader";
-
 StreamInWorkerLogic::Status StreamInWorkerLogic::cycle() {
     // Note: for input streams, draining is driven by the client, thus
     // "empty buffer" condition can only happen while handling the 'burst'
@@ -188,7 +192,7 @@ StreamInWorkerLogic::Status StreamInWorkerLogic::cycle() {
     }
 
     LOG(VERBOSE) << __func__ << ": received command " << command.toString() << " in "
-                  << kThreadName;
+                  << mContext->getStreamName();
 
     StreamDescriptor::Reply reply{};
     reply.status = STATUS_BAD_VALUE;
@@ -326,7 +330,8 @@ StreamInWorkerLogic::Status StreamInWorkerLogic::cycle() {
     using LogSeverity = ::android::base::LogSeverity;
     const LogSeverity severity =
             (reply.status != STATUS_OK) ? LogSeverity::ERROR : LogSeverity::VERBOSE;
-    LOG(severity) << __func__ << ": writing reply " << reply.toString();
+    LOG(severity) << __func__ << ": writing reply " << reply.toString() << " in "
+                  << mContext->getStreamName();
 
     if (!mContext->getReplyMQ()->writeBlocking(&reply, 1)) {
         LOG(ERROR) << __func__ << ": writing of reply " << reply.toString() << " to MQ failed";
@@ -376,8 +381,6 @@ bool StreamInWorkerLogic::read(size_t clientSize, StreamDescriptor::Reply* reply
     reply->latencyMs = latency;
     return !fatal;
 }
-
-const std::string StreamOutWorkerLogic::kThreadName = "writer";
 
 bool StreamOutAsyncWorkerLogic::handleTransferReady() {
     if (mState == StreamDescriptor::State::TRANSFERRING) {
@@ -479,7 +482,7 @@ StreamOutWorkerLogic::Status StreamOutAsyncWorkerLogic::cycle() {
     }
 
     LOG(VERBOSE) << __func__ << ": received command " << command.toString() << " in "
-                 << kThreadName;
+                 << mContext->getStreamName();
 
     StreamDescriptor::Reply reply{};
     reply.status = STATUS_BAD_VALUE;
@@ -778,7 +781,8 @@ StreamOutWorkerLogic::Status StreamOutAsyncWorkerLogic::cycle() {
     LOG(severity) << __func__ << ": writing reply " << reply.toString()
                   << (mDrainInternalState
                               ? (": drain internal state:" + toString(mDrainInternalState.value()))
-                              : "");
+                              : "")
+                  << " in " << mContext->getStreamName();
 
     if (!mContext->getReplyMQ()->writeBlocking(&reply, 1)) {
         LOG(ERROR) << __func__ << ": writing of reply " << reply.toString() << " to MQ failed ";
@@ -820,7 +824,7 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
     }
 
     LOG(VERBOSE) << __func__ << ": received command " << command.toString() << " in "
-                 << kThreadName;
+                 << mContext->getStreamName();
 
     StreamDescriptor::Reply reply{};
     reply.status = STATUS_BAD_VALUE;
@@ -991,7 +995,8 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
     using LogSeverity = ::android::base::LogSeverity;
     const LogSeverity severity =
             (reply.status != STATUS_OK) ? LogSeverity::ERROR : LogSeverity::VERBOSE;
-    LOG(severity) << __func__ << ": writing reply " << reply.toString();
+    LOG(severity) << __func__ << ": writing reply " << reply.toString() << " in "
+                  << mContext->getStreamName();
 
     if (!mContext->getReplyMQ()->writeBlocking(&reply, 1)) {
         LOG(ERROR) << __func__ << ": writing of reply " << reply.toString() << " to MQ failed";
