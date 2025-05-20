@@ -34,8 +34,10 @@ PRODUCT_HWASAN_INCLUDE_PATHS += \
 endif
 
 # Pro Audio feature
+ifneq ($(TARGET_SUPPORTS_WEARABLES),true)
 PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.audio.pro.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.pro.xml
+endif
 
 SOONG_CONFIG_qtiaudio_var00 := false
 SOONG_CONFIG_qtiaudio_var11 := false
