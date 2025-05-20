@@ -45,6 +45,7 @@ PRODUCT_COPY_FILES += \
     $(CONFIG_HAL_SRC_DIR)/audio_effects.conf:$(CONFIG_SKU_OUT_DIR)/audio_effects.conf \
     $(CONFIG_HAL_SRC_DIR)/audio_effects.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects.xml \
     $(CONFIG_HAL_SRC_DIR)/audio_effects_config.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects_config.xml \
+    $(CONFIG_HAL_SRC_DIR)/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/microphone_characteristics.xml \
     $(CONFIG_PAL_SRC_DIR)/mixer_paths_monaco_idp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_monaco_idp.xml \
     $(CONFIG_PAL_SRC_DIR)/mixer_paths_monaco_idp_amic.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_monaco_idp_amic.xml \
     $(CONFIG_PAL_SRC_DIR)/mixer_paths_monaco_idp_wsa.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_monaco_idp_wsa.xml \
