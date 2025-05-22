@@ -15,7 +15,7 @@ MM_AUDIO_AR := acdb_cal.acdb
 MM_AUDIO_AR += libautohal_pal
 
 # AGM service is not used for GY
-ifneq ($(TARGET_USES_GY), true)
+ifeq (,$(filter gen4_gvm_gy gen5_gvm_gy gen5_gvm, $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)))
 MM_AUDIO_AR += libagm
 MM_AUDIO_AR += libagm_compress_plugin
 MM_AUDIO_AR += libagm_mixer_plugin
@@ -26,7 +26,7 @@ MM_AUDIO_AR += vendor.qti.hardware.AGMIPC@1.0-service
 MM_AUDIO_AR += init.qti.AGMIPC.sh
 else
 MM_AUDIO_AR += libarpowerpolicy
-endif #ends TARGET_USES_GY
+endif
 
 # Will remove these two 32 bit version once update to new tinyalsa lib
 MM_AUDIO_AR += agmplay_32
