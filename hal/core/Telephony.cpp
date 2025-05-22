@@ -317,26 +317,38 @@ void Telephony::onExternalDeviceConnectionChanged(const AudioDevice& extDevice,
         LOG(VERBOSE) << __func__ << ": sco/a2dp/ble broadcast no change";
         return;
     }
-    if (isAnyCallActive() || mAudioMode == AudioMode::IN_CALL) {
-        LOG(VERBOSE) << __func__ << ": voice call exist";
-        return;
-    }
+
     if (connect) {
         if (isOutputDevice(extDevice)) {
-            mRxDevice = extDevice;
-            mTxDevice = getMatchingTxDevice(mRxDevice);
-            updateDevices();
+            CRSPluginDevices.push_back(extDevice);
+            if (mIsCRSStarted) {
+               updateDevices();
+            }
         } else {
             if (mTxDevice.type.type != extDevice.type.type) {
                 mTxDevice = getMatchingTxDevice(mRxDevice);
-                updateDevices();
+                if (mIsCRSStarted) {
+                    updateDevices();
+                }
             }
         }
     } else {
-        if (isOutputDevice(extDevice)) {
+        //remove disconnect devices
+        for (auto iter = CRSPluginDevices.begin(); iter != CRSPluginDevices.end();) {
+             if ((*iter).type.type == extDevice.type.type ) {
+                 iter = CRSPluginDevices.erase(iter);
+                 continue;
+             }
+             iter++;
+        }
+        if (CRSPluginDevices.empty()) {
             mRxDevice = kDefaultRxDevice;
             mTxDevice = getMatchingTxDevice(mRxDevice);
-            updateDevices();
+            if (mIsCRSStarted)
+                updateDevices();
+        } else {
+            if (mIsCRSStarted)
+                updateDevices();
         }
     }
 }
@@ -370,17 +382,31 @@ void Telephony::onBluetoothScoEvent(const bool& enable) {
     }
 
    if (enable) {
+       mRxDevice = AudioDevice{.type.type = AudioDeviceType::OUT_DEVICE,
+                               .type.connection = AudioDeviceDescription::CONNECTION_BT_SCO};
+       mTxDevice = getMatchingTxDevice(mRxDevice);
+       CRSPluginDevices.push_back(mRxDevice);
        if (mIsCRSStarted) {
-           mRxDevice = AudioDevice{.type.type = AudioDeviceType::OUT_DEVICE,
-                                   .type.connection = AudioDeviceDescription::CONNECTION_BT_SCO};
-           mTxDevice = getMatchingTxDevice(mRxDevice);
            updateDevices();
        }
    } else {
        if (isBluetoothSCODevice(mRxDevice) || isBluetoothA2dpDevice(mRxDevice)) {
-           mRxDevice = kDefaultRxDevice;
-           mTxDevice = getMatchingTxDevice(mRxDevice);
-           updateDevices();
+          for (auto iter = CRSPluginDevices.begin(); iter != CRSPluginDevices.end();) {
+               if ((*iter).type.connection == AudioDeviceDescription::CONNECTION_BT_SCO) {
+                   iter = CRSPluginDevices.erase(iter);
+                   continue;
+               }
+               iter++;
+          }
+          if (CRSPluginDevices.empty()) {
+              mRxDevice = kDefaultRxDevice;
+              mTxDevice = getMatchingTxDevice(mRxDevice);
+              if (mIsCRSStarted)
+                  updateDevices();
+          } else {
+              if (mIsCRSStarted)
+                  updateDevices();
+          }
      }
   }
 }
@@ -391,10 +417,14 @@ void Telephony::updateCrsDevice() {
         return;
     }
 
-    if (mRxDevice.type.type == AudioDeviceType::OUT_SPEAKER_EARPIECE) {
-        mRxDevice = kDefaultCRSRxDevice;
-        mTxDevice = getMatchingTxDevice(mRxDevice);
-        LOG(VERBOSE) << __func__ << " force to speaker for CRS call";
+    if (CRSPluginDevices.empty()) {
+        if (mRxDevice.type.type == AudioDeviceType::OUT_SPEAKER_EARPIECE) {
+            mRxDevice = kDefaultCRSRxDevice;
+            mTxDevice = getMatchingTxDevice(mRxDevice);
+        }
+    } else {
+            mRxDevice = CRSPluginDevices.back();
+            mTxDevice = getMatchingTxDevice(mRxDevice);
     }
 }
 

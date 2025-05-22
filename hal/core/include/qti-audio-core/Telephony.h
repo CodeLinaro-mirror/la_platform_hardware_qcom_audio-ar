@@ -227,6 +227,7 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
     // Stream Handle for VOIP Playback
     std::weak_ptr<StreamCommonInterface> mVoipStreamWptr;
     std::vector<::aidl::android::media::audio::common::AudioDevice> mPlaybackStreamDevices;
+    std::vector<::aidl::android::media::audio::common::AudioDevice> CRSPluginDevices;
     Platform& mPlatform{Platform::getInstance()};
 };
 
