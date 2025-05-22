@@ -22,23 +22,59 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <mixPort name="media" role="source" flags="PRIMARY">
             <profile samplingRates="8000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
-        <mixPort name="sys_notification" role="source" flags="DEEP_BUFFER">
+        <mixPort name="sys_notification_16bit" role="source" flags="DEEP_BUFFER">
             <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
-        <mixPort name="nav_guidance" role="source"  flags="DEEP_BUFFER">
+        <mixPort name="sys_notification_24bit" role="source" flags="DEEP_BUFFER">
+            <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_24_BIT" />
+        </mixPort>
+        <mixPort name="sys_notification_32bit" role="source" flags="DEEP_BUFFER">
+            <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_32_BIT" />
+        </mixPort>
+        <mixPort name="sys_notification_float" role="source" flags="DEEP_BUFFER">
+            <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="FLOAT_32_BIT" />
+        </mixPort>
+        <mixPort name="nav_guidance_16bit" role="source"  flags="DEEP_BUFFER">
             <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="nav_guidance_24bit" role="source"  flags="DEEP_BUFFER">
+            <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_24_BIT" />
+        </mixPort>
+        <mixPort name="nav_guidance_32bit" role="source"  flags="DEEP_BUFFER">
+            <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_32_BIT" />
+        </mixPort>
+        <mixPort name="nav_guidance_float" role="source"  flags="DEEP_BUFFER">
+            <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="FLOAT_32_BIT" />
         </mixPort>
         <mixPort name="nav_guidance_fast" role="source" flags="FAST">
             <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
-        <mixPort name="phone" role="source" flags="DEEP_BUFFER">
+        <mixPort name="phone_16bit" role="source" flags="DEEP_BUFFER">
             <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="phone_24bit" role="source" flags="DEEP_BUFFER">
+            <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_24_BIT" />
+        </mixPort>
+        <mixPort name="phone_32bit" role="source" flags="DEEP_BUFFER">
+            <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_32_BIT" />
+        </mixPort>
+        <mixPort name="phone_float" role="source" flags="DEEP_BUFFER">
+            <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="FLOAT_32_BIT" />
         </mixPort>
         <mixPort name="phone_fast" role="source" flags="FAST">
             <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
-        <mixPort name="alerts" role="source" flags="DEEP_BUFFER">
+        <mixPort name="alerts_16bit" role="source" flags="DEEP_BUFFER">
             <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="alerts_24bit" role="source" flags="DEEP_BUFFER">
+            <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_24_BIT" />
+        </mixPort>
+        <mixPort name="alerts_32bit" role="source" flags="DEEP_BUFFER">
+            <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_32_BIT" />
+        </mixPort>
+        <mixPort name="alerts_float" role="source" flags="DEEP_BUFFER">
+            <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="FLOAT_32_BIT" />
         </mixPort>
         <mixPort name="alerts_fast" role="source" flags="FAST">
             <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
@@ -309,10 +345,10 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
     </devicePorts>
     <routes>
         <route type="mix" sink="Media Bus" sources="media,primary_out,low_latency_out_16bit,mmap_no_irq_out" />
-        <route type="mix" sink="Sys Notification Bus" sources="sys_notification,mmap_no_irq_out,low_latency_out_16bit,low_latency_out_24bit,low_latency_out_32bit,low_latency_out_float,low_latency_out_8k_16bit,low_latency_out_8k_24bit,low_latency_out_8k_32bit,low_latency_out_8k_float,low_latency_out_16k_sys_16bit,low_latency_out_16k_sys_24bit,low_latency_out_16k_sys_32bit,low_latency_out_16k_sys_float,low_latency_out_24k_16bit,low_latency_out_24k_24bit,low_latency_out_24k_32bit,low_latency_out_24k_float,low_latency_out_32k_16bit,low_latency_out_32k_24bit,ow_latency_out_32k_32bit,low_latency_out_32k_float" />
-        <route type="mix" sink="Nav Guidance Bus" sources="nav_guidance,mmap_no_irq_out,low_latency_out_16bit,low_latency_out_24bit,low_latency_out_32bit,low_latency_out_float,low_latency_out_8k_16bit,low_latency_out_8k_24bit,low_latency_out_8k_32bit,low_latency_out_8k_float,low_latency_out_16k_sys_16bit,low_latency_out_16k_sys_24bit,low_latency_out_16k_sys_32bit,low_latency_out_16k_sys_float,low_latency_out_24k_16bit,low_latency_out_24k_24bit,low_latency_out_24k_32bit,low_latency_out_24k_float,low_latency_out_32k_16bit,low_latency_out_32k_24bit,ow_latency_out_32k_32bit,low_latency_out_32k_float" />
-        <route type="mix" sink="Phone Bus" sources="phone,mmap_no_irq_out,low_latency_out_16bit,low_latency_out_24bit,low_latency_out_32bit,low_latency_out_float,low_latency_out_8k_16bit,low_latency_out_8k_24bit,low_latency_out_8k_32bit,low_latency_out_8k_float,low_latency_out_16k_sys_16bit,low_latency_out_16k_sys_24bit,low_latency_out_16k_sys_32bit,low_latency_out_16k_sys_float,low_latency_out_24k_16bit,low_latency_out_24k_24bit,low_latency_out_24k_32bit,low_latency_out_24k_float,low_latency_out_32k_16bit,low_latency_out_32k_24bit,ow_latency_out_32k_32bit,low_latency_out_32k_float" />
-        <route type="mix" sink="Alerts Bus" sources="alerts,mmap_no_irq_out,low_latency_out_16bit,low_latency_out_24bit,low_latency_out_32bit,low_latency_out_float,low_latency_out_8k_16bit,low_latency_out_8k_24bit,low_latency_out_8k_32bit,low_latency_out_8k_float,low_latency_out_16k_sys_16bit,low_latency_out_16k_sys_24bit,low_latency_out_16k_sys_32bit,low_latency_out_16k_sys_float,low_latency_out_24k_16bit,low_latency_out_24k_24bit,low_latency_out_24k_32bit,low_latency_out_24k_float,low_latency_out_32k_16bit,low_latency_out_32k_24bit,ow_latency_out_32k_32bit,low_latency_out_32k_float" />
+        <route type="mix" sink="Sys Notification Bus" sources="sys_notification_16bit,sys_notification_24bit,sys_notification_32bit,sys_notification_float,mmap_no_irq_out,low_latency_out_16bit,low_latency_out_24bit,low_latency_out_32bit,low_latency_out_float,low_latency_out_8k_16bit,low_latency_out_8k_24bit,low_latency_out_8k_32bit,low_latency_out_8k_float,low_latency_out_16k_sys_16bit,low_latency_out_16k_sys_24bit,low_latency_out_16k_sys_32bit,low_latency_out_16k_sys_float,low_latency_out_24k_16bit,low_latency_out_24k_24bit,low_latency_out_24k_32bit,low_latency_out_24k_float,low_latency_out_32k_16bit,low_latency_out_32k_24bit,ow_latency_out_32k_32bit,low_latency_out_32k_float" />
+        <route type="mix" sink="Nav Guidance Bus" sources="nav_guidance_16bit,nav_guidance_24bit,nav_guidance_32bit,nav_guidance_float,mmap_no_irq_out,low_latency_out_16bit,low_latency_out_24bit,low_latency_out_32bit,low_latency_out_float,low_latency_out_8k_16bit,low_latency_out_8k_24bit,low_latency_out_8k_32bit,low_latency_out_8k_float,low_latency_out_16k_sys_16bit,low_latency_out_16k_sys_24bit,low_latency_out_16k_sys_32bit,low_latency_out_16k_sys_float,low_latency_out_24k_16bit,low_latency_out_24k_24bit,low_latency_out_24k_32bit,low_latency_out_24k_float,low_latency_out_32k_16bit,low_latency_out_32k_24bit,ow_latency_out_32k_32bit,low_latency_out_32k_float" />
+        <route type="mix" sink="Phone Bus" sources="phone_16bit,phone_24bit,phone_32bit,phone_float,mmap_no_irq_out,low_latency_out_16bit,low_latency_out_24bit,low_latency_out_32bit,low_latency_out_float,low_latency_out_8k_16bit,low_latency_out_8k_24bit,low_latency_out_8k_32bit,low_latency_out_8k_float,low_latency_out_16k_sys_16bit,low_latency_out_16k_sys_24bit,low_latency_out_16k_sys_32bit,low_latency_out_16k_sys_float,low_latency_out_24k_16bit,low_latency_out_24k_24bit,low_latency_out_24k_32bit,low_latency_out_24k_float,low_latency_out_32k_16bit,low_latency_out_32k_24bit,ow_latency_out_32k_32bit,low_latency_out_32k_float" />
+        <route type="mix" sink="Alerts Bus" sources="alerts_16bit,alerts_24bit,alerts_32bit,alerts_float,mmap_no_irq_out,low_latency_out_16bit,low_latency_out_24bit,low_latency_out_32bit,low_latency_out_float,low_latency_out_8k_16bit,low_latency_out_8k_24bit,low_latency_out_8k_32bit,low_latency_out_8k_float,low_latency_out_16k_sys_16bit,low_latency_out_16k_sys_24bit,low_latency_out_16k_sys_32bit,low_latency_out_16k_sys_float,low_latency_out_24k_16bit,low_latency_out_24k_24bit,low_latency_out_24k_32bit,low_latency_out_24k_float,low_latency_out_32k_16bit,low_latency_out_32k_24bit,ow_latency_out_32k_32bit,low_latency_out_32k_float" />
         <route type="mix" sink="Front Passenger Bus" sources="front_passenger" />
         <route type="mix" sink="Rear Seat Bus" sources="rear_seat" />
         <route type="mix" sink="primary_in" sources="built_in_mic,built_in_back_mic,Primary In Bus,Front Passenger In Bus,Rear Seat In Bus" />
