@@ -4,7 +4,11 @@ $(warning use audio in stub mode)
 
 # AudioPolicyConfigs
 APM_CONFIG_SRC_PATH := frameworks/av/services/audiopolicy/config
+ifeq ($(call is-board-platform-in-list, vienna), true)
+APM_CONFIG_DST_PATH := $(TARGET_COPY_OUT_VENDOR)/etc
+else
 APM_CONFIG_DST_PATH := $(TARGET_COPY_OUT_VENDOR)/etc/audio
+endif
 
 PRODUCT_COPY_FILES += \
     vendor/qcom/opensource/audio-hal/primary-hal/configs/common/audio_policy_configuration_stub.xml:$(APM_CONFIG_DST_PATH)/audio_policy_configuration.xml \

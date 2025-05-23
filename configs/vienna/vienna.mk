@@ -68,9 +68,9 @@ PRODUCT_PACKAGES += fai__8.0.2_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_4.6_enp
 PRODUCT_PACKAGES += fai__8.0.3_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_4.6_enpuv5.pmd
 PRODUCT_PACKAGES += fai__3.0.0_0.0__eai_4.6_enpuv5.pmd
 
-# Audio configuration xml's related to Lanai
-QCV_FAMILY_SKUS := vienna
-DEVICE_SKU := vienna
+# Audio configuration xml
+QCV_FAMILY_SKUS := vienna vienna64
+DEVICE_SKU := $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)
 UV_WRAPPER2 := false
 
 CONFIG_PAL_SRC_DIR := vendor/qcom/opensource/pal/configs/vienna
@@ -96,12 +96,10 @@ PRODUCT_COPY_FILES += \
 PRODUCT_COPY_FILES += \
     hardware/interfaces/audio/aidl/default/audio_effects_config.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects_config_stub.xml
 
-#XML Audio configuration files
 ifneq ($(TARGET_USES_AOSP_FOR_AUDIO), true)
 PRODUCT_COPY_FILES += \
     $(CONFIG_HAL_SRC_DIR)/audio_policy_configuration.xml:$(CONFIG_SKU_OUT_DIR)/audio_policy_configuration.xml
 
-#Audio configuration xml's common to sun family
 PRODUCT_COPY_FILES += \
 $(foreach DEVICE_SKU, $(QCV_FAMILY_SKUS), \
     $(CONFIG_HAL_SRC_DIR)/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/sku_$(DEVICE_SKU)_qssi/audio_policy_configuration.xml)
@@ -111,7 +109,7 @@ PRODUCT_COPY_FILES += \
 endif
 
 # XML config file for memory logger
-PRODUCT_COPY_FILES += $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/$(DEVICE_SKU)/mem_logger_config.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mem_logger_config.xml
+PRODUCT_COPY_FILES += $(CONFIG_HAL_SRC_DIR)/mem_logger_config.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mem_logger_config.xml
 
 PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_configuration.xml \
@@ -131,7 +129,7 @@ PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/codec2/service/1.0/c2audio.vendor.ext-arm.policy:vendor/etc/seccomp_policy/c2audio.vendor.ext-arm.policy \
     $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/codec2/service/1.0/c2audio.vendor.ext-arm64.policy:vendor/etc/seccomp_policy/c2audio.vendor.ext-arm64.policy
 PRODUCT_COPY_FILES += \
-    $(CONFIG_HAL_SRC_DIR)/vendor_audio_interfaces.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/vendor_audio_interfaces.xml
+    $(CONFIG_HAL_SRC_DIR)/vendor_audio_interfaces.xml:$(CONFIG_SKU_OUT_DIR)/vendor_audio_interfaces.xml
 
 ifneq (,$(filter userdebug eng, $(TARGET_BUILD_VARIANT)))
 PRODUCT_COPY_FILES += \
@@ -238,7 +236,9 @@ vendor.audio.feature.a2dp_offload.enable=true \
 vendor.audio.feature.battery_listener.enable=true \
 vendor.audio.feature.hfp.enable=true \
 vendor.audio.feature.kpi_optimize.enable=true \
-vendor.audio.feature.dmabuf.cma.memory.enable=false
+vendor.audio.feature.dmabuf.cma.memory.enable=false \
+vendor.audio.gsl.shmem.dmaheap.uncached = true
+
 
 AUDIO_FEATURE_ENABLED_GKI := true
 BUILD_AUDIO_TECHPACK_SOURCE := true

@@ -8,8 +8,6 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
     method expected API signature
     "int32_t <function_name>()"
     -->
-    <library name = "vendorextservice" libraryName="libaudiohalvendorextn.so"
-            method="registerInterface" mandatory="true"/>
     <library name = "agmservice" libraryName="libagmipcservice.so"
             method="registerService" mandatory="true"/>
     <library name = "palservice" libraryName="libpalipcservice.so"
@@ -23,9 +21,9 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
     <library name = "listenSoundModel" libraryName="liblistensoundmodelaidl.so"
             method="registerService" mandatory="false"/>
     <library name = "audioeffecthal" libraryName="libaudioeffecthal.qti.so"
-            method="registerService" mandatory="true"/>
+            method="registerService" mandatory="false"/>
     <library name = "sthal" libraryName="libsoundtriggerhal.qti.so"
-            method="createISoundTriggerFactory" mandatory="true" />
+            method="createISoundTriggerFactory" mandatory="false" />
     <library name="btaudio_sw" libraryName="android.hardware.bluetooth.audio_sw.so"
             method="registerIModuleBluetoothSWQti" mandatory="false" />
     <library name = "asr" libraryName="libqasr.so"
