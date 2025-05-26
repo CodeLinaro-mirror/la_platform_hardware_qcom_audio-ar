@@ -30,13 +30,20 @@
 #include <android-base/properties.h>
 #include <system/audio_config.h>
 
+// NOTE: Follow same enum definition with audio hal(hal/service/Services.cpp)
+enum class StubMode {
+    STUB_DISABLED = 0,
+    STUB_ENABLED = 1 << 0,
+    AUTO_RECOVERY_ENABLED = 1 << 2,
+};
+
 /** Default name of effect configuration file. */
 static const char* kDefaultConfigName = "audio_effects_config.xml";
 static const char* kStubConfigName = "audio_effects_config_stub.xml";
 
 static inline std::string getEffectConfig() {
-    auto stubmode = ::android::base::GetIntProperty<int8_t>("vendor.audio.hal.stubmode", 0);
-    if (stubmode) {
+    StubMode stubmode = (StubMode)::android::base::GetIntProperty("vendor.audio.hal.stubmode", 0);
+    if (stubmode == StubMode::STUB_ENABLED) {
         LOG(INFO) << __func__ << " using effects in stub mode";
         return android::audio_find_readable_configuration_file(kStubConfigName);
     }
