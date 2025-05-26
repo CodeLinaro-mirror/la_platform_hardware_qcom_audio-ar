@@ -15,8 +15,8 @@
  */
 
 /*
- * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
- * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -841,7 +841,7 @@ std::vector<VendorParameter> ModulePrimary::onGetGenericParams(
             std::string value = (mOffloadSpeedSupported ? "true" : "false");
             auto param = makeVendorParameter(id, value);
             results.push_back(param);
-        } else if (id == Parameters::kAOSPClipTransitionSupport) {
+        } else if (id == Parameters::kAospClipTransitionSupport) {
             LOG(DEBUG) << __func__ << " supports " << id;
             std::string value = "true";
             auto param = makeVendorParameter(id, value);

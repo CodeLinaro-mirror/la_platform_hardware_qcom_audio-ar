@@ -1,8 +1,7 @@
 /*
-* Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
-* SPDX-License-Identifier: BSD-3-Clause-Clear
-*/
-
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
 #define LOG_TAG "AHAL_Usecase_QTI"
 
 
@@ -452,13 +451,7 @@ int32_t CompressPlayback::palCallback(pal_stream_handle_t* palHandle, uint32_t e
                  * Although this platform logic can be accommodated in the layers below,
                  * hence adding this TODO for platform behavior change.
                  */
-                if (int32_t ret = ::pal_stream_drain(compressPlayback->mCompressPlaybackHandle,
-                                                     PAL_DRAIN);
-                    ret) {
-                    LOG(ERROR) << __func__
-                               << " failed to FULL EOS drain after EARLY EOS notification, ret:"
-                               << ret;
-                }
+                compressPlayback->issueFullDrain();
             }
             compressPlayback->mPlatformStreamCallback->onDrainReady();
             // gapless resets in PAL, when partial drain is received,
@@ -472,6 +465,14 @@ int32_t CompressPlayback::palCallback(pal_stream_handle_t* palHandle, uint32_t e
             return -EINVAL;
     }
     return 0;
+}
+
+void CompressPlayback::issueFullDrain() {
+    if (int32_t ret = ::pal_stream_drain(mCompressPlaybackHandle, PAL_DRAIN);
+        ret) {
+        LOG(ERROR) << __func__
+                   << " failed to FULL EOS drain after EARLY EOS notification, ret:" << ret;
+    }
 }
 
 ndk::ScopedAStatus CompressPlayback::setVendorParameters(
