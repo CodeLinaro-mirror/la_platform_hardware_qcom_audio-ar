@@ -306,6 +306,11 @@ void StreamInPrimary::resume() {
 
 ::android::status_t StreamInPrimary::start() {
     LOG(DEBUG) << __func__ << mLogPrefix;
+    if (!mPlatform.isSoundCardUp()) {
+        LOG(ERROR) << __func__ << mLogPrefix << "Sound card is offline, returning...\n";
+        return -EINVAL;
+    }
+
     if (AudioExtension::getInstance().in_power_policy == POWER_POLICY_STATUS_OFFLINE) {
         LOG(ERROR) << "POWER POLICY OFFLINE please try again\n";
         return -EINVAL;
