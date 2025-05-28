@@ -62,8 +62,7 @@ using ::aidl::android::hardware::automotive::vehicle::RawPropValues;
 using aidl::android::media::audio::common::AudioDeviceType;
 using namespace ::qti::audio::oem::config;
 
-#ifndef ENABLE_VHAL_TEST_WITH_KITCHENSINK
-#define ENABLE_VHAL_TEST_WITH_KITCHENSINK
+#ifdef ENABLE_VHAL_TEST_WITH_KITCHENSINK
 const int32_t ThermalPropertyId = 356517121; //VehicleProperty::HVAC_FAN_DIRECTION
 const int32_t MuteRadioOrderByAAMId = 289408269; //VehicleProperty::HVAC_STEERING_WHEEL_HEAT
 #ifdef ENABLE_QCOM_VHAL_NIGHTMODE
