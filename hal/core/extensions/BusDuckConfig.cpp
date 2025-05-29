@@ -122,7 +122,7 @@ StreamType getAudioUsageFromString(const std::string& src) {
     else if (src == "WELCOME_SEQUENCE") return UseCase::WELCOME_SEQUENCE;
     else if (src == "ROAD_ADAS") return UseCase::ROAD_ADAS;
     else if (src == "VEHICLE_WARNING") return UseCase::VEHICLE_WARNING;
-    else if (src == "VEHICLE_SAFETY_WARNING") return UseCase::VEHICLE_WARNING;
+    else if (src == "VEHICLE_SAFETY_WARNING") return UseCase::VEHICLE_SAFETY_WARNING;
     else if (src == "CYBER") return Type::CYBER;
     else if (src == "TCU") return Type::TCU;
     else if (src == "STATIC_POWER_LIMITATION") return Type::STATIC_POWER_LIMITATION;
