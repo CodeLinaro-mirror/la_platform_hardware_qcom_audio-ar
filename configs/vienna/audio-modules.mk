@@ -196,6 +196,10 @@ AUDIO_MODULES += \
     libaudiocorehal.default \
     libaudioeffecthal.qti
 
+#audio vibrator
+AUDIO_MODULES += vendor.qti.hardware.vibrator.impl
+AUDIO_MODULES += vendor.qti.hardware.vibrator.service
+
 # AIDL AHAL VENDOR EXTENSION
 AUDIO_MODULES += \
     libaudiohalvendorextn_wear
