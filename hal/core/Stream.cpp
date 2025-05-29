@@ -690,7 +690,6 @@ StreamOutWorkerLogic::Status StreamOutAsyncWorkerLogic::cycle() {
                     }
                 }
             } else {
-                populateReplyWrongState(&reply, command);
                 break;
             }
         } break;
@@ -935,7 +934,6 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
                 }
             } else {
                 LOG(WARNING) << __func__ << ": invalid drain mode: " << toString(currentMode);
-                populateReplyWrongState(&reply, command);
             }
         } break;
         case Tag::standby: {
