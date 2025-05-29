@@ -329,7 +329,7 @@ endif
 ifneq ($(filter $(TARGET_BOARD_DERIVATIVE_SUFFIX), _sdv _cdcsdv),)
 PRODUCT_COPY_FILES += \
 $(TOPDIR)vendor/qcom/opensource/pal/configs/gen4_au/plugin_manager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/plugin_manager.xml \
-$(TOPDIR)vendor/qcom/opensource/harry-pal/bike_bell.wav:$(TARGET_COPY_OUT_VENDOR)/etc/bike_bell.wav
+$(TOPDIR)vendor/qcom/opensource/harry-pal/test/bike_bell.wav:$(TARGET_COPY_OUT_VENDOR)/etc/bike_bell.wav
 endif
 
 # cma memory for MDF
