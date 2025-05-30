@@ -473,6 +473,9 @@ LOCAL_CFLAGS := \
     -Wunused-parameter \
     -Wextra \
 
+ifeq ($(ENABLE_QCOM_VHAL),true)
+LOCAL_CFLAGS += -DENABLE_VHAL_TEST_WITH_KITCHENSINK
+endif
 
 LOCAL_C_INCLUDES := \
     $(TOP)/vendor/qcom/opensource/pal \
@@ -590,6 +593,10 @@ LOCAL_CFLAGS := \
 
 ifeq ($(ENABLE_QCOM_VHAL_NIGHTMODE),true)
 LOCAL_CFLAGS += -DENABLE_QCOM_VHAL_NIGHTMODE
+endif
+
+ifeq ($(ENABLE_QCOM_VHAL),true)
+LOCAL_CFLAGS += -DENABLE_VHAL_TEST_WITH_KITCHENSINK
 endif
 
 LOCAL_C_INCLUDES := \

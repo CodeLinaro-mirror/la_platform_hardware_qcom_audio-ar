@@ -150,6 +150,7 @@ PRODUCT_PACKAGES += CarServiceResAutoTarget_Vendor
 endif
 endif
 endif
+ENABLE_QCOM_VHAL := true
 ENABLE_QCOM_AMPERE_AUDIO := false
 $(call soong_config_set_bool,qcom_audio_hal,use_ampere_audio,true)
 
