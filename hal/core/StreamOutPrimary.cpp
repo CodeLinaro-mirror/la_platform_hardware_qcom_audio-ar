@@ -38,8 +38,11 @@ using ::aidl::android::hardware::audio::core::IStreamCallback;
 using ::aidl::android::hardware::audio::core::IStreamCommon;
 using ::aidl::android::hardware::audio::core::StreamDescriptor;
 using ::aidl::android::hardware::audio::core::VendorParameter;
-
+using ::aidl::android::media::audio::common::AudioIoFlags;
+using ::aidl::android::media::audio::common::AudioInputFlags;
+using ::aidl::android::media::audio::common::AudioOutputFlags;
 using aidl::android::media::audio::common::AudioPortExt;
+using aidl::android::media::audio::common::AudioDevice;
 
 // uncomment this to enable logging of very verbose logs like burst commands.
 //#define VERY_VERBOSE_LOGGING 1
@@ -98,9 +101,11 @@ StreamOutPrimary::StreamOutPrimary(StreamContext&& context, const SourceMetadata
     } else if (mTag == Usecase::LOW_LATENCY_PLAYBACK) {
         mExt.emplace<LowLatencyPlayback>();
     }
-
+    outFlags = mMixPortConfig.flags.value().get<AudioIoFlags::Tag::output>();
+    mAudioDevices = audioDevices;
     mHwVolumeSupported = isHwVolumeSupported();
     mVolumes.resize(getChannelCount(mMixPortConfig.channelMask.value()));
+    ioHandle_l = mMixPortConfig.ext.get<AudioPortExt::Tag::mix>().handle;
     std::ostringstream os;
     os << " : usecase: " << mTagName;
     os << " IoHandle: " << mMixPortConfig.ext.get<AudioPortExt::Tag::mix>().handle << " ";
