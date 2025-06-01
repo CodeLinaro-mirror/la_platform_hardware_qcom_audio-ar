@@ -105,6 +105,7 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     void onError() override;
     std::vector<::aidl::android::media::audio::common::AudioDevice> mAudioDevices; /* AudioDevices for Effects */
     uint64_t mBytesWritten; /* total bytes written, not cleared when entering standby */
+    bool mMuted = false;
     std::vector <::aidl::android::media::audio::common::AudioDevice>& getAudioDevice() {
         return mAudioDevices;
     }
@@ -116,6 +117,10 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     int32_t getOutFlags() {
         return outFlags;
     }
+    /* return mPalHandle */
+    pal_stream_handle_t* getPalHandle() {
+        return mPalHandle;
+   }
   protected:
     /*
      * opens, configures and starts pal stream, also validates the pal handle.

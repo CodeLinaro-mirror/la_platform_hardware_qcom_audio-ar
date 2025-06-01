@@ -50,8 +50,8 @@ static void auto_hal_set_mute_state(char* mute_bus_addr, int mute_state) {
     char address[AUDIO_DEVICE_MAX_ADDRESS_LEN] = {0};
 
     ALOGI("%s: fp mute_config", __func__);
-    if (!init_config.fp_set_mute_config_for_address) {
-        ALOGE("%s: function pointer to set_mute_config is null", __func__);
+    if (!init_config.fp_set_mute_config_for_address || !init_config.fp_set_duck_config_for_address ) {
+        ALOGE("%s: function pointer to set_mute_config/set_duck_config is null", __func__);
         return ;
     }
     if (mute_bus_addr == NULL) {
@@ -73,11 +73,11 @@ static void auto_hal_set_mute_state(char* mute_bus_addr, int mute_state) {
                     break;
                 case DUCK:
                     ALOGD("%s: Ducking BUS device %s", __func__, address);
-                    init_config.fp_set_mute_config_for_address(address, true, DUCK_VOLUME);
+                    init_config.fp_set_duck_config_for_address(address, true, DUCK_VOLUME);
                     break;
                 case UNDUCK:
                     ALOGD("%s: Unducking BUS device %s", __func__, address);
-                    init_config.fp_set_mute_config_for_address(address, false, DUCK_VOLUME);
+                    init_config.fp_set_duck_config_for_address(address, false, DUCK_VOLUME);
                     break;
             }
         }
@@ -87,7 +87,10 @@ static void auto_hal_set_mute_state(char* mute_bus_addr, int mute_state) {
 void autohal_init(auto_hal_init_config_t init_config)
 {
     if (init_config.fp_set_mute_config_for_address != NULL) {
-        ALOGD("Function pointer is set.");
+        ALOGD("Mute/Unmute Function pointer is set.");
+    }
+    if (init_config.fp_set_duck_config_for_address != NULL) {
+        ALOGD("Duck/Unduck Function pointer is set.");
     }
     return;
 }

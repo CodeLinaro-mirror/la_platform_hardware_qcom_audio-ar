@@ -343,7 +343,9 @@ AutohalExtension::AutohalExtension() : AudioExtensionBase(kAutohalLibrary, isExt
             goto feature_disabled;
         }
         init_config.fp_set_mute_config_for_address = extn_set_mute_config_for_address;
+        init_config.fp_set_duck_config_for_address = extn_set_duck_config_for_address;
         LOG(DEBUG) << __func__ << "fp log: %s" << init_config.fp_set_mute_config_for_address;
+        LOG(DEBUG) << __func__ << "fp log: %s" << init_config.fp_set_duck_config_for_address;
         autohal_init(init_config);
 
         LOG(DEBUG)<< __func__ <<  ":: ---- Feature AUTO HAL is Enabled ----";

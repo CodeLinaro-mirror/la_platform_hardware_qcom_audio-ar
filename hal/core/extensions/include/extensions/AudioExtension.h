@@ -42,9 +42,11 @@ typedef enum {
 #endif
 
 typedef void (*fp_set_mute_config_for_address_t) (char*, bool, float);
+typedef void (*fp_set_duck_config_for_address_t) (char*, bool, float);
 typedef struct auto_hal_init_config {
       fp_set_mute_config_for_address_t     fp_set_mute_config_for_address;
-  } auto_hal_init_config_t;
+      fp_set_duck_config_for_address_t     fp_set_duck_config_for_address;
+} auto_hal_init_config_t;
 typedef void(*autohal_init_t)(auto_hal_init_config_t);
 
 extern auto_hal_init_config_t init_config;
