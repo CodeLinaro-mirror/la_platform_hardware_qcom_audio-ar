@@ -195,7 +195,7 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <!-- end of source mixports-->
 
         <!-- start of sink mixports-->
-        <mixPort name="primary_in" role="sink" maxOpenCount="3" maxActiveCount="3">
+        <mixPort name="primary_in" role="sink" maxOpenCount="3" maxActiveCount="3" flags="FAST">
             <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_FRONT_BACK" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
         <mixPort name="fast_input" role="sink" maxOpenCount="2" maxActiveCount="2" flags="FAST">
