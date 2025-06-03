@@ -49,6 +49,7 @@ class StreamOutPrimaryOEM : public StreamOutPrimary {
     size_t ecnr_out_buffer_size{0};
     std::unique_ptr<uint8_t[]> ecnr_in_buffer{nullptr};
     size_t ecnr_in_buffer_size{0};
+    std::unique_ptr<pal_stream_attributes> attr;
 #ifdef ECNR_HAL_SRC_CP
     std::unique_ptr<uint8_t[]> ecnr_src_buffer{nullptr};
     size_t ecnr_src_buffer_size{0};
@@ -60,6 +61,7 @@ class StreamOutPrimaryOEM : public StreamOutPrimary {
     int ecnrPeriodSize{512};
     int ecnrSampleRate{48000};
     size_t mECNRFrameSizeBytes{0};
+    int mScd_file_path_index_dl;
 #ifdef ECNR_HAL_TUNE
     tECNR_TuneIFData pECNR_TuneIFData;
 #endif
