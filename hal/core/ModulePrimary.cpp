@@ -512,17 +512,6 @@ void ModulePrimary::onSetGenericParameters(const std::vector<VendorParameter>& p
             const auto isOn = getBoolFromString(paramValue);
             mPlatform.setTranslationRecordState(isOn);
             LOG(INFO) << __func__ << ": PCM Record FFECNS for Translation:" << isOn;
-        } else if (Parameters::kCallTranslation == param.id) {
-            // Add Call translation param enable check and update the stream using call translation manager API
-            const auto isOn = getBoolFromString(paramValue);
-            mTelephony->updateCallTranslationParam(paramValue);
-            mPlatform.setCallTranslationState(isOn);
-            LOG(INFO) << __func__ << ": Call Translation state using ASR and TTS :" << isOn;
-            if (!mTelephony) {
-                LOG(ERROR) << __func__ << ": Telephony not created ";
-                return;
-            }
-            mTelephony->CallTranslationManager();
         }
     }
 }
@@ -608,6 +597,8 @@ void ModulePrimary::onSetTelephonyParameters(const std::vector<VendorParameter>&
             mPlatform.setTranslationRxMuteState(isOn);
             LOG(DEBUG) << __func__ << " : translation Rx mute set as true" ;
             mTelephony->updateVoiceVolume();
+        } else if (Parameters::kTranslationConfig == p.id) {
+            mTelephony->CallTranslationManager(paramValue);
         }
     }
 
@@ -725,9 +716,9 @@ ModulePrimary::SetParameterToFeatureMap ModulePrimary::fillSetParameterToFeature
                                  {Parameters::kVoiceDeviceMute, Feature::TELEPHONY},
                                  {Parameters::kVoiceDirection, Feature::TELEPHONY},
                                  {Parameters::kVoiceTranslationRxMute, Feature::TELEPHONY},
+                                 {Parameters::kTranslationConfig, Feature::TELEPHONY},
                                  {Parameters::kInCallMusic, Feature::GENERIC},
                                  {Parameters::kTranslateRecord, Feature::GENERIC},
-                                 {Parameters::kCallTranslation, Feature::GENERIC},
                                  {Parameters::kUHQA, Feature::GENERIC},
                                  {Parameters::kFbspCfgWaitTime, Feature::FTM},
                                  {Parameters::kFbspFTMWaitTime, Feature::FTM},

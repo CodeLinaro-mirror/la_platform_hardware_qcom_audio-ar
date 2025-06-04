@@ -58,10 +58,14 @@ Telephony::Telephony() {
     // Todo check on default RX device
     mRxDevice = kDefaultRxDevice;
     mTxDevice = getMatchingTxDevice(mRxDevice);
+    tx_call_translation_conf = new call_translation_config();
+    rx_call_translation_conf = new call_translation_config();
 }
 
 Telephony::~Telephony() {
     stopCall();
+    delete tx_call_translation_conf;
+    delete rx_call_translation_conf;
 }
 
 ndk::ScopedAStatus Telephony::getSupportedAudioModes(std::vector<AudioMode>* _aidl_return) {
@@ -313,26 +317,38 @@ void Telephony::onExternalDeviceConnectionChanged(const AudioDevice& extDevice,
         LOG(VERBOSE) << __func__ << ": sco/a2dp/ble broadcast no change";
         return;
     }
-    if (isAnyCallActive() || mAudioMode == AudioMode::IN_CALL) {
-        LOG(VERBOSE) << __func__ << ": voice call exist";
-        return;
-    }
+
     if (connect) {
         if (isOutputDevice(extDevice)) {
-            mRxDevice = extDevice;
-            mTxDevice = getMatchingTxDevice(mRxDevice);
-            updateDevices();
+            CRSPluginDevices.push_back(extDevice);
+            if (mIsCRSStarted) {
+               updateDevices();
+            }
         } else {
             if (mTxDevice.type.type != extDevice.type.type) {
                 mTxDevice = getMatchingTxDevice(mRxDevice);
-                updateDevices();
+                if (mIsCRSStarted) {
+                    updateDevices();
+                }
             }
         }
     } else {
-        if (isOutputDevice(extDevice)) {
+        //remove disconnect devices
+        for (auto iter = CRSPluginDevices.begin(); iter != CRSPluginDevices.end();) {
+             if ((*iter).type.type == extDevice.type.type ) {
+                 iter = CRSPluginDevices.erase(iter);
+                 continue;
+             }
+             iter++;
+        }
+        if (CRSPluginDevices.empty()) {
             mRxDevice = kDefaultRxDevice;
             mTxDevice = getMatchingTxDevice(mRxDevice);
-            updateDevices();
+            if (mIsCRSStarted)
+                updateDevices();
+        } else {
+            if (mIsCRSStarted)
+                updateDevices();
         }
     }
 }
@@ -366,17 +382,31 @@ void Telephony::onBluetoothScoEvent(const bool& enable) {
     }
 
    if (enable) {
+       mRxDevice = AudioDevice{.type.type = AudioDeviceType::OUT_DEVICE,
+                               .type.connection = AudioDeviceDescription::CONNECTION_BT_SCO};
+       mTxDevice = getMatchingTxDevice(mRxDevice);
+       CRSPluginDevices.push_back(mRxDevice);
        if (mIsCRSStarted) {
-           mRxDevice = AudioDevice{.type.type = AudioDeviceType::OUT_DEVICE,
-                                   .type.connection = AudioDeviceDescription::CONNECTION_BT_SCO};
-           mTxDevice = getMatchingTxDevice(mRxDevice);
            updateDevices();
        }
    } else {
        if (isBluetoothSCODevice(mRxDevice) || isBluetoothA2dpDevice(mRxDevice)) {
-           mRxDevice = kDefaultRxDevice;
-           mTxDevice = getMatchingTxDevice(mRxDevice);
-           updateDevices();
+          for (auto iter = CRSPluginDevices.begin(); iter != CRSPluginDevices.end();) {
+               if ((*iter).type.connection == AudioDeviceDescription::CONNECTION_BT_SCO) {
+                   iter = CRSPluginDevices.erase(iter);
+                   continue;
+               }
+               iter++;
+          }
+          if (CRSPluginDevices.empty()) {
+              mRxDevice = kDefaultRxDevice;
+              mTxDevice = getMatchingTxDevice(mRxDevice);
+              if (mIsCRSStarted)
+                  updateDevices();
+          } else {
+              if (mIsCRSStarted)
+                  updateDevices();
+          }
      }
   }
 }
@@ -387,10 +417,14 @@ void Telephony::updateCrsDevice() {
         return;
     }
 
-    if (mRxDevice.type.type == AudioDeviceType::OUT_SPEAKER_EARPIECE) {
-        mRxDevice = kDefaultCRSRxDevice;
-        mTxDevice = getMatchingTxDevice(mRxDevice);
-        LOG(VERBOSE) << __func__ << " force to speaker for CRS call";
+    if (CRSPluginDevices.empty()) {
+        if (mRxDevice.type.type == AudioDeviceType::OUT_SPEAKER_EARPIECE) {
+            mRxDevice = kDefaultCRSRxDevice;
+            mTxDevice = getMatchingTxDevice(mRxDevice);
+        }
+    } else {
+            mRxDevice = CRSPluginDevices.back();
+            mTxDevice = getMatchingTxDevice(mRxDevice);
     }
 }
 
@@ -530,7 +564,8 @@ void Telephony::updateCalls() {
                                         mIsVoiceStarted = true;
                                         mVoiceSession.session[i].state.current_ = mVoiceSession.session[i].state.new_;
                                         if(mPlatform.getCallTranslationState()) {
-                                            startCallTranslation();
+                                            CallTranslationManager("",CALL_TRANSLATION_DIR_TX);
+                                            CallTranslationManager("",CALL_TRANSLATION_DIR_RX);
                                         }
                                     }
                                 } else {
@@ -557,7 +592,7 @@ void Telephony::updateCalls() {
                                 } else {
                                     mVoiceSession.session[i].state.current_ = mVoiceSession.session[i].state.new_;
                                 }
-                                if(mPalCallTranslationHandle != nullptr) {
+                                if (mPalCallTranslationTxHandle != nullptr || mPalCallTranslationRxHandle != nullptr) {
                                     stopCallTranslation();
                                 }
                                 break;
@@ -931,74 +966,220 @@ void Telephony::stopCrsLoopback() {
     LOG(DEBUG) << __func__ << ": EXIT";
 }
 
-void Telephony::updateCallTranslationParam(std::string param) {
-    // Based on the param decode logic from APK assign the values to tx_call_translation_conf and rx_call_translation_conf;
+uint32_t* Telephony:: stringToUint32Array(const std::string& str, size_t* size) {
+    std::istringstream iss(str);
+    std::vector<uint32_t> cache;
+    std::string token;
+    while (std::getline(iss, token, ',')) {
+        int value = std::stoi(token);
+        cache.push_back(static_cast<uint32_t>(value));
+    }
+    size_t dataSize = cache.size();
+    uint32_t* resArray = (uint32_t *) calloc(1, dataSize * sizeof(uint32_t));
+    std::copy(cache.begin(), cache.end(), resArray);
+    if (size != nullptr) {
+        *size = dataSize;
+    }
+    return resArray;
 }
 
-void Telephony::CallTranslationManager() {
-
+void Telephony::updateCallTranslationConfigs(const std::string& str) {
     LOG(INFO) << __func__ << " : Enter";
-    if(mPlatform.getCallTranslationState() == false && mPalCallTranslationHandle != nullptr) {
+    uint32_t* uint32Array = stringToUint32Array(str, nullptr);
+    if (uint32Array == nullptr) {
+        LOG(ERROR) << __func__ << ": empty param array";
+        return;
+    }
+    callTranslationDirection = static_cast<pal_call_translation_direction>(uint32Array[1]);
+    bool enable = uint32Array[0] != 0;
+    if (enable) {
+        LOG(INFO) << __func__ << "Call Translation enabled";
+        mPlatform.setCallTranslationState(true);
+    } else {
+        LOG(INFO) << __func__ << "Call Translation not set as enabled";
+        mPlatform.setCallTranslationState(false);
+        return;
+    }
+    call_translation_config* config;
+    if (callTranslationDirection == CALL_TRANSLATION_DIR_TX) {
+        config = tx_call_translation_conf;
+        LOG(DEBUG) << __func__ << "Call Translation Direction : TX - handle tx modules config";
+    } else if (callTranslationDirection == CALL_TRANSLATION_DIR_RX) {
+        config = rx_call_translation_conf;
+        LOG(DEBUG) << __func__ << "Call Translation Direction : RX - handle rx modules config";
+    } else {
+        free(uint32Array);
+        return;
+    }
+    config->enable = uint32Array[0] != 0;
+    config->call_translation_dir = callTranslationDirection;
+    config->asr_module_config.input_language_code = uint32Array[2];
+    config->asr_module_config.output_language_code = config->asr_module_config.input_language_code;
+    config->asr_module_config.enable_language_detection = uint32Array[4] != 0;
+    config->asr_module_config.enable_translation = uint32Array[5] != 0;
+    config->asr_module_config.enable_continuous_mode = uint32Array[6] != 0;
+    config->asr_module_config.enable_partial_transcription = uint32Array[7] != 0;
+    config->asr_module_config.threshold = uint32Array[8];
+    config->asr_module_config.timeout_duration = uint32Array[9];
+    config->asr_module_config.silence_detection_duration = uint32Array[10];
+    config->asr_module_config.outputBufferMode = uint32Array[11] != 0;
+    config->nmt_module_config.input_language_code = config->asr_module_config.output_language_code;
+    config->nmt_module_config.output_language_code = uint32Array[3];
+    config->tts_module_config.language_code = config->nmt_module_config.output_language_code;
+    config->tts_module_config.speech_format = uint32Array[12];
+
+    LOG(INFO) << __func__ << "configs - enable : " << config->enable
+              << ", call_translation_dir : " << config->call_translation_dir
+              << ", ASR_input_language_code : " << config->asr_module_config.input_language_code
+              << ", ASR_output_language_code : " << config->asr_module_config.output_language_code
+              << ", ASR_enable_language_detection : " << config->asr_module_config.enable_language_detection
+              << ", ASR_enable_translation : " << config->asr_module_config.enable_translation
+              << ", ASR_enable_continuous_mode : " << config->asr_module_config.enable_continuous_mode
+              << ", ASR_enable_partial_transcription : " << config->asr_module_config.enable_partial_transcription
+              << ", ASR_threshold : " << config->asr_module_config.threshold
+              << ", ASR_timeout_duration : " << config->asr_module_config.timeout_duration
+              << ", ASR_silence_detection_duration : " << config->asr_module_config.silence_detection_duration
+              << ", ASR_outputBufferMode : " << config->asr_module_config.outputBufferMode
+              << ", NMT_input_language_code : " << config->nmt_module_config.input_language_code
+              << ", NMT_output_language_code : " << config->nmt_module_config.output_language_code
+              << ", TTS_language_code : " << config->tts_module_config.language_code
+              << ", TTS_speech_format : " << config->tts_module_config.speech_format;
+
+    free(uint32Array);
+}
+
+void Telephony::updateCallTranslationParam(pal_call_translation_direction direction) {
+    LOG(INFO) << __func__ << " : Enter";
+    auto byteSize = sizeof(pal_param_payload) + sizeof(call_translation_config);
+    auto bytes = std::make_unique<uint8_t[]>(byteSize);
+    auto palParamPayload = reinterpret_cast<pal_param_payload*>(bytes.get());
+    palParamPayload->payload_size = sizeof(call_translation_config);
+    auto callTranslationConfigPayload = reinterpret_cast<call_translation_config*>(palParamPayload->payload);
+
+    if (direction == CALL_TRANSLATION_DIR_TX) {
+        // Copy the contents of tx_call_translation_conf to the payload
+        *callTranslationConfigPayload = *tx_call_translation_conf;
+        if (int32_t ret = ::pal_stream_set_param(mPalCallTranslationTxHandle, PAL_PARAM_ID_CALL_TRANSLATION_CONFIG, palParamPayload);
+            ret) {
+            LOG(ERROR) << __func__ << ": failed to set Translation PAL_PARAM_ID_CALL_TRANSLATION_CONFIG for tx_call_translation_conf";
+            return;
+        }
+    } else if (direction == CALL_TRANSLATION_DIR_RX) {
+        // Copy the contents of rx_call_translation_conf to the payload
+        *callTranslationConfigPayload = *rx_call_translation_conf;
+        if (int32_t ret = ::pal_stream_set_param(mPalCallTranslationRxHandle, PAL_PARAM_ID_CALL_TRANSLATION_CONFIG, palParamPayload);
+            ret) {
+            LOG(ERROR) << __func__ << ": failed to set Translation PAL_PARAM_ID_CALL_TRANSLATION_CONFIG for rx_call_translation_conf";
+            return;
+        }
+    }
+}
+
+void Telephony::CallTranslationManager(const std::string& str, pal_call_translation_direction direction) {
+    LOG(INFO) << __func__ << " : Enter";
+    if(direction == CALL_TRANSLATION_DEFAULT) {
+        LOG(DEBUG) << __func__ << "No direction provided.";
+    } else {
+        callTranslationDirection = direction;
+    }
+    if (str.empty()) {
+        LOG(DEBUG) << __func__ << "No module config data to set.";
+    } else {
+        updateCallTranslationConfigs(str);
+    }
+    if(mPlatform.getCallTranslationState() == false && (mPalCallTranslationRxHandle || mPalCallTranslationTxHandle)){
         // Close the call translation graph if we get disable state
         stopCallTranslation();
         return;
     }
-
-    // Check for an active voice or voip
-    if((isAnyCallActive() || isVoipActive()) && mPlatform.getCallTranslationState()) {
-        LOG(INFO) << __func__ << ": Configure Call Translation Stream : Found existing Voip/Voice Call";
-        startCallTranslation();
+    // Check if any active voice / voip already present with an enable call translation param, then start the translation stream.
+    if (isAnyCallActive() && mPlatform.getCallTranslationState()) {
+        LOG(INFO) << __func__ << ": Configure Call Translation Stream : Found existing Voice Call";
+        startCallTranslation(callTranslationDirection);
+    } else if (isVoipActive() && mPlatform.getCallTranslationState()){
+        LOG(INFO) << __func__ << ":  Configure Call Translation Stream : Found existing Voip Call ";
+        if (callTranslationDirection == CALL_TRANSLATION_DIR_TX && !mPalCallTranslationTxHandle) {
+            startCallTranslation(CALL_TRANSLATION_DIR_TX);
+        } else if (callTranslationDirection == CALL_TRANSLATION_DIR_RX && !mPalCallTranslationRxHandle) {
+            startCallTranslation(CALL_TRANSLATION_DIR_RX);
+        }
     } else {
-        LOG(INFO) << __func__ << ": Voice/Voip not found, will not start the call translation stream";
+        LOG(INFO) << __func__ << ": Found no active Voice/Voip Calls";
     }
+    callTranslationDirection = CALL_TRANSLATION_DEFAULT;
     LOG(INFO) << __func__ << " : Exit";
 }
 
-void Telephony::startCallTranslation() {
-
-    LOG(INFO) << __func__ << " : Enter";
-    auto attr = mPlatform.getDefaultCallTranslationAttributes();
+void Telephony::startCallTranslation(pal_call_translation_direction direction) {
+    LOG(INFO) << __func__ << " : Enter, dir : " << direction;
+    auto attr = mPlatform.getDefaultCallTranslationAttributes(direction);
     if (!attr) {
         LOG(ERROR) << __func__ << " no pal attributes";
         return;
     }
-
     auto palDevices = mPlatform.convertToPalDevices({mRxDevice, mTxDevice});
-
     const size_t numDevices = 0;
-    if (int32_t ret = ::pal_stream_open(
-                attr.get(), numDevices, reinterpret_cast<pal_device*>(palDevices.data()), 0,
-                nullptr, nullptr, reinterpret_cast<uint64_t>(this), &mPalCallTranslationHandle);
-        ret) {
-        LOG(ERROR) << __func__ << ": pal stream open failed !!" << ret;
-        return;
-    }
+    if (direction == CALL_TRANSLATION_DIR_TX && !mPalCallTranslationTxHandle) {
+        if (int32_t ret = ::pal_stream_open(
+                    attr.get(), numDevices, reinterpret_cast<pal_device*>(palDevices.data()), 0,
+                    nullptr, nullptr, reinterpret_cast<uint64_t>(this), &mPalCallTranslationTxHandle);
+            ret) {
+            LOG(ERROR) << __func__ << ": pal stream open failed !!" << ret;
+            return;
+        }
+        updateCallTranslationParam(direction);
+        if (int32_t ret = ::pal_stream_start(this->mPalCallTranslationTxHandle); ret) {
+            LOG(ERROR) << __func__ << " pal_stream_start failed, ret:" << ret;
+            ::pal_stream_close(mPalCallTranslationTxHandle);
+            mPalCallTranslationTxHandle = nullptr;
+            return;
+        }
+        LOG(INFO) << __func__ << " : Exit : Call translation TX Stream Start Success.";
 
-    if (int32_t ret = ::pal_stream_start(this->mPalCallTranslationHandle); ret) {
-        LOG(ERROR) << __func__ << " pal_stream_start failed, ret:" << ret;
-        ::pal_stream_close(mPalCallTranslationHandle);
-        mPalCallTranslationHandle = nullptr;
-        return;
+    } else if (direction == CALL_TRANSLATION_DIR_RX && !mPalCallTranslationRxHandle) {
+        if (int32_t ret = ::pal_stream_open(
+                    attr.get(), numDevices, reinterpret_cast<pal_device*>(palDevices.data()), 0,
+                    nullptr, nullptr, reinterpret_cast<uint64_t>(this), &mPalCallTranslationRxHandle);
+            ret) {
+            LOG(ERROR) << __func__ << ": pal stream open failed !!" << ret;
+            return;
+        }
+        updateCallTranslationParam(direction);
+        if (int32_t ret = ::pal_stream_start(this->mPalCallTranslationRxHandle); ret) {
+            LOG(ERROR) << __func__ << " pal_stream_start failed, ret:" << ret;
+            ::pal_stream_close(mPalCallTranslationRxHandle);
+            mPalCallTranslationRxHandle = nullptr;
+            return;
+        }
+        LOG(INFO) << __func__ << " : Exit : Call translation RX Stream Start Success.";
     }
-
-    LOG(INFO) << __func__ << " : Exit : Call translation Stream Start Success.";
 }
 
 void Telephony::stopCallTranslation() {
 
     LOG(INFO) << __func__ << " : Enter.";
-    if (mPalCallTranslationHandle == nullptr) {
+    if (mPalCallTranslationTxHandle == nullptr && mPalCallTranslationRxHandle == nullptr) {
         LOG(ERROR) << __func__ << " No Translation stream found";
         return;
     }
-
-    if (int32_t ret = pal_stream_stop(mPalCallTranslationHandle); ret) {
-        LOG(ERROR) << __func__ << ": pal stream stop failed !!" << ret;
+    if (mPalCallTranslationTxHandle) {
+        if (int32_t ret = pal_stream_stop(mPalCallTranslationTxHandle); ret) {
+            LOG(ERROR) << __func__ << ": pal stream stop failed !!" << ret;
+        }
+        if (int32_t ret = pal_stream_close(mPalCallTranslationTxHandle); ret) {
+            LOG(ERROR) << __func__ << ": pal stream stop failed !!" << ret;
+        }
+        mPalCallTranslationTxHandle = nullptr;
     }
-    if (int32_t ret = pal_stream_close(mPalCallTranslationHandle); ret) {
-        LOG(ERROR) << __func__ << ": pal stream stop failed !!" << ret;
+    if (mPalCallTranslationRxHandle) {
+        if (int32_t ret = pal_stream_stop(mPalCallTranslationRxHandle); ret) {
+            LOG(ERROR) << __func__ << ": pal stream stop failed !!" << ret;
+        }
+        if (int32_t ret = pal_stream_close(mPalCallTranslationRxHandle); ret) {
+            LOG(ERROR) << __func__ << ": pal stream stop failed !!" << ret;
+        }
+        mPalCallTranslationRxHandle = nullptr;
     }
-    mPalCallTranslationHandle = nullptr;
     LOG(INFO) << __func__ << " : Exit.";
     return;
 }
