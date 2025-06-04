@@ -418,13 +418,12 @@ bool StreamOutAsyncWorkerLogic::handleDrainReady() {
                 mDrainInternalState = DrainInternalState::DRAINING_en_sent;
             } else if (mDrainInternalState.value() == DrainInternalState::DRAINING_en_sent) {
                 mDrainInternalState = {};
-                if (mIsClipTransitionDataBurstsAvailable) {
+                if (mIsClipTransitionDataBurstsInProgress) {
                     mState = StreamDescriptor::State::TRANSFERRING;
-                    mPendingCallBack = StreamCallbackType::TR;
                 } else {
                     mState = StreamDescriptor::State::IDLE;
                 }
-                mIsClipTransitionDataBurstsAvailable = false;
+                mIsClipTransitionDataBurstsInProgress = false;
             } else {
                 LOG(WARNING) << __func__
                              << ": shouldn't happen !! state:"  //<< toString(mState.load())
@@ -575,7 +574,7 @@ StreamOutWorkerLogic::Status StreamOutAsyncWorkerLogic::cycle() {
                                     DrainInternalState::DRAIN_PAUSED_en_sent) {
                             mDrainInternalState = DrainInternalState::DRAIN_PAUSED_en_sent;
                             mState = StreamDescriptor::State::DRAIN_PAUSED;
-                            mIsClipTransitionDataBurstsAvailable = true;
+                            mIsClipTransitionDataBurstsInProgress = true;
                         } else if (mDrainInternalState &&
                                    mDrainInternalState.value() ==
                                            DrainInternalState::DRAIN_PAUSED_en) {
@@ -608,7 +607,7 @@ StreamOutWorkerLogic::Status StreamOutAsyncWorkerLogic::cycle() {
                         if (mDrainInternalState &&
                             mDrainInternalState.value() == DrainInternalState::DRAINING_en_sent) {
                             mDrainInternalState = DrainInternalState::DRAINING_en_sent;
-                            mIsClipTransitionDataBurstsAvailable = true;
+                            mIsClipTransitionDataBurstsInProgress = true;
                             mState = StreamDescriptor::State::DRAINING;
                         } else {
                             if (reply.fmqByteCount == fmqByteCount) {
@@ -757,7 +756,7 @@ StreamOutWorkerLogic::Status StreamOutAsyncWorkerLogic::cycle() {
                 mState == StreamDescriptor::State::TRANSFER_PAUSED) {
                 if (auto status = mDriver->flush(); status == ::android::OK) {
                     mState = StreamDescriptor::State::IDLE;
-                    mIsClipTransitionDataBurstsAvailable = false;
+                    mIsClipTransitionDataBurstsInProgress = false;
                     mDrainInternalState = {};
                     populateReply(&reply, mIsConnected);
                 } else {
@@ -787,7 +786,7 @@ StreamOutWorkerLogic::Status StreamOutAsyncWorkerLogic::cycle() {
         return Status::ABORT;
     }
 
-    if (mPendingCallBack) {
+    if (mPendingCallBack && command.getTag() != Tag::getStatus) {
         if (mPendingCallBack == StreamCallbackType::TR) {
             handleTransferReady();
         } else if (mPendingCallBack == StreamCallbackType::DR) {
