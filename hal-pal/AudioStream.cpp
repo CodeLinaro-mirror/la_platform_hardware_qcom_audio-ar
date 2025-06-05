@@ -62,6 +62,7 @@
 #define AFE_PROXY_RECORD_PERIOD_SIZE  768
 static bool hw_ts_enable= false;
 static bool isEchoRefDev = false;
+static char mic_address[AUDIO_DEVICE_MAX_ADDRESS_LEN];
 
 static bool is_pcm_format(audio_format_t format)
 {
@@ -1316,7 +1317,7 @@ static int astream_in_get_active_microphones(
     if (astream_in) {
         channels = astream_in->GetChannelMask();
         memset(palDevs, 0, MAX_ACTIVE_MICROPHONES_TO_SUPPORT*sizeof(pal_device_id_t));
-        if (!(astream_in->GetPalDeviceIds(palDevs, &noPalDevices))) {
+        if (!(astream_in->GetPalDeviceIds(palDevs, &noPalDevices, mic_address))) {
             for (int i = 0; i < noPalDevices; i++) {
                 if (total_mic_count < in_mic_count) {
                     out_mic_count = in_mic_count - total_mic_count;
@@ -3303,14 +3304,18 @@ bool StreamInPrimary::isDeviceAvailable(pal_device_id_t deviceId)
     return false;
 }
 
-int StreamInPrimary::GetPalDeviceIds(pal_device_id_t *palDevIds, int *numPalDevs)
+int StreamInPrimary::GetPalDeviceIds(pal_device_id_t *palDevIds, int *numPalDevs, const char *address)
 {
     int noPalDevices;
 
     if (!palDevIds || !numPalDevs)
         return -EINVAL;
 
-    noPalDevices = getPalDeviceIds(mAndroidInDevices, mPalInDeviceIds);
+    if (address != NULL) {
+        noPalDevices = getPalDeviceIds(mAndroidInDevices, mPalInDeviceIds, address);
+    } else {
+        noPalDevices = getPalDeviceIds(mAndroidInDevices, mPalInDeviceIds);
+    }
     if (noPalDevices > MAX_ACTIVE_MICROPHONES_TO_SUPPORT)
         return -EINVAL;
 
@@ -3606,7 +3611,7 @@ int StreamInPrimary::RouteStream(const std::set<audio_devices_t>& new_devices) {
         goto done;
     }
 
-    AHAL_DBG("mAndroidInDevices %#x, mNoOfInDevices %zu, new_devices %d, num new_devices: %zu",
+    AHAL_DBG("mAndroidInDevices %#x, mNoOfInDevices %zu, new_devices %#x, num new_devices: %zu",
              AudioExtn::get_device_types(mAndroidInDevices),
              mAndroidInDevices.size(), AudioExtn::get_device_types(new_devices), new_devices.size());
 
@@ -4301,6 +4306,7 @@ StreamInPrimary::StreamInPrimary(audio_io_handle_t handle,
     }
     if (address) {
          strlcpy(address_, address, AUDIO_DEVICE_MAX_ADDRESS_LEN);
+         strlcpy(mic_address, address, AUDIO_DEVICE_MAX_ADDRESS_LEN);
          AHAL_DBG("address = %s\n", address_);
      } else {
          AHAL_DBG("address not present");
@@ -4336,6 +4342,7 @@ StreamPrimary::StreamPrimary(audio_io_handle_t handle,
 {
     memset(&streamAttributes_, 0, sizeof(streamAttributes_));
     memset(&address_, 0, sizeof(address_));
+    memset(&mic_address, 0, sizeof(mic_address));
     AHAL_INFO("handle: %d channel_mask: %d ", handle_, config_.channel_mask);
 }
 
