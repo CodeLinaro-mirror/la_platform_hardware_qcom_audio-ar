@@ -399,6 +399,11 @@ void StreamOutPrimary::resume() {
     // hardware is expected to up on start
     // but we are doing on first write
     LOG(DEBUG) << __func__ << mLogPrefix;
+    if (!mPlatform.isSoundCardUp()) {
+        LOG(ERROR) << __func__ << mLogPrefix << "Sound card is offline, returning...\n";
+        return -EINVAL;
+    }
+
     if (AudioExtension::getInstance().out_power_policy == POWER_POLICY_STATUS_OFFLINE) {
         LOG(ERROR) << "POWER POLICY OFFLINE please try again\n";
         return -EINVAL;
