@@ -346,7 +346,7 @@ ndk::ScopedAStatus qti::audio::core::ModulePrimary::setAudioPortConfig(const ::a
             break;
         }
     }
-    LOG(DEBUG) << "the module list is not empty";
+    LOG(VERBOSE) << "the module list is not empty";
     auto iter = list.begin();
     auto route_portid = route->sourcePortIds.begin();
     for (iter; route_portid!=route->sourcePortIds.end(); iter++) {
@@ -387,7 +387,6 @@ ndk::ScopedAStatus qti::audio::core::ModulePrimary::setAudioPortConfig(const ::a
                 }
                 LOG(DEBUG) << "gain is:" << volume;
                 LOG(DEBUG) << "volume is:" << vol[0];
-                (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(outIter))->setAddress(port.device.address.get<AudioDeviceAddress::Tag::id>());
                 (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(outIter))->setHwVolume(vol);
                 LOG(DEBUG) << "volume set :" << vol[0];
                 route_portid++;
