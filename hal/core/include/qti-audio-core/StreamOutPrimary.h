@@ -96,6 +96,7 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
         std::vector<::aidl::android::media::audio::common::AudioLatencyMode>* _aidl_return) override;
 
     bool isStreamOutPrimary() { return (mTag == Usecase::PRIMARY_PLAYBACK) ? true : false; }
+    bool isStreamOutMedia() { return (mTag == Usecase::MEDIA_PLAYBACK) ? true : false; }
     static std::mutex sourceMetadata_mutex_;
 
     // Methods from PlatformStreamCallback
