@@ -34,8 +34,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -1134,6 +1134,8 @@ int AudioDevice::Init(hw_device_t **device, const hw_module_t *module) {
     AudioExtn::a2dp_source_feature_init(property_get_bool("vendor.audio.feature.a2dp_offload.enable", false));
 
     AudioExtn::audio_extn_fm_init();
+    AudioExtn::bt_achat_feature_init(true);
+
     AudioExtn::audio_extn_kpi_optimize_feature_init(
             property_get_bool("vendor.audio.feature.kpi_optimize.enable", false));
     AudioExtn::battery_listener_feature_init(
