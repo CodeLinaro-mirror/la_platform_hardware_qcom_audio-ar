@@ -99,6 +99,14 @@ typedef enum {
    ESIRI_OUT,
 } cp_type;
 
+typedef enum {
+   INVALID_PATH = -1,
+   CALIB_PATH,
+   TUNING_PATH,
+   DEFAULT_PATH,
+   MAX_SCD_PATH_INDEX,
+} scd_file_path_index_t;
+
 typedef struct ecnrMainStruct tECNR_Main;
 
 typedef struct tECNR_AudioIO
@@ -260,7 +268,7 @@ class HalECNRExtension {
     int audio_extn_getSCDtype(uint32_t sample_Rate, int vocoder_rate, uint32_t ecnr_type, int connection_type, uint32_t dir);
     int audio_extn_fillSCDbuffer(char * scd_file_name, uint32_t** scd_buffer, uint32_t* scd_buffer_size, uint32_t dir, uint16_t data);
     int find_crc(FILE *fd, char * scd_file_name, uint32_t dir, uint16_t data);
-    int audio_extn_getSCDdata(tECNR_ProcessData* pECNR_ProcessData, uint32_t dir);
+    int audio_extn_getSCDdata(tECNR_ProcessData* pECNR_ProcessData, uint32_t dir, int *current_file_path);
     int audio_extn_setupECNR( tECNR_ProcessData* pECNR_ProcessData);
     int audio_extn_setupIOBuffer(tECNR_ProcessData* pECNR_ProcessData, int dir, int in_ch, int out_ch, int framesize, void* in_buffer, void* out_buffer);
     int audio_extn_resetIOBuffer(tECNR_ProcessData* pECNR_ProcessData);
