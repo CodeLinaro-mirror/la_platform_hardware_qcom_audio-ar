@@ -1156,7 +1156,9 @@ void StreamOutPrimary::configure() {
                     std::vector<float> Volumes;
                     int iter_channel;
                     int no_of_channels = mVolumes.size();
-                    if (streamOutPrimary->isStreamOutPrimary()) {
+                    if (streamOutPrimary->isStreamOutPrimary() || streamOutPrimary->isStreamOutMedia()) {
+                        /* Get mute status and volumes from PRIMARY_PLAYBACK or MEDIA_PLAYBACK */
+                        mMuted = streamOutPrimary->mMuted;
                         streamOutPrimary->getHwVolume(&Volumes);
                         for(iter_channel = 0; iter_channel < no_of_channels; iter_channel++) {
                             mVolumes[iter_channel] = Volumes[0];
