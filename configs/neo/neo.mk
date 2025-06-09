@@ -178,6 +178,7 @@ PRODUCT_PACKAGES += fai__3.0.0_0.0__eai_1.36_enpu2.pmd
 PRODUCT_PACKAGES += libfmpal
 PRODUCT_PACKAGES += libbtsinkpal
 PRODUCT_PACKAGES += libhfppal
+PRODUCT_PACKAGES += libbtachatpal
 PRODUCT_PACKAGES += event.eai
 PRODUCT_PACKAGES += music.eai
 PRODUCT_PACKAGES += speech.eai
