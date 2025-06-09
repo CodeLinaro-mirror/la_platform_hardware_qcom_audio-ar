@@ -682,20 +682,26 @@ HalECNRExtension::HalECNRExtension() {
                     return ret;
                 }
             } else {
-                if(*path == INVALID_PATH) {
+                if(current_file_path == NULL)
+                {
+                    ret = -1;
+                    LOG(ERROR) << __func__ << " current_file_path is Null ret = " << ret;
+                    return ret;
+                }
+                if(*current_file_path == INVALID_PATH) {
                     snprintf(scd_file_path, sizeof(scd_file_path), "%s%s", retCalibPath.c_str() ,scd_file_name);
                     ret = audio_extn_fillSCDbuffer(scd_file_path, &(pECNR_ProcessData->scd_buffer[1]), &(pECNR_ProcessData->scd_buffer_size[1]), dir, DNN);
-                    *path = CALIB_PATH;
+                    *current_file_path = CALIB_PATH;
                     if(ret) {
                         LOG(ERROR) << __func__ << " Couldn't find scd file";
                         snprintf(scd_file_path, sizeof(scd_file_path), "%s%s", SCD_PATH, scd_file_name);
                         ret = audio_extn_fillSCDbuffer(scd_file_path, &(pECNR_ProcessData->scd_buffer[1]), &(pECNR_ProcessData->scd_buffer_size[1]), dir, DNN);
-                        *path = TUNING_PATH;
+                        *current_file_path = TUNING_PATH;
                         if(ret) {
                             LOG(ERROR) << __func__ << " Invalid scd path";
                             snprintf(scd_file_path, sizeof(scd_file_path), "%s%s", SCD_PATH_BK, scd_file_name);
                             ret = audio_extn_fillSCDbuffer(scd_file_path, &(pECNR_ProcessData->scd_buffer[1]), &(pECNR_ProcessData->scd_buffer_size[1]), dir, DNN);
-                            *path = DEFAULT_PATH;
+                            *current_file_path = DEFAULT_PATH;
                             if(ret) {
                                 LOG(ERROR) << __func__ << " Couldn't find scd file";
                                 if(dir)
@@ -707,8 +713,14 @@ HalECNRExtension::HalECNRExtension() {
                         }
                     }
                 } else {
-                    LOG(DEBUG) << __func__ << " path: " << *path;
-                    if (*path == TUNING_PATH) {
+                    if(current_file_path == NULL)
+                    {
+                        ret = -1;
+                        LOG(ERROR) << __func__ << " current_file_path is Null ret = " << ret;
+                        return ret;
+                    }
+                    LOG(DEBUG) << __func__ << " current_file_path: " << *current_file_path;
+                    if (*current_file_path == TUNING_PATH) {
                         snprintf(scd_file_path, sizeof(scd_file_path), "%s%s", SCD_PATH, scd_file_name);
                         ret = audio_extn_fillSCDbuffer(scd_file_path, &(pECNR_ProcessData->scd_buffer[1]), &(pECNR_ProcessData->scd_buffer_size[1]), dir, DNN);
                         if(ret) {
