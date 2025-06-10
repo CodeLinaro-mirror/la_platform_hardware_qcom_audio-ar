@@ -15,8 +15,8 @@
  */
 
 /*
- * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -30,20 +30,12 @@
 #include <android-base/properties.h>
 #include <system/audio_config.h>
 
-// NOTE: Follow same enum definition with audio hal(hal/service/Services.cpp)
-enum class StubMode {
-    STUB_DISABLED = 0,
-    STUB_ENABLED = 1 << 0,
-    AUTO_RECOVERY_ENABLED = 1 << 2,
-};
-
 /** Default name of effect configuration file. */
 static const char* kDefaultConfigName = "audio_effects_config.xml";
 static const char* kStubConfigName = "audio_effects_config_stub.xml";
 
-static inline std::string getEffectConfig() {
-    StubMode stubmode = (StubMode)::android::base::GetIntProperty("vendor.audio.hal.stubmode", 0);
-    if (stubmode == StubMode::STUB_ENABLED) {
+static inline std::string getEffectConfig(bool stubMode) {
+    if (stubMode) {
         LOG(INFO) << __func__ << " using effects in stub mode";
         return android::audio_find_readable_configuration_file(kStubConfigName);
     }
@@ -51,12 +43,7 @@ static inline std::string getEffectConfig() {
     return android::audio_find_readable_configuration_file(kDefaultConfigName);
 }
 
-extern "C" __attribute__((visibility("default"))) binder_status_t registerService() {
-    auto configFile = getEffectConfig();
-    if (configFile == "") {
-        LOG(ERROR) << __func__ << ": config file " << kDefaultConfigName << " not found!";
-        return EXIT_FAILURE;
-    }
+static inline int registerIEffectService(std::string configFile) {
     LOG(INFO) << __func__ << ": start factory with configFile:" << configFile;
     auto effectFactory = ndk::SharedRefBase::make<aidl::qti::effects::Factory>(configFile);
     int version = 0;
@@ -66,4 +53,22 @@ extern "C" __attribute__((visibility("default"))) binder_status_t registerServic
             AServiceManager_addService(effectFactory->asBinder().get(), serviceName.c_str());
     LOG(DEBUG) << __func__ << " " << serviceName << " version " << version << " status " << status;
     return status;
+}
+
+static inline int registerServiceImpl(bool stubMode) {
+    auto configFile = getEffectConfig(stubMode);
+    if (configFile == "") {
+        const char* file_name = stubMode ?  kStubConfigName : kDefaultConfigName;
+        LOG(ERROR) << __func__ << ": config file " << file_name << " not found!";
+        return EXIT_FAILURE;
+    }
+    return registerIEffectService(configFile);
+}
+
+extern "C" __attribute__((visibility("default"))) binder_status_t registerService() {
+    return registerServiceImpl(false /* stubMode */);
+}
+
+extern "C" __attribute__((visibility("default"))) binder_status_t registerStubService() {
+    return registerServiceImpl(true /* stubMode */);
 }
