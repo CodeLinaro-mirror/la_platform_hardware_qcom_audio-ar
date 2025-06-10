@@ -31,6 +31,13 @@
         <defaultvalue>-4000</defaultvalue>
     </config>
 	<config>
+        <name>DefaultVolume</name>
+        <type>int</type>
+		<min>-9000</min>
+		<max>0</max>
+        <defaultvalue>-3300</defaultvalue>
+    </config>
+	<config>
         <name>Fader</name>
         <type>int</type>
 		<min>0</min>

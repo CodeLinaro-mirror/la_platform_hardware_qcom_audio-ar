@@ -560,13 +560,16 @@ LOCAL_SHARED_LIBRARIES := \
     android.hardware.automotive.audiocontrol-V4-ndk \
     ampere.hardware.interfaces.automotive.audioparameterparser-V1-ndk \
     libAudioConfigOem \
-    libAWXPAL
+    libAWXPAL \
+    libxml2 \
+    libaudioserviceexampleimpl
 
 
 LOCAL_HEADER_LIBRARIES :=  \
     libaudio_system_headers \
     libsystem_headers \
-    libarpal_headers
+    libarpal_headers \
+    libxsdc-utils
 
 include $(BUILD_SHARED_LIBRARY)
 
