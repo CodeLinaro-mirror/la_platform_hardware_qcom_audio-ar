@@ -22,9 +22,6 @@ AUDIO_AGM += libagm_compress_plugin
 AUDIO_AGM += agmcompresscap
 AUDIO_AGM += agmvoiceui
 AUDIO_AGM += agmhostless
-AUDIO_AGM += libcodec_interface
-AUDIO_AGM += libcodec_pcm_plugin
-
 
 #PAL Module
 AUDIO_PAL := libar-pal
@@ -38,7 +35,7 @@ AUDIO_PAL += libhfp_pal
 #PAL Service
 AUDIO_PAL += libpalclient
 AUDIO_PAL += libpalipcservice
-AUDIO_PAL += libpaleventnotifier
+#AUDIO_PAL += libpaleventnotifier
 #PAL Stream Modules
 AUDIO_PAL += libstream_compress
 AUDIO_PAL += libstream_incall
@@ -52,7 +49,7 @@ AUDIO_PAL += libstream_haptics
 AUDIO_PAL += libstream_acd
 AUDIO_PAL += libstream_nontunnel
 AUDIO_PAL += libstream_soundtrigger
-AUDIO_PAL += libstream_acdb
+AUDIO_PAL += libstream_dummy
 AUDIO_PAL += libstream_asr
 #PAL Sessions Modules
 AUDIO_PAL += libsession_agm
@@ -83,8 +80,6 @@ AUDIO_PAL += libdev_speaker_mic
 AUDIO_PAL += libdev_ultrasound
 AUDIO_PAL += libdev_usb
 
-AUDIO_PAL += libpaleventnotifier
-
 # C2 Audio
 AUDIO_C2 := libqc2audio_base
 AUDIO_C2 += libqc2audio_utils
@@ -93,11 +88,8 @@ AUDIO_C2 += libqc2audio_core
 AUDIO_C2 += libqc2audio_basecodec
 AUDIO_C2 += libqc2audio_hooks
 AUDIO_C2 += libqc2audio_swaudiocodec
-AUDIO_C2 += libqc2audio_swaudiocodec_data_common
 AUDIO_C2 += libqc2audio_hwaudiocodec
-AUDIO_C2 += libqc2audio_hwaudiocodec_data_common
 AUDIO_C2 += vendor.qti.media.c2audio@1.0-service
-AUDIO_C2 += qc2audio_test
 AUDIO_C2 += libEvrcSwCodec
 AUDIO_C2 += libQcelp13SwCodec
 AUDIO_C2 += c2audio.vendor.base-arm.policy
@@ -109,12 +101,8 @@ AUDIO_TEST := mcs_test
 AUDIO_TEST += ar_util_in_test_example
 
 
-AUDIO_MODULES := ftm_test_config
-AUDIO_MODULES += ftm_test_config_sun-qrd-snd-card
-AUDIO_MODULES += ftm_test_config_sun-qrd-sku2-snd-card
-AUDIO_MODULES += audioadsprpcd
-AUDIO_MODULES += acdb_cal_vienna.acdb
-AUDIO_MODULES += workspaceFileXml_vienna.qwsp
+AUDIO_MODULES += ftm_test_config
+
 AUDIO_MODULES += MTP_acdb_cal.acdb
 AUDIO_MODULES += MTP_workspaceFileXml.qwsp
 AUDIO_MODULES += CDP_acdb_cal.acdb
@@ -123,54 +111,54 @@ AUDIO_MODULES += QRD_acdb_cal.acdb
 AUDIO_MODULES += QRD_workspaceFileXml.qwsp
 AUDIO_MODULES += IDP_UPD_acdb_cal.acdb
 AUDIO_MODULES += IDP_UPD_workspaceFileXml.qwsp
-AUDIO_MODULES += QRD_sun_sku2_acdb_cal.acdb
-AUDIO_MODULES += QRD_sun_sku2_workspaceFileXml.qwsp
-AUDIO_MODULES += fai__2.3.0_0.1__3.0.0_0.0__eai_1.10.pmd
-AUDIO_MODULES += fai__2.3.0_0.1__3.0.0_0.0__eai_1.36_enpu2_comp.pmd
-AUDIO_MODULES += fai__2.0.0_0.1__3.0.0_0.0__eai_1.36_enpu2.pmd
-AUDIO_MODULES += fai__2.7.2_0.0__3.0.0_0.0__eai_1.36_enpu2.pmd
-AUDIO_MODULES += fai__2.7.20_0.0__3.0.0_0.0__eai_1.36_enpu2.pmd
-AUDIO_MODULES += fai__3.0.0_0.0__eai_1.36_enpu2.pmd
-AUDIO_MODULES += ffv__7.1.1_0.1__eai_4.8_enpu_v5.pmd
-AUDIO_MODULES += ffv__7.1.1_0.2__eai_4.8_enpu_v5.pmd
-AUDIO_MODULES += ffv__5.0.2_0.1__eai_4.8_enpu_v5.pmd
-AUDIO_MODULES += hk01b_relu_eAI_4.6_eNPU_V5_adsp_i.pmd
-AUDIO_MODULES += click.pcm
-AUDIO_MODULES += double_click.pcm
-AUDIO_MODULES += heavy_click.pcm
-AUDIO_MODULES += pop.pcm
-AUDIO_MODULES += reserved_1.pcm
-AUDIO_MODULES += reserved_2.pcm
-AUDIO_MODULES += reserved_3.pcm
-AUDIO_MODULES += reserved_4.pcm
-AUDIO_MODULES += reserved_5.pcm
-AUDIO_MODULES += reserved_6.pcm
-AUDIO_MODULES += reserved_7.pcm
-AUDIO_MODULES += reserved_8.pcm
-AUDIO_MODULES += texture_tick.pcm
-AUDIO_MODULES += thud.pcm
-AUDIO_MODULES += tick.pcm
-AUDIO_MODULES += libfmpal
-AUDIO_MODULES += event.eai
-AUDIO_MODULES += music.eai
-AUDIO_MODULES += speech.eai
-AUDIO_MODULES += environment.eai
+#AUDIO_MODULES += QRD_sun_sku2_acdb_cal.acdb
+#AUDIO_MODULES += QRD_sun_sku2_workspaceFileXml.qwsp
+#AUDIO_MODULES += fai__2.3.0_0.1__3.0.0_0.0__eai_1.10.pmd
+#AUDIO_MODULES += fai__2.3.0_0.1__3.0.0_0.0__eai_1.36_enpu2_comp.pmd
+#AUDIO_MODULES += fai__2.0.0_0.1__3.0.0_0.0__eai_1.36_enpu2.pmd
+#AUDIO_MODULES += fai__2.7.2_0.0__3.0.0_0.0__eai_1.36_enpu2.pmd
+#AUDIO_MODULES += fai__2.7.20_0.0__3.0.0_0.0__eai_1.36_enpu2.pmd
+#AUDIO_MODULES += fai__3.0.0_0.0__eai_1.36_enpu2.pmd
+#AUDIO_MODULES += ffv__5.0.1_0.1__3.0.0_0.0__eai_2.10_enpu3.pmd
+#AUDIO_MODULES += ffv__5.0.1_0.1__eai_2.10_enpu3.pmd
+#AUDIO_MODULES += ffv__6.2.5_0.1__eai_3.4__enpu_v4.pmd
+#AUDIO_MODULES += ffv__7.0.1_0.1__eai_3.4_enpu_v4.pmd
+#AUDIO_MODULES += click.pcm
+#AUDIO_MODULES += double_click.pcm
+#AUDIO_MODULES += heavy_click.pcm
+#AUDIO_MODULES += pop.pcm
+#AUDIO_MODULES += reserved_1.pcm
+#AUDIO_MODULES += reserved_2.pcm
+#AUDIO_MODULES += reserved_3.pcm
+#AUDIO_MODULES += reserved_4.pcm
+#AUDIO_MODULES += reserved_5.pcm
+#AUDIO_MODULES += reserved_6.pcm
+#AUDIO_MODULES += reserved_7.pcm
+#AUDIO_MODULES += reserved_8.pcm
+#AUDIO_MODULES += texture_tick.pcm
+#AUDIO_MODULES += thud.pcm
+#AUDIO_MODULES += tick.pcm
+#AUDIO_MODULES += libfmpal
+#AUDIO_MODULES += event.eai
+#AUDIO_MODULES += music.eai
+#AUDIO_MODULES += speech.eai
+#AUDIO_MODULES += environment.eai
 AUDIO_MODULES += libqtigefar
 AUDIO_MODULES += audiodsd2pcmtest
 AUDIO_MODULES += mm-audio-ftm
 AUDIO_MODULES += libmcs
+AUDIO_MODULES += libquasar
 AUDIO_MODULES += sensors.dynamic_sensor_hal
-
-ifeq ($(PRODUCT_ENABLE_QESDK),true)
 AUDIO_MODULES += libvui_dmgr
 AUDIO_MODULES += libvui_dmgr_client
 AUDIO_MODULES += qsap_voiceui
 AUDIO_MODULES += qsap_voiceui.policy
-endif
-
+#AUDIO_MODULES += libaudiocollector
 AUDIO_MODULES += libhotword_intf
 AUDIO_MODULES += libcustomva_intf
 AUDIO_MODULES += libvui_intf
+AUDIO_MODULES += libVoiceSdk
+AUDIO_MODULES += libtensorflowlite_c
 
 AUDIO_MODULES += $(AUDIO_AGM)
 AUDIO_MODULES += $(AUDIO_PAL)
@@ -193,10 +181,6 @@ AUDIO_MODULES += \
     libaudiocorehal.qti \
     libaudiocorehal.default \
     libaudioeffecthal.qti
-
-# AIDL AHAL VENDOR EXTENSION
-AUDIO_MODULES += \
-    libaudiohalvendorextn_wear
 
 # add modules for fuzzing
 ifneq ($(filter audio,$(QC_HWASAN))$(filter hwaddress,$(SANITIZE_TARGET)),)

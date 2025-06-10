@@ -1,5 +1,6 @@
-#BOARD_USES_GENERIC_AUDIO := true
-#
+# Audio product definitions
+include vendor/qcom/opensource/audio-hal/primary-hal/configs/lahaina/audio-modules.mk
+PRODUCT_PACKAGES += $(AUDIO_MODULES)
 #AUDIO_FEATURE_FLAGS
 ifeq ($(TARGET_USES_QMAA_OVERRIDE_AUDIO), false)
 ifeq ($(TARGET_USES_QMAA),true)
@@ -7,10 +8,7 @@ AUDIO_USE_STUB_HAL := true
 endif
 endif
 
-TARGET_USES_ION_CMA_MEMORY := true
-
 ifneq ($(AUDIO_USE_STUB_HAL), true)
-BOARD_USES_ALSA_AUDIO := true
 TARGET_USES_AOSP_FOR_AUDIO := false
 
 ifneq ($(TARGET_USES_AOSP_FOR_AUDIO), true)
@@ -38,9 +36,8 @@ AUDIO_FEATURE_ENABLED_MPEGH_SW_DECODER := true
 AUDIO_FEATURE_ENABLED_PROXY_DEVICE := true
 AUDIO_FEATURE_ENABLED_SSR := true
 AUDIO_FEATURE_ENABLED_DTS_EAGLE := false
-BOARD_USES_SRS_TRUEMEDIA := false
 DTS_CODEC_M_ := false
-MM_AUDIO_ENABLED_SAFX := true
+MM_AUDIO_ENABLED_SAFX := false
 AUDIO_FEATURE_ENABLED_HW_ACCELERATED_EFFECTS := false
 AUDIO_FEATURE_ENABLED_AUDIOSPHERE := true
 AUDIO_FEATURE_ENABLED_USB_TUNNEL := true
@@ -48,12 +45,11 @@ AUDIO_FEATURE_ENABLED_A2DP_OFFLOAD := true
 AUDIO_FEATURE_ENABLED_3D_AUDIO := true
 AUDIO_FEATURE_ENABLED_AHAL_EXT := false
 AUDIO_FEATURE_ENABLED_EXTENDED_COMPRESS_FORMAT := true
+AUDIO_FEATURE_ENABLED_EC_REF_CAPTURE := true
 DOLBY_ENABLE := false
 endif
 
 AUDIO_FEATURE_ENABLED_DLKM := true
-BOARD_SUPPORTS_SOUND_TRIGGER := true
-BOARD_SUPPORTS_GCS := false
 AUDIO_FEATURE_ENABLED_INSTANCE_ID := true
 AUDIO_USE_DEEP_AS_PRIMARY_OUTPUT := false
 AUDIO_FEATURE_ENABLED_VBAT_MONITOR := true
@@ -84,17 +80,15 @@ AUDIO_FEATURE_ENABLED_SND_MONITOR := true
 AUDIO_FEATURE_ENABLED_USB_BURST_MODE := true
 AUDIO_FEATURE_ENABLED_SVA_MULTI_STAGE := true
 AUDIO_FEATURE_ENABLED_BATTERY_LISTENER := true
-
-AUDIO_FEATURE_ENABLED_PAL_HIDL := true
-AUDIO_FEATURE_ENABLED_LSM_HIDL := false
+BUILD_AUDIO_TECHPACK_SOURCE := true
+AUDIO_FEATURE_ENABLED_MCS := true
 ##AUDIO_FEATURE_FLAGS
-
 #AGM
 AUDIO_AGM := libagmclient
 AUDIO_AGM += libagmservice
-AUDIO_AGM += vendor.qti.hardware.AGMIPC@1.0-impl
-AUDIO_AGM += vendor.qti.hardware.AGMIPC@1.0-service
-AUDIO_AGM += vendor.qti.hardware.AGMIPC@1.0-service.rc
+#AUDIO_AGM += vendor.qti.hardware.AGMIPC@1.0-impl
+#AUDIO_AGM += vendor.qti.hardware.AGMIPC@1.0-service
+#AUDIO_AGM += vendor.qti.hardware.AGMIPC@1.0-service.rc
 AUDIO_AGM += libagm
 AUDIO_AGM += agmplay
 AUDIO_AGM += agmcap
@@ -104,23 +98,15 @@ AUDIO_AGM += libagm_mixer_plugin
 AUDIO_AGM += libagm_pcm_plugin
 AUDIO_AGM += libagm_compress_plugin
 
-#PAL Module
-AUDIO_PAL := libar-pal
-AUDIO_PAL += lib_bt_bundle
-AUDIO_PAL += lib_bt_aptx
-AUDIO_PAL += lib_bt_ble
-AUDIO_PAL += catf
 #PAL Service
 AUDIO_PAL += libpalclient
 AUDIO_PAL += vendor.qti.hardware.pal@1.0-impl
 
+#PAL Module
+AUDIO_PAL := libar-pal
+AUDIO_PAL += catf
+AUDIO_PAL += PalTest
 
-BOARD_SUPPORTS_OPENSOURCE_STHAL := true
-
-AUDIO_HARDWARE := audio.a2dp.default
-AUDIO_HARDWARE += audio.usb.default
-AUDIO_HARDWARE += audio.r_submix.default
-AUDIO_HARDWARE += audio.primary.lahaina
 
 #HAL Wrapper
 AUDIO_WRAPPER := libqahw
@@ -149,23 +135,30 @@ AUDIO_HAL_TEST_APPS += hal_rec_test
 PRODUCT_PACKAGES += $(AUDIO_HARDWARE)
 PRODUCT_PACKAGES += $(AUDIO_WRAPPER)
 PRODUCT_PACKAGES += $(AUDIO_HAL_TEST_APPS)
-PRODUCT_PACKAGES += ftm_test_config_lahaina-qrd-snd-card
-PRODUCT_PACKAGES += audioadsprpcd
-PRODUCT_PACKAGES += vendor.qti.audio-adsprpc-service.rc
-PRODUCT_PACKAGES += android.hardware.audio.service
-PRODUCT_PACKAGES += android.hardware.audio.service.rc
-PRODUCT_PACKAGES += MTP_acdb_cal.acdb
-PRODUCT_PACKAGES += MTP_workspaceFileXml.qwsp
-PRODUCT_PACKAGES += CDP_acdb_cal.acdb
-PRODUCT_PACKAGES += CDP_workspaceFileXml.qwsp
+
+
+PRODUCT_PACKAGES += IDP_acdb_cal.acdb
+PRODUCT_PACKAGES += IDP_workspaceFileXml.qwsp
 PRODUCT_PACKAGES += QRD_acdb_cal.acdb
 PRODUCT_PACKAGES += QRD_workspaceFileXml.qwsp
+PRODUCT_PACKAGES += IDP_lahaina_yupik_acdb_cal.acdb
+PRODUCT_PACKAGES += IDP_lahaina_yupik_workspaceFileXml.qwsp
+PRODUCT_PACKAGES += QRD_lahaina_yupik_acdb_cal.acdb
+PRODUCT_PACKAGES += QRD_lahaina_yupik_workspaceFileXml.qwsp
 PRODUCT_PACKAGES += fai__2.3.0_0.1__3.0.0_0.0__eai_1.10.pmd
+PRODUCT_PACKAGES += fai__2.3.0_0.1__3.0.0_0.0__eai_1.36_enpu2_comp.pmd
+PRODUCT_PACKAGES += fai__2.0.0_0.1__3.0.0_0.0__eai_1.36_enpu2.pmd
+PRODUCT_PACKAGES += fai__2.7.2_0.0__3.0.0_0.0__eai_1.36_enpu2.pmd
+PRODUCT_PACKAGES += fai__2.7.20_0.0__3.0.0_0.0__eai_1.36_enpu2.pmd
+PRODUCT_PACKAGES += fai__3.0.0_0.0__eai_1.36_enpu2.pmd
 PRODUCT_PACKAGES += libfmpal
 PRODUCT_PACKAGES += event.eai
 PRODUCT_PACKAGES += music.eai
 PRODUCT_PACKAGES += speech.eai
 PRODUCT_PACKAGES += libqtigefar
+ifeq ($(strip $(AUDIO_FEATURE_ENABLED_MCS)), true)
+PRODUCT_PACKAGES += libmcs
+endif
 
 ifneq ($(strip $(TARGET_USES_RRO)), true)
 #Audio Specific device overlays
@@ -175,25 +168,51 @@ PRODUCT_PACKAGES += $(AUDIO_AGM)
 PRODUCT_PACKAGES += $(AUDIO_PAL)
 PRODUCT_PACKAGES += $(AUDIO_C2)
 
+# Audio configuration xml's related to yupik
+QCV_FAMILY_SKUS := yupik
+DEVICE_SKU := yupik
+
+CONFIG_PAL_SRC_DIR := vendor/qcom/opensource/pal/configs/lahaina
+CONFIG_HAL_SRC_DIR := vendor/qcom/opensource/audio-hal/primary-hal/configs/lahaina
+CONFIG_SKU_OUT_DIR := $(TARGET_COPY_OUT_VENDOR)/etc/audio/sku_$(DEVICE_SKU)
+
 PRODUCT_COPY_FILES += \
-    vendor/qcom/opensource/audio-hal/primary-hal/configs/lahaina/audio_effects.conf:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects.conf \
-    vendor/qcom/opensource/audio-hal/primary-hal/configs/lahaina/audio_effects.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects.xml \
-    vendor/qcom/opensource/audio-hal/primary-hal/configs/lahaina/card-defs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/card-defs.xml \
-    vendor/qcom/opensource/audio-hal/primary-hal/configs/lahaina/mixer_paths_lahaina_qrd.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_lahaina_qrd.xml \
-    vendor/qcom/opensource/audio-hal/primary-hal/configs/lahaina/mixer_paths_lahaina_mtp.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_lahaina_mtp.xml \
-    vendor/qcom/opensource/audio-hal/primary-hal/configs/lahaina/mixer_paths_lahaina_cdp.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_lahaina_cdp.xml \
-    vendor/qcom/opensource/pal/configs/lahaina/resourcemanager_lahaina_qrd.xml:$(TARGET_COPY_OUT_VENDOR)/etc/resourcemanager_lahaina_qrd.xml \
-    vendor/qcom/opensource/pal/configs/lahaina/resourcemanager_lahaina_mtp.xml:$(TARGET_COPY_OUT_VENDOR)/etc/resourcemanager_lahaina_mtp.xml \
-    vendor/qcom/opensource/pal/configs/lahaina/resourcemanager_lahaina_cdp.xml:$(TARGET_COPY_OUT_VENDOR)/etc/resourcemanager_lahaina_cdp.xml \
+    $(CONFIG_HAL_SRC_DIR)/audio_effects.conf:$(CONFIG_SKU_OUT_DIR)/audio_effects.conf \
+    $(CONFIG_HAL_SRC_DIR)/audio_effects.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects.xml \
+    $(CONFIG_HAL_SRC_DIR)/audio_effects_config.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects_config.xml \
+    $(CONFIG_HAL_SRC_DIR)/card-defs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/card-defs.xml \
+    $(CONFIG_HAL_SRC_DIR)/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/microphone_characteristics.xml \
+    $(CONFIG_HAL_SRC_DIR)/mixer_paths_lahaina_yupikqrd.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_lahaina_yupikqrd.xml \
+    $(CONFIG_HAL_SRC_DIR)/mixer_paths_lahaina_yupikidp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_lahaina_yupikidp.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_lahaina_yupikidp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_lahaina_yupikidp.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_lahaina_yupikqrd.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_lahaina_yupikqrd.xml \
+    $(CONFIG_PAL_SRC_DIR)/usecaseKvManager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usecaseKvManager.xml \
+    $(CONFIG_PAL_SRC_DIR)/plugin_manager.xml:$(CONFIG_SKU_OUT_DIR)/plugin_manager.xml \
     vendor/qcom/opensource/audio-hal/primary-hal/configs/common/media_codecs_vendor_audio.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_vendor_audio.xml \
     frameworks/native/data/etc/android.hardware.audio.pro.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.pro.xml \
     frameworks/native/data/etc/android.hardware.audio.low_latency.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.low_latency.xml
 
+# Copy AudioEffects config
+PRODUCT_COPY_FILES += \
+    hardware/interfaces/audio/aidl/default/audio_effects_config.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects_config_stub.xml
+
 #XML Audio configuration files
 ifneq ($(TARGET_USES_AOSP_FOR_AUDIO), true)
 PRODUCT_COPY_FILES += \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/lahaina/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/audio_policy_configuration.xml
+    $(CONFIG_HAL_SRC_DIR)/audio_policy_configuration.xml:$(CONFIG_SKU_OUT_DIR)/audio_policy_configuration.xml
+
+#Audio configuration xml's common to yupik family
+PRODUCT_COPY_FILES += \
+$(foreach DEVICE_SKU, $(QCV_FAMILY_SKUS), \
+    $(CONFIG_HAL_SRC_DIR)/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/sku_$(DEVICE_SKU)_qssi/audio_policy_configuration.xml)
+
+PRODUCT_COPY_FILES += \
+    $(CONFIG_HAL_SRC_DIR)/audio_module_config_primary.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/audio_module_config_primary.xml
 endif
+
+# XML config file for memory logger
+PRODUCT_COPY_FILES += $(CONFIG_HAL_SRC_DIR)/mem_logger_config.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mem_logger_config.xml
+
 PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_configuration.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/a2dp_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/a2dp_audio_policy_configuration.xml \
@@ -201,6 +220,7 @@ PRODUCT_COPY_FILES += \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/default_volume_tables.xml:$(TARGET_COPY_OUT_VENDOR)/etc/default_volume_tables.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/r_submix_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/r_submix_audio_policy_configuration.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/usb_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usb_audio_policy_configuration.xml \
+    $(TOPDIR)frameworks/av/services/audiopolicy/config/stub_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/stub_audio_policy_configuration.xml \
     $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/bluetooth_qti_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/bluetooth_qti_audio_policy_configuration.xml \
     $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/bluetooth_qti_hearing_aid_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/bluetooth_qti_hearing_aid_audio_policy_configuration.xml
 
@@ -210,18 +230,28 @@ PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/codec2/service/1.0/c2audio.vendor.base-arm64.policy:vendor/etc/seccomp_policy/c2audio.vendor.base-arm64.policy \
     $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/codec2/service/1.0/c2audio.vendor.ext-arm.policy:vendor/etc/seccomp_policy/c2audio.vendor.ext-arm.policy \
     $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/codec2/service/1.0/c2audio.vendor.ext-arm64.policy:vendor/etc/seccomp_policy/c2audio.vendor.ext-arm64.policy
+PRODUCT_COPY_FILES += \
+    $(CONFIG_HAL_SRC_DIR)/vendor_audio_interfaces.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/vendor_audio_interfaces.xml
 
-# Reduce client buffer size for fast audio output tracks
-PRODUCT_PROPERTY_OVERRIDES += \
-    af.fast_track_multiplier=1
-
+ifneq (,$(filter userdebug eng, $(TARGET_BUILD_VARIANT)))
+PRODUCT_COPY_FILES += \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/init.qti.audio.debug.sh:$(TARGET_COPY_OUT_VENDOR)/bin/init.qti.audio.debug.sh
+endif
 # Reduce AF standby time for playback threads (except offload)
 PRODUCT_PROPERTY_OVERRIDES += \
    ro.audio.flinger_standbytime_ms=2000
 
+# timecheck timeout value for audio in ms
+PRODUCT_PROPERTY_OVERRIDES += \
+    vendor.audio_hal.timecheck_timeoutMS=8000
+
 # Low latency audio buffer size in frames
 PRODUCT_PROPERTY_OVERRIDES += \
     vendor.audio_hal.period_size=192
+
+# period multiplier for low latency capture tracks
+PRODUCT_PROPERTY_OVERRIDES += \
+    vendor.audio.ull_record_period_multiplier=2
 
 ##Ambisonic Capture
 PRODUCT_PROPERTY_OVERRIDES += \
@@ -239,12 +269,20 @@ persist.vendor.audio.fluence.voicerec=false\
 persist.vendor.audio.fluence.speaker=true\
 persist.vendor.audio.fluence.tmic.enabled=false
 
+#
+#snapdragon value add features
+#
+PRODUCT_PROPERTY_OVERRIDES += \
+ro.qc.sdk.audio.ssr=false
+
 ##fluencetype can be "fluence" or "fluencepro" or "none"
 PRODUCT_PROPERTY_OVERRIDES += \
 ro.qc.sdk.audio.fluencetype=none\
-persist.audio.fluence.voicecall=true\
-persist.audio.fluence.voicerec=false\
-persist.audio.fluence.speaker=true
+
+##speaker protection v3 switch and ADSP AFE API version
+PRODUCT_PROPERTY_OVERRIDES += \
+persist.vendor.audio.spv3.enable=true\
+persist.vendor.audio.avs.afe_api_version=2
 
 #disable tunnel encoding
 PRODUCT_PROPERTY_OVERRIDES += \
@@ -317,20 +355,20 @@ PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.hal.boot.timeout.ms=20000
 
 #split a2dp DSP supported encoder list
-PRODUCT_PROPERTY_OVERRIDES += \
-persist.vendor.bt.a2dp_offload_cap=sbc-aptx-aptxtws-aptxhd-aac-ldac
+#PRODUCT_PROPERTY_OVERRIDES += \
+#persist.vendor.bt.a2dp_offload_cap=sbc-aptx-aptxtws-aptxhd-aac-ldac
 
 # A2DP offload support
-PRODUCT_PROPERTY_OVERRIDES += \
-ro.bluetooth.a2dp_offload.supported=true
+#PRODUCT_PROPERTY_OVERRIDES += \
+#ro.bluetooth.a2dp_offload.supported=true
 
 # Disable A2DP offload
-PRODUCT_PROPERTY_OVERRIDES += \
-persist.bluetooth.a2dp_offload.disabled=false
+#PRODUCT_PROPERTY_OVERRIDES += \
+#persist.bluetooth.a2dp_offload.disabled=false
 
 # A2DP offload DSP supported encoder list
-PRODUCT_PROPERTY_OVERRIDES += \
-persist.bluetooth.a2dp_offload.cap=sbc-aac-aptx-aptxhd-ldac
+#PRODUCT_PROPERTY_OVERRIDES += \
+#persist.bluetooth.a2dp_offload.cap=sbc-aac-aptx-aptxhd-ldac
 
 #enable software decoders for ALAC and APE
 PRODUCT_PROPERTY_OVERRIDES += \
@@ -374,13 +412,21 @@ vendor.audio.adm.buffering.ms=2
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.volume.headset.gain.depcal=true
 
-#enable dualmic fluence for voice communication
-PRODUCT_PROPERTY_OVERRIDES += \
-persist.audio.fluence.voicecomm=true
-
 #enable c2 based encoders/decoders as default NT decoders/encoders
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.c2.preferred=true
+
+#Enable dmaBuf heap usage by C2 components
+PRODUCT_PROPERTY_OVERRIDES += \
+debug.c2.use_dmabufheaps=1
+
+#Enable C2 suspend
+PRODUCT_PROPERTY_OVERRIDES += \
+vendor.qc2audio.suspend.enabled=true
+
+#Enable qc2 audio sw flac frame decode
+PRODUCT_PROPERTY_OVERRIDES += \
+vendor.qc2audio.per_frame.flac.dec.enabled=true
 
 ifneq ($(GENERIC_ODM_IMAGE),true)
 $(warning "Enabling codec2.0 SW only for non-generic odm build variant")
@@ -412,20 +458,20 @@ PRODUCT_PROPERTY_OVERRIDES += \
 persist.vendor.audio.voicecall.speaker.stereo=true
 
 #enable AAC frame ctl for A2DP sinks
-PRODUCT_PROPERTY_OVERRIDES += \
-persist.vendor.bt.aac_frm_ctl.enabled=true
+#PRODUCT_PROPERTY_OVERRIDES += \
+#persist.vendor.bt.aac_frm_ctl.enabled=true
 
 #enable VBR frame ctl
-PRODUCT_PROPERTY_OVERRIDES += \
-persist.vendor.bt.aac_vbr_frm_ctl.enabled=true
+#PRODUCT_PROPERTY_OVERRIDES += \
+#persist.vendor.bt.aac_vbr_frm_ctl.enabled=true
 
 #enable dedicated proxy for hearing aid
 PRODUCT_PROPERTY_OVERRIDES += \
 persist.vendor.audio.ha_proxy.enabled=true
 
 #add dynamic feature flags here
+#vendor.audio.feature.a2dp_offload.enable=true
 PRODUCT_PROPERTY_OVERRIDES += \
-vendor.audio.feature.a2dp_offload.enable=true \
 vendor.audio.feature.afe_proxy.enable=true \
 vendor.audio.feature.anc_headset.enable=false \
 vendor.audio.feature.battery_listener.enable=true \
@@ -466,50 +512,10 @@ vendor.audio.feature.deepbuffer_as_primary.enable=false \
 vendor.audio.feature.vbat.enable=true \
 vendor.audio.feature.wsa.enable=false \
 vendor.audio.feature.audiozoom.enable=false \
-vendor.audio.feature.snd_mon.enable=true
+vendor.audio.feature.snd_mon.enable=true \
+vendor.audio.feature.dmabuf.cma.memory.enable=true \
+vendor.audio.hdr.record.enable=false
 
-
-# for HIDL related packages
-PRODUCT_PACKAGES += \
-    android.hardware.audio@2.0-service \
-    android.hardware.audio@2.0-impl \
-    android.hardware.audio.effect@2.0-impl \
-    android.hardware.soundtrigger@2.1-impl \
-    android.hardware.audio@4.0 \
-    android.hardware.audio.common@4.0 \
-    android.hardware.audio.common@4.0-util \
-    android.hardware.audio@4.0-impl \
-    android.hardware.audio.effect@4.0 \
-    android.hardware.audio.effect@4.0-impl \
-    vendor.qti.hardware.audiohalext@1.0 \
-    vendor.qti.hardware.audiohalext@1.0-impl \
-    vendor.qti.hardware.audiohalext-utils
-
-# enable audio hidl hal 5.0
-PRODUCT_PACKAGES += \
-    android.hardware.audio@5.0 \
-    android.hardware.audio.common@5.0 \
-    android.hardware.audio.common@5.0-util \
-    android.hardware.audio@5.0-impl \
-    android.hardware.audio.effect@5.0 \
-    android.hardware.audio.effect@5.0-impl
-
-# enable audio hidl hal 6.0
-PRODUCT_PACKAGES += \
-    android.hardware.audio@6.0 \
-    android.hardware.audio.common@6.0 \
-    android.hardware.audio.common@6.0-util \
-    android.hardware.audio@6.0-impl \
-    android.hardware.audio.effect@6.0 \
-    android.hardware.audio.effect@6.0-impl
-
-# enable sound trigger hidl hal 2.2
-PRODUCT_PACKAGES += \
-    android.hardware.soundtrigger@2.2-impl \
-
-# enable sound trigger hidl hal 2.3
-PRODUCT_PACKAGES += \
-    android.hardware.soundtrigger@2.3-impl \
 
 PRODUCT_PACKAGES_ENG += \
     VoicePrintTest \
