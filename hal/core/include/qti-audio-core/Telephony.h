@@ -183,6 +183,7 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
     ::aidl::android::media::audio::common::AudioDevice getMatchingTxDevice(
             const ::aidl::android::media::audio::common::AudioDevice & rxDevice);
     bool isValidDevice(const ::aidl::android::media::audio::common::AudioDevice & rxDevice);
+    bool isUsbDeviceConnected(const ::aidl::android::media::audio::common::AudioDevice & rxDevice);
 
   protected:
     // Gaurd all the public APIs
