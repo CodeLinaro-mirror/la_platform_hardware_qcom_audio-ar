@@ -188,8 +188,8 @@ class StreamContext {
     // locking because it only cleans MQ pointers which were also set on the Binder thread.
     void reset();
     // 'advanceFrameCount' and 'getFrameCount' are only called on the worker thread.
-    long advanceFrameCount(size_t increase) { return mFrameCount += increase; }
-    long getFrameCount() const { return mFrameCount; }
+    void advanceFrameCount(size_t increase) { mFrameCount += increase; }
+    int64_t getFrameCount() const { return mFrameCount; }
     const ::aidl::android::media::audio::common::AudioPortConfig& getMixPortConfig() const {
         return mMixPortConfig;
     }
@@ -204,14 +204,14 @@ class StreamContext {
     std::unique_ptr<ReplyMQ> mReplyMQ;
     ::aidl::android::media::audio::common::AudioFormatDescription mFormat;
     ::aidl::android::media::audio::common::AudioChannelLayout mChannelLayout;
-    int mSampleRate;
+    int32_t mSampleRate;
     ::aidl::android::media::audio::common::AudioPortConfig mMixPortConfig;
     std::unique_ptr<DataMQ> mDataMQ;
     std::shared_ptr<::aidl::android::hardware::audio::core::IStreamCallback> mAsyncCallback;
     std::shared_ptr<::aidl::android::hardware::audio::core::IStreamOutEventCallback>
             mOutEventCallback; // Only used by output streams
     DebugParameters mDebugParameters;
-    long mFrameCount = 0;
+    int64_t mFrameCount = 0;
     int32_t mNominalLatency = 0;
     std::weak_ptr<Telephony> mTelephony;
     std::string mStreamName;
