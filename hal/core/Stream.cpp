@@ -791,16 +791,18 @@ StreamOutWorkerLogic::Status StreamOutAsyncWorkerLogic::cycle() {
     }
 
     if (mPendingCallBack) {
-        if (mPendingCallBack == StreamCallbackType::TR) {
-            handleTransferReady();
-        } else if (mPendingCallBack == StreamCallbackType::DR) {
-            handleDrainReady();
-        } else if (mPendingCallBack == StreamCallbackType::ER) {
-            handleError();
+        if (mPendingCallBack == StreamCallbackType::TR && handleTransferReady()) {
+            mPendingCallBack = {};
+        } else if (mPendingCallBack == StreamCallbackType::DR && handleDrainReady()) {
+            mPendingCallBack = {};
+        } else if (mPendingCallBack == StreamCallbackType::ER && handleError()) {
+            mPendingCallBack = {};
         } else {
-            LOG(WARNING) << __func__ << ": shouldn't happen !!!";
+            if (command.getTag() != Tag::getStatus) {
+                LOG(ERROR) << __func__
+                           << ": pending callback not handled, callback:" << *mPendingCallBack;
+            }
         }
-        mPendingCallBack = {};
     }
 
     return Status::CONTINUE;
