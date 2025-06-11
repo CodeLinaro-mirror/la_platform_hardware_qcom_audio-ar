@@ -39,6 +39,18 @@ using aidl::android::media::audio::common::AudioPortExt;
 // uncomment this to enable logging of very verbose logs like burst commands.
 // #define VERY_VERBOSE_LOGGING 1
 
+#ifdef AUDIO_FEATURE_ENABLED_GCOV
+extern "C" void __gcov_dump(void);
+#define GCOV_DUMP() \
+    do { \
+        LOG(DEBUG) << __func__ << mLogPrefix << "start dump gcov"; \
+        __gcov_dump(); \
+        LOG(DEBUG) << __func__ << mLogPrefix << "end dump gcov"; \
+    } while(0)
+#else
+#define GCOV_DUMP()
+#endif
+
 static bool karaoke = false;
 
 namespace qti::audio::core {
@@ -1296,6 +1308,7 @@ void StreamOutPrimary::shutdown_I() {
     mPalHandle = nullptr;
     mHapticsPalHandle = nullptr;
     LOG(VERBOSE) << __func__ << mLogPrefix;
+    GCOV_DUMP();
 }
 
 ::android::status_t StreamOutPrimary::burstZero() {
