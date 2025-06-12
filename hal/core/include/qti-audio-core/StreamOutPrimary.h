@@ -123,7 +123,7 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     const std::string mTagName;
     const size_t mFrameSizeBytes;
     bool mIsPaused{false};
-    std::vector<float> mVolumes{};
+    std::vector<float> mVolumes{-3600,-3600};
     bool mUseCachedVolume = false;
     bool mHwVolumeSupported = false;
     bool mVolumeGaincheck = false;

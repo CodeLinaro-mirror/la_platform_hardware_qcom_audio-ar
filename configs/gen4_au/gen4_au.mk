@@ -150,6 +150,7 @@ PRODUCT_PACKAGES += CarServiceResAutoTarget_Vendor
 endif
 endif
 endif
+ENABLE_QCOM_VHAL := true
 ENABLE_QCOM_AMPERE_AUDIO := false
 $(call soong_config_set_bool,qcom_audio_hal,use_ampere_audio,true)
 
@@ -329,7 +330,7 @@ endif
 ifneq ($(filter $(TARGET_BOARD_DERIVATIVE_SUFFIX), _sdv _cdcsdv),)
 PRODUCT_COPY_FILES += \
 $(TOPDIR)vendor/qcom/opensource/pal/configs/gen4_au/plugin_manager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/plugin_manager.xml \
-$(TOPDIR)vendor/qcom/opensource/harry-pal/bike_bell.wav:$(TARGET_COPY_OUT_VENDOR)/etc/bike_bell.wav
+$(TOPDIR)vendor/qcom/opensource/harry-pal/test/bike_bell.wav:$(TARGET_COPY_OUT_VENDOR)/etc/bike_bell.wav
 endif
 
 # cma memory for MDF

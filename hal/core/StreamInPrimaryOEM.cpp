@@ -61,6 +61,7 @@ StreamInPrimaryOEM::StreamInPrimaryOEM(StreamContext&& context, const SinkMetada
     os << " : usecase: " << mTagName;
     os << " IoHandle:" << mMixPortConfig.ext.get<AudioPortExt::Tag::mix>().handle;
     mLogPrefixOEM = os.str();
+    mScd_file_path_index_ul = INVALID_PATH;
 
     LOG(INFO) << __func__ << mLogPrefixOEM;
 }
@@ -194,16 +195,47 @@ void StreamInPrimaryOEM::shutdown() {
                 getTuneIOBuffer = mAudExt.mHalExtension->audio_extn_get_TuneIO_buffer(&pECNR_TuneIFData, &(pECNR_ProcessData.sECNRTuneIO));
                 if (getTuneIOBuffer >= 0)
                     ret = mAudExt.mHalExtension->audio_extn_ecnrProcess(pECNR_ProcessData.pMain, pECNR_ProcessData.audioIO, &(pECNR_ProcessData.sECNRTuneIO));
-                else
+                else {
 #endif
                     ret = mAudExt.mHalExtension->audio_extn_ecnrProcess(pECNR_ProcessData.pMain, pECNR_ProcessData.audioIO, NULL);
+                    if (ret) {
+                        for(int path_index = mScd_file_path_index_ul; path_index < MAX_SCD_PATH_INDEX; path_index++) {
+                            if(mScd_file_path_index_ul == DEFAULT_PATH) {
+                                LOG(ERROR) << __func__ << mLogPrefixOEM << " ECNR_Process failed ret = " << ret;
+                                shutdown_I();
+                            } else {
+                                //Increamenting file path index to skip the used path
+                                mScd_file_path_index_ul++;
+                                if (mAudExt.mHalExtension->audio_extn_getSCDdata(&pECNR_ProcessData, DIR_UL, &mScd_file_path_index_ul)) {
+                                    LOG(ERROR) << __func__ << mLogPrefixOEM << " failed to get scd information, disabling ecnr processing";
+                                    shutdown_I();
+                                }
+                                LOG(DEBUG) << __func__ << " path: " << mScd_file_path_index_ul;
+                                mAudExt.mHalExtension->audio_extn_setupIOBuffer(&pECNR_ProcessData, DIR_UL, ECNR_MIC_EC_CH, mChannels, ecnrPeriodSize, ecnr_in_buffer.get(), ecnr_out_buffer.get());
+                                ret = mAudExt.mHalExtension->audio_extn_setupECNR(&pECNR_ProcessData);
+                                if (ret) {
+                                    LOG(ERROR) << __func__ << mLogPrefixOEM << " audio_extn_setupECNR failed ret" << ret;
+                                    shutdown_I();
+                                }
+#ifdef ECNR_HAL_TUNE
+                                mAudExt.mHalExtension->audio_extn_setupECNR_TuneIF(&pECNR_TuneIFData, portid);
+#endif
+                            }
+                            ret = mAudExt.mHalExtension->audio_extn_ecnrProcess(pECNR_ProcessData.pMain, pECNR_ProcessData.audioIO, NULL);
+                            if(!ret) {
+                                LOG(DEBUG) << __func__ << " ret = "<< ret;
+                                break;
+                            }
+                        }
+                    }
+#ifdef ECNR_HAL_TUNE
+                }
+                mAudExt.mHalExtension->audio_extn_feedback_TuneIO_buffer(&pECNR_TuneIFData, &(pECNR_ProcessData.sECNRTuneIO));
+#endif
 #ifdef ECNR_HAL_SRC_CP
                 if (property_get_bool("vendor.audio.feature.ecnr.force_error", false)) {
                     ret = -1;
                 }
-#endif
-#ifdef ECNR_HAL_TUNE
-                mAudExt.mHalExtension->audio_extn_feedback_TuneIO_buffer(&pECNR_TuneIFData, &(pECNR_ProcessData.sECNRTuneIO));
 #endif
 #ifdef ECNR_HAL_DUMP_ENABLE
                 if (property_get_bool("vendor.audio.feature.ecnr.dump", false)) {
@@ -293,7 +325,7 @@ void StreamInPrimaryOEM::configure() {
     LOG(DEBUG) << __func__ << " Vocoder_samplerate : " << vocoder_rate << " connection_type : " << conn_type << " carplay_type : " << cp_type;
 
 #ifdef ECNR_HAL_TUNE
-    int portid = ECNR_PORT_ID_VR_TX_2016;
+    portid = ECNR_PORT_ID_VR_TX_2016;
 #endif
     const auto startTime = std::chrono::steady_clock::now();
     auto attr = mPlatform.getPalStreamAttributes(mMixPortConfig, true);
@@ -314,35 +346,35 @@ void StreamInPrimaryOEM::configure() {
     auto bufConfig = getBufferConfigOEM();
     if (mAudExt.mHalExtension->audio_extn_getEnablement() && bECNRprop_Enable &&
         ((strcmp(attr->bus_addr, "BUS_INPUT_3rdpartyvr0") == 0) || (mTag == Usecase::VOIP_RECORD))) {
-        if (vocoder_rate > 0 && conn_type >= 0) {
+        if (strcmp(attr->bus_addr, "BUS_INPUT_3rdpartyvr0") == 0) {
             bECNR_Enable = true;
             LOG(INFO) << __func__ << " bECNR_Enable " << bECNR_Enable;
-            if (mTag == Usecase::VOIP_RECORD) {
-                attr->type = PAL_STREAM_VOIP_TX;
-                pECNR_ProcessData.ecnr_type = ECNR_TYPE_TEL;
+            attr->type = PAL_STREAM_CAPTURE_BUS;
+            pECNR_ProcessData.ecnr_type = ECNR_TYPE_VR;
+#ifdef ECNR_HAL_TUNE
+            portid = ECNR_PORT_ID_VR_TX_2016;
+#endif
+        } else if (vocoder_rate > 0 && conn_type >= 0 && mTag == Usecase::VOIP_RECORD) {
+            bECNR_Enable = true;
+            LOG(INFO) << __func__ << " bECNR_Enable " << bECNR_Enable;
+            attr->type = PAL_STREAM_VOIP_TX;
+            pECNR_ProcessData.ecnr_type = ECNR_TYPE_TEL;
 #ifdef ECNR_HAL_SRC_CP
-                if((vocoder_rate == 8000) || (vocoder_rate == 16000) || (vocoder_rate == 24000)) {
-                    ecnrSampleRate = 24000;
-                } else if(vocoder_rate == 32000) {
-                    ecnrSampleRate = 32000;
-                } else if(vocoder_rate == 48000) {
-                    ecnrSampleRate = 48000;
-                }
-                VoipRecordECNR::kSampleRate = ecnrSampleRate;
-                ecnrPeriodSize = UsecaseConfig<VoipRecordECNR>::getULECNRPeriodSize(VoipRecordECNR::kSampleRate);
-                LOG(INFO) << __func__ << mLogPrefixOEM << " ecnrSampleRate:  " << ecnrSampleRate << " encrPeriodSize: "<< ecnrPeriodSize;
+            if((vocoder_rate == 8000) || (vocoder_rate == 16000) || (vocoder_rate == 24000)) {
+                ecnrSampleRate = 24000;
+            } else if(vocoder_rate == 32000) {
+                ecnrSampleRate = 32000;
+            } else if(vocoder_rate == 48000) {
+                ecnrSampleRate = 48000;
+            }
+            VoipRecordECNR::kSampleRate = ecnrSampleRate;
+            ecnrPeriodSize = UsecaseConfig<VoipRecordECNR>::getULECNRPeriodSize(VoipRecordECNR::kSampleRate);
+            LOG(INFO) << __func__ << mLogPrefixOEM << " ecnrSampleRate:  " << ecnrSampleRate << " encrPeriodSize: "<< ecnrPeriodSize;
 
 #endif
 #ifdef ECNR_HAL_TUNE
-                portid = ECNR_PORT_ID_VOIP_TX_2014;
+            portid = ECNR_PORT_ID_VOIP_TX_2014;
 #endif
-            } else {
-                attr->type = PAL_STREAM_CAPTURE_BUS;
-                pECNR_ProcessData.ecnr_type = ECNR_TYPE_VR;
-#ifdef ECNR_HAL_TUNE
-                portid = ECNR_PORT_ID_VR_TX_2016;
-#endif
-            }
         } else if (conn_type >= 0) {
             bECNR_Enable = true;
             LOG(INFO) << __func__ << " bECNR_Enable " << bECNR_Enable;
@@ -361,7 +393,7 @@ void StreamInPrimaryOEM::configure() {
             goto skip_ecnr_configuration;
         }
         pECNR_ProcessData.scd_type = mAudExt.mHalExtension->audio_extn_getSCDtype(ecnrSampleRate, vocoder_rate, pECNR_ProcessData.ecnr_type, conn_type, DIR_UL);
-        if (mAudExt.mHalExtension->audio_extn_getSCDdata(&pECNR_ProcessData, DIR_UL)) {
+        if (mAudExt.mHalExtension->audio_extn_getSCDdata(&pECNR_ProcessData, DIR_UL, &mScd_file_path_index_ul)) {
             LOG(ERROR) << __func__ << mLogPrefixOEM << " failed to get scd information, disabling ecnr processing";
             bECNR_Enable = false;
             goto skip_ecnr_configuration;
@@ -399,7 +431,7 @@ void StreamInPrimaryOEM::configure() {
         mAudExt.mHalExtension->audio_extn_setupIOBuffer(&pECNR_ProcessData, DIR_UL, ECNR_MIC_EC_CH, mChannels, ecnrPeriodSize, ecnr_in_buffer.get(), ecnr_out_buffer.get());
         ret = mAudExt.mHalExtension->audio_extn_setupECNR(&pECNR_ProcessData);
         if (ret) {
-            LOG(ERROR) << __func__ << mLogPrefixOEM << " audio_extn_setupECNR ret" << ret;
+            LOG(ERROR) << __func__ << mLogPrefixOEM << " audio_extn_setupECNR failed ret" << ret;
             bECNR_Enable = false;
             goto skip_ecnr_configuration;
         }

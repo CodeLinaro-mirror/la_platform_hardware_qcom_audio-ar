@@ -112,13 +112,10 @@ using ::android::frameworks::automotive::vhal::IHalPropValue;
 using ::aidl::android::hardware::automotive::vehicle::RawPropValues;
 using namespace ::qti::audio::oem::config;
 
-#ifndef ENABLE_VHAL_TEST_WITH_KITCHENSINK
-#define ENABLE_VHAL_TEST_WITH_KITCHENSINK
+#ifdef ENABLE_VHAL_TEST_WITH_KITCHENSINK
 const VehicleProperty SpeedpropertyId = VehicleProperty::HVAC_TEMPERATURE_SET;
-const VehicleProperty HVACpropertyId = VehicleProperty::HVAC_RECIRC_ON;
 #else
 const VehicleProperty SpeedpropertyId = VehicleProperty::PERF_VEHICLE_SPEED;
-const VehicleProperty HVACpropertyId = VehicleProperty::HVAC_FAN_SPEED;
 #endif //ENABLE_VHAL_TEST_WITH_KITCHENSINK
 
 
@@ -178,7 +175,7 @@ void AudioVehicleListener::onPropertyEvent(const std::vector<std::unique_ptr<IHa
                 }
             }
         }
-        if (value->getPropId() == static_cast<int32_t>(HVACpropertyId)) {
+        if (value->getPropId() == static_cast<int32_t>(VehicleProperty::HVAC_FAN_SPEED)) {
             if (value->getInt32Values().size() < 1) {
                 LOG(ERROR) << "Invalid HVAC_FAN_SPEED getInt32Values size, empty value :" << value->getFloatValues().size();
                 goto exit;
@@ -580,8 +577,8 @@ extern "C" __attribute__((visibility("default")))int oem_init(void)
             LOG(DEBUG) << "regiter for PERF_VEHICLE_SPEED done.";
         }
 
-        LOG(DEBUG) << "Subscribing VHAL property HVAC " << static_cast<int32_t>(HVACpropertyId);
-        if (!subscribeToVHal(subscriptionClient.get(), HVACpropertyId)) {
+        LOG(DEBUG) << "Subscribing VHAL property HVAC " << static_cast<int32_t>(VehicleProperty::HVAC_FAN_SPEED);
+        if (!subscribeToVHal(subscriptionClient.get(), VehicleProperty::HVAC_FAN_SPEED)) {
             LOG(ERROR) << "Didn't register for  HVAC_FAN_SPEED notification, Exiting.";
             retValue = EXIT_FAILURE;
         }

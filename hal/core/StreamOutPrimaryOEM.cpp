@@ -57,6 +57,7 @@ StreamOutPrimaryOEM::StreamOutPrimaryOEM(StreamContext&& context, const SourceMe
     os << " : usecase: " << mTagName;
     os << " IoHandle: " << mMixPortConfig.ext.get<AudioPortExt::Tag::mix>().handle << " ";
     mLogPrefixOEM = os.str();
+    mScd_file_path_index_dl = INVALID_PATH;
     LOG(INFO) << __func__ << mLogPrefixOEM;
 }
 
@@ -211,10 +212,41 @@ void StreamOutPrimaryOEM::shutdown() {
             getTuneIOBuffer = mAudExt.mHalExtension->audio_extn_get_TuneIO_buffer(&pECNR_TuneIFData, &(pECNR_ProcessData.sECNRTuneIO));
             if (getTuneIOBuffer >= 0)
                 ret = mAudExt.mHalExtension->audio_extn_ecnrProcess(pECNR_ProcessData.pMain, pECNR_ProcessData.audioIO, &(pECNR_ProcessData.sECNRTuneIO));
-            else
+            else {
 #endif
-            ret = mAudExt.mHalExtension->audio_extn_ecnrProcess(pECNR_ProcessData.pMain, pECNR_ProcessData.audioIO, NULL);
+                ret = mAudExt.mHalExtension->audio_extn_ecnrProcess(pECNR_ProcessData.pMain, pECNR_ProcessData.audioIO, NULL);
+                if (ret) {
+                    for(int path_index = mScd_file_path_index_dl; path_index < MAX_SCD_PATH_INDEX; path_index++) {
+                        if(mScd_file_path_index_dl == DEFAULT_PATH) {
+                            LOG(ERROR) << __func__ << mLogPrefixOEM << " ECNR_Process failed ret = " << ret;
+                            shutdown_I();
+                        } else {
+                            //Increamenting file path index to skip the used path
+                            mScd_file_path_index_dl++;
+                            LOG(DEBUG) << __func__ << " Line no: " << mScd_file_path_index_dl;
+                            if (mAudExt.mHalExtension->audio_extn_getSCDdata(&pECNR_ProcessData, DIR_DL, &mScd_file_path_index_dl)) {
+                                LOG(ERROR) << __func__ << mLogPrefixOEM << " failed to get scd information, disabling ecnr processing";
+                                shutdown_I();
+                            }
+                            mAudExt.mHalExtension->audio_extn_setupIOBuffer(&pECNR_ProcessData, DIR_DL, attr->out_media_config.ch_info.channels, attr->out_media_config.ch_info.channels, ecnrPeriodSize, ecnr_in_buffer.get(), ecnr_out_buffer.get());
+                            ret = mAudExt.mHalExtension->audio_extn_setupECNR(&pECNR_ProcessData);
+                            if (ret) {
+                                LOG(ERROR) << __func__ << mLogPrefixOEM << " audio_extn_setupECNR failed ret" << ret;
+                                shutdown_I();
+                            }
 #ifdef ECNR_HAL_TUNE
+                            mAudExt.mHalExtension->audio_extn_setupECNR_TuneIF(&pECNR_TuneIFData, ECNR_PORT_ID_VOIP_RX_2015);
+#endif
+                        }
+                        ret = mAudExt.mHalExtension->audio_extn_ecnrProcess(pECNR_ProcessData.pMain, pECNR_ProcessData.audioIO, NULL);
+                        if(!ret) {
+                            LOG(DEBUG) << __func__ << " ret = "<< ret;
+                            break;
+                        }
+                    }
+                }
+#ifdef ECNR_HAL_TUNE
+            }
             mAudExt.mHalExtension->audio_extn_feedback_TuneIO_buffer(&pECNR_TuneIFData, &(pECNR_ProcessData.sECNRTuneIO));
 #endif
 #ifdef ECNR_HAL_SRC_CP
@@ -293,7 +325,7 @@ void StreamOutPrimaryOEM::configure() {
     LOG(DEBUG) << __func__ << " Vocoder_samplerate : " << vocoder_rate << " connection_type : " << conn_type << " carplay_type : " << cp_type;
 
     const auto startTime = std::chrono::steady_clock::now();
-    auto attr = mPlatform.getPalStreamAttributes(mMixPortConfig, false);
+    attr = mPlatform.getPalStreamAttributes(mMixPortConfig, false);
 
     if (!attr) {
         LOG(ERROR) << __func__ << mLogPrefixOEM << " no pal attributes found";
@@ -342,7 +374,7 @@ void StreamOutPrimaryOEM::configure() {
             goto skip_ecnr_configuration;
         }
         pECNR_ProcessData.scd_type = mAudExt.mHalExtension->audio_extn_getSCDtype( ecnrSampleRate, vocoder_rate, pECNR_ProcessData.ecnr_type, conn_type, DIR_DL);
-        if (mAudExt.mHalExtension->audio_extn_getSCDdata(&pECNR_ProcessData, DIR_DL)) {
+        if (mAudExt.mHalExtension->audio_extn_getSCDdata(&pECNR_ProcessData, DIR_DL, &mScd_file_path_index_dl)) {
             LOG(ERROR) << __func__ << mLogPrefixOEM << " failed to get scd information, disabling ecnr processing";
             bECNR_Enable = false;
             goto skip_ecnr_configuration;

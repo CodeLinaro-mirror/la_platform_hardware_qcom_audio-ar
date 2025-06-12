@@ -7,203 +7,174 @@
         <name>DNN_DNS_HFSQ_16KHZ</name>
         <key>sdv.audio_pre_processing.dnn_dns_hfsq_16khz.calib</key>
         <defaultPath>/confcal/DNN_DNS_HFSQ_16KHZ.scd</defaultPath>
-        <crc>D59A736A</crc>
     </Calibration>
     <Calibration>
         <ID>2</ID>
         <name>DNN_DNS_HFSQ_24KHZ</name>
         <key>sdv.audio_pre_processing.dnn_dns_hfsq_24khz.calib</key>
         <defaultPath>/confcal/DNN_DNS_HFSQ_24KHZ.scd</defaultPath>
-        <crc>8F3EDDB1</crc>
     </Calibration>
     <Calibration>
         <ID>3</ID>
         <name>DNN_DNS_VR_16KHZ</name>
         <key>sdv.audio_pre_processing.dnn_dns_vr_16khz.calib</key>
         <defaultPath>/confcal/DNN_DNS_VR_16KHZ.scd</defaultPath>
-        <crc>0C73ECEE</crc>
     </Calibration>
     <Calibration>
         <ID>4</ID>
         <name>SSE_BT_HF_NB_DL</name>
         <key>sdv.audio_pre_processing.sse_bt_hf_nb_dl.calib</key>
         <defaultPath>/confcal/SSE_BT_HF_NB_DL.scd</defaultPath>
-        <crc>93278E2A</crc>
     </Calibration>
     <Calibration>
         <ID>5</ID>
         <name>SSE_BT_HF_NB_UL</name>
         <key>sdv.audio_pre_processing.sse_bt_hf_nb_ul.calib</key>
         <defaultPath>/confcal/SSE_BT_HF_NB_UL.scd</defaultPath>
-        <crc>A12E7772</crc>
     </Calibration>
     <Calibration>
         <ID>6</ID>
         <name>SSE_BT_HF_WB_DL</name>
         <key>sdv.audio_pre_processing.sse_bt_hf_wb_dl.calib</key>
         <defaultPath>/confcal/SSE_BT_HF_WB_DL.scd</defaultPath>
-        <crc>35C77C96</crc>
     </Calibration>
     <Calibration>
         <ID>7</ID>
         <name>SSE_BT_HF_WB_UL</name>
         <key>sdv.audio_pre_processing.sse_bt_hf_wb_ul.calib</key>
         <defaultPath>/confcal/SSE_BT_HF_WB_UL.scd</defaultPath>
-        <crc>592FB815</crc>
     </Calibration>
     <Calibration>
         <ID>8</ID>
         <name>SSE_CP_FT_USB_DL</name>
         <key>sdv.audio_pre_processing.sse_cp_ft_usb_dl.calib</key>
         <defaultPath>/confcal/SSE_CP_FT_USB_DL.scd</defaultPath>
-        <crc>729D0B01</crc>
     </Calibration>
     <Calibration>
         <ID>9</ID>
         <name>SSE_CP_FT_USB_UL</name>
         <key>sdv.audio_pre_processing.sse_cp_ft_usb_ul.calib</key>
         <defaultPath>/confcal/SSE_CP_FT_USB_UL.scd</defaultPath>
-        <crc>8D5CB2F</crc>
     </Calibration>
     <Calibration>
         <ID>10</ID>
         <name>SSE_CP_FT_WIFI_DL</name>
         <key>sdv.audio_pre_processing.sse_cp_ft_wifi_dl.calib</key>
         <defaultPath>/confcal/SSE_CP_FT_WIFI_DL.scd</defaultPath>
-        <crc>729D0B01</crc>
     </Calibration>
     <Calibration>
         <ID>11</ID>
         <name>SSE_CP_FT_WIFI_UL</name>
         <key>sdv.audio_pre_processing.sse_cp_ft_wifi_ul.calib</key>
         <defaultPath>/confcal/SSE_CP_FT_WIFI_UL.scd</defaultPath>
-        <crc>8D5CB2F</crc>
     </Calibration>
     <Calibration>
         <ID>12</ID>
         <name>SSE_CP_SIRI_USB_UL</name>
         <key>sdv.audio_pre_processing.sse_cp_siri_usb_ul.calib</key>
         <defaultPath>/confcal/SSE_CP_SIRI_USB_UL.scd</defaultPath>
-        <crc>C5F398B3</crc>
     </Calibration>
     <Calibration>
         <ID>13</ID>
         <name>SSE_CP_SIRI_WIFI_UL</name>
         <key>sdv.audio_pre_processing.sse_cp_siri_wifi_ul.calib</key>
         <defaultPath>/confcal/SSE_CP_SIRI_WIFI_UL.scd</defaultPath>
-        <crc>C5F398B3</crc>
     </Calibration>
     <Calibration>
         <ID>14</ID>
         <name>SSE_CP_TEL_FB_USB_DL</name>
         <key>sdv.audio_pre_processing.sse_cp_tel_fb_usb_dl.calib</key>
         <defaultPath>/confcal/SSE_CP_TEL_FB_USB_DL.scd</defaultPath>
-        <crc>B5432757</crc>
     </Calibration>
     <Calibration>
         <ID>15</ID>
         <name>SSE_CP_TEL_FB_USB_UL</name>
         <key>sdv.audio_pre_processing.sse_cp_tel_fb_usb_ul.calib</key>
         <defaultPath>/confcal/SSE_CP_TEL_FB_USB_UL.scd</defaultPath>
-        <crc>F0FDD318</crc>
     </Calibration>
     <Calibration>
         <ID>16</ID>
         <name>SSE_CP_TEL_FB_WIFI_DL</name>
         <key>sdv.audio_pre_processing.sse_cp_tel_fb_wifi_dl.calib</key>
         <defaultPath>/confcal/SSE_CP_TEL_FB_WIFI_DL.scd</defaultPath>
-        <crc>B5432757</crc>
     </Calibration>
     <Calibration>
         <ID>17</ID>
         <name>SSE_CP_TEL_FB_WIFI_UL</name>
         <key>sdv.audio_pre_processing.sse_cp_tel_fb_wifi_ul.calib</key>
         <defaultPath>/confcal/SSE_CP_TEL_FB_WIFI_UL.scd</defaultPath>
-        <crc>F0FDD318</crc>
     </Calibration>
     <Calibration>
         <ID>18</ID>
         <name>SSE_CP_TEL_NB_USB_DL</name>
         <key>sdv.audio_pre_processing.sse_cp_tel_nb_usb_dl.calib</key>
         <defaultPath>/confcal/SSE_CP_TEL_NB_USB_DL.scd</defaultPath>
-        <crc>729D0B01</crc>
     </Calibration>
     <Calibration>
         <ID>19</ID>
         <name>SSE_CP_TEL_NB_USB_UL</name>
         <key>sdv.audio_pre_processing.sse_cp_tel_nb_usb_ul.calib</key>
         <defaultPath>/confcal/SSE_CP_TEL_NB_USB_UL.scd</defaultPath>
-        <crc>E24A214F</crc>
     </Calibration>
     <Calibration>
         <ID>20</ID>
         <name>SSE_CP_TEL_NB_WIFI_DL</name>
         <key>sdv.audio_pre_processing.sse_cp_tel_nb_wifi_dl.calib</key>
         <defaultPath>/confcal/SSE_CP_TEL_NB_WIFI_DL.scd</defaultPath>
-        <crc>729D0B01</crc>
     </Calibration>
     <Calibration>
         <ID>21</ID>
         <name>SSE_CP_TEL_NB_WIFI_UL</name>
         <key>sdv.audio_pre_processing.sse_cp_tel_nb_wifi_ul.calib</key>
         <defaultPath>/confcal/SSE_CP_TEL_NB_WIFI_UL.scd</defaultPath>
-        <crc>E24A214F</crc>
     </Calibration>
     <Calibration>
         <ID>22</ID>
         <name>SSE_CP_TEL_SWB_USB_DL</name>
         <key>sdv.audio_pre_processing.sse_cp_tel_swb_usb_dl.calib</key>
         <defaultPath>/confcal/SSE_CP_TEL_SWB_USB_DL.scd</defaultPath>
-        <crc>C722455A</crc>
     </Calibration>
     <Calibration>
         <ID>23</ID>
         <name>SSE_CP_TEL_SWB_USB_UL</name>
         <key>sdv.audio_pre_processing.sse_cp_tel_swb_usb_ul.calib</key>
         <defaultPath>/confcal/SSE_CP_TEL_SWB_USB_UL.scd</defaultPath>
-        <crc>AF00D297</crc>
     </Calibration>
     <Calibration>
         <ID>24</ID>
         <name>SSE_CP_TEL_SWB_WIFI_DL</name>
         <key>sdv.audio_pre_processing.sse_cp_tel_swb_wifi_dl.calib</key>
         <defaultPath>/confcal/SSE_CP_TEL_SWB_WIFI_DL.scd</defaultPath>
-        <crc>B5432757</crc>
     </Calibration>
     <Calibration>
         <ID>25</ID>
         <name>SSE_CP_TEL_SWB_WIFI_UL</name>
         <key>sdv.audio_pre_processing.sse_cp_tel_swb_wifi_ul.calib</key>
         <defaultPath>/confcal/SSE_CP_TEL_SWB_WIFI_UL.scd</defaultPath>
-        <crc>378214D5</crc>
     </Calibration>
     <Calibration>
         <ID>26</ID>
         <name>SSE_CP_TEL_WB_USB_DL</name>
         <key>sdv.audio_pre_processing.sse_cp_tel_wb_usb_dl.calib</key>
         <defaultPath>/confcal/SSE_CP_TEL_WB_USB_DL.scd</defaultPath>
-        <crc>729D0B01</crc>
     </Calibration>
     <Calibration>
         <ID>27</ID>
         <name>SSE_CP_TEL_WB_USB_UL</name>
         <key>sdv.audio_pre_processing.sse_cp_tel_wb_usb_ul.calib</key>
         <defaultPath>/confcal/SSE_CP_TEL_WB_USB_UL.scd</defaultPath>
-        <crc>77659E4F</crc>
     </Calibration>
     <Calibration>
         <ID>28</ID>
         <name>SSE_CP_TEL_WB_WIFI_DL</name>
         <key>sdv.audio_pre_processing.sse_cp_tel_wb_wifi_dl.calib</key>
         <defaultPath>/confcal/SSE_CP_TEL_WB_WIFI_DL.scd</defaultPath>
-        <crc>729D0B01</crc>
     </Calibration>
     <Calibration>
         <ID>29</ID>
         <name>SSE_CP_TEL_WB_WIFI_UL</name>
         <key>sdv.audio_pre_processing.sse_cp_tel_wb_wifi_ul.calib</key>
         <defaultPath>/confcal/SSE_CP_TEL_WB_WIFI_UL.scd</defaultPath>
-        <crc>77659E4F</crc>
     </Calibration>
     <Calibration>
         <ID>30</ID>
@@ -216,6 +187,5 @@
         <name>SSE_WUW_BI_ESIRI_UL</name>
         <key>sdv.audio_pre_processing.sse_wuw_bi_esiri_ul.calib</key>
         <defaultPath>/confcal/SSE_WUW_BI_ESIRI_UL.scd</defaultPath>
-        <crc>973784B1</crc>
     </Calibration>
 </Calibrations>

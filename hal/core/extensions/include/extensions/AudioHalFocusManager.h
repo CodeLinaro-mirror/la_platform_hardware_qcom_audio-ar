@@ -145,32 +145,31 @@ class AudioFocusService {
         int32_t getNearestIndex(int32_t gain);
 
     private:
-
+        const char* externalVolumeConfiguration = "/vendor/etc/audio_policy_engine_default_volumes.xml";
         std::unordered_map<int64_t, FocusInfo> registeredFocusCallbacks;
         std::unordered_map<int64_t, std::unordered_set<int64_t> > registeredStreams;
         std::unordered_set<int64_t> globalActiveFocusSessions;
         std::map<StreamType, Reasons>
             reasonsMap = {{ AudioUsage::ASSISTANCE_NAVIGATION_GUIDANCE,
                             Reasons::NAV_DUCKING},
-                          { UseCase::ROAD_ADAS,
+                        { UseCase::ROAD_ADAS,
                             Reasons::ADAS_DUCKING},
-                            {"RADIO_AAM_MUTE_ORDER",
-                                Reasons::ADAS_DUCKING},
-                            {"NIGHT_MODE",
-                                    Reasons::ADAS_DUCKING},
-                            {"DEVICE_TEMPERATURE_STATUS",
-                                Reasons::THERMAL_LIMITATION},
-                        //   { UseCase::ROAD_ADAS,
-                        //     Reasons::PROJECTION_DUCKING},
-                          { UseCase::VEHICLE_SAFETY_WARNING,
+                        { UseCase::VEHICLE_SAFETY_WARNING,
                             Reasons::REMOTE_MUTE},
-                          { Type::TCU, Reasons::TCU_MUTE},
-                          { Type::STATIC_POWER_LIMITATION, Reasons::TCU_MUTE},
-                          { Type::DELIVERY_MODE, Reasons::TCU_MUTE},
-                          { Type::CYBER, Reasons::FORCED_MASTER_MUTE},
-                          { "THERMAL_MITIGATION", Reasons::THERMAL_LIMITATION},
-                          { "CP_DUCK", Reasons::PROJECTION_DUCKING},};
-                        //{ "THERMAL_MITIGATION", Reasons::SUSPEND_EXIT_VOL_LIMITATION},};
+                        { UseCase::VEHICLE_WARNING,
+                            Reasons::ADAS_DUCKING},
+                        { Type::TCU, Reasons::TCU_MUTE},
+                        { Type::STATIC_POWER_LIMITATION, Reasons::TCU_MUTE},
+                        { Type::DELIVERY_MODE, Reasons::TCU_MUTE},
+                        { Type::CYBER, Reasons::FORCED_MASTER_MUTE},
+                        {"RADIO_AAM_MUTE_ORDER",
+                            Reasons::ADAS_DUCKING},
+                        {"NIGHT_MODE",
+                            Reasons::ADAS_DUCKING},
+                        {"DEVICE_TEMPERATURE_STATUS",
+                            Reasons::THERMAL_LIMITATION},
+                        { "THERMAL_MITIGATION", Reasons::THERMAL_LIMITATION},
+                        { "CP_DUCK", Reasons::PROJECTION_DUCKING},};
         std::map<AudioUsage, RampParams> rampMap = {
             {AudioUsage::NOTIFICATION_TELEPHONY_RINGTONE, {RAMP_SHAPE_EXP, 20,20}},
             {AudioUsage::VOICE_COMMUNICATION, {RAMP_SHAPE_EXP,20,20}},
@@ -194,6 +193,9 @@ class AudioFocusService {
             {-2700, 28}, {-2475, 29}, {-2250, 30}, {-2025, 31},
             {-1800, 32}, {-1575, 33}, {-1350, 34}, {-1125, 35},
             {-900, 36}, {-675, 37}, {-450, 38}, {-225, 39}, {0, 40}};
+
+        void parseVolumeProfile();
+        void processVolumePoints(const std::vector<std::string> &points);
 
         std::shared_ptr<IAudioControlInternal> mAudioControlInternalService;
         std::shared_ptr<IAudioControlInternal> getAudioControlService();
