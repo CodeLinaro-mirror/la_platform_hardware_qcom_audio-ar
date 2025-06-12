@@ -1125,10 +1125,10 @@ void StreamOutPrimary::configure() {
         }
         ModulePrimary::outListMutex.unlock();
     }
-    setHwVolume(mVolumes);
 #ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
     requestFocus();
 #endif
+    setHwVolume(mVolumes);
     if (mTag == Usecase::HAPTICS_PLAYBACK) {
 
         hapticChannelLayout = AudioChannelLayout::make<AudioChannelLayout::Tag::layoutMask>

@@ -9,7 +9,10 @@
 #include <include/extensions/AudioConfig.h>
 #include <include/extensions/PalParamDelegator.h>
 #include <PalApi.h>
+
 #include "android_audio_policy_configuration.h"
+#include <libxml/parser.h>
+#include <libxml/tree.h>
 
 #define ALL_BUS_VOLUMES 0x7F
 #define TOTAL_BUS_COUNT 7
@@ -43,7 +46,7 @@ namespace qti::audio::core {
         if (doc == nullptr) {
             return std::nullopt;
         }
-        xmlNodePtr _child = xmlDocGetRootElement(doc.get());
+        xmlNode* _child = xmlDocGetRootElement(doc.get());
         if (_child == nullptr) {
             return std::nullopt;
         }
@@ -59,8 +62,62 @@ namespace qti::audio::core {
         return std::nullopt;
     }
     AudioFocusService* mHalFocusService = nullptr;
-
-
+    std::unordered_map<StreamType,
+                std::unordered_map<MuterOderType, Reasons>>  AudioFocusService::reasonsMap;
+    const std::unordered_map<
+        std::string, std::unordered_map<std::string, StreamType>>
+             AudioFocusService::usageMap = {
+            {
+                "AudioUsage", {
+                    {"ASSISTANCE_NAVIGATION_GUIDANCE",
+                        AudioUsage::ASSISTANCE_NAVIGATION_GUIDANCE},
+                    {"MEDIA", AudioUsage::MEDIA},
+                }
+            }, {
+                "String", {
+                    {"BUS00_MEDIA", "BUS00_MEDIA"},
+                    {"BUS01_SYS_NOTIFICATION", "BUS01_SYS_NOTIFICATION"},
+                    {"BUS02_NAV_GUIDANCE", "BUS02_NAV_GUIDANCE"},
+                    {"BUS03_PHONE", "BUS03_PHONE"},
+                    {"BUS0F_NAV_GUIDANCE2","BUS0F_NAV_GUIDANCE2"},
+                    {"THERMAL_MITIGATION","THERMAL_MITIGATION"},
+                    {"RADIO_AAM_MUTE_ORDER","RADIO_AAM_MUTE_ORDER"},
+                    {"NIGHT_MODE","NIGHT_MODE"},
+                    {"DEVICE_TEMPERATURE_STATUS","DEVICE_TEMPERATURE_STATUS"},
+                    {"CP_DUCK","CP_DUCK"}
+                }
+            }, {
+                "UseCase", {
+                        {"WELCOME_SEQUENCE", UseCase::WELCOME_SEQUENCE},
+                        {"ROAD_ADAS", UseCase::ROAD_ADAS},
+                        {"VEHICLE_WARNING", UseCase::VEHICLE_WARNING},
+                        {"VEHICLE_SAFETY_WARNING", UseCase::VEHICLE_SAFETY_WARNING},
+                }
+            }, {
+                "Type", {
+                    {"CYBER", Type::CYBER},
+                    {"TCU", Type::TCU},
+                    {"STATIC_POWER_LIMITATION", Type::STATIC_POWER_LIMITATION},
+                    {"DELIVERY_MODE", Type::DELIVERY_MODE},
+                }
+            }
+        };
+    const std::unordered_map<std::string, MuterOderType>
+             AudioFocusService::muteOrderStrtoAidl = {
+        {"BLOCKED", MuterOderType::BLOCKED},
+        {"UNBLOCKED", MuterOderType::UNBLOCKED},
+        {"NONE", MuterOderType::NONE},
+    };
+    const std::unordered_map<std::string, Reasons>
+             AudioFocusService::reasonStrtoAidl = {
+        {"NAV_DUCKING", Reasons::NAV_DUCKING},
+        {"ADAS_DUCKING", Reasons::ADAS_DUCKING},
+        {"TCU_MUTE", Reasons::TCU_MUTE},
+        {"FORCED_MASTER_MUTE", Reasons::FORCED_MASTER_MUTE},
+        {"PROJECTION_DUCKING", Reasons::PROJECTION_DUCKING},
+        {"THERMAL_LIMITATION", Reasons::THERMAL_LIMITATION},
+        {"REMOTE_MUTE", Reasons::REMOTE_MUTE},
+    };
     std::unordered_map<StreamType,
             std::unordered_map<StreamType, ParseParams> > AudioFocusService::configuration;
 
@@ -122,16 +179,20 @@ namespace qti::audio::core {
         }
     }
 
-    std::unordered_map<std::string, std::pair<float, std::unordered_set<Reasons> > > reportInfo;
-    std::vector< std::pair<std::string, std::pair<float, std::unordered_set<Reasons> > > > tempReportInfo;
+    std::unordered_map<std::string,
+        std::pair<float, std::unordered_set<Reasons> > > reportInfo;
+    std::vector<std::pair<std::string,
+        std::pair<float, std::unordered_set<Reasons> > > > tempReportInfo;
 
-    int32_t AudioFocusService::setRampParam(int32_t uptime, int32_t downtime, int32_t shape, pal_stream_handle_t* handle) {
+    int32_t AudioFocusService::setRampParam(int32_t uptime,
+            int32_t downtime, int32_t shape, pal_stream_handle_t* handle) {
         int32_t ret = 0;
         pal_awx_volume_data rampuptime={}, rampdowntime={}, ramptype={};
         aidl::qti::awx::pal_awx_param_t *pal_param = NULL;
         aidl::qti::awx::effect_type type = aidl::qti::awx::SYNC_WITH_AUDIO_BUS;
 
-        LOG(DEBUG) << "Enter: " << __func__ << "uptime: " << uptime << " downtime: " << downtime << " shape: " << shape << " handle: " << handle;
+        LOG(DEBUG) << "Enter: " << __func__ << "uptime: " << uptime <<" downtime: "
+                        << downtime << " shape: " << shape << " handle: " << handle;
 
         rampuptime.volume_func = 0x1;
         rampdowntime.volume_func = 0x1;
@@ -147,7 +208,8 @@ namespace qti::audio::core {
             return -1;
         }
 
-        pal_param = (aidl::qti::awx::pal_awx_param_t *)malloc(sizeof(aidl::qti::awx::pal_awx_param_t));
+        pal_param = (aidl::qti::awx::pal_awx_param_t *)malloc(
+                            sizeof(aidl::qti::awx::pal_awx_param_t));
         if (pal_param == NULL) {
             LOG(ERROR) << __func__ << "Memory not assigned properly";
             return -1;
@@ -200,7 +262,8 @@ namespace qti::audio::core {
                         auto focusId = entry.first;
                         auto focusInfo = entry.second;
                         if (reasonsMap.count(focusInfo.usage) &&
-                            reasonsMap[focusInfo.usage] == Reasons::PROJECTION_DUCKING) {
+                            reasonsMap[focusInfo.usage][focusInfo.muteOrderType]
+                                                    == Reasons::PROJECTION_DUCKING) {
                             if (focusInfo.rampDuration >= MIN_RAMP_DURATION &&
                                     focusInfo.rampDuration <= MAX_RAMP_DURATION) {
                                 LOG(INFO) << "Enforcing CarPlay Duck Ramp Params ";
@@ -218,7 +281,8 @@ namespace qti::audio::core {
                         auto focusId = entry.first;
                         auto focusInfo = entry.second;
                         if (reasonsMap.count(focusInfo.usage) &&
-                            reasonsMap[focusInfo.usage] == Reasons::NAV_DUCKING) {
+                            reasonsMap[focusInfo.usage][focusInfo.muteOrderType]
+                                                            == Reasons::NAV_DUCKING) {
                                 LOG(INFO) << "Enforcing Ramp Params ";
                             setRampParam(RAMP_MEDIUM_DURATION, RAMP_MEDIUM_DURATION,
                                     RAMP_SHAPE_EXP, *mPalHandle);
@@ -236,7 +300,8 @@ namespace qti::audio::core {
                 auto focusId = entry.first;
                 auto focusInfo = entry.second;
                 if (reasonsMap.count(focusInfo.usage) &&
-                    reasonsMap[focusInfo.usage] == Reasons::PROJECTION_DUCKING) {
+                    reasonsMap[focusInfo.usage][focusInfo.muteOrderType]
+                                                == Reasons::PROJECTION_DUCKING) {
                     if (focusInfo.rampDuration >= MIN_RAMP_DURATION &&
                             focusInfo.rampDuration <= MAX_RAMP_DURATION) {
                         LOG(INFO) << "Enforcing CarPlay Duck Ramp Params ";
@@ -297,7 +362,6 @@ namespace qti::audio::core {
 
         ::aidl::qti::awx::VolumeParams params;
         params.eq_mask = bus_mask;
-        // params.eq_mask = SET; //setting all bus
         memset(&params, 0, sizeof(::aidl::qti::awx::VolumeParams));
 
         pal_param.param_id = PARAM_ID_VOLUME ;
@@ -387,12 +451,15 @@ namespace qti::audio::core {
         if (!ret.isOk()) {
             LOG(ERROR) << __func__ << ": Unable to report audio gain changed ";
             return;
+        } else {
+            resetCachedMediaVolume();
         }
     }
 
     void AudioFocusService::syncVolumeChanges() {
         for (auto volumeInfo: tempReportInfo) {
-                std::vector< std::pair<std::string, std::pair<float, std::unordered_set<Reasons> > > > tempReportInfo;
+            std::vector< std::pair<std::string,
+                std::pair<float, std::unordered_set<Reasons> > > > tempReportInfo;
             std::string busAddress = volumeInfo.first;
             float gain = volumeInfo.second.first;
             //update the voumes for device entry also
@@ -418,19 +485,19 @@ namespace qti::audio::core {
         auto tempGain = entry.second.first;
         auto tempReasons = entry.second.second;
 
-        if (reportInfo.count(address)) {
-            auto &gain = reportInfo[address].first;
-            auto &reasons =  reportInfo[address].second;
-            if (gain == tempGain) {
-                reasons.insert(tempReasons.begin(), tempReasons.end());
-            } else if (gain > tempGain) {
-                gain = tempGain;
-                reasons.clear();
-                reasons.insert(tempReasons.begin(), tempReasons.end());
+            if (reportInfo.count(address)) {
+                auto &gain = reportInfo[address].first;
+                auto &reasons =  reportInfo[address].second;
+                if (gain == tempGain) {
+                    reasons.insert(tempReasons.begin(), tempReasons.end());
+                } else if (gain > tempGain) {
+                    gain = tempGain;
+                    reasons.clear();
+                    reasons.insert(tempReasons.begin(), tempReasons.end());
+                }
+            } else {
+                reportInfo[address] = std::make_pair(tempGain, tempReasons);
             }
-        } else {
-            reportInfo[address] = std::make_pair(tempGain, tempReasons);
-        }
         }
 
         {   //compile the reasons list
@@ -460,13 +527,17 @@ namespace qti::audio::core {
             }
         }
 
-
-        if (duckAgcis.size()/* have one entry with gain change*/) {
+        if (!duckAgcis.empty()) {
             LOG(INFO) << "report device gain changed";
             if (const auto &audioControlService = getAudioControlService();
                                                     audioControlService != nullptr) {
                 enforceRampParameters(duckReasons);
-                syncVolumeChanges();
+                if (duckReasons.empty()) {
+                    restoreMediaCachedVolume();
+                } else {
+                    cacheMediaVolume();
+                    syncVolumeChanges();
+                }
                 audioControlService->reportAudioDeviceGainChanged(duckReasons, duckAgcis);
             } else {
                 LOG(ERROR) << "Failed to report device gain change";
@@ -503,12 +574,14 @@ namespace qti::audio::core {
             return;
         }
         auto &usage1 = registeredFocusCallbacks[focusId].usage;
+
         auto &configuration = AudioFocusService::configuration;
         auto duckFocusIds = registeredStreams[focusId];
         LOG(INFO) << "outside gain " << mostCriticalGain;
 
         for (auto duckingFocusId : duckFocusIds) {
             auto &usage2 = registeredFocusCallbacks[duckingFocusId].usage;
+            auto &muteOrdertype2 = registeredFocusCallbacks[duckingFocusId].muteOrderType;
             auto isExternalGain = registeredFocusCallbacks[duckingFocusId].isExternalGain;
             if (checkIfExists(usage2, usage1) && reasonsMap.count(usage2)) {
                 if (isExternalGain) {
@@ -530,30 +603,70 @@ namespace qti::audio::core {
                 LOG(INFO) << "mostCritical gain " << mostCriticalGain << "cur gain" << gain;
 
                 if (gain == mostCriticalGain) {
-                    reasons.insert(reasonsMap[usage2]);
+                    reasons.insert(reasonsMap[usage2][muteOrdertype2]);
                 } else if (gain < mostCriticalGain) {
                     reasons.clear();
-                    reasons.insert(reasonsMap[usage2]);
+                    reasons.insert(reasonsMap[usage2][muteOrdertype2]);
                     mostCriticalGain = gain;
                 }
             }
             else LOG(ERROR) << "Error!! mapping doesn't exist between two usages";
         }
-        tempReportInfo.push_back(std::make_pair(address, std::make_pair(mostCriticalGain, reasons)));
+        tempReportInfo.push_back(std::make_pair(
+                address, std::make_pair(mostCriticalGain, reasons)));
 
     }
 
-    bool AudioFocusService::nonReportReasons(StreamType usage) {
+    bool AudioFocusService::nonBlockingReasons(StreamType usage, MuterOderType muteOrderType) {
+        //exception PROJECTION DUCKING,
+        //needed to be report irrespecitive of MEDIA playback
         if (reasonsMap.find(usage) != reasonsMap.end() &&
-                (reasonsMap[usage] == Reasons::ADAS_DUCKING ||
-                reasonsMap[usage] == Reasons::NAV_DUCKING ||
-                reasonsMap[usage] == Reasons::PROJECTION_DUCKING)) {
+                (reasonsMap[usage][muteOrderType] == Reasons::ADAS_DUCKING)) {
             return true;
         }
         return false;
     }
 
+    bool AudioFocusService::isAudioOnMediaBus(int64_t focusId) {
+        auto &focusInfo = registeredFocusCallbacks[focusId];
+        if (auto address = focusInfo.device.address.get<AudioDeviceAddress::Tag::id>();
+                !address.empty() && address == MEDIA_BUS) {
+            return true;
+        }
+        return false;
+    }
 
+    void AudioFocusService::resetNonBlockingReasons(int64_t focusId) {
+        //get usage BUS00_MEDIA focusId
+        int64_t mediaFocusId = -1;
+        for (auto &entry: registeredStreams) {
+            auto focusId = entry.first;
+            auto focusInfo = registeredFocusCallbacks[focusId];
+            auto in_usage = focusInfo.usage;
+            if (std::holds_alternative<std::string>(in_usage)
+                    && std::get<std::string>(in_usage) == MEDIA_BUS) {
+                mediaFocusId = focusId;
+                break;
+            }
+        }
+        if (mediaFocusId == -1) {
+            LOG(ERROR) << "Focus Id for MEDIA BUS unavailable";
+            return;
+        }
+        //if any non blocking reasons active, remove them from ducking media
+        //except projection ducking
+        auto &duckFocusIds = registeredStreams[mediaFocusId];
+        for (auto itr = duckFocusIds.begin(); itr != duckFocusIds.end();) {
+                auto &focusInfo = registeredFocusCallbacks[*itr];
+            if (nonBlockingReasons(focusInfo.usage, focusInfo.muteOrderType)) {
+                itr = duckFocusIds.erase(itr);
+                populateReasonsnGains(mediaFocusId);
+            } else {
+                ++itr;
+            }
+        }
+        return;
+    }
     void AudioFocusService::handleFocusRequest(int64_t focusId) {
         //set ramp params
         auto mPalHandle = registeredFocusCallbacks[focusId].mPalHandle;
@@ -578,23 +691,12 @@ namespace qti::audio::core {
                 if (checkIfExists(focusInfo.usage, activeFocusInfo.usage)) {
                     registeredStreams[activeFocusId].insert(focusId);
                     LOG(INFO) << "1 calling populateReasonsnGains on " << activeFocusId;
-                } else if (checkIfExists(activeFocusInfo.usage, focusInfo.usage)) {
-                  if (!nonReportReasons(activeFocusInfo.usage)) {
-                         duckFocusIds.insert(activeFocusId);
-                  }
                 }
                 if (registeredStreams[activeFocusId].size()) {
                     populateReasonsnGains(activeFocusId);
                 }
             }
             registeredStreams[focusId] = duckFocusIds;
-            if (duckFocusIds.size()) {
-                LOG(INFO) << "2 calling populateReasonsnGains on " << focusId;
-                LOG(INFO) << "duckFocusIds size " << duckFocusIds.size();
-                populateReasonsnGains(focusId);
-            }
-            //incoming request is active for now, so add an entry in globalactive sessions,
-            //so duck could be triggered if needed
             globalActiveFocusSessions.insert(focusId);
             reportGainChanges();
 
@@ -613,78 +715,126 @@ namespace qti::audio::core {
         return false;
     }
 
+    void AudioFocusService::reportThermalReason(int64_t thermalFocusId, int64_t curFocusId) {
+        auto curIndex = getNearestIndex(registeredFocusCallbacks[curFocusId].gain);
+        auto index = getNearestIndex(registeredFocusCallbacks[thermalFocusId].gain);
+        if (curIndex >= index) {
+            //thermal was the one ducking the system currently, thermal's at same index
+            //let's set persistent volume to thermal itself and report it.
+            LOG(INFO) << "report device gain changed";
+            if (const auto &audioControlService = getAudioControlService();
+                                                    audioControlService != nullptr) {
+                AudioGainConfigInfo agci{
+                        .zoneId = 0,
+                        .devicePortAddress = MEDIA_BUS,
+                        .volumeIndex = index,
+                };
+                for (auto &entry: registeredFocusCallbacks) {
+                    auto focusId = entry.first;
+                    auto &focusInfo = entry.second;
+                    auto in_usage = focusInfo.usage;
+                    if (auto address = focusInfo.device.address.get<AudioDeviceAddress::Tag::id>();
+                            !address.empty() && address == agci.devicePortAddress) {
+                        focusInfo.gain = registeredFocusCallbacks[thermalFocusId].gain;
+                        LOG(INFO) << "Synced duckVolume for focusID " << focusId;
+                    }
+                }
+                auto ret = audioControlService->reportAudioDeviceGainChanged({Reasons::EXTERNAL_AMP_VOL_FEEDBACK},
+                                                                            {agci});
+                if (!ret.isOk()) {
+                    LOG(ERROR) << __func__ << ": Unable to report audio gain changed ";
+                    return;
+                } else {
+                    resetCachedMediaVolume();
+                }
+            } else {
+                LOG(ERROR) << "Faild to report device gain change";
+            }
+        }
+    }
+
+    void AudioFocusService::resetDuckFocusId(int64_t focusId) {
+        for (auto &entry: registeredStreams) { //loop through active focus sessions
+            auto &duckFocusIds = entry.second;
+            auto curFocusId = entry.first;
+            if (duckFocusIds.find(focusId) != duckFocusIds.end()) {
+                duckFocusIds.erase(focusId);
+            }
+        }
+    }
+    void AudioFocusService::resetCachedMediaVolume() {
+        cachedMediaVolume = 1.0;
+    }
+
+    bool AudioFocusService::cacheMediaVolume() {
+        if (cachedMediaVolume != 1.0) {
+            LOG(INFO) << "Volume Cached already, ignoring";
+            return false;
+        }
+        for (auto &entry: registeredFocusCallbacks) {
+            auto focusId = entry.first;
+            auto &focusInfo = entry.second;
+            auto in_usage = focusInfo.usage;
+            if (auto address = focusInfo.device.address.get<AudioDeviceAddress::Tag::id>();
+                    !address.empty() && address == MEDIA_BUS) {
+                cachedMediaVolume = focusInfo.gain;
+                LOG(INFO) << "Cached volume for focusID " << focusId << " to " 
+                    << cachedMediaVolume;
+                return true;
+            }
+        }
+        LOG(ERROR) << "Couldn't cache volume for Media Bus";
+        return false;
+    }
+
+    bool AudioFocusService::restoreMediaCachedVolume() {
+        if (cachedMediaVolume == 1.0) {
+            LOG(ERROR) << "Cached Volume restore attempted without caching Volume";
+            return false;
+        }
+        for (auto &entry: registeredFocusCallbacks) {
+            auto focusId = entry.first;
+            auto &focusInfo = entry.second;
+            auto in_usage = focusInfo.usage;
+            if (auto address = focusInfo.device.address.get<AudioDeviceAddress::Tag::id>();
+                    !address.empty() && address == MEDIA_BUS) {
+                focusInfo.gain = cachedMediaVolume;
+                LOG(INFO) << "Cache volume restored for focusID " << focusId << " to " 
+                    << cachedMediaVolume;
+                cachedMediaVolume = 1.0;
+                return true;
+            }
+        }
+        LOG(ERROR) << "Couldn't restore cached volume for Media Bus";
+        return false;
+    }
     void AudioFocusService::handleFocusAbandon(int64_t focusId) {
+        restoreMediaCachedVolume();
         if (isMuteAbandonRequest(focusId)) {
             restoreBusVolumes();
+            resetDuckFocusId(focusId);
         }
-
         if (globalActiveFocusSessions.find(focusId) != globalActiveFocusSessions.end())
             globalActiveFocusSessions.erase(focusId);
 
         if (registeredStreams.find(focusId) != registeredStreams.end()) {
-            // delete the entry from the list, and update per session list for all other entries
-            //TODO: handle when media ends first
-            if (registeredStreams[focusId].size()) {
-                auto &duckFocusIds = registeredStreams[focusId];
-                auto it = duckFocusIds.begin();
-                while (it != duckFocusIds.end()) {
-                    auto activeFocusInfo = registeredFocusCallbacks[*it];
-                    if (nonReportReasons(activeFocusInfo.usage)) {
-                        it = duckFocusIds.erase(it);
-                    } else {
-                        ++it;
-                    }
-                }
-                populateReasonsnGains(focusId);
-            }
+            // delete the entry from the list
+            // and update per session list for all other entries
             registeredStreams.erase(focusId);
             for (auto &entry: registeredStreams) { //loop through active focus sessions
                 auto &duckFocusIds = entry.second;
                 auto curFocusId = entry.first;
                 if (duckFocusIds.find(focusId) != duckFocusIds.end()) {
-                        duckFocusIds.erase(focusId);
-                        if (isThermalFocusId(focusId)) {
-                            auto curIndex = getNearestIndex(registeredFocusCallbacks[curFocusId].gain);
-                            auto index = getNearestIndex(registeredFocusCallbacks[focusId].gain);
-                            if (curIndex == index) {
-                                //thermal was the one ducking the system currently, thermal's at same index
-                                //let's set persistent volume to thermal itself and report it.
-                                //TODO: report thermal
-                                LOG(INFO) << "report device gain changed";
-                                if (const auto &audioControlService = getAudioControlService();
-                                                                        audioControlService != nullptr) {
-                                    AudioGainConfigInfo agci{
-                                            .zoneId = 0,
-                                            .devicePortAddress = "BUS00_MEDIA",
-                                            .volumeIndex = index,
-                                    };
-                                    for (auto &entry: registeredFocusCallbacks) {
-                                        auto focusId = entry.first;
-                                        auto &focusInfo = entry.second;
-                                        auto in_usage = focusInfo.usage;
-                                        if (auto address = focusInfo.device.address.get<AudioDeviceAddress::Tag::id>();
-                                                !address.empty() && address == agci.devicePortAddress) {
-                                            focusInfo.gain = registeredFocusCallbacks[curFocusId].gain;
-                                            LOG(INFO) << "Synced duckVolume for focusID " << focusId;
-                                        }
-                                    }
-                                    audioControlService->reportAudioDeviceGainChanged({Reasons::EXTERNAL_AMP_VOL_FEEDBACK},
-                                                                                        {agci});
-                                } else {
-                                    LOG(ERROR) << "Faild to report device gain change";
-                                }
-                            }
+                    duckFocusIds.erase(focusId);
+                    if (isThermalFocusId(focusId)) {
+                        reportThermalReason(focusId, curFocusId);
                     }
                     populateReasonsnGains(curFocusId);
                 } else if (duckFocusIds.size() > 0) {
                     populateReasonsnGains(curFocusId);
                 }
-
             }
             reportGainChanges();
-            //in car play cases media might needs restored to slow
-            //enforceRampParameters({});
-
         } else {
             // assert as focus request is raised only during start
             LOG(ERROR) << "focus ID for abandon focus doesn't exist";
@@ -699,42 +849,36 @@ namespace qti::audio::core {
         return;
     }
 
-void AudioFocusService::handleVolumeChange(int64_t focusId, float gain, bool isExternalGain) {
-    auto incomingGainIndex = getNearestIndex(gain);
-    auto curGainIndex = getNearestIndex(registeredFocusCallbacks[focusId].gain);
-    if (incomingGainIndex == curGainIndex &&
-        registeredFocusCallbacks[focusId].isExternalGain == isExternalGain) {
+    void AudioFocusService::handleVolumeChange(int64_t focusId, float gain, bool isExternalGain) {
+        auto incomingGainIndex = getNearestIndex(gain);
+        auto curGainIndex = getNearestIndex(registeredFocusCallbacks[focusId].gain);
+        if (incomingGainIndex == curGainIndex &&
+            registeredFocusCallbacks[focusId].isExternalGain == isExternalGain) {
+                return;
+        }
+        registeredFocusCallbacks[focusId].gain = gain;
+        registeredFocusCallbacks[focusId].isExternalGain = isExternalGain;
+        LOG(INFO) << "Volume updated for focus ID " << focusId;
+        resetCachedMediaVolume();
+        auto &duckFocusIds = registeredStreams[focusId];
+        //no need to recompute, since focus doesn't change
+        if (duckFocusIds.size() == 0) {
             return;
-    }
-    registeredFocusCallbacks[focusId].gain = gain;
-    registeredFocusCallbacks[focusId].isExternalGain = isExternalGain;
-    LOG(INFO) << "Volume updated for focus ID " << focusId;
-    auto &duckFocusIds = registeredStreams[focusId];
-    //no need to recompute, since focus doesn't change
-    if (duckFocusIds.size() == 0) {
+        }
+
+        //check if incoming request is audio over MEDIA bus
+        if (isAudioOnMediaBus(focusId)) {
+            resetNonBlockingReasons(focusId);
+        }
+        for (auto entry: registeredStreams) { //loop through active focus sessions for streams
+            auto activeFocusId = entry.first;
+            if (registeredStreams[activeFocusId].size()) {
+                populateReasonsnGains(activeFocusId);
+            }
+        }
+        reportGainChanges();
         return;
     }
-    auto it = duckFocusIds.begin();
-    while (it != duckFocusIds.end()) {
-        auto activeFocusInfo = registeredFocusCallbacks[*it];
-        if (nonReportReasons(activeFocusInfo.usage)) {
-            LOG(INFO) << "Removing focusId " << *it <<
-                 "from ducking " << focusId;
-            it = duckFocusIds.erase(it);
-        } else {
-            ++it;
-        }
-    }
-
-    for (auto entry: registeredStreams) { //loop through active focus sessions for streams
-        auto activeFocusId = entry.first;
-        if (registeredStreams[activeFocusId].size()) {
-            populateReasonsnGains(activeFocusId);
-        }
-    }
-    reportGainChanges();
-    return;
-}
 
     void AudioFocusService::threadLoop(AudioFocusService* focusService) {
         LOG(INFO) << "threadLoop started";
@@ -822,32 +966,138 @@ void AudioFocusService::handleVolumeChange(int64_t focusId, float gain, bool isE
         return ;
     }
 
+    static std::string getXmlAttribute(const xmlNode *cur, const char *attribute) {
+        auto xmlValue = make_xmlUnique(
+                xmlGetProp(cur, reinterpret_cast<const xmlChar*>(attribute)));
+        if (xmlValue == nullptr) {
+            return "";
+        }
+        std::string value(reinterpret_cast<const char*>(xmlValue.get()));
+        return value;
+    }
+    StreamType getUsageFromStr(std::string usageType, std::string usageStr) {
+        auto &usageMap = AudioFocusService::usageMap;
+        StreamType streamType = AudioUsage::INVALID;
+        auto usageTypeIt = usageMap.find(usageType);
+        if (usageTypeIt != usageMap.end()) {
+            auto usageStrIt = usageTypeIt->second.find(usageStr);
+            if (usageStrIt != usageTypeIt->second.end()) {
+                streamType = usageStrIt->second;
+            } else {
+                LOG(ERROR) << "Can't find usageStr " << usageStr;
+            }
+        } else {
+            LOG(ERROR) << "Cant' find usageType " << usageType;
+        }
+        return streamType;
+    }
+
+    void parseDuckingRules(xmlNode* _root) {
+        auto &configMap = AudioFocusService::configuration;
+        for (xmlNode* _child = _root->xmlChildrenNode; _child != nullptr; _child = _child->next) {
+            if (!xmlStrcmp(_child->name, reinterpret_cast<const xmlChar*>("rule"))) {
+                LOG(INFO) << "rule parsing";
+                std::string sourceType, targetType;
+                std::string source, target, duck, gain, volOverride;
+                sourceType = getXmlAttribute(_child, "sourceType");
+                targetType = getXmlAttribute(_child, "targetType");
+                source = getXmlAttribute(_child, "source");
+                target = getXmlAttribute(_child, "target");
+                duck = getXmlAttribute(_child, "duck");
+                gain = getXmlAttribute(_child, "gain");
+                volOverride = getXmlAttribute(_child, "volumeOverride");
+                if (!sourceType.empty() && !targetType.empty()) {
+
+                    StreamType inSrcUsage = getUsageFromStr(sourceType, source);
+                    StreamType runningSrcUsage = getUsageFromStr(targetType, target);
+
+                    if (duck == "true") {
+                        configMap[inSrcUsage][runningSrcUsage] = ParseParams {
+                                .gain = static_cast<float>(std::stoi(gain)),
+                                .vol_override = (volOverride == "true" ? true : false),
+                        };
+                    }
+                    LOG(INFO) << "Source: " << source << " "
+                        << "Target: " << target << " " << duck << " " << volOverride;
+                } else {
+                    LOG(ERROR) << "duck rule parsing failed";
+                }
+            }
+        }
+    }
+
+    void parseRampMap(xmlNode* _root) {
+        return;
+    }
+
+    void parseReasonsMap(xmlNode* _root) {
+        auto &reasonsMap = AudioFocusService::reasonsMap;
+        auto &usageMap = AudioFocusService::usageMap;
+        auto &muteOrderStrtoAidl = AudioFocusService::muteOrderStrtoAidl;
+        auto &reasonStrtoAidl = AudioFocusService::reasonStrtoAidl;
+
+        for (xmlNode* _child = _root->xmlChildrenNode; _child != nullptr; _child = _child->next) {
+            if (!xmlStrcmp(_child->name, reinterpret_cast<const xmlChar*>("entry"))) {
+                LOG(INFO) << "entry parsing";
+                std::string sourcetypeStr;
+                sourcetypeStr = getXmlAttribute(_child, "sourceType");
+                std::string streamTypeStr, reasonStr, muteOrderTypeStr = "NONE";
+                streamTypeStr = getXmlAttribute(_child, "streamType");
+                reasonStr = getXmlAttribute(_child, "reason");
+                if (sourcetypeStr == "UseCase") {
+                    muteOrderTypeStr = getXmlAttribute(_child, "MuteOrderType");
+                }
+                StreamType usage = usageMap.at(sourcetypeStr).at(streamTypeStr);
+                MuterOderType muterOderType = muteOrderStrtoAidl.at(muteOrderTypeStr);
+                Reasons reason = reasonStrtoAidl.at(reasonStr);
+                reasonsMap[usage][muterOderType] = reason;
+                LOG(INFO) << "streamTypeStr: " << streamTypeStr
+                    << "muterOderType: " << muteOrderTypeStr << " reasonStr: " << reasonStr;
+            }
+        }
+        return;
+    }
+
+    bool parseConfig(const char* xmlFilePath) {
+        xmlDocPtr doc = xmlParseFile(xmlFilePath);
+        if (doc == nullptr) {
+            return false;
+        }
+        xmlNode* _root = xmlDocGetRootElement(doc);
+        if (_root == nullptr) {
+            return false;
+        }
+        if (!xmlStrcmp(_root->name,
+                reinterpret_cast<const xmlChar*>("CarAudioDuckingConfiguration"))) {
+            //do the parsing here
+            LOG(INFO) << "Parsing CarAudioDuckingConfiguration";
+            for (xmlNode* _child = _root->xmlChildrenNode; _child != nullptr;
+                                                            _child = _child->next) {
+                if (!xmlStrcmp(_child->name,
+                        reinterpret_cast<const xmlChar*>("duckingRules"))) {
+                    LOG(INFO) << "parseDuckingRules called";
+                    parseDuckingRules(_child);
+                } else if (!xmlStrcmp(_child->name,
+                        reinterpret_cast<const xmlChar*>("rampMap"))) {
+                    LOG(INFO) << "parseRampMap called";
+                    parseRampMap(_child);
+                } else if (!xmlStrcmp(_child->name,
+                        reinterpret_cast<const xmlChar*>("reasonsMap"))) {
+                    LOG(INFO) << "parseReasonsMap called";
+                    parseReasonsMap(_child);
+                }
+            }
+        }
+        return true;
+    }
+
     AudioFocusService::AudioFocusService() {
 
         { //parse configuration from xml
-            BusDuckConfigParser parser;
-            FILE* file = NULL;
-            file = fopen(XML_FILE_PATH, "r");
-            if(!file){
-                LOG(ERROR) << __func__ <<  "File not present: " << XML_FILE_PATH;
-                return;
-            }
-            else{
-                LOG(ERROR) << __func__ <<  "File present" << XML_FILE_PATH;
-            }
-            fclose(file);
-
-            if (parser.parseConfig(XML_FILE_PATH)) {
-                const auto& properties = parser.getProperties();
-                for(const auto& prop : properties)
-                {
-                    LOG(INFO) << __func__ << " In_src:" << prop.in_src
-                            << " running_src:" << prop.running_src
-                            << " vol_override" << prop.vol_override;
-                }
-                parser.populateAudioFocusConfig(AudioFocusService::configuration);
+            if (parseConfig(XML_FILE_PATH)) {
+                LOG(ERROR) << __func__ <<  " Parsed " << XML_FILE_PATH;
             } else {
-                LOG(ERROR) << __func__ <<  "Failed to parse configuration" ;
+                LOG(ERROR) << __func__ <<  " Failed to parse configuration";
             }
         }
         parseVolumeProfile();
@@ -888,14 +1138,16 @@ void AudioFocusService::handleVolumeChange(int64_t focusId, float gain, bool isE
         return 0;
     }
 
-    int32_t AudioFocusService::updateVolume(const int64_t focusId, const float gain, const bool isExternalGain) {
+    int32_t AudioFocusService::updateVolume(const int64_t focusId,
+                        const float gain, const bool isExternalGain) {
         {
             std::lock_guard<std::mutex> _lock(mtx);
             if (registeredFocusCallbacks.find(focusId) == registeredFocusCallbacks.end()) {
                 LOG(ERROR) << "FocusId invalid, couldn't update gain";
                 return -1;
             }
-            focusQueue.push(FocusAction(FocusCommand::UPDATE_VOLUME, focusId, gain, isExternalGain));
+            focusQueue.push(FocusAction(FocusCommand::UPDATE_VOLUME,
+                                        focusId, gain, isExternalGain));
         }
         cv.notify_one();
         return 0;

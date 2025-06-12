@@ -1010,6 +1010,7 @@ std::vector<AudioGainConfigInfo> ModulePrimary::getAudioGainConfigsForSinks() {
         FocusSession focusSessioninfo((int64_t)(focusRequest.soundId));
         focusInfo.usage = focusRequest.useCase;
         focusInfo.gain = -1000.0;
+        focusInfo.muteOrderType = focusRequest.muteOrderType;
         mAudExt.mAutoAudioHalPriorityExtension->requestFocus(focusInfo, &focusSessioninfo.FocusId);
         LOG(INFO) << "Focus Id: " << focusRequest.soundId;
 
