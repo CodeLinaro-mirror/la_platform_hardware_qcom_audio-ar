@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
+* Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 * SPDX-License-Identifier: BSD-3-Clause-Clear
 */
 
@@ -515,65 +515,58 @@ extern "C" __attribute__((visibility("default")))int priority_init(void)
         // Changes in these values are what will trigger a reconfiguration.
         if (!subscribeToVHal(subscriptionClient.get(), MuteRadioOrderByAAMId)) {
             LOG(ERROR) << "Didn't register for RADIO_AAM_MUTE_ORDER notification, Exiting.";
-            return EXIT_FAILURE;
         }
         else
         {
-            LOG(ERROR) << "Register for RADIO_AAM_MUTE_ORDER done.";
+            LOG(DEBUG) << "Register for RADIO_AAM_MUTE_ORDER done.";
         }
 #ifdef ENABLE_QCOM_VHAL_NIGHTMODE
         if (!subscribeToVHal(subscriptionClient.get(), NightModePropertyId)) {
             LOG(ERROR) << "Didn't register for NIGHT_MODE , Exiting.";
-            return EXIT_FAILURE;
         }
         else
         {
-            LOG(ERROR) << "regiter for NIGHT_MODE done.";
+            LOG(DEBUG) << "regiter for NIGHT_MODE done.";
         }
 
         if (!subscribeToVHal(subscriptionClient.get(), DriverDoorPropertyId)) {
             LOG(ERROR) << "Didn't register for Driver Door notification, Exiting.";
-            return EXIT_FAILURE;
         }
         else
         {
-            LOG(ERROR) << "Register for Driver Door done.";
+            LOG(DEBUG) << "Register for Driver Door done.";
         }
 
         if (!subscribeToVHal(subscriptionClient.get(), FrontPassengerDoorPropertyId)) {
             LOG(ERROR) << "Didn't register for Front Passenger Door notification, Exiting.";
-            return EXIT_FAILURE;
         }
         else
         {
-            LOG(ERROR) << "Register for Front Passenger door done.";
+            LOG(DEBUG) << "Register for Front Passenger door done.";
         }
 
         if (!subscribeToVHal(subscriptionClient.get(), RearLeftDoorPropertyId)) {
             LOG(ERROR) << "Didn't register for Rear Left Door notification, Exiting.";
-            return EXIT_FAILURE;
         }
         else
         {
-            LOG(ERROR) << "Register for Rear Left Door done.";
+            LOG(DEBUG) << "Register for Rear Left Door done.";
         }
 
         if (!subscribeToVHal(subscriptionClient.get(), RearRightDoorPropertyId)) {
             LOG(ERROR) << "Didn't register for Rear Right Door notification, Exiting.";
-            return EXIT_FAILURE;
         }
         else
         {
-            LOG(ERROR) << "Register for Rear Right Door done.";
+            LOG(DEBUG) << "Register for Rear Right Door done.";
         }
 #endif
         if (!subscribeToVHal(subscriptionClient.get(), ThermalPropertyId)) {
             LOG(ERROR) << "Didn't register for Thermal Property, Exiting.";
-            return EXIT_FAILURE;
         }
         else
         {
-            LOG(ERROR) << "Register for Thermal Property done.";
+            LOG(DEBUG) << "Register for Thermal Property done.";
         }
     }
     return EXIT_SUCCESS;
