@@ -89,7 +89,7 @@ status_t BatteryListenerImpl::init() {
 
     do {
         mHealth = IHealth::fromBinder(
-                ndk::SpAIBinder(AServiceManager_getService(service_name.c_str())));
+                ndk::SpAIBinder(AServiceManager_checkService(service_name.c_str())));
         if (mHealth != NULL) break;
         usleep(GET_HEALTH_SVC_WAIT_TIME_MS * 1000);
         tries++;

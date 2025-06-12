@@ -27,6 +27,10 @@
 #define MIN_TONE_CONTROLLER_BANDS 0
 #define MAX_TONE_CONTROLLER_BANDS 1
 
+#define MAX_VOLUME 0
+#define MIN_VOLUME -9000
+#define DEFAULT_VOLUME -3300
+
 #define SOUND_STAGE_ENTRY 0
 #define SOUND_STAGE_MID 1
 #define SOUND_STAGE_PREMIUM 2
@@ -54,6 +58,7 @@
 #define SOUND_STAGE_STR "SoundStage"
 #define DEFAULT_AMBIANCE_STR "DefaultAmbiance"
 #define DEFAULT_AGC_STATE_STR "DefaultAGCState"
+#define DEFAULT_VOLUME_STR "DefaultVolume"
 
 #define TYPE_INT "int"
 
@@ -71,6 +76,7 @@ typedef enum
     AUDIO_CONFIG_SOUND_STAGE,
     AUDIO_CONFIG_DEFAULT_AMBIANCE,
     AUDIO_CONFIG_DEFAULT_AGC_STATE,
+    AUDIO_CONFIG_DEFAULT_VOLUME,
     // Add new Items above this
     AUDIO_CONFIG_MAX,
 }AudioConfigType;
@@ -96,8 +102,8 @@ const std::map<std::string,AudioConfigType> ConfigkeyMap =
     {TONE_CONTROLLER_STR,AUDIO_CONFIG_TONE_CONTROLLER_BANDS},
     {SOUND_STAGE_STR,AUDIO_CONFIG_SOUND_STAGE},
     {DEFAULT_AMBIANCE_STR,AUDIO_CONFIG_DEFAULT_AMBIANCE},
-    {DEFAULT_AGC_STATE_STR,AUDIO_CONFIG_DEFAULT_AGC_STATE}
-
+    {DEFAULT_AGC_STATE_STR,AUDIO_CONFIG_DEFAULT_AGC_STATE},
+    {DEFAULT_VOLUME_STR,AUDIO_CONFIG_DEFAULT_VOLUME},
 };
 
 class AudioConfigManager {
@@ -109,6 +115,7 @@ class AudioConfigManager {
 
         int getAudioConfigValue(AudioConfigType req, AudioConfigData* configType);
         void printXMLData();
+        static AudioConfigType getTypeFromName(const char* configName);
 
     private:
         struct AudioXMLData {
@@ -129,7 +136,6 @@ class AudioConfigManager {
         AudioConfigManager(const AudioConfigManager&) = delete;
         AudioConfigManager& operator=(const AudioConfigManager&) = delete;
 
-        static AudioConfigType getTypeFromName(const char* configName);
         static void end(void *userData, const char *name);
         static void start(void *userData, const char *name, const char **attr);
         static void value(void *userData, const char *val, int len);

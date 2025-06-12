@@ -9,17 +9,56 @@
 #include <include/extensions/AudioConfig.h>
 #include <include/extensions/PalParamDelegator.h>
 #include <PalApi.h>
+#include "android_audio_policy_configuration.h"
 
 #define ALL_BUS_VOLUMES 0x7F
-#define BUS_COUNT 5
+#define TOTAL_BUS_COUNT 7
+#define FVM_BUS_COUNT 5
+#define MEDIA_BUS_INDEX 0
 #define MIN_GAIN -9000.0
 #define XML_FILE_PATH "/vendor/etc/audio_ar/duck_configuration.xml"
 #define RAMP_MEDIUM_DURATION 90
 #define MAX_RAMP_DURATION 1000
 #define MIN_RAMP_DURATION 0
+#define DEFAULT_VOLUME_STR "DefaultVolume"
+#define MEDIA_BUS "BUS00_MEDIA"
 namespace qti::audio::core {
 
-AudioFocusService* mHalFocusService = nullptr;
+    template <class T>
+    constexpr void (*xmlDeleter)(T* t);
+    template <>
+    constexpr auto xmlDeleter<xmlDoc> = xmlFreeDoc;
+    template <>
+    auto xmlDeleter<xmlChar> = [](xmlChar *s) { xmlFree(s); };
+    template <class T>
+    constexpr auto make_xmlUnique(T *t) {
+        auto deleter = [](T *t) { xmlDeleter<T>(t); };
+        return std::unique_ptr<T, decltype(deleter)>{t, deleter};
+    }
+
+    std::map<int32_t, int32_t> globalVolumeMap;
+    std::optional<::android::audio::policy::configuration::Volumes>
+                                volProfileRead(const char* configFile) {
+        auto doc = make_xmlUnique(xmlParseFile(configFile));
+        if (doc == nullptr) {
+            return std::nullopt;
+        }
+        xmlNodePtr _child = xmlDocGetRootElement(doc.get());
+        if (_child == nullptr) {
+            return std::nullopt;
+        }
+        if (xmlXIncludeProcess(doc.get()) < 0) {
+            return std::nullopt;
+        }
+
+        if (!xmlStrcmp(_child->name, reinterpret_cast<const xmlChar*>("volumes"))) {
+            ::android::audio::policy::configuration::Volumes
+                _value = ::android::audio::policy::configuration::Volumes::read(_child);
+            return _value;
+        }
+        return std::nullopt;
+    }
+    AudioFocusService* mHalFocusService = nullptr;
 
 
     std::unordered_map<StreamType,
@@ -68,11 +107,11 @@ AudioFocusService* mHalFocusService = nullptr;
     }
 
     int32_t AudioFocusService::getNearestIndex(int32_t gain) {
-        auto it = volumeMap.lower_bound(gain);
-        if (it == volumeMap.begin()) {
+        auto it = globalVolumeMap.lower_bound(gain);
+        if (it == globalVolumeMap.begin()) {
             return it->second;
         }
-        if (it == volumeMap.end()) {
+        if (it == globalVolumeMap.end()) {
             return std::prev(it)->second;
         }
         auto prevIt = std::prev(it);
@@ -225,10 +264,34 @@ AudioFocusService* mHalFocusService = nullptr;
     }
 
     std::vector<int32_t> getVolumeProfile(uint16_t bus_mask) {
+        std::vector<int32_t> volumes(TOTAL_BUS_COUNT, -1);
         LOG(DEBUG) << "Enter " << __func__;
+        {
+            auto &configManager = ::qti::audio::oem::config::AudioConfigManager::getInstance();
+            ::qti::audio::oem::config::AudioConfigType
+                type = configManager.getTypeFromName(DEFAULT_VOLUME_STR);
+            ::qti::audio::oem::config::AudioConfigData configData;
+            if (type != ::qti::audio::oem::config::AudioConfigType::AUDIO_CONFIG_MAX) {
+                configManager.getAudioConfigValue(type, &configData);
+                LOG(INFO) << "Volume post MUTE restored to : " << configData.defaultValue;
+                for (int i = 0; i < FVM_BUS_COUNT; i++) {
+                    volumes[i] = configData.defaultValue;
+                }
+                //override media bus volume with attenuation target
+                {
+                    ::qti::audio::oem::config::AudioConfigType
+                            req = ::qti::audio::oem::config::AUDIO_CONFIG_ATTENUATION_TARGET;
+                    ::qti::audio::oem::config::AudioConfigData configData;
+                    ::qti::audio::oem::config ::AudioConfigManager::getInstance().
+                                                    getAudioConfigValue(req, &configData);
+                    volumes[MEDIA_BUS_INDEX] = (float)(configData.defaultValue);
+                    LOG(INFO) << "Overriding media volume restore"
+                        " to attenuation target: " << volumes[MEDIA_BUS_INDEX];
+                }
+                return volumes;
+            }
+        }
         int ret;
-        std::vector<int32_t> volumes(7, -1);
-
         ::aidl::qti::awx::pal_awx_param_t pal_param;
         memset(&pal_param, 0, sizeof(::aidl::qti::awx::pal_awx_param_t));
 
@@ -258,16 +321,18 @@ AudioFocusService* mHalFocusService = nullptr;
             return volumes;
         }
         else {
-            for(int i=0; i<7; i++){
+            for(int i = 0; i < TOTAL_BUS_COUNT; i++){
                 if (bus_mask & (1 << (i))) {
                     int volValue = params.value[i] ;
 
                     if (volValue < MIN_VOLUME_VALUE || volValue > MAX_VOLUME_VALUE) {
-                        LOG(ERROR) << __func__ << "Unsupported volume value " << "for " << busTypes[i];
+                        LOG(ERROR) << __func__
+                            << "Unsupported volume value " << "for " << busTypes[i];
                     }
                     else{
                         volumes[i] = params.value[i];
-                        LOG(DEBUG) << __func__ << " " << busTypes[i] << " Volume fetched successfully! ret: " << params.value[i];
+                        LOG(DEBUG) << __func__ << " " << busTypes[i]
+                            << " Volume fetched successfully! ret: " << params.value[i];
                     }
                 }
             }
@@ -291,7 +356,7 @@ AudioFocusService* mHalFocusService = nullptr;
         std::vector<Reasons> reasons{};
         reasons.push_back(Reasons::EXTERNAL_AMP_VOL_FEEDBACK);
         std::vector<AudioGainConfigInfo> agcis{};
-        for (int i = 0; i < BUS_COUNT; i++) {
+        for (int i = 0; i < FVM_BUS_COUNT; i++) {
             AudioGainConfigInfo agci{
                     .zoneId = 0,
                     .devicePortAddress = busTypes[i],
@@ -309,7 +374,8 @@ AudioFocusService* mHalFocusService = nullptr;
                 }
             }
             LOG(INFO) << "Restoring volume for bus "
-                << agci.devicePortAddress << " to " << busVolumes[i] << "(index: " << agci.volumeIndex << ")";
+                << agci.devicePortAddress << " to "
+                    << busVolumes[i] << "(index: " << agci.volumeIndex << ")";
         }
 
         if (getAudioControlService() == nullptr) {
@@ -584,31 +650,30 @@ AudioFocusService* mHalFocusService = nullptr;
                                 //thermal was the one ducking the system currently, thermal's at same index
                                 //let's set persistent volume to thermal itself and report it.
                                 //TODO: report thermal
-                            LOG(INFO) << "report device gain changed";
-                            if (const auto &audioControlService = getAudioControlService();
-                                                                    audioControlService != nullptr) {
-                                AudioGainConfigInfo agci{
-                                        .zoneId = 0,
-                                        .devicePortAddress = "BUS00_MEDIA",
-                                        .volumeIndex = index,
-                                };
-                                for (auto &entry: registeredFocusCallbacks) {
-                                    auto focusId = entry.first;
-                                    auto &focusInfo = entry.second;
-                                    auto in_usage = focusInfo.usage;
-                                    if (auto address = focusInfo.device.address.get<AudioDeviceAddress::Tag::id>();
-                                            !address.empty() && address == agci.devicePortAddress) {
-                                        focusInfo.gain = registeredFocusCallbacks[curFocusId].gain;
-                                        LOG(INFO) << "Synced duckVolume for focusID " << focusId;
+                                LOG(INFO) << "report device gain changed";
+                                if (const auto &audioControlService = getAudioControlService();
+                                                                        audioControlService != nullptr) {
+                                    AudioGainConfigInfo agci{
+                                            .zoneId = 0,
+                                            .devicePortAddress = "BUS00_MEDIA",
+                                            .volumeIndex = index,
+                                    };
+                                    for (auto &entry: registeredFocusCallbacks) {
+                                        auto focusId = entry.first;
+                                        auto &focusInfo = entry.second;
+                                        auto in_usage = focusInfo.usage;
+                                        if (auto address = focusInfo.device.address.get<AudioDeviceAddress::Tag::id>();
+                                                !address.empty() && address == agci.devicePortAddress) {
+                                            focusInfo.gain = registeredFocusCallbacks[curFocusId].gain;
+                                            LOG(INFO) << "Synced duckVolume for focusID " << focusId;
+                                        }
                                     }
+                                    audioControlService->reportAudioDeviceGainChanged({Reasons::EXTERNAL_AMP_VOL_FEEDBACK},
+                                                                                        {agci});
+                                } else {
+                                    LOG(ERROR) << "Faild to report device gain change";
                                 }
-                                audioControlService->reportAudioDeviceGainChanged({Reasons::EXTERNAL_AMP_VOL_FEEDBACK},
-                                                                                    {agci});
-                            } else {
-                                LOG(ERROR) << "Faild to report device gain change";
                             }
-                            }
-
                     }
                     populateReasonsnGains(curFocusId);
                 } else if (duckFocusIds.size() > 0) {
@@ -717,6 +782,46 @@ void AudioFocusService::handleVolumeChange(int64_t focusId, float gain, bool isE
 
     }
 
+    void AudioFocusService::processVolumePoints(const std::vector<std::string> &points) {
+        std::map<int32_t, int32_t> volumeMap;
+        int32_t index, gain;
+        LOG(INFO) << "AMPERE Volume Curve:";
+        for (auto point: points) {
+            size_t p = point.find(',');
+            if (p != std::string::npos) {
+                index = std::stoi(point.substr(0, p));
+                gain = std::stoi(point.substr(p + 1));
+                volumeMap[gain] = index;
+                LOG(INFO) << index << " : " << gain;
+            }
+        }
+        globalVolumeMap = volumeMap;
+        return;
+    }
+
+    void AudioFocusService::parseVolumeProfile() {
+        const std::optional<::android::audio::policy::configuration::Volumes>
+                                            volumeInfo(volProfileRead(externalVolumeConfiguration));
+        if (volumeInfo.has_value() && volumeInfo->hasReference()) {
+            const std::vector<::android::audio::policy::configuration::Reference>
+                references = volumeInfo->getReference();
+            for (auto reference: references) {
+                if (reference.hasName() && reference.getName() == "DEFAULT_VOLUME_STEPS_CURVE") {
+                    if (reference.hasPoint()) {
+                        const std::vector<std::string> points = reference.getPoint();
+                        processVolumePoints(points);
+                    }
+                    break;
+                }
+            }
+        }
+        if (globalVolumeMap.empty()) {
+            LOG(INFO) << "Falling back to QC volume curve for audio priority management";
+            globalVolumeMap = volumeMap;
+        }
+        return ;
+    }
+
     AudioFocusService::AudioFocusService() {
 
         { //parse configuration from xml
@@ -745,7 +850,7 @@ void AudioFocusService::handleVolumeChange(int64_t focusId, float gain, bool isE
                 LOG(ERROR) << __func__ <<  "Failed to parse configuration" ;
             }
         }
-
+        parseVolumeProfile();
         LOG(INFO) << "Creating worker thread for handling focus requests";
         this->worker_thread = std::make_unique<std::thread>(&AudioFocusService::threadLoop, this);
         if (!this->worker_thread) {

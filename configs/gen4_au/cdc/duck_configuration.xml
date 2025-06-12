@@ -11,12 +11,14 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <!-- Define a rule where the media bus is ducked when nav2 is incoming -->
         <priority in_src="ASSISTANCE_NAVIGATION_GUIDANCE" running_src="MEDIA" duck="true" Gain="-9000" vol_override="false"/>
         <priority in_src="ROAD_ADAS" running_src="MEDIA" duck="true" Gain="-6750" vol_override="false"/>
+        <priority in_src="VEHICLE_WARNING" running_src="MEDIA" duck="true" Gain="-6750" vol_override="false"/>
         <priority in_src="AM" running_src="MEDIA" duck="true" Gain="-150" vol_override="false"/>
         <priority in_src="FM" running_src="MEDIA" duck="true" Gain="-120" vol_override="false"/>
         <priority in_src="RADIO_AAM_MUTE_ORDER" running_src="MEDIA" duck="true" Gain="-4000" vol_override="false"/>
         <priority in_src="NIGHT_MODE" running_src="MEDIA" duck="true" Gain="-4000" vol_override="false"/>
         <priority in_src="DEVICE_TEMPERATURE_STATUS" running_src="MEDIA" duck="true" Gain="-4000" vol_override="false"/>
         <priority in_src="THERMAL_MITIGATION" running_src="MEDIA" duck="true" Gain="-2250" vol_override="false"/>
+        <priority in_src="VEHICLE_SAFETY_WARNING" running_src="BUS00_MEDIA" duck="true" Gain="-9000" vol_override="true"/>
         <priority in_src="CYBER" running_src="BUS00_MEDIA" duck="true" Gain="-9000" vol_override="true"/>
         <priority in_src="CYBER" running_src="BUS01_SYS_NOTIFICATION" duck="true" Gain="-9000" vol_override="true"/>
         <priority in_src="CYBER" running_src="BUS02_NAV_GUIDANCE" duck="true" Gain="-9000" vol_override="true"/>

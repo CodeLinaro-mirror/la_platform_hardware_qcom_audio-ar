@@ -108,6 +108,11 @@ static struct hfp_loopback_module hfpmod = {
 #define HFP_16_BIT_FORMAT_BYTES 2
 #define HFP_BUFFER_COUNT 4
 
+int scd_file_path_index_dl = INVALID_PATH;
+int scd_file_path_index_ul = INVALID_PATH;
+int dl_period_size = 0;
+int ul_period_size = 0;
+static int32_t stop_hfp();
 static int hfp_get_sampleRate_period_size_UL_processing(uint32_t sample_rate)
 {
    int size = 0;
@@ -236,10 +241,41 @@ static void *hfp_dl_thread(void *__unused) {
                 ret = hfpmod.mHalExtension->audio_extn_get_TuneIO_buffer(&(hfpmod.p_DL_ECNR_TuneIFData), &(hfpmod.p_DL_ECNR_ProcessData.sECNRTuneIO));
                 if (ret >= 0)
                     ret = hfpmod.mHalExtension->audio_extn_ecnrProcess(hfpmod.p_DL_ECNR_ProcessData.pMain,hfpmod.p_DL_ECNR_ProcessData.audioIO,&(hfpmod.p_DL_ECNR_ProcessData.sECNRTuneIO));
-                else
+                else {
 #endif
                     ret = hfpmod.mHalExtension->audio_extn_ecnrProcess(hfpmod.p_DL_ECNR_ProcessData.pMain,hfpmod.p_DL_ECNR_ProcessData.audioIO,NULL);
+                    if(ret) {
+                    for(int path_index = scd_file_path_index_dl; path_index < MAX_SCD_PATH_INDEX; path_index++) {
+                        if(scd_file_path_index_dl == DEFAULT_PATH) {
+                            LOG(ERROR) << __func__ << " ECNR_Process failed ret = " << ret;
+                            stop_hfp();
+                        } else {
+                           //Increamenting file path index to skip the used path
+                            scd_file_path_index_dl++;
+                            ret = hfpmod.mHalExtension->audio_extn_getSCDdata(&(hfpmod.p_DL_ECNR_ProcessData), DIR_DL, &scd_file_path_index_dl);
+                            if(ret) {
+                                LOG(ERROR) << __func__ << " failed to get scd information, ret " << ret;
+                                stop_hfp();
+                            }
+                            hfpmod.mHalExtension->audio_extn_setupIOBuffer(&(hfpmod.p_DL_ECNR_ProcessData),DIR_DL,ECNR_IN_DL_CH,ECNR_OUT_DL_CH,dl_period_size,hfpmod.DL_TX_stream_buffer,hfpmod.DL_RX_stream_buffer);
+                            ret = hfpmod.mHalExtension->audio_extn_setupECNR(&(hfpmod.p_DL_ECNR_ProcessData));
+                            if (ret) {
+                                LOG(ERROR) << __func__ << " audio_extn_setupECNR failed ret" << ret;
+                                stop_hfp();
+                            }
 #ifdef ECNR_HAL_TUNE
+                            hfpmod.mHalExtension->audio_extn_setupECNR_TuneIF(&(hfpmod.p_DL_ECNR_TuneIFData), ECNR_PORT_ID_HFP_DL_2012);
+#endif
+                        }
+                            ret = hfpmod.mHalExtension->audio_extn_ecnrProcess(hfpmod.p_DL_ECNR_ProcessData.pMain,hfpmod.p_DL_ECNR_ProcessData.audioIO,NULL);
+                            if(!ret) {
+                                LOG(DEBUG) << __func__ << " ret = "<< ret;
+                                break;
+                            }
+                        }
+                    }
+#ifdef ECNR_HAL_TUNE
+                }
                 hfpmod.mHalExtension->audio_extn_feedback_TuneIO_buffer(&(hfpmod.p_DL_ECNR_TuneIFData), &(hfpmod.p_DL_ECNR_ProcessData.sECNRTuneIO));
 #endif
                 if (!ret) {
@@ -306,10 +342,41 @@ static void *hfp_ul_thread(void *__unused) {
                 ret = hfpmod.mHalExtension->audio_extn_get_TuneIO_buffer(&(hfpmod.p_UL_ECNR_TuneIFData), &(hfpmod.p_UL_ECNR_ProcessData.sECNRTuneIO));
                 if (ret >= 0)
                     ret = hfpmod.mHalExtension->audio_extn_ecnrProcess(hfpmod.p_UL_ECNR_ProcessData.pMain,hfpmod.p_UL_ECNR_ProcessData.audioIO,&(hfpmod.p_UL_ECNR_ProcessData.sECNRTuneIO));
-                else
+                else {
 #endif
                     ret = hfpmod.mHalExtension->audio_extn_ecnrProcess(hfpmod.p_UL_ECNR_ProcessData.pMain, hfpmod.p_UL_ECNR_ProcessData.audioIO, NULL);
+                    if(ret) {
+                        for(int path_index = scd_file_path_index_ul; path_index < MAX_SCD_PATH_INDEX; path_index++) {
+                            if(scd_file_path_index_ul == DEFAULT_PATH) {
+                                LOG(ERROR) << __func__ << " ECNR_Process failed ret = " << ret;
+                                stop_hfp();
+                            } else {
+                                //Increamenting file path index to skip the used path
+                                scd_file_path_index_ul++;
+                                ret = hfpmod.mHalExtension->audio_extn_getSCDdata(&(hfpmod.p_UL_ECNR_ProcessData), DIR_UL, &scd_file_path_index_ul);
+                                if(ret) {
+                                    LOG(ERROR) << __func__ << " failed to get scd information, ret " << ret;
+                                    stop_hfp();
+                                }
+                                hfpmod.mHalExtension->audio_extn_setupIOBuffer(&(hfpmod.p_UL_ECNR_ProcessData),DIR_UL,ECNR_MIC_EC_CH,ECNR_OUT_UL_CH,ul_period_size,hfpmod.UL_TX_stream_buffer,hfpmod.UL_RX_stream_buffer);
+                                ret = hfpmod.mHalExtension->audio_extn_setupECNR(&(hfpmod.p_UL_ECNR_ProcessData));
+                                if (ret) {
+                                    LOG(ERROR) << __func__ << " audio_extn_setupECNR failed ret " << ret;
+                                    stop_hfp();
+                                }
 #ifdef ECNR_HAL_TUNE
+                                hfpmod.mHalExtension->audio_extn_setupECNR_TuneIF(&(hfpmod.p_UL_ECNR_TuneIFData),ECNR_PORT_ID_HFP_UL_2013);
+#endif
+                            }
+                            ret = hfpmod.mHalExtension->audio_extn_ecnrProcess(hfpmod.p_UL_ECNR_ProcessData.pMain, hfpmod.p_UL_ECNR_ProcessData.audioIO, NULL);
+                            if(!ret) {
+                                LOG(DEBUG) << __func__ << " ret = "<< ret;
+                                break;
+                            }
+                        }
+                    }
+#ifdef ECNR_HAL_TUNE
+                }
                 hfpmod.mHalExtension->audio_extn_feedback_TuneIO_buffer(&(hfpmod.p_UL_ECNR_TuneIFData), &(hfpmod.p_UL_ECNR_ProcessData.sECNRTuneIO));
 #endif
 
@@ -545,8 +612,8 @@ static int32_t start_hfp(struct str_parms *parms __unused) {
     struct pal_channel_info ch_info;
     struct pal_buffer_config outBufCfg = {0, 0, 0};
     struct pal_buffer_config inBufCfg = {0, 0, 0};
-    int ul_period_size = hfp_get_sampleRate_period_size_UL_processing(hfpmod.sample_rate);
-    int dl_period_size = hfp_get_sampleRate_period_size_DL_processing(hfpmod.sample_rate);
+    ul_period_size = hfp_get_sampleRate_period_size_UL_processing(hfpmod.sample_rate);
+    dl_period_size = hfp_get_sampleRate_period_size_DL_processing(hfpmod.sample_rate);
     LOG(DEBUG) << __func__ << " HFP start enter";
     if (hfpmod.rx_stream_handle || hfpmod.tx_stream_handle) return 0; // hfp already running;
 
@@ -632,10 +699,10 @@ static int32_t start_hfp(struct str_parms *parms __unused) {
         int scd_ret = 0;
         if (hfpmod.sample_rate == 8000) {
             hfpmod.p_DL_ECNR_ProcessData.scd_type = TEL_BT_NB_DL;
-            scd_ret = hfpmod.mHalExtension->audio_extn_getSCDdata(&(hfpmod.p_DL_ECNR_ProcessData), DIR_DL);
+            scd_ret = hfpmod.mHalExtension->audio_extn_getSCDdata(&(hfpmod.p_DL_ECNR_ProcessData), DIR_DL, &scd_file_path_index_dl);
         } else {
             hfpmod.p_DL_ECNR_ProcessData.scd_type = TEL_BT_WB_DL;
-            scd_ret = hfpmod.mHalExtension->audio_extn_getSCDdata(&(hfpmod.p_DL_ECNR_ProcessData), DIR_DL);
+            scd_ret = hfpmod.mHalExtension->audio_extn_getSCDdata(&(hfpmod.p_DL_ECNR_ProcessData), DIR_DL, &scd_file_path_index_dl);
         }
         if (scd_ret) {
             hfpmod.bECNR_DL_Enable = false;
@@ -652,10 +719,10 @@ static int32_t start_hfp(struct str_parms *parms __unused) {
         }
         if (hfpmod.sample_rate == 8000) {
             hfpmod.p_UL_ECNR_ProcessData.scd_type = TEL_BT_NB_UL;
-            scd_ret = hfpmod.mHalExtension->audio_extn_getSCDdata(&(hfpmod.p_UL_ECNR_ProcessData), DIR_UL);
+            scd_ret = hfpmod.mHalExtension->audio_extn_getSCDdata(&(hfpmod.p_UL_ECNR_ProcessData), DIR_UL, &scd_file_path_index_ul);
         } else {
             hfpmod.p_UL_ECNR_ProcessData.scd_type = TEL_BT_WB_UL;
-            scd_ret = hfpmod.mHalExtension->audio_extn_getSCDdata(&(hfpmod.p_UL_ECNR_ProcessData), DIR_UL);
+            scd_ret = hfpmod.mHalExtension->audio_extn_getSCDdata(&(hfpmod.p_UL_ECNR_ProcessData), DIR_UL, &scd_file_path_index_ul);
         }
         if (scd_ret) {
             hfpmod.bECNR_UL_Enable = false;

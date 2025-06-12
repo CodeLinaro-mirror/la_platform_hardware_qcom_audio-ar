@@ -62,7 +62,6 @@ typedef struct{
     int id;
     std::string stringId;
     std::string default_path;
-    std::string crc;
 }AudioCalibData;
 
 typedef struct{
@@ -83,7 +82,6 @@ class AudioCalibManager {
         void printXMLData();
 
         std::string  getAudioCalibPath(std::string scd_file_name);
-        std::string  getAudiocrc(std::string scd_file_name);
 
     private:
         static std::vector<AudioCalibData> mCalibDataList;

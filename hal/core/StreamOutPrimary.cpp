@@ -381,6 +381,11 @@ void StreamOutPrimary::resume() {
     // hardware is expected to up on start
     // but we are doing on first write
     LOG(DEBUG) << __func__ << mLogPrefix;
+    if (!mPlatform.isSoundCardUp()) {
+        LOG(ERROR) << __func__ << mLogPrefix << "Sound card is offline, returning...\n";
+        return -EINVAL;
+    }
+
     if (AudioExtension::getInstance().out_power_policy == POWER_POLICY_STATUS_OFFLINE) {
         LOG(ERROR) << "POWER POLICY OFFLINE please try again\n";
         return -EINVAL;
@@ -860,16 +865,23 @@ int32_t StreamOutPrimary::setAggregateSourceMetadata(bool voiceActive) {
     btSourceMetadata.track_count = track_count_total;
     btSourceMetadata.tracks = total_tracks.data();
 
+    int32_t totalTracks = 0;
     for (auto it = outStreams.begin(); it != outStreams.end(); it++) {
         ::aidl::android::hardware::audio::common::SourceMetadata srcMetadata;
         if (it->lock()) {
             it->lock()->getMetadata(srcMetadata);
             for (auto& item : srcMetadata.tracks) {
+                // check tracks size in this stream metadata not to exceed total count
+                if (totalTracks >= track_count_total) {
+                    break;
+                }
+
                 /* currently after cs call ends, we are getting metadata as
                 * usage voice and content speech, this is causing BT to again
                 * open call session, so added below check to send metadata of
                 * voice only if call is active, else discard it
                 */
+
                 if (!voiceActive && (mPlatform.getCallMode() != 3) &&
                     (AUDIO_USAGE_VOICE_COMMUNICATION == static_cast<audio_usage_t>(item.usage)) &&
                     (AUDIO_CONTENT_TYPE_SPEECH ==
@@ -882,8 +894,9 @@ int32_t StreamOutPrimary::setAggregateSourceMetadata(bool voiceActive) {
                     LOG(VERBOSE) << __func__ << mLogPrefix << " source metadata usage is "
                                  << btSourceMetadata.tracks->usage << " content is "
                                  << btSourceMetadata.tracks->content_type;
-                    ++btSourceMetadata.tracks;
+                   ++btSourceMetadata.tracks;
                 }
+                ++totalTracks;
             }
         }
     }
@@ -1093,8 +1106,14 @@ void StreamOutPrimary::configure() {
                 auto stream = itr->lock();
                 if (stream) {
                     auto streamOutPrimary = std::static_pointer_cast<StreamOutPrimary>(stream);
+                    std::vector<float> Volumes;
+                    int iter_channel;
+                    int no_of_channels = mVolumes.size();
                     if (streamOutPrimary->isStreamOutPrimary()) {
-                        streamOutPrimary->getHwVolume(&this->mVolumes);
+                        streamOutPrimary->getHwVolume(&Volumes);
+                        for(iter_channel = 0; iter_channel < no_of_channels; iter_channel++) {
+                            mVolumes[iter_channel] = Volumes[0];
+                        }
                         LOG(INFO) << __func__ << " Overriding Offload Volume";
                         break;
                     }

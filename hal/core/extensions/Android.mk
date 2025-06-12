@@ -110,7 +110,8 @@ LOCAL_SHARED_LIBRARIES := \
     $(LATEST_ANDROID_HARDWARE_AUDIO_CORE) \
     qti-audio-types-aidl-V1-ndk \
     libar-pal \
-    libAudioCalibOem
+    libAudioCalibOem \
+    libexpat
 
 ifeq ($(ENABLE_QCOM_HAL_AUDIO_FOCUS),true)
 LOCAL_CFLAGS += -DENABLE_QCOM_HAL_AUDIO_FOCUS
@@ -473,6 +474,9 @@ LOCAL_CFLAGS := \
     -Wunused-parameter \
     -Wextra \
 
+ifeq ($(ENABLE_QCOM_VHAL),true)
+LOCAL_CFLAGS += -DENABLE_VHAL_TEST_WITH_KITCHENSINK
+endif
 
 LOCAL_C_INCLUDES := \
     $(TOP)/vendor/qcom/opensource/pal \
@@ -556,13 +560,16 @@ LOCAL_SHARED_LIBRARIES := \
     android.hardware.automotive.audiocontrol-V4-ndk \
     ampere.hardware.interfaces.automotive.audioparameterparser-V1-ndk \
     libAudioConfigOem \
-    libAWXPAL
+    libAWXPAL \
+    libxml2 \
+    libaudioserviceexampleimpl
 
 
 LOCAL_HEADER_LIBRARIES :=  \
     libaudio_system_headers \
     libsystem_headers \
-    libarpal_headers
+    libarpal_headers \
+    libxsdc-utils
 
 include $(BUILD_SHARED_LIBRARY)
 
@@ -592,6 +599,10 @@ ifeq ($(ENABLE_QCOM_VHAL_NIGHTMODE),true)
 LOCAL_CFLAGS += -DENABLE_QCOM_VHAL_NIGHTMODE
 endif
 
+ifeq ($(ENABLE_QCOM_VHAL),true)
+LOCAL_CFLAGS += -DENABLE_VHAL_TEST_WITH_KITCHENSINK
+endif
+
 LOCAL_C_INCLUDES := \
     $(TOP)/vendor/qcom/opensource/pal \
     $(TOP)/vendor/qcom/opensource/audio-hal/primary-hal/hal \
@@ -615,7 +626,6 @@ LOCAL_SHARED_LIBRARIES := \
     libAudioConfigOem \
     $(LATEST_ANDROID_MEDIA_AUDIO_COMMON_TYPES) \
     $(LATEST_ANDROID_HARDWARE_AUDIO_CORE) \
-    android.hardware.audio.focus-V1-ndk \
     alliance.hardware.automotive.audiocontrol.internal-V2-ndk \
     android.hardware.audio.core.sounddose-V1-ndk \
     android.hardware.automotive.audiocontrol-V4-ndk \
