@@ -2135,6 +2135,39 @@ int AudioDevice::SetParameters(const char *kvpairs) {
             sizeof(pal_param_bta2dp_t));
     }
 
+    ret = str_parms_get_str(parms, "asrc_start", value, sizeof(value));
+    if (ret >= 0) {
+        AHAL_DBG("Getting ASRC parameters starts! ");
+        typedef struct {
+            uint32_t effective;
+            uint32_t ratio;
+            uint32_t ramp;
+        } asrc_ratio_t;
+        asrc_ratio_t asrc_ratio = {0,0,0};
+
+        ret = str_parms_get_str(parms, "asrc_effective", value, sizeof(value));
+        if (ret >= 0) {
+            sscanf(value, "%x", &(asrc_ratio.effective));
+            AHAL_DBG("asrc eff = %x", asrc_ratio.effective);
+        }
+
+        ret = str_parms_get_str(parms, "asrc_ratio", value, sizeof(value));
+        if (ret >= 0) {
+            sscanf(value, "%x", &(asrc_ratio.ratio));
+            AHAL_DBG("asrc ratio = %x", asrc_ratio.ratio);
+        }
+
+        ret = str_parms_get_str(parms, "asrc_ramp", value, sizeof(value));
+        if (ret >= 0) {
+            sscanf(value, "%x", &(asrc_ratio.ramp));
+            AHAL_DBG("asrc ramp = %x", asrc_ratio.ramp);
+        }
+
+        ret = pal_set_param(PAL_PARAM_ID_ASRC, &asrc_ratio, sizeof(asrc_ratio));
+            str_parms_destroy(parms);
+            goto exit;
+    }
+
     str_parms_destroy(parms);
 
 exit:
@@ -2385,7 +2418,7 @@ int AudioDevice::GetPalDeviceIds(const std::set<audio_devices_t> &hal_device_ids
                 pal_device_id[device_count] = PAL_DEVICE_IN_HANDSET_MIC;
             }
             AHAL_DBG("Found haldeviceId: %x and PAL Device ID %d",
-                     AUDIO_DEVICE_OUT_BUS, pal_device_id[device_count]);
+                     AUDIO_DEVICE_IN_BUS, pal_device_id[device_count]);
             ++device_count;
             continue;
         }
@@ -2572,6 +2605,7 @@ int32_t AudioDevice::get_microphones(struct audio_microphone_characteristic_t *m
 void AudioDevice::process_microphone_characteristics(const XML_Char **attr)
 {
     struct audio_microphone_characteristic_t microphone;
+    microphone.device = AUDIO_DEVICE_NONE;
     uint32_t curIdx = 0;
     uint32_t valid_mask;
 
