@@ -436,7 +436,7 @@ class StreamOutAsyncWorkerLogic : public StreamOutWorkerLogic {
      * This indicates whether there is transitioning clip data bursts in
      * "DRAINING_en_sent" and "DRAIN_PAUSED_en_sent" states.
      */
-    bool mIsClipTransitionDataBurstsAvailable = false;
+    bool mIsClipTransitionDataBurstsInProgress = false;
 };
 using StreamOutAsyncWorker = StreamWorkerImpl<StreamOutAsyncWorkerLogic>;
 
