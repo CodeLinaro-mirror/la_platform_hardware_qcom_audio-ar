@@ -92,7 +92,7 @@ AUDIO_ACDB := workspaceFileXml.qwsp
 AUDIO_ACDB += acdb_cal.acdb
 AUDIO_ACDB += acdb_cal.acdbdelta
 
-AUDIO_MODULES := $(AUDIO_AGM)
+AUDIO_MODULES += $(AUDIO_AGM)
 AUDIO_MODULES += $(AUDIO_PAL)
 AUDIO_MODULES += $(AUDIO_ACDB)
 
