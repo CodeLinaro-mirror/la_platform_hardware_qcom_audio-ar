@@ -263,7 +263,7 @@ RetCode VisualizerOffloadContext::disable() {
 
 void VisualizerOffloadContext::reset() {
     std::lock_guard lg(mMutex);
-    std::fill_n(mCaptureBuf.begin(), kMaxCaptureBufSize, 0x80);
+    std::fill(mCaptureBuf.begin(), mCaptureBuf.end(), 0x80);
 }
 
 RetCode VisualizerOffloadContext::setCaptureSamples(int samples) {
@@ -372,15 +372,14 @@ Visualizer::Measurement VisualizerOffloadContext::getMeasure() {
 }
 
 std::vector<uint8_t> VisualizerOffloadContext::capture() {
-    std::vector<uint8_t> result;
+    uint32_t captureSamples = mCaptureSamples;
+    std::vector<uint8_t> result(captureSamples, 0x80);
     std::lock_guard lg(mMutex);
     if (mState != State::ACTIVE) {
-        result.resize(mCaptureSamples);
-        memset(result.data(), 0x80, mCaptureSamples);
         return result;
     }
-    int32_t latencyMs = mDownstreamLatency;
-    const int32_t deltaMs = getDeltaTimeMsFromUpdatedTime_l();
+
+    const uint32_t deltaMs = getDeltaTimeMsFromUpdatedTime_l();
     // if audio framework has stopped playing audio although the effect is still active we must
     // clear the capture buffer to return silence
     if ((mLastCaptureIdx == mCaptureIdx) && (mBufferUpdateTime.tv_sec != 0) &&
@@ -389,25 +388,36 @@ std::vector<uint8_t> VisualizerOffloadContext::capture() {
         mBufferUpdateTime.tv_sec = 0;
         return result;
     }
-    __builtin_sub_overflow((int32_t)latencyMs, deltaMs, &latencyMs);
-    if (latencyMs < 0) latencyMs = 0;
-    uint32_t deltaSamples = mCommon.input.base.sampleRate * latencyMs / 1000;
-    int64_t capturePoint = mCaptureIdx;
-    capturePoint -= mCaptureSamples;
-    capturePoint -= deltaSamples;
-    int64_t captureSize = mCaptureSamples;
+    int32_t latencyMs = mDownstreamLatency;
+    latencyMs -= deltaMs;
+    if (latencyMs < 0) {
+        latencyMs = 0;
+    }
+    uint32_t deltaSamples = captureSamples + mCommon.input.base.sampleRate * latencyMs / 1000;
+
+    // large sample rate, latency, or capture size, could cause overflow.
+    // do not offset more than the size of buffer.
+    if (deltaSamples > kMaxCaptureBufSize) {
+        // android_errorWriteLog(0x534e4554, "31781965");
+        deltaSamples = kMaxCaptureBufSize;
+    }
+
+    int32_t capturePoint;
+    __builtin_sub_overflow((int32_t)mCaptureIdx, deltaSamples, &capturePoint);
+    // a negative capturePoint means we wrap the buffer.
     if (capturePoint < 0) {
-        int64_t size = -capturePoint;
-        if (size > captureSize) {
-            size = captureSize;
+        uint32_t size = -capturePoint;
+        if (size > captureSamples) {
+            size = captureSamples;
         }
-        result.insert(result.end(), &mCaptureBuf[kMaxCaptureBufSize + capturePoint],
-                      &mCaptureBuf[kMaxCaptureBufSize + capturePoint + size]);
-        captureSize -= size;
+        std::copy(std::begin(mCaptureBuf) + kMaxCaptureBufSize - size,
+                  std::begin(mCaptureBuf) + kMaxCaptureBufSize, result.begin());
+        captureSamples -= size;
         capturePoint = 0;
     }
-    result.insert(result.end(), &mCaptureBuf[capturePoint],
-                  &mCaptureBuf[capturePoint + captureSize]);
+    std::copy(std::begin(mCaptureBuf) + capturePoint,
+              std::begin(mCaptureBuf) + capturePoint + captureSamples,
+              result.begin() + mCaptureSamples - captureSamples);
     mLastCaptureIdx = mCaptureIdx;
     return result;
 }
@@ -415,66 +425,75 @@ std::vector<uint8_t> VisualizerOffloadContext::capture() {
 int VisualizerOffloadContext::process(int16_t* inBuffer) {
     if (!inBuffer || mState != State::ACTIVE) return -EINVAL;
 
+    int samples = AUDIO_CAPTURE_PERIOD_SIZE * mChannelCount;
     // perform measurements if needed
     if (mMeasurementMode == Visualizer::MeasurementMode::PEAK_RMS) {
         // find the peak and RMS squared for the new buffer
         float rmsSqAcc = 0;
-        int16_t maxSample = 0;
-        for (size_t inIdx = 0; inIdx < AUDIO_CAPTURE_PERIOD_SIZE * mChannelCount; ++inIdx) {
-            if (inBuffer[inIdx] > maxSample) {
-                maxSample = inBuffer[inIdx];
-            } else if (-inBuffer[inIdx] > maxSample) {
-                maxSample = -inBuffer[inIdx];
-            }
-            rmsSqAcc += inBuffer[inIdx] * inBuffer[inIdx];
+        float maxSample = 0.f;
+        float sample = 0.f;
+        for (size_t inIdx = 0; inIdx < (unsigned)samples; ++inIdx) {
+            sample = float_from_i16(inBuffer[inIdx]);
+            maxSample = fmax(maxSample, fabs(sample));
+            rmsSqAcc += sample * sample;
         }
-        mPastMeasurements[mMeasurementBufferIdx] = {
-                .mPeakU16 = (uint16_t)maxSample,
-                .mRmsSquared = rmsSqAcc / (AUDIO_CAPTURE_PERIOD_SIZE * mChannelCount),
-                .mIsValid = true};
+        maxSample *= 1 << 15;  // scale to int16_t, with exactly 1 << 15 representing positive num.
+        rmsSqAcc *= 1 << 30;   // scale to int16_t * 2
+
+        mPastMeasurements[mMeasurementBufferIdx] = {.mIsValid = true,
+                                                    .mPeakU16 = (uint16_t)maxSample,
+                                                    .mRmsSquared = rmsSqAcc / samples};
         if (++mMeasurementBufferIdx >= mMeasurementWindowSizeInBuffers) {
             mMeasurementBufferIdx = 0;
         }
     }
-    /* all code below assumes stereo 16 bit PCM output and input */
-    int32_t shift;
+
+    float fscale;  // multiplicative scale
     if (mScalingMode == Visualizer::ScalingMode::NORMALIZED) {
-        /* derive capture scaling factor from peak value in current buffer
-         * this gives more interesting captures for display. */
-        shift = 32;
-        int len = AUDIO_CAPTURE_PERIOD_SIZE * 2;
-        for (int idx = 0; idx < len; idx++) {
-            int32_t smp = inBuffer[idx];
-            if (smp < 0) smp = -smp - 1; /* take care to keep the max negative in range */
-            int32_t clz = __builtin_clz(smp);
-            if (shift > clz) shift = clz;
+        // derive capture scaling factor from peak value in current buffer
+        // this gives more interesting captures for display.
+        float maxSample = 0.f;
+        for (size_t inIdx = 0; inIdx < (unsigned)samples;) {
+            // we reconstruct the actual summed value to ensure proper normalization
+            // for multichannel outputs (channels > 2 may often be 0).
+            float smp = 0.f;
+            for (int i = 0; i < mChannelCount; ++i) {
+                smp += float_from_i16(inBuffer[inIdx++]);
+            }
+            maxSample = fmax(maxSample, fabs(smp));
         }
-        /* A maximum amplitude signal will have 17 leading zeros, which we want to
-         * translate to a shift of 8 (for converting 16 bit to 8 bit) */
-        shift = 25 - shift;
-        /* Never scale by less than 8 to avoid returning unaltered PCM signal. */
-        if (shift < 3) {
-            shift = 3;
+        if (maxSample > 0.f) {
+            fscale = 0.99f / maxSample;
+            int exp;  // unused
+            const float significand = frexp(fscale, &exp);
+            if (significand == 0.5f) {
+                fscale *= 255.f / 256.f;  // avoid returning unaltered PCM signal
+            }
+        } else {
+            // scale doesn't matter, the values are all 0.
+            fscale = 1.f;
         }
-        /* add one to combine the division by 2 needed after summing
-         * left and right channels below */
-        shift++;
     } else {
         assert(mScalingMode == Visualizer::ScalingMode::AS_PLAYED);
         // Note: if channels are uncorrelated, 1/sqrt(N) could be used at the risk of clipping.
-        shift = 9;
+        fscale = 1.f / mChannelCount;  // account for summing all the channels together.
     }
+
     uint32_t captIdx;
     uint32_t inIdx;
-    for (inIdx = 0, captIdx = mCaptureIdx; inIdx < AUDIO_CAPTURE_PERIOD_SIZE; inIdx++, captIdx++) {
+    for (inIdx = 0, captIdx = mCaptureIdx; inIdx < (unsigned)samples; captIdx++) {
         // wrap
         if (captIdx >= kMaxCaptureBufSize) {
             captIdx = 0;
         }
-        int32_t smp = inBuffer[2 * inIdx] + inBuffer[2 * inIdx + 1];
-        smp = smp >> shift;
-        mCaptureBuf[captIdx] = ((uint8_t)smp) ^ 0x80;
+
+        float smp = 0.f;
+        for (uint32_t i = 0; i < mChannelCount; ++i) {
+            smp += float_from_i16(inBuffer[inIdx++]);
+        }
+        mCaptureBuf[captIdx] = clamp8_from_float(smp * fscale);
     }
+
     // the following two should really be atomic, though it probably doesn't
     // matter much for visualization purposes
     mCaptureIdx = captIdx;
@@ -482,11 +501,8 @@ int VisualizerOffloadContext::process(int16_t* inBuffer) {
     if (clock_gettime(CLOCK_MONOTONIC, &mBufferUpdateTime) < 0) {
         mBufferUpdateTime.tv_sec = 0;
     }
-    if (mState != State::ACTIVE) {
-        LOG(DEBUG) << __func__ << "DONE inactive " << details();
-        return -ENODATA;
-    }
+
     return 0;
 }
 
-} // namespace aidl::qti::effects
+}  // namespace aidl::qti::effects
