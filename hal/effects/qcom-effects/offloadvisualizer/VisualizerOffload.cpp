@@ -58,7 +58,8 @@ namespace aidl::qti::effects {
 const std::string VisualizerOffload::kEffectName = "VisualizerQti";
 const std::vector<Range::VisualizerRange> VisualizerOffload::kRanges = {
         MAKE_RANGE(Visualizer, latencyMs, 0, VisualizerOffloadContext::kMaxLatencyMs),
-        MAKE_RANGE(Visualizer, captureSamples, 0, VisualizerOffloadContext::kMaxCaptureBufSize),
+        MAKE_RANGE(Visualizer, captureSamples, VisualizerOffloadContext::kMinCaptureBufSize,
+                   VisualizerOffloadContext::kMaxCaptureBufSize),
         /* get only parameters, set invalid range (min > max) to indicate not support set */
         MAKE_RANGE(Visualizer, measurement, Visualizer::Measurement({.peak = 1, .rms = 1}),
                    Visualizer::Measurement({.peak = 0, .rms = 0})),
@@ -236,4 +237,4 @@ RetCode VisualizerOffload::releaseContext() {
     return RetCode::SUCCESS;
 }
 
-} // namespace aidl::qti::effects
+}  // namespace aidl::qti::effects
