@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
- * SPDX-License-Identifier: BSD-3-Clause-Clear
- */
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear.
+*/
 #define LOG_TAG "AHAL_Usecase_QTI"
 
 
@@ -714,7 +714,8 @@ void CompressPlayback::configureDefault() {
         mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC ||
         mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_HE_V1 ||
         mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_HE_V2 ||
-        mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_LC) {
+        mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_LC ||
+        mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_ADTS_LC) {
         mPalSndDec.aac_dec.audio_obj_type = 29;
         mPalSndDec.aac_dec.pce_bits_size = 0;
     }
