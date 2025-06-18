@@ -6,7 +6,6 @@
 #pragma once
 
 #include <aidl/android/hardware/audio/effect/BnEffect.h>
-
 #include "VisualizerOffloadContext.h"
 #include "effect-impl/EffectImpl.h"
 #include "effect-impl/EffectUUID.h"
@@ -40,4 +39,4 @@ class VisualizerOffload final : public EffectImpl {
                                               Parameter::Specific* specific);
 };
 
-} // namespace aidl::qti::effects
+}  // namespace aidl::qti::effects
