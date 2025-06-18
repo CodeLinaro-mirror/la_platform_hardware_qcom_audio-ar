@@ -170,10 +170,10 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     std::optional<std::unique_ptr<BufferFormatConverter>> mBufferFormatConverter;
 
     std::map<std::string, float> sourceGainTable = {
-        {"FM", -1500},
-        {"AM", -1200},
-        {"DAB", -200},
-        {"other", 0}
+        {"DEFAULT", 0},
+        {"FM", 900},
+        {"DAB", 100},
+        {"AM", 0}
     };
 };
 

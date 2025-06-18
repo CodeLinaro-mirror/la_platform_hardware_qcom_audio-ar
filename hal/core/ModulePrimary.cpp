@@ -113,7 +113,7 @@ namespace qti::audio::core {
 
 std::vector<std::weak_ptr<::qti::audio::core::StreamOut>> ModulePrimary::mStreamsOut;
 std::vector<std::weak_ptr<::qti::audio::core::StreamIn>> ModulePrimary::mStreamsIn;
-std::string qti::audio::core::ModulePrimary::globalAudioSource = "other";
+std::string qti::audio::core::ModulePrimary::globalAudioSource = "DEFAULT";
 
 #ifdef ENABLE_QCOM_AMPERE_AUDIO
 std::unordered_map<std::string, FocusSession> ModulePrimary::mActiveFocusDevices;
