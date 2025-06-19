@@ -11,6 +11,8 @@ ifneq ($(TARGET_IS_HEADLESS),true)
 #AGM
 AUDIO_AGM := libagmclient
 AUDIO_AGM += libagmipcservice
+AUDIO_AGM += libcodecipcservice
+AUDIO_AGM += libcodec_ipc_client
 AUDIO_AGM += libagm
 AUDIO_AGM += agmplay
 AUDIO_AGM += agmcap
