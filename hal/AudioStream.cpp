@@ -2241,8 +2241,6 @@ int StreamOutPrimary::CreateMmapBuffer(int32_t min_size_frames,
 
 exit:
     stream_mutex_.unlock();
-    if (mmap_start_thread_.joinable())
-        mmap_start_thread_.join();
 
     if (!stream_started_) {
         mmap_start_thread_ = std::thread([this]() {
@@ -2462,6 +2460,10 @@ int StreamOutPrimary::Standby() {
                 GetFrames(&mCachedPosition);
             }
         }
+
+        if (usecase_ == USECASE_AUDIO_PLAYBACK_MMAP && mmap_start_thread_.joinable())
+            mmap_start_thread_.join();
+
         ret = pal_stream_stop(pal_stream_handle_);
         if (ret) {
             AHAL_ERR("failed to stop stream.");
@@ -4542,6 +4544,14 @@ StreamOutPrimary::~StreamOutPrimary() {
         if (CheckOffloadEffectsType(streamAttributes_.type)) {
             StopOffloadEffects(handle_, pal_stream_handle_);
             StopOffloadVisualizer(handle_, pal_stream_handle_);
+        }
+
+        if (usecase_ == USECASE_AUDIO_PLAYBACK_MMAP) {
+            if (mmap_start_thread_.joinable())
+                mmap_start_thread_.join();
+
+            if(stream_started_)
+                pal_stream_stop(pal_stream_handle_);
         }
 
         pal_stream_close(pal_stream_handle_);
