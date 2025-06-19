@@ -25,7 +25,6 @@
 <!-- OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN -->
 <!-- IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                          -->
 
-<!-- Changes from Qualcomm Innovation Center are provided under the following license:    -->
 <!--                                                                                      -->
 <!-- Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.                   -->
 <!-- SPDX-License-Identifier: BSD-3-Clause-Clear                                          -->
@@ -3696,6 +3695,11 @@
         <ctl name="VA DEC1 MUX" value="MSM_DMIC" />
         <ctl name="VA DMIC MUX0" value="DMIC1" />
         <ctl name="VA DMIC MUX1" value="DMIC2" />
+    </path>
+
+    <path name="va-mic-dmic-lpi">
+        <ctl name="LPI Enable" value="1" />
+        <path name="va-mic-dmic" />
     </path>
 
     <path name="va-mic-mono-lpi">
