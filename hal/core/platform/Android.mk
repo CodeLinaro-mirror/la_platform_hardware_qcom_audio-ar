@@ -19,6 +19,13 @@ LOCAL_SRC_FILES := \
     AudioUsecase.cpp \
     PlatformUtils.cpp
 
+# add for gcov dump
+ifeq ($(AUDIO_FEATURE_ENABLED_GCOV), true)
+LOCAL_CFLAGS += -g --coverage -fprofile-arcs -ftest-coverage
+LOCAL_CPPFLAGS += -g --coverage -fprofile-arcs -ftest-coverage
+LOCAL_LDFLAGS += -g --coverage -fprofile-arcs -ftest-coverage
+endif
+
 LOCAL_WHOLE_STATIC_LIBRARIES := libaudio_microphoneinfo_parser
 
 LOCAL_STATIC_LIBRARIES := \

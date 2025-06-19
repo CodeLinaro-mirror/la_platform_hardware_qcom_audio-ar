@@ -15,8 +15,8 @@
  */
 
 /*
- * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -102,7 +102,7 @@ class StreamContext {
                     outEventCallback,
             ::aidl::android::media::audio::common::AudioPortConfig mixPortConfig,
             DebugParameters debugParameters, const int nominalLatency,
-            std::weak_ptr<Telephony> telephony)
+            std::weak_ptr<Telephony> telephony, const std::string& streamName)
         : mCommandMQ(std::move(commandMQ)),
           mInternalCommandCookie(std::rand()),
           mReplyMQ(std::move(replyMQ)),
@@ -115,7 +115,8 @@ class StreamContext {
           mMixPortConfig(mixPortConfig),
           mNominalLatency(nominalLatency),
           mDebugParameters(debugParameters),
-          mTelephony(telephony) {}
+          mTelephony(telephony),
+          mStreamName(streamName) {}
     StreamContext(StreamContext&& other)
         : mCommandMQ(std::move(other.mCommandMQ)),
           mInternalCommandCookie(other.mInternalCommandCookie),
@@ -130,7 +131,8 @@ class StreamContext {
           mDebugParameters(std::move(other.mDebugParameters)),
           mFrameCount(other.mFrameCount),
           mNominalLatency(other.mNominalLatency),
-          mTelephony(other.mTelephony) {}
+          mTelephony(other.mTelephony),
+          mStreamName(other.mStreamName) {}
     StreamContext& operator=(StreamContext&& other) {
         mCommandMQ = std::move(other.mCommandMQ);
         mInternalCommandCookie = other.mInternalCommandCookie;
@@ -146,6 +148,7 @@ class StreamContext {
         mFrameCount = other.mFrameCount;
         mNominalLatency =  other.mNominalLatency;
         mTelephony = other.mTelephony;
+        mStreamName = other.mStreamName;
         return *this;
     }
 
@@ -194,6 +197,7 @@ class StreamContext {
     }
     int32_t getNominalLatencyMs() const { return mNominalLatency; }
     std::weak_ptr<Telephony> getTelephony() { return mTelephony; }
+    std::string getStreamName() const { return mStreamName; }
 
   private:
     std::unique_ptr<CommandMQ> mCommandMQ;
@@ -212,6 +216,7 @@ class StreamContext {
     long mFrameCount = 0;
     int32_t mNominalLatency = 0;
     std::weak_ptr<Telephony> mTelephony;
+    std::string mStreamName;
 };
 
 // This interface provides operations of the stream which are executed on the worker thread.
@@ -330,7 +335,7 @@ class StreamWorkerImpl : public StreamWorkerInterface,
     void setClosed() override { WorkerImpl::setClosed(); }
     bool start() override {
         // This is an "audio service thread," must have elevated priority.
-        return WorkerImpl::start(WorkerImpl::kThreadName, ANDROID_PRIORITY_URGENT_AUDIO);
+        return WorkerImpl::start("", ANDROID_PRIORITY_URGENT_AUDIO);
     }
     pid_t getTid() override { return WorkerImpl::getTid(); }
     void join() override { return WorkerImpl::join(); }
@@ -341,7 +346,6 @@ class StreamWorkerImpl : public StreamWorkerInterface,
 
 class StreamInWorkerLogic : public StreamWorkerCommonLogic {
   public:
-    static const std::string kThreadName;
     StreamInWorkerLogic(StreamContext* context, DriverInterface* driver)
         : StreamWorkerCommonLogic(context, driver) {}
     ~StreamInWorkerLogic() override = default;
@@ -357,7 +361,6 @@ using StreamInWorker = StreamWorkerImpl<StreamInWorkerLogic>;
 
 class StreamOutWorkerLogic : public StreamWorkerCommonLogic {
   public:
-    static const std::string kThreadName;
     StreamOutWorkerLogic(StreamContext* context, DriverInterface* driver)
         : StreamWorkerCommonLogic(context, driver),
           mEventCallback(context->getOutEventCallback()) {}
@@ -436,7 +439,7 @@ class StreamOutAsyncWorkerLogic : public StreamOutWorkerLogic {
      * This indicates whether there is transitioning clip data bursts in
      * "DRAINING_en_sent" and "DRAIN_PAUSED_en_sent" states.
      */
-    bool mIsClipTransitionDataBurstsInProgress = false;
+    bool mIsClipTransitionDataBurstsAvailable = false;
 };
 using StreamOutAsyncWorker = StreamWorkerImpl<StreamOutAsyncWorkerLogic>;
 

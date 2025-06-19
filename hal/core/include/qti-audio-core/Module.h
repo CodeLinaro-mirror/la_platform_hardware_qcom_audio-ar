@@ -15,8 +15,8 @@
  */
 
 /*
- * ​​​​​Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -239,7 +239,7 @@ class Module : public ::aidl::android::hardware::audio::core::BnModule {
             std::shared_ptr<::aidl::android::hardware::audio::core::IStreamCallback> asyncCallback,
             std::shared_ptr<::aidl::android::hardware::audio::core::IStreamOutEventCallback>
                     outEventCallback,
-            StreamContext* out_context);
+            const std::string& streamName, StreamContext* out_context);
     std::vector<::aidl::android::media::audio::common::AudioDevice> findConnectedDevices(
             int32_t portConfigId);
     std::set<int32_t> findConnectedPortConfigIds(int32_t portConfigId);

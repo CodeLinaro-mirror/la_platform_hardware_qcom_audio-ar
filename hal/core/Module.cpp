@@ -15,8 +15,8 @@
  */
 
 /*
- * ​​​​​Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -154,7 +154,7 @@ ndk::ScopedAStatus Module::createStreamContext(
         std::shared_ptr<::aidl::android::hardware::audio::core::IStreamCallback> asyncCallback,
         std::shared_ptr<::aidl::android::hardware::audio::core::IStreamOutEventCallback>
                 outEventCallback,
-        StreamContext* out_context) {
+        const std::string& streamName, StreamContext* out_context) {
     if (in_bufferSizeFrames <= 0) {
         LOG(ERROR) << __func__ << ": non-positive buffer size " << in_bufferSizeFrames;
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
@@ -204,7 +204,7 @@ ndk::ScopedAStatus Module::createStreamContext(
             portConfigIt->format.value(), portConfigIt->channelMask.value(),
             portConfigIt->sampleRate.value().value,
             std::make_unique<StreamContext::DataMQ>(frameSize * in_bufferSizeFrames), asyncCallback,
-            outEventCallback, *portConfigIt, params, nominalLatency, wTelephony);
+            outEventCallback, *portConfigIt, params, nominalLatency, wTelephony, streamName);
     if (temp.isValid()) {
         *out_context = std::move(temp);
     } else {
@@ -914,9 +914,10 @@ ndk::ScopedAStatus Module::openInputStream(const OpenInputStreamArguments& in_ar
                    << " does not correspond to an input mix port";
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
     }
+    const std::string streamName = port->name + "_" + std::to_string(in_args.portConfigId);
     StreamContext context;
     RETURN_STATUS_IF_ERROR(createStreamContext(in_args.portConfigId, in_args.bufferSizeFrames,
-                                               nullptr, nullptr, &context));
+                                               nullptr, nullptr, streamName, &context));
     context.fillDescriptor(&_aidl_return->desc);
     std::shared_ptr<StreamIn> stream;
     RETURN_STATUS_IF_ERROR(createInputStream(std::move(context), in_args.sinkMetadata,
@@ -975,10 +976,11 @@ ndk::ScopedAStatus Module::openOutputStream(const OpenOutputStreamArguments& in_
                    << " has NON_BLOCKING flag set, requires async callback";
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
     }
+    const std::string streamName = port->name + "_" + std::to_string(in_args.portConfigId);
     StreamContext context;
     RETURN_STATUS_IF_ERROR(createStreamContext(in_args.portConfigId, in_args.bufferSizeFrames,
                                                isNonBlocking ? in_args.callback : nullptr,
-                                               in_args.eventCallback, &context));
+                                               in_args.eventCallback, streamName, &context));
     context.fillDescriptor(&_aidl_return->desc);
     std::shared_ptr<StreamOut> stream;
     RETURN_STATUS_IF_ERROR(createOutputStream(std::move(context), in_args.sourceMetadata,

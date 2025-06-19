@@ -15,8 +15,8 @@
  */
 
 /*
- * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -133,6 +133,12 @@ std::string StreamWorkerCommonLogic::init() {
     if (::android::status_t status = mDriver->init(); status != STATUS_OK) {
         return "Failed to initialize the driver: " + std::to_string(status);
     }
+    constexpr int kThreadNameMaxLen = 15;
+    const auto& threadName = mContext->getStreamName().substr(0, kThreadNameMaxLen);
+    if (int errCode = pthread_setname_np(pthread_self(), threadName.c_str()); errCode != 0) {
+        LOG(WARNING) << ": Failed to set name for stream worker thread: " << strerror(errCode)
+                     << " " << threadName;
+    }
     return "";
 }
 
@@ -171,8 +177,6 @@ void StreamWorkerCommonLogic::populateReplyWrongState(
     reply->status = STATUS_INVALID_OPERATION;
 }
 
-const std::string StreamInWorkerLogic::kThreadName = "reader";
-
 StreamInWorkerLogic::Status StreamInWorkerLogic::cycle() {
     // Note: for input streams, draining is driven by the client, thus
     // "empty buffer" condition can only happen while handling the 'burst'
@@ -188,7 +192,7 @@ StreamInWorkerLogic::Status StreamInWorkerLogic::cycle() {
     }
 
     LOG(VERBOSE) << __func__ << ": received command " << command.toString() << " in "
-                  << kThreadName;
+                  << mContext->getStreamName();
 
     StreamDescriptor::Reply reply{};
     reply.status = STATUS_BAD_VALUE;
@@ -326,7 +330,8 @@ StreamInWorkerLogic::Status StreamInWorkerLogic::cycle() {
     using LogSeverity = ::android::base::LogSeverity;
     const LogSeverity severity =
             (reply.status != STATUS_OK) ? LogSeverity::ERROR : LogSeverity::VERBOSE;
-    LOG(severity) << __func__ << ": writing reply " << reply.toString();
+    LOG(severity) << __func__ << ": writing reply " << reply.toString() << " in "
+                  << mContext->getStreamName();
 
     if (!mContext->getReplyMQ()->writeBlocking(&reply, 1)) {
         LOG(ERROR) << __func__ << ": writing of reply " << reply.toString() << " to MQ failed";
@@ -377,8 +382,6 @@ bool StreamInWorkerLogic::read(size_t clientSize, StreamDescriptor::Reply* reply
     return !fatal;
 }
 
-const std::string StreamOutWorkerLogic::kThreadName = "writer";
-
 bool StreamOutAsyncWorkerLogic::handleTransferReady() {
     if (mState == StreamDescriptor::State::TRANSFERRING) {
         mState = StreamDescriptor::State::ACTIVE;
@@ -418,12 +421,13 @@ bool StreamOutAsyncWorkerLogic::handleDrainReady() {
                 mDrainInternalState = DrainInternalState::DRAINING_en_sent;
             } else if (mDrainInternalState.value() == DrainInternalState::DRAINING_en_sent) {
                 mDrainInternalState = {};
-                if (mIsClipTransitionDataBurstsInProgress) {
+                if (mIsClipTransitionDataBurstsAvailable) {
                     mState = StreamDescriptor::State::TRANSFERRING;
+                    mPendingCallBack = StreamCallbackType::TR;
                 } else {
                     mState = StreamDescriptor::State::IDLE;
                 }
-                mIsClipTransitionDataBurstsInProgress = false;
+                mIsClipTransitionDataBurstsAvailable = false;
             } else {
                 LOG(WARNING) << __func__
                              << ": shouldn't happen !! state:"  //<< toString(mState.load())
@@ -479,7 +483,7 @@ StreamOutWorkerLogic::Status StreamOutAsyncWorkerLogic::cycle() {
     }
 
     LOG(VERBOSE) << __func__ << ": received command " << command.toString() << " in "
-                 << kThreadName;
+                 << mContext->getStreamName();
 
     StreamDescriptor::Reply reply{};
     reply.status = STATUS_BAD_VALUE;
@@ -574,7 +578,7 @@ StreamOutWorkerLogic::Status StreamOutAsyncWorkerLogic::cycle() {
                                     DrainInternalState::DRAIN_PAUSED_en_sent) {
                             mDrainInternalState = DrainInternalState::DRAIN_PAUSED_en_sent;
                             mState = StreamDescriptor::State::DRAIN_PAUSED;
-                            mIsClipTransitionDataBurstsInProgress = true;
+                            mIsClipTransitionDataBurstsAvailable = true;
                         } else if (mDrainInternalState &&
                                    mDrainInternalState.value() ==
                                            DrainInternalState::DRAIN_PAUSED_en) {
@@ -607,7 +611,7 @@ StreamOutWorkerLogic::Status StreamOutAsyncWorkerLogic::cycle() {
                         if (mDrainInternalState &&
                             mDrainInternalState.value() == DrainInternalState::DRAINING_en_sent) {
                             mDrainInternalState = DrainInternalState::DRAINING_en_sent;
-                            mIsClipTransitionDataBurstsInProgress = true;
+                            mIsClipTransitionDataBurstsAvailable = true;
                             mState = StreamDescriptor::State::DRAINING;
                         } else {
                             if (reply.fmqByteCount == fmqByteCount) {
@@ -685,7 +689,6 @@ StreamOutWorkerLogic::Status StreamOutAsyncWorkerLogic::cycle() {
                     }
                 }
             } else {
-                populateReplyWrongState(&reply, command);
                 break;
             }
         } break;
@@ -756,7 +759,7 @@ StreamOutWorkerLogic::Status StreamOutAsyncWorkerLogic::cycle() {
                 mState == StreamDescriptor::State::TRANSFER_PAUSED) {
                 if (auto status = mDriver->flush(); status == ::android::OK) {
                     mState = StreamDescriptor::State::IDLE;
-                    mIsClipTransitionDataBurstsInProgress = false;
+                    mIsClipTransitionDataBurstsAvailable = false;
                     mDrainInternalState = {};
                     populateReply(&reply, mIsConnected);
                 } else {
@@ -778,7 +781,8 @@ StreamOutWorkerLogic::Status StreamOutAsyncWorkerLogic::cycle() {
     LOG(severity) << __func__ << ": writing reply " << reply.toString()
                   << (mDrainInternalState
                               ? (": drain internal state:" + toString(mDrainInternalState.value()))
-                              : "");
+                              : "")
+                  << " in " << mContext->getStreamName();
 
     if (!mContext->getReplyMQ()->writeBlocking(&reply, 1)) {
         LOG(ERROR) << __func__ << ": writing of reply " << reply.toString() << " to MQ failed ";
@@ -786,17 +790,19 @@ StreamOutWorkerLogic::Status StreamOutAsyncWorkerLogic::cycle() {
         return Status::ABORT;
     }
 
-    if (mPendingCallBack && command.getTag() != Tag::getStatus) {
-        if (mPendingCallBack == StreamCallbackType::TR) {
-            handleTransferReady();
-        } else if (mPendingCallBack == StreamCallbackType::DR) {
-            handleDrainReady();
-        } else if (mPendingCallBack == StreamCallbackType::ER) {
-            handleError();
+    if (mPendingCallBack) {
+        if (mPendingCallBack == StreamCallbackType::TR && handleTransferReady()) {
+            mPendingCallBack = {};
+        } else if (mPendingCallBack == StreamCallbackType::DR && handleDrainReady()) {
+            mPendingCallBack = {};
+        } else if (mPendingCallBack == StreamCallbackType::ER && handleError()) {
+            mPendingCallBack = {};
         } else {
-            LOG(WARNING) << __func__ << ": shouldn't happen !!!";
+            if (command.getTag() != Tag::getStatus) {
+                LOG(ERROR) << __func__
+                           << ": pending callback not handled, callback:" << *mPendingCallBack;
+            }
         }
-        mPendingCallBack = {};
     }
 
     return Status::CONTINUE;
@@ -820,7 +826,7 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
     }
 
     LOG(VERBOSE) << __func__ << ": received command " << command.toString() << " in "
-                 << kThreadName;
+                 << mContext->getStreamName();
 
     StreamDescriptor::Reply reply{};
     reply.status = STATUS_BAD_VALUE;
@@ -930,7 +936,6 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
                 }
             } else {
                 LOG(WARNING) << __func__ << ": invalid drain mode: " << toString(currentMode);
-                populateReplyWrongState(&reply, command);
             }
         } break;
         case Tag::standby: {
@@ -991,7 +996,8 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
     using LogSeverity = ::android::base::LogSeverity;
     const LogSeverity severity =
             (reply.status != STATUS_OK) ? LogSeverity::ERROR : LogSeverity::VERBOSE;
-    LOG(severity) << __func__ << ": writing reply " << reply.toString();
+    LOG(severity) << __func__ << ": writing reply " << reply.toString() << " in "
+                  << mContext->getStreamName();
 
     if (!mContext->getReplyMQ()->writeBlocking(&reply, 1)) {
         LOG(ERROR) << __func__ << ": writing of reply " << reply.toString() << " to MQ failed";

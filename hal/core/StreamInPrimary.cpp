@@ -41,6 +41,18 @@ using ::aidl::android::media::audio::common::AudioDeviceDescription;
 // uncomment this to enable logging of very verbose logs like burst commands.
 // #define VERY_VERBOSE_LOGGING 1
 
+#ifdef AUDIO_FEATURE_ENABLED_GCOV
+extern "C" void __gcov_dump(void);
+#define GCOV_DUMP() \
+    do { \
+        LOG(DEBUG) << __func__ << mLogPrefix << "start dump gcov"; \
+        __gcov_dump(); \
+        LOG(DEBUG) << __func__ << mLogPrefix << "end dump gcov";\
+    } while(0)
+#else
+#define GCOV_DUMP()
+#endif
+
 namespace qti::audio::core {
 
 #define READ_RETRY_COUNT 10
@@ -620,11 +632,15 @@ ndk::ScopedAStatus StreamInPrimary::addEffect(const std::shared_ptr<IEffect>& in
             mAECEnabled = true;
             applyEffects();
         }
+        isECEnabledCount++;
+        LOG(VERBOSE) << __func__ << mLogPrefix << " isECEnabledCount:" << isECEnabledCount;
     } else if (typeUUID == stringToUuid(Descriptor::EFFECT_TYPE_UUID_NS)) {
         if (!mNSEnabled) {
             mNSEnabled = true;
             applyEffects();
         }
+        isNSEnabledCount++;
+        LOG(VERBOSE) << __func__ << mLogPrefix << " isNSEnabledCount:" << isNSEnabledCount;
     }
 
     return ndk::ScopedAStatus::ok();
@@ -644,12 +660,18 @@ ndk::ScopedAStatus StreamInPrimary::removeEffect(const std::shared_ptr<IEffect>&
     const auto& typeUUID = desc.common.id.type;
 
     if (typeUUID == stringToUuid(Descriptor::EFFECT_TYPE_UUID_AEC)) {
-        if (mAECEnabled) {
+        isECEnabledCount--;
+        LOG(VERBOSE) << __func__ << mLogPrefix << " isECEnabledCount:" << isECEnabledCount;
+        if (mAECEnabled && !isECEnabledCount) {
+            LOG(VERBOSE) << __func__ << mLogPrefix << " removing EC effect";
             mAECEnabled = false;
             applyEffects();
         }
     } else if (typeUUID == stringToUuid(Descriptor::EFFECT_TYPE_UUID_NS)) {
-        if (mNSEnabled) {
+        isNSEnabledCount--;
+        LOG(VERBOSE) << __func__ << mLogPrefix << " isNSEnabledCount:" << isNSEnabledCount;
+        if (mNSEnabled && !isNSEnabledCount) {
+            LOG(VERBOSE) << __func__ << mLogPrefix << " removing NS effect";
             mNSEnabled = false;
             applyEffects();
         }
@@ -888,6 +910,7 @@ void StreamInPrimary::shutdown_I() {
         std::get<CompressCapture>(mExt).setPalHandle(nullptr);
     }
     mPalHandle = nullptr;
+    GCOV_DUMP();
 }
 
 ::android::status_t StreamInPrimary::burstZero() {
