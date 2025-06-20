@@ -43,7 +43,8 @@ using ::android::automotive::car_binder_lib::LargeParcelableBase;
 #define AUDIO_AVAILABILITY_ON 0x049D + 0x20000000 + 0x01000000 + 0x00200000 // VehiclePropertyGroup:VENDOR, VehicleArea:GLOBAL, VehiclePropertyType:BOOLEAN
 #define AUDIO_NOTI_DETECT_FAILURE_V2 0x09F3 + 0x20000000 + 0x01000000 + 0x00410000 // VehiclePropertyGroup:VENDOR, VehicleArea:GLOBAL, VehiclePropertyType:INT32_VEC
 #define SPEAKER_GROUP_AVAILABILITY 0x09F5 + 0x20000000 + 0x01000000 + 0x00410000 // VehiclePropertyGroup:VENDOR, VehicleArea:GLOBAL, VehiclePropertyType:INT32_VEC
-#define SPEAKER_GROUP_AVAILABILITY_SIZE 4
+#define VUC_SPEAKER_GROUP_AVAILABILITY 0x0A21 + 0x20000000 + 0x01000000 + 0x00410000 // VehiclePropertyGroup:VENDOR, VehicleArea:GLOBAL, VehiclePropertyType:INT
+#define VUC_SPEAKER_GROUP_AVAILABILITY_SIZE 4
 #define AUDIO_NOTI_DETECT_FAILURE_V2_SIZE 7
 
 static int fd = -1, efd = -1;
@@ -54,6 +55,78 @@ std::shared_ptr<aidl::android::hardware::automotive::vehicle::IVehicle> AudioDia
 
 int getUUID() {
     return (++uuid) % INT_MAX;
+}
+
+ndk::ScopedAStatus getPropertyValues(int32_t propId,
+        std::shared_ptr<aidl::android::hardware::automotive::vehicle::IVehicleCallback> callback) {
+    ::aidl::android::hardware::automotive::vehicle::GetValueRequest
+             request =  ::aidl::android::hardware::automotive::vehicle::GetValueRequest{
+                                            .requestId = (long)(getUUID()),
+                                            .prop = aidl::android::hardware::automotive::vehicle::VehiclePropValue{
+                                                        .prop = propId,
+                                                    },
+                                        };
+    ::aidl::android::hardware::automotive::vehicle::GetValueRequests requests;
+    requests.payloads = {request};
+    auto result = LargeParcelableBase::parcelableToStableLargeParcelable(requests);
+    if (!result.ok()) {
+        LOG(INFO) << "conversion to parcelable failed!!";
+        return ndk::ScopedAStatus::ok();
+    }
+    if (result.value() != nullptr) {
+        requests.sharedMemoryFd = std::move(*result.value());
+        requests.payloads.clear();
+    }
+
+    //auto vehicleCallback = ndk::SharedRefBase::make<AudioDiagVehicleCallback>();
+    auto callbackClient =
+    ::aidl::android::hardware::automotive::vehicle::IVehicleCallback::fromBinder(callback->asBinder());
+    auto mVhal = AudioDiagnostics::getVhalService();
+    if (mVhal == nullptr) {
+        LOG(ERROR) << "Couldn't fetch VHAL service!!";
+        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
+    }
+    auto status = mVhal->getValues(callbackClient, requests);
+    if (!status.isOk() ) {
+       LOG(INFO) << "getValues failed: " << status.getMessage();
+    }
+    return ndk::ScopedAStatus::ok();
+}
+
+ndk::ScopedAStatus updateSpeakerGroupAvailability(std::vector<int32_t> speakerInfo) {
+    ::aidl::android::hardware::automotive::vehicle::SetValueRequest
+             request =  ::aidl::android::hardware::automotive::vehicle::SetValueRequest{
+                                            .requestId = (long)(getUUID()),
+                                            .value = aidl::android::hardware::automotive::vehicle::VehiclePropValue{
+                                                        .prop = SPEAKER_GROUP_AVAILABILITY,
+                                                        .value.int32Values = speakerInfo,
+                                                    },
+                                        };
+    ::aidl::android::hardware::automotive::vehicle::SetValueRequests requests;
+    requests.payloads = {request};
+    auto result = LargeParcelableBase::parcelableToStableLargeParcelable(requests);
+    if (!result.ok()) {
+        LOG(INFO) << "conversion to parcelable failed!!";
+        return ndk::ScopedAStatus::ok();
+    }
+    if (result.value() != nullptr) {
+        requests.sharedMemoryFd = std::move(*result.value());
+        requests.payloads.clear();
+    }
+
+    auto vehicleCallback = ndk::SharedRefBase::make<AudioDiagVehicleCallback>();
+    auto callbackClient =
+    ::aidl::android::hardware::automotive::vehicle::IVehicleCallback::fromBinder(vehicleCallback->asBinder());
+    auto mVhal = AudioDiagnostics::getVhalService();
+    if (mVhal == nullptr) {
+        LOG(ERROR) << "Couldn't fetch VHAL service!!";
+        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
+    }
+    auto status = mVhal->setValues(callbackClient, requests);
+    if (!status.isOk() ) {
+       LOG(INFO) << "setValues failed: " << status.getMessage();
+    }
+    return ndk::ScopedAStatus::ok();
 }
 
 ndk::ScopedAStatus updateVHAL() {
@@ -82,6 +155,10 @@ ndk::ScopedAStatus updateVHAL() {
     auto callbackClient =
     ::aidl::android::hardware::automotive::vehicle::IVehicleCallback::fromBinder(vehicleCallback->asBinder());
     auto mVhal = AudioDiagnostics::getVhalService();
+    if (mVhal == nullptr) {
+        LOG(ERROR) << "Couldn't fetch VHAL service!!";
+        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
+    }
     auto status = mVhal->setValues(callbackClient, requests);
     if (!status.isOk() ) {
        LOG(INFO) << "setValues failed: " << status.getMessage();
@@ -209,6 +286,7 @@ AudioDiagnostics::AudioDiagnostics() {
     auto mVhal = AudioDiagnostics::getVhalService();
     if (mVhal == nullptr) {
         LOG(ERROR) << "VHAL client creation failed!!";
+        return;
     }
     std::shared_ptr<AudioFailureDetectCallback>
         failureDetectCallback = ndk::SharedRefBase::make<AudioFailureDetectCallback>();
@@ -230,16 +308,19 @@ AudioDiagnostics::AudioDiagnostics() {
         speakerGroupAvailCallback = ndk::SharedRefBase::make<SpeakerGroupAvailCallback>();
     options = {
         {
-            .propId = SPEAKER_GROUP_AVAILABILITY,
+            .propId = VUC_SPEAKER_GROUP_AVAILABILITY,
             .areaIds = {},
         }
     };
     if (auto status = mVhal->subscribe(speakerGroupAvailCallback, options,
                                        /*maxSharedMemoryFileCount=*/0); !status.isOk()) {
-        LOG(ERROR) << "Subscription to SPEAKER_GROUP_AVAILABILITY property failed!!";
+        LOG(ERROR) << "Subscription to VUC_SPEAKER_GROUP_AVAILABILITY property failed!!";
     } else {
-        LOG(INFO) << "Subscribed to SPEAKER_GROUP_AVAILABILITY property";
+        LOG(INFO) << "Subscribed to VUC_SPEAKER_GROUP_AVAILABILITY property";
     }
+    //get the initial values
+    getPropertyValues(AUDIO_NOTI_DETECT_FAILURE_V2, ndk::SharedRefBase::make<AudioFailureDetectCallback>());
+    getPropertyValues(VUC_SPEAKER_GROUP_AVAILABILITY, ndk::SharedRefBase::make<SpeakerGroupAvailCallback>());
     return;
 }
 
@@ -296,7 +377,24 @@ ndk::ScopedAStatus AudioDiagVehicleCallback::onPropertySetError(
 
 ndk::ScopedAStatus AudioFailureDetectCallback::onGetValues(
         const aidl::android::hardware::automotive::vehicle::GetValueResults& results) {
-    LOG(INFO) << "onGetValues called";
+    LOG(INFO) << __func__ << "onGetValues called";
+    {
+        for (auto entry: results.payloads) {
+            LOG(INFO) << "RequestId: " << (long)entry.requestId
+                << " result: " << (int)entry.status;
+            if (entry.status ==  aidl::android::hardware::automotive::vehicle::StatusCode::OK) {
+                if (entry.prop.has_value()) {
+                    processVehiclePropValue(entry.prop.value());
+                } else {
+                    LOG(ERROR) << "Payload is null";
+                    return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
+                }
+            } else {
+                LOG(ERROR) << "getValues failed !!, status : " << (int)entry.status;
+                return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
+            }
+        }
+    }
     return ndk::ScopedAStatus::ok();
 }
 
@@ -313,42 +411,51 @@ ndk::ScopedAStatus AudioFailureDetectCallback::onPropertySetError(
     return ndk::ScopedAStatus::ok();
 }
 
-ndk::ScopedAStatus AudioFailureDetectCallback::onPropertyEvent(
-        const aidl::android::hardware::automotive::vehicle::VehiclePropValues& vehiclePropValues,
-        int32_t) {
-    LOG(DEBUG) << __func__ << ": Enter " ;
+void AudioFailureDetectCallback::processVehiclePropValue(const
+        aidl::android::hardware::automotive::vehicle::VehiclePropValue vehiclePropValue) {
     int32_t propId = -1, areadId = -1;
-    for (auto entry: vehiclePropValues.payloads) {
-        propId = entry.prop;
-        areadId = entry.areaId;
-        LOG(DEBUG) << __func__ << ": PropId : " << propId << ": areaId : " << areadId;
+    propId = vehiclePropValue.prop;
+    areadId = vehiclePropValue.areaId;
+    LOG(DEBUG) << __func__ << ": PropId : " << propId << ": areaId : " << areadId;
 
-        if (propId != AUDIO_NOTI_DETECT_FAILURE_V2) {
-            LOG(ERROR) << __func__ << "Callback PropId not matching with SPEAKER_GROUP_AVAILABILITY";
+    if (propId != AUDIO_NOTI_DETECT_FAILURE_V2) {
+        LOG(ERROR) << __func__ << "Callback PropId not matching with AUDIO_NOTI_DETECT_FAILURE_V2";
+    } else {
+        std::vector<int32_t> audioCompInfo = vehiclePropValue.value.int32Values;
+        for (auto it: audioCompInfo) {
+            LOG(INFO) << __func__ << it;
+        }
+        if (audioCompInfo.size() != AUDIO_NOTI_DETECT_FAILURE_V2_SIZE) {
+            LOG(ERROR) << "Invalid AUDIO_NOTI_DETECT_FAILURE_V2_SIZE getInt32Values size: "
+                << audioCompInfo.size();
+            goto exit;
         } else {
-            std::vector<int32_t> audioCompInfo = entry.value.int32Values;
-            if (audioCompInfo.size() != AUDIO_NOTI_DETECT_FAILURE_V2_SIZE) {
-                LOG(ERROR) << "Invalid AUDIO_NOTI_DETECT_FAILURE_V2_SIZE getInt32Values size: " << audioCompInfo.size();
-                goto exit;
+            if (audioCompInfo[AudioCompIndex::AMP1] != AudioCompStatus::OK &&
+                audioCompInfo[AudioCompIndex::AMP2] != AudioCompStatus::OK &&
+                audioCompInfo[AudioCompIndex::A2B_LINK1] != AudioCompStatus::OK &&
+                audioCompInfo[AudioCompIndex::A2B_LINK2] != AudioCompStatus::OK &&
+                audioCompInfo[AudioCompIndex::EXT_AMP1] != AudioCompStatus::OK &&
+                audioCompInfo[AudioCompIndex::EXT_AMP2] != AudioCompStatus::OK) {
+                LOG(ERROR) << "AUDIO UNAVAILABLE, reporting to VHAL";
+                speaker_status = false;
             } else {
-                if (audioCompInfo[AudioCompIndex::AMP1] != AudioCompStatus::OK &&
-                    audioCompInfo[AudioCompIndex::AMP2] != AudioCompStatus::OK &&
-                    audioCompInfo[AudioCompIndex::A2B_LINK1] != AudioCompStatus::OK &&
-                    audioCompInfo[AudioCompIndex::A2B_LINK2] != AudioCompStatus::OK &&
-                    audioCompInfo[AudioCompIndex::EXT_AMP1] != AudioCompStatus::OK &&
-                    audioCompInfo[AudioCompIndex::EXT_AMP2] != AudioCompStatus::OK) {
-                    LOG(ERROR) << "AUDIO UNAVAILABLE, reporting to VHAL";
-                    speaker_status = false;
-                } else {
-                    LOG(INFO) << "Audio Components are in connected state";
-                    speaker_status = true;
-                }
-                updateVHAL();
+                LOG(INFO) << "Audio Components are in connected state";
+                speaker_status = true;
             }
+            updateVHAL();
         }
     }
 exit:
     LOG(DEBUG) << __func__ << ": Exit ";
+    return;
+}
+ndk::ScopedAStatus AudioFailureDetectCallback::onPropertyEvent(
+        const aidl::android::hardware::automotive::vehicle::VehiclePropValues& vehiclePropValues,
+        int32_t) {
+    LOG(DEBUG) << __func__ << ": Enter " ;
+    for (auto entry: vehiclePropValues.payloads) {
+        processVehiclePropValue(entry);
+    }
     return ndk::ScopedAStatus::ok();
 }
 
@@ -358,7 +465,24 @@ exit:
 
 ndk::ScopedAStatus SpeakerGroupAvailCallback::onGetValues(
         const aidl::android::hardware::automotive::vehicle::GetValueResults& results) {
-    LOG(INFO) << "onGetValues called";
+    LOG(INFO) << __func__ << "onGetValues called";
+    {
+        for (auto entry: results.payloads) {
+            LOG(INFO) << "RequestId: " << (long)entry.requestId
+                << " result: " << (int)entry.status;
+            if (entry.status ==  aidl::android::hardware::automotive::vehicle::StatusCode::OK) {
+                if (entry.prop.has_value()) {
+                    processVehiclePropValue(entry.prop.value());
+                } else {
+                    LOG(ERROR) << "Payload is null";
+                    return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
+                }
+            } else {
+                LOG(ERROR) << "getValues failed !!, status : " << (int)entry.status;
+                return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
+            }
+        }
+    }
     return ndk::ScopedAStatus::ok();
 }
 
@@ -375,39 +499,52 @@ ndk::ScopedAStatus SpeakerGroupAvailCallback::onPropertySetError(
     return ndk::ScopedAStatus::ok();
 }
 
-ndk::ScopedAStatus SpeakerGroupAvailCallback::onPropertyEvent(
-        const aidl::android::hardware::automotive::vehicle::VehiclePropValues& vehiclePropValues,
-        int32_t) {
-    LOG(DEBUG) << __func__ << ": Enter " ;
+void SpeakerGroupAvailCallback::processVehiclePropValue(const
+        aidl::android::hardware::automotive::vehicle::VehiclePropValue vehiclePropValue) {
     int32_t propId = -1, areadId = -1;
-    for (auto entry: vehiclePropValues.payloads) {
-        propId = entry.prop;
-        areadId = entry.areaId;
-        LOG(DEBUG) << __func__ << ": PropId : " << propId << ": areaId : " << areadId;
+    propId = vehiclePropValue.prop;
+    areadId = vehiclePropValue.areaId;
+    LOG(DEBUG) << __func__ << ": PropId : " << propId << ": areaId : " << areadId;
 
-        if (propId != SPEAKER_GROUP_AVAILABILITY) {
-            LOG(ERROR) << __func__ << "Callback PropId not matching with SPEAKER_GROUP_AVAILABILITY";
+    if (propId != VUC_SPEAKER_GROUP_AVAILABILITY) {
+        LOG(ERROR) << __func__ << "Callback PropId not matching with VUC_SPEAKER_GROUP_AVAILABILITY";
+    } else {
+        std::vector<int32_t> speakerInfo = vehiclePropValue.value.int32Values;
+        for (auto it: speakerInfo) {
+            LOG(INFO) << __func__ << it;
+        }
+        {
+            LOG(INFO) << "Updating SPEAKER_GROUP_AVAILABILITY";
+            updateSpeakerGroupAvailability(speakerInfo);
+        }
+        if (speakerInfo.size() != VUC_SPEAKER_GROUP_AVAILABILITY_SIZE) {
+            LOG(ERROR) << "Invalid VUC_SPEAKER_GROUP_AVAILABILITY_SIZE getInt32Values size: "
+                << speakerInfo.size();
         } else {
-            std::vector<int32_t> speakerInfo = entry.value.int32Values;
-            if (speakerInfo.size() != SPEAKER_GROUP_AVAILABILITY_SIZE) {
-                LOG(ERROR) << "Invalid SPEAKER_GROUP_AVAILABILITY_SIZE getInt32Values size: " << speakerInfo.size();
-                goto exit;
+            if (speakerInfo[SpeakerIndex::FRONT_LEFT] != SpeakerState::OK &&
+                speakerInfo[SpeakerIndex::FRONT_RIGHT] != SpeakerState::OK &&
+                speakerInfo[SpeakerIndex::REAR_LEFT] != SpeakerState::OK &&
+                speakerInfo[SpeakerIndex::REAR_RIGHT] != SpeakerState::OK) {
+                LOG(ERROR) << "AUDIO UNAVAILABLE, reporting to VHAL";
+                audio_comp_status = false;
             } else {
-                if (speakerInfo[SpeakerIndex::FRONT_LEFT] != SpeakerState::OK &&
-                    speakerInfo[SpeakerIndex::FRONT_RIGHT] != SpeakerState::OK &&
-                    speakerInfo[SpeakerIndex::REAR_LEFT] != SpeakerState::OK &&
-                    speakerInfo[SpeakerIndex::REAR_RIGHT] != SpeakerState::OK) {
-                    LOG(ERROR) << "AUDIO UNAVAILABLE, reporting to VHAL";
-                    audio_comp_status = false;
-                } else {
-                    LOG(INFO) << "SPEAKERs are in connected state";
-                    audio_comp_status = true;
-                }
-                updateVHAL();
+                LOG(INFO) << "SPEAKERs are in connected state";
+                audio_comp_status = true;
             }
+            updateVHAL();
         }
     }
 exit:
     LOG(DEBUG) << __func__ << ": Exit ";
+    return;
+}
+
+ndk::ScopedAStatus SpeakerGroupAvailCallback::onPropertyEvent(
+        const aidl::android::hardware::automotive::vehicle::VehiclePropValues& vehiclePropValues,
+        int32_t) {
+    LOG(DEBUG) << __func__ << ": Enter " ;
+    for (auto entry: vehiclePropValues.payloads) {
+        processVehiclePropValue(entry);
+    }
     return ndk::ScopedAStatus::ok();
 }
