@@ -1153,8 +1153,14 @@ void StreamOutPrimary::configure() {
                 auto stream = itr->lock();
                 if (stream) {
                     auto streamOutPrimary = std::static_pointer_cast<StreamOutPrimary>(stream);
+                    std::vector<float> Volumes;
+                    int iter_channel;
+                    int no_of_channels = mVolumes.size();
                     if (streamOutPrimary->isStreamOutPrimary()) {
-                        streamOutPrimary->getHwVolume(&this->mVolumes);
+                        streamOutPrimary->getHwVolume(&Volumes);
+                        for(iter_channel = 0; iter_channel < no_of_channels; iter_channel++) {
+                            mVolumes[iter_channel] = Volumes[0];
+                        }
                         LOG(INFO) << __func__ << " Overriding Offload Volume";
                         break;
                     }
