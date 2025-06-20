@@ -1,24 +1,27 @@
 /*
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
+
 
 #pragma once
 
 #include <android-base/logging.h>
 #include <android-base/thread_annotations.h>
-#include <android-base/thread_annotations.h>
+
 #include <algorithm>
+#include <atomic>
 #include <memory>
 #include <thread>
 #include <unordered_map>
+
 #include "PalApi.h"
 #include "effect-impl/EffectContext.h"
 
-using aidl::android::hardware::audio::effect::Parameter;
-using aidl::android::hardware::audio::effect::CommandId;
 using aidl::android::hardware::audio::effect::Capability;
+using aidl::android::hardware::audio::effect::CommandId;
 using aidl::android::hardware::audio::effect::Descriptor;
+using aidl::android::hardware::audio::effect::Parameter;
 using aidl::android::hardware::audio::effect::Range;
 using aidl::android::hardware::audio::effect::Visualizer;
 
@@ -31,6 +34,7 @@ using aidl::android::hardware::audio::effect::Visualizer;
 #define BUFFERSIZE AUDIO_CAPTURE_PERIOD_SIZE* AUDIO_CAPTURE_CHANNEL_COUNT * sizeof(int16_t)
 
 namespace aidl::qti::effects {
+
 class VisualizerOffloadContext final : public EffectContext {
   public:
     static const uint32_t kMaxCaptureBufSize = 65536;
@@ -41,6 +45,7 @@ class VisualizerOffloadContext final : public EffectContext {
 
     RetCode enable();
     RetCode disable();
+    virtual RetCode setOffload(bool offload) override;
     // keep all parameters and reset buffer.
     void reset();
 
@@ -76,6 +81,8 @@ class VisualizerOffloadContext final : public EffectContext {
     };
 
   private:
+    std::atomic<bool> mCaptureThreadRunning{false};
+
     // maximum time since last capture buffer update before resetting capture buffer. This means
     // that the framework has stopped playing audio and we must start returning silence
     static const uint32_t kMaxStallTimeMs = 1000;
@@ -87,7 +94,7 @@ class VisualizerOffloadContext final : public EffectContext {
 
     // serialize process() and parameter setting
     std::mutex mMutex;
-    Parameter::Common mCommon GUARDED_BY(mMutex);
+
     State mState GUARDED_BY(mMutex) = State::UNINITIALIZED;
     uint32_t mCaptureIdx GUARDED_BY(mMutex) = 0;
     uint32_t mLastCaptureIdx GUARDED_BY(mMutex) = 0;
@@ -110,6 +117,8 @@ class VisualizerOffloadContext final : public EffectContext {
     std::array<BufferStats, kMeasurementWindowMaxSizeInBuffers> mPastMeasurements;
     void initParams();
     uint32_t getDeltaTimeMsFromUpdatedTime_l() REQUIRES(mMutex);
+
+    std::string details();
 };
 
 class StreamProxy {
@@ -139,24 +148,4 @@ class StreamProxy {
     bool mStreamOpened = false;
 };
 
-class GlobalVisualizerSession {
-  public:
-    static GlobalVisualizerSession& getSession() {
-        static GlobalVisualizerSession instance;
-        return instance;
-    }
-    std::shared_ptr<VisualizerOffloadContext> createSession(const Parameter::Common& common,
-                                                            bool processData);
-    void releaseSession(std::shared_ptr<VisualizerOffloadContext> context);
-    void startEffect(int ioHandle);
-    void stopEffect(int ioHandle);
-
-  private:
-    GlobalVisualizerSession(){};
-    std::mutex mMutex;
-    // List of call created visualizer effects
-    std::vector<std::shared_ptr<VisualizerOffloadContext>> mCreatedEffectsList;
-    // List of active outputs
-    std::vector<int> mActiveOutputsList;
-};
 } // namespace aidl::qti::effects
