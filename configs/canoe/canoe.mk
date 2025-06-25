@@ -82,7 +82,7 @@ PRODUCT_PACKAGES += fai__8.0.2_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_5.3.0_e
 PRODUCT_PACKAGES += fai__3.0.0_0.0__eai_5.3.0_enpuv6.pmd
 
 # Adding WNR Model File
-#PRODUCT_PACKAGES += wind_filter__1.0__48k__2ch__16b__eai_5.5.eai
+PRODUCT_PACKAGES += wind_filter__1.0__48k__2ch__16b__eai_5.5.eai
 
 # Audio configuration xml's related to Kaanapali
 QCV_FAMILY_SKUS := canoe
@@ -168,7 +168,7 @@ PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/codec2/service/1.0/c2audio.vendor.ext-arm64.policy:vendor/etc/seccomp_policy/c2audio.vendor.ext-arm64.policy
 PRODUCT_COPY_FILES += \
     $(CONFIG_HAL_SRC_DIR)/vendor_audio_interfaces.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/vendor_audio_interfaces.xml
-   
+
 # Audio configuration xml's related to Molokai
 QCV_FAMILY_SKUS := alor
 DEVICE_SKU := alor
