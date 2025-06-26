@@ -45,6 +45,11 @@ LOCAL_HEADER_LIBRARIES :=  \
     libmedia_helper_headers \
     libarpal_headers
 
+#Enable Hardware timestamp for Android V and U
+ifeq ($(call math_gt_or_eq, $(PRODUCT_SHIPPING_API_LEVEL), 34), true)
+LOCAL_CPPFLAGS += -DHARDWARE_TIMESTAMP
+endif
+
 ifeq ($(ENABLE_QCOM_HAL_AUDIO_FOCUS),true)
 LOCAL_CFLAGS += -DENABLE_QCOM_HAL_AUDIO_FOCUS
 endif
