@@ -419,6 +419,12 @@ void StreamOutPrimary::resume() {
         LOG(ERROR) << "POWER POLICY OFFLINE please try again\n";
         return -EINVAL;
     }
+    uint64_t signed_frames = 0;
+    uint64_t written_frames = 0;
+    uint64_t kernel_frames = 0;
+    uint64_t dsp_frames = 0;
+    uint64_t bt_extra_frames = 0;
+    uint64_t kernel_buffer_size = 0;
     if (!mPalHandle) {
         // configure on first transfer or after stand by
         configure();
@@ -470,7 +476,18 @@ void StreamOutPrimary::resume() {
     }
 
     *actualFrameCount = static_cast<size_t>(bytesWritten / mFrameSizeBytes);
+    /* This adjustment accounts for buffering after app processor
+    * It is based on estimated DSP latency per use case, rather than exact.
+    */
 
+    dsp_frames = GetRenderLatency(getAddress()) * (getStreamContext().getSampleRate()) / 1000000LL;
+    mBytesWritten += bytesWritten;
+    struct BufferConfig BufferConfig_ = getBufferConfig();
+    written_frames = mBytesWritten / mFrameSizeBytes;
+    kernel_buffer_size = BufferConfig_.bufferSize * BufferConfig_.bufferCount;
+    kernel_frames = kernel_buffer_size / mFrameSizeBytes;
+    if (written_frames >= (kernel_frames + dsp_frames))
+        signed_frames = written_frames - (kernel_frames + dsp_frames);
 #ifdef VERY_VERBOSE_LOGGING
     LOG(VERBOSE) << __func__ << mLogPrefix << ": byteswritten: " << bytesWritten;
 #endif
@@ -481,6 +498,10 @@ void StreamOutPrimary::resume() {
         const auto& btlatencyMs = mPlatform.getBluetoothLatencyMs(mConnectedDevices);
         *latencyMs += btlatencyMs;
     }
+#ifdef VERY_VERBOSE_LOGGING
+    LOG(DEBUG) << "signed frames " << signed_frames << " written frames "<< written_frames
+    << " kernel frames " << kernel_frames << " dsp frames " << dsp_frames;
+#endif
     return ::android::OK;
 }
 
@@ -1443,4 +1464,69 @@ void StreamOutPrimary::abandonFocus() {
     return;
 }
 #endif
+
+::android::status_t StreamOutPrimary::getHwTimeStamp(::aidl::android::hardware::audio::core::StreamDescriptor::Reply* reply) {
+    LOG(DEBUG) << "Enter :" << __func__;
+    if (!reply) {
+        LOG(ERROR) << "Null in reply - " << "Failed to get hw timestamp";
+        return ::android::INVALID_OPERATION;
+    }
+    // for stream out we use the system uptime as the time stamp
+    reply->observable.timeNs = ::android::uptimeNanos();
+    LOG(DEBUG) << "android::uptimeNanos() -> TimeStamp - reply->observable.timeNs: " << reply->observable.timeNs;
+    LOG(DEBUG) << "Exit : " << __func__;
+    return ::android::OK;
+}
+
+int64_t StreamOutPrimary::GetSourceLatency() {
+    auto attr = mPlatform.getPalStreamAttributes(mMixPortConfig, false);
+    switch (attr->type) {
+        case PAL_STREAM_DEEP_BUFFER:
+            return DEEP_BUFFER_PLATFORM_CAPTURE_DELAY;
+        case PAL_STREAM_LOW_LATENCY:
+            return LOW_LATENCY_PLATFORM_CAPTURE_DELAY;
+        case PAL_STREAM_VOIP_TX:
+            return VOIP_TX_PLATFORM_CAPTURE_DELAY;
+        case PAL_STREAM_RAW:
+            return RAW_STREAM_PLATFORM_CAPTURE_DELAY;
+            // TODO: Add more streamtypes if available in pal
+        default:
+            return 0;
+    }
+}
+
+int64_t StreamOutPrimary::GetRenderLatency(std::string address) {
+    auto streamAttributes_ = mPlatform.getPalStreamAttributes(mMixPortConfig, false);
+    int ret = -EINVAL;
+    long long latency = 0;
+    LOG(INFO) << __func__ << "type: " << streamAttributes_->type;
+
+    if (mPalHandle) {
+        ret = pal_stream_get_rendering_latency(mPalHandle, &latency);
+        LOG(INFO) << "ret " << ret << ", latency " << latency;
+        return latency;
+    }
+    switch (streamAttributes_->type) {
+        case PAL_STREAM_DEEP_BUFFER:
+        case PAL_STREAM_PLAYBACK_BUS:
+            if (((address.compare("BUS03_PHONE")) == 0) ||
+                ((address.compare("BUS01_SYS_NOTIFICATION")) == 0) ||
+                ((address.compare("BUS03_PHONE")) == 0)) {
+                return LOW_LATENCY_PLATFORM_DELAY;
+            } else {
+                return DEEP_BUFFER_PLATFORM_DELAY;
+            }
+        case PAL_STREAM_LOW_LATENCY:
+            return LOW_LATENCY_PLATFORM_DELAY;
+        case PAL_STREAM_COMPRESSED:
+        case PAL_STREAM_PCM_OFFLOAD:
+            return PCM_OFFLOAD_PLATFORM_DELAY;
+        case PAL_STREAM_ULTRA_LOW_LATENCY:
+            return ULL_PLATFORM_DELAY;
+        // TODO: Add more usecases/type as in current hal, once they are available in pal
+        default:
+            return 0;
+    }
+}
+
 } // namespace qti::audio::core
