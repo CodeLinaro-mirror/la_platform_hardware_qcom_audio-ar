@@ -6,13 +6,24 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
 <modules>
 <module name="default">
     <attachedDevices>
-        <item>speaker</item>
+        <item>Media Bus</item>
+        <item>Sys Notification Bus</item>
+        <item>Nav Guidance Bus</item>
+        <item>Phone Bus</item>
+        <item>Alerts Bus</item>
+        <item>Front Passenger Bus</item>
+        <item>Rear Seat Bus</item>
+        <item>Primary In Bus</item>
+        <item>Front Passenger In Bus</item>
+        <item>Rear Seat In Bus</item>
         <item>built_in_mic</item>
         <item>built_in_back_mic</item>
         <item>fm_tuner</item>
+        <item>wired_headset_mic</item>
+        <item>bt_sco_headset_mic</item>
         <item>echo_reference_mic</item>
     </attachedDevices>
-    <defaultOutputDevice>speaker</defaultOutputDevice>
+    <defaultOutputDevice>Media Bus</defaultOutputDevice>
     <mixPorts>
         <!-- based on role, mixport flags are identified as either input flags or
         output flags-->

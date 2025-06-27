@@ -1436,8 +1436,6 @@ int64_t StreamOutPrimary::GetRenderLatency(std::string address) {
     auto streamAttributes_ = mPlatform.getPalStreamAttributes(mMixPortConfig, false);
     int ret = -EINVAL;
     long long latency = 0;
-    LOG(INFO) << __func__ << "type: " << streamAttributes_->type;
-
     if (mPalHandle) {
         ret = pal_stream_get_rendering_latency(mPalHandle, &latency);
         LOG(VERBOSE) << "ret " << ret << ", latency " << latency;
