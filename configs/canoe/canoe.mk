@@ -289,7 +289,7 @@ PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.hw.aac.encoder=false
 #ADM Buffering size in ms
 PRODUCT_PROPERTY_OVERRIDES += \
-vendor.audio.adm.buffering.ms=2
+vendor.audio.adm.buffering.ms=3
 
 #enable headset calibration
 PRODUCT_PROPERTY_OVERRIDES += \
