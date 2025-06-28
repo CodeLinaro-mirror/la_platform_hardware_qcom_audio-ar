@@ -38,8 +38,11 @@ using ::aidl::android::hardware::audio::core::IStreamCallback;
 using ::aidl::android::hardware::audio::core::IStreamCommon;
 using ::aidl::android::hardware::audio::core::StreamDescriptor;
 using ::aidl::android::hardware::audio::core::VendorParameter;
-
+using ::aidl::android::media::audio::common::AudioIoFlags;
+using ::aidl::android::media::audio::common::AudioInputFlags;
+using ::aidl::android::media::audio::common::AudioOutputFlags;
 using aidl::android::media::audio::common::AudioPortExt;
+using aidl::android::media::audio::common::AudioDevice;
 
 // uncomment this to enable logging of very verbose logs like burst commands.
 //#define VERY_VERBOSE_LOGGING 1
@@ -98,9 +101,15 @@ StreamOutPrimary::StreamOutPrimary(StreamContext&& context, const SourceMetadata
     } else if (mTag == Usecase::LOW_LATENCY_PLAYBACK) {
         mExt.emplace<LowLatencyPlayback>();
     }
-
+    outFlags = mMixPortConfig.flags.value().get<AudioIoFlags::Tag::output>();
+    mAudioDevices = audioDevices;
+    if (audioDevices.size() == 1) {
+        busAddr = audioDevices[0].address.get<AudioDeviceAddress::Tag::id>();
+        LOG (VERBOSE) << __func__ << " AudioDeviceAddress: " << busAddr;
+    }
     mHwVolumeSupported = isHwVolumeSupported();
     mVolumes.resize(getChannelCount(mMixPortConfig.channelMask.value()));
+    ioHandle_l = mMixPortConfig.ext.get<AudioPortExt::Tag::mix>().handle;
     std::ostringstream os;
     os << " : usecase: " << mTagName;
     os << " IoHandle: " << mMixPortConfig.ext.get<AudioPortExt::Tag::mix>().handle << " ";
@@ -394,6 +403,11 @@ void StreamOutPrimary::resume() {
     // hardware is expected to up on start
     // but we are doing on first write
     LOG(DEBUG) << __func__ << mLogPrefix;
+    if (!mPlatform.isSoundCardUp()) {
+        LOG(ERROR) << __func__ << mLogPrefix << "Sound card is offline, returning...\n";
+        return -EINVAL;
+    }
+
     if (AudioExtension::getInstance().out_power_policy == POWER_POLICY_STATUS_OFFLINE) {
         LOG(ERROR) << "POWER POLICY OFFLINE please try again\n";
         return -EINVAL;
@@ -863,16 +877,23 @@ int32_t StreamOutPrimary::setAggregateSourceMetadata(bool voiceActive) {
     btSourceMetadata.track_count = track_count_total;
     btSourceMetadata.tracks = total_tracks.data();
 
+    int32_t totalTracks = 0;
     for (auto it = outStreams.begin(); it != outStreams.end(); it++) {
         ::aidl::android::hardware::audio::common::SourceMetadata srcMetadata;
         if (it->lock()) {
             it->lock()->getMetadata(srcMetadata);
             for (auto& item : srcMetadata.tracks) {
+                // check tracks size in this stream metadata not to exceed total count
+                if (totalTracks >= track_count_total) {
+                    break;
+                }
+
                 /* currently after cs call ends, we are getting metadata as
                 * usage voice and content speech, this is causing BT to again
                 * open call session, so added below check to send metadata of
                 * voice only if call is active, else discard it
                 */
+
                 if (!voiceActive && (mPlatform.getCallMode() != 3) &&
                     (AUDIO_USAGE_VOICE_COMMUNICATION == static_cast<audio_usage_t>(item.usage)) &&
                     (AUDIO_CONTENT_TYPE_SPEECH ==
@@ -885,8 +906,9 @@ int32_t StreamOutPrimary::setAggregateSourceMetadata(bool voiceActive) {
                     LOG(VERBOSE) << __func__ << mLogPrefix << " source metadata usage is "
                                  << btSourceMetadata.tracks->usage << " content is "
                                  << btSourceMetadata.tracks->content_type;
-                    ++btSourceMetadata.tracks;
+                   ++btSourceMetadata.tracks;
                 }
+                ++totalTracks;
             }
         }
     }
@@ -1120,6 +1142,39 @@ void StreamOutPrimary::configure() {
         setHwVolume(mVolumes);
     }
 
+    if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK || mTag == Usecase::PCM_OFFLOAD_PLAYBACK) {
+        //get volume from primary media playback stream
+        ModulePrimary::outListMutex.lock();
+        auto &outStreams = ModulePrimary::getOutStreams();
+        for (auto itr = outStreams.begin(); itr != outStreams.end(); ) {
+            if (itr->expired()) {
+                itr = outStreams.erase(itr);
+            } else {
+                auto stream = itr->lock();
+                if (stream) {
+                    auto streamOutPrimary = std::static_pointer_cast<StreamOutPrimary>(stream);
+                    std::vector<float> Volumes;
+                    int iter_channel;
+                    int no_of_channels = mVolumes.size();
+                    if (streamOutPrimary->isStreamOutPrimary() || streamOutPrimary->isStreamOutMedia()) {
+                        /* Get mute status and volumes from PRIMARY_PLAYBACK or MEDIA_PLAYBACK */
+                        mMuted = streamOutPrimary->mMuted;
+                        streamOutPrimary->getHwVolume(&Volumes);
+                        for(iter_channel = 0; iter_channel < no_of_channels; iter_channel++) {
+                            mVolumes[iter_channel] = Volumes[0];
+                        }
+                        LOG(INFO) << __func__ << " Overriding Offload Volume";
+                        break;
+                    }
+                } else {
+                    LOG(ERROR) << __func__ << " Stream Obj NULL";
+                }
+                ++itr;
+            }
+        }
+        ModulePrimary::outListMutex.unlock();
+        setHwVolume(mVolumes);
+    }
     if (mTag == Usecase::HAPTICS_PLAYBACK) {
 
         hapticChannelLayout = AudioChannelLayout::make<AudioChannelLayout::Tag::layoutMask>
@@ -1254,6 +1309,10 @@ void StreamOutPrimary::configure() {
         mPlatform.setPlaybackRate(mPalHandle, mTag, mPlaybackRate);
     }
 
+    if(mMuted) {
+         LOG(INFO) << __func__ << mLogPrefix << ": Volume for stream is Muted";
+         pal_stream_set_mute(mPalHandle, mMuted);
+    }
     LOG(INFO) << __func__ << mLogPrefix << ": stream is configured";
     enableOffloadEffects(true);
     const auto endTime = std::chrono::steady_clock::now();
@@ -1270,12 +1329,6 @@ void StreamOutPrimary::configure() {
               << ", ms pal_stream_start: " << palStreamStartTimeTaken << " ms]";
 }
 
-std::string StreamOutPrimary::getAddress()const { return busAddr; }
-std::string StreamOutPrimary::setAddress(std::string Address) 
-{
-    busAddr = Address; 
-    return busAddr;
-}
 
 void StreamOutPrimary::enableOffloadEffects(const bool enable) {
     if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK || mTag == Usecase::PCM_OFFLOAD_PLAYBACK) {
@@ -1350,7 +1403,7 @@ void StreamOutPrimary::shutdown_I() {
 }
 
 ::android::status_t StreamOutPrimary::getHwTimeStamp(::aidl::android::hardware::audio::core::StreamDescriptor::Reply* reply) {
-    LOG(DEBUG) << "Enter :" << __func__;
+    LOG(VERBOSE) << "Enter :" << __func__;
     if (!reply) {
         LOG(ERROR) << "Null in reply - " << "Failed to get hw timestamp";
         return ::android::INVALID_OPERATION;
@@ -1358,7 +1411,7 @@ void StreamOutPrimary::shutdown_I() {
     // for stream out we use the system uptime as the time stamp
     reply->observable.timeNs = ::android::uptimeNanos();
     LOG(VERBOSE) << "android::uptimeNanos() -> TimeStamp - reply->observable.timeNs: " << reply->observable.timeNs;
-    LOG(DEBUG) << "Exit : " << __func__;
+    LOG(VERBOSE) << "Exit : " << __func__;
     return ::android::OK;
 }
 

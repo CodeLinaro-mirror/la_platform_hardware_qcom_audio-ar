@@ -277,7 +277,7 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         </devicePort>
     </devicePorts>
     <routes>
-        <route type="mix" sink="Media Bus" sources="media,primary_out,low_latency_out,deep_buffer_out,mmap_no_irq_out" />
+        <route type="mix" sink="Media Bus" sources="media,primary_out,low_latency_out,mmap_no_irq_out" />
         <route type="mix" sink="Sys Notification Bus" sources="sys_notification,mmap_no_irq_out,low_latency_out,low_latency_out_8k,low_latency_out_16k_sys,low_latency_out_24k,low_latency_out_32k" />
         <route type="mix" sink="Nav Guidance Bus" sources="nav_guidance,mmap_no_irq_out,low_latency_out,low_latency_out_8k,low_latency_out_16k_sys,low_latency_out_24k,low_latency_out_32k" />
         <route type="mix" sink="Phone Bus" sources="phone,mmap_no_irq_out,low_latency_out,low_latency_out_8k,low_latency_out_16k_sys,low_latency_out_24k,low_latency_out_32k" />

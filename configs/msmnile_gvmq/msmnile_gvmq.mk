@@ -16,7 +16,7 @@ ifeq ($(TARGET_USES_AUDIOLITE),true)
 AUDIO_USE_STUB_HAL := true
 endif #ends TARGET_USES_AUDIOLITE
 
-ifeq ($(TARGET_USES_GY), true)
+ifneq (,$(filter gen4_gvm_gy, $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)))
 AUDIO_FEATURE_ENABLED_POWER_POLICY := true
 endif
 
@@ -187,11 +187,11 @@ PRODUCT_COPY_FILES += \
     $(TOPDIR)frameworks/native/data/etc/android.hardware.audio.low_latency.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.low_latency.xml
 
 # gen4_gvm_gy specific configuration files
-ifeq ($(TARGET_USES_GY), true)
+ifneq (,$(filter gen4_gvm_gy, $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)))
 PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/mixer_paths_VIOSND.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_VIOSND.xml \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/audio_policy_configuration_7_0_pure.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_configuration.xml
-endif # ends TARGET_USES_GY
+endif
 endif # ends TARGET_GVMGH_SPECIFIC, false
 endif # ends ENABLE_HYP
 
@@ -243,12 +243,19 @@ PRODUCT_COPY_FILES += \
 endif
 
 ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_gvmq)
+# Choosing audio config file between pure and value added
+ifeq ($(TARGET_FWK_SUPPORTS_FULL_VALUEADDS), true)
+PRODUCT_COPY_FILES += \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_gvmq/audio_module_config_primary_va.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_module_config_primary.xml
+else
+PRODUCT_COPY_FILES += \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_gvmq/audio_module_config_primary.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_module_config_primary.xml
+endif
 PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_gvmq/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_configuration.xml \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_gvmq/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_configuration.xml \
     $(TOPDIR)vendor/qcom/opensource/pal/configs/msmnile/plugin_manager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/plugin_manager.xml \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_gvmq/vendor_audio_interfaces.xml:$(TARGET_COPY_OUT_VENDOR)/etc/vendor_audio_interfaces.xml \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_gvmq/audio_module_config_primary.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_module_config_primary.xml \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_gvmq/audio_effects_config.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects_config.xml \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_gvmq/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/microphone_characteristics.xml \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_gvmq/mem_logger_config.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mem_logger_config.xml \
@@ -569,10 +576,10 @@ ifneq ( ,$(filter T Tiramisu 13, $(PLATFORM_VERSION)))
 PRODUCT_ODM_PROPERTIES += \
 vendor.audio.feature.arpowerpolicy.enable=true
 endif
-ifeq ($(TARGET_USES_GY), true)
+ifneq (,$(filter gen4_gvm_gy, $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)))
 PRODUCT_ODM_PROPERTIES += \
 vendor.audio.feature.arpowerpolicy.enable=true
-endif # ends TARGET_USES_GY
+endif
 endif
 else
 # Non-Generic ODM varient related
@@ -636,10 +643,10 @@ PRODUCT_ODM_PROPERTIES += \
 vendor.audio.feature.arpowerpolicy.enable=true
 endif
 endif
-ifeq ($(TARGET_USES_GY), true)
+ifneq (,$(filter gen4_gvm_gy, $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)))
 PRODUCT_ODM_PROPERTIES += \
 vendor.audio.feature.arpowerpolicy.enable=true
-endif # ends TARGET_USES_GY
+endif
 endif
 
 PRODUCT_PACKAGES_ENG += \

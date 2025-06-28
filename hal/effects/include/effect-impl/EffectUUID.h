@@ -427,6 +427,34 @@ static const AudioUuid kQuasarEffectQtiUUID = {static_cast<int32_t>(0x71d0e2ee),
                                                             0x483d,
                                                             0xa809,
                                                             {0x09, 0xe7, 0x5e, 0xe5, 0x5e, 0xcd}};
+/* BMT Effect UUID: e039757b-a367-44e9-9bbb-634af0c51cb7 */
+static const AudioUuid kBmtEffectQtiUUID = {static_cast<int32_t>(0xe039757b),
+                                            0xa367,
+                                            0x44e9,
+                                            0x9bbb,
+                                            {0x63, 0x4a, 0xf0, 0xc5, 0x1c, 0xb7}};
+
+/* SUMX Effect UUID: 32e9fe7f-de63-4d1b-a5d2-281e8492f3ce */
+static const AudioUuid kSumxEffectQtiUUID = {static_cast<int32_t>(0x32e9fe7f),
+                                             0xde63,
+                                             0x4d1b,
+                                             0xa5d2,
+                                             {0x28, 0x1e, 0x84, 0x92, 0xf3, 0xce}};
+
+/* AVC Effect UUID: 2130c69e-6a3a-4e35-9890-71687f0b78bf */
+static const AudioUuid kAvcEffectQtiUUID = {static_cast<int32_t>(0x2130c69e),
+                                  0x6a3a,
+                                  0x4e35,
+                                  0x9890,
+                                  {0x71, 0x68, 0x7f, 0x0b, 0x78, 0xbf}};
+
+/* FNB Effect UUID: 6bc88c84-a544-11e8-98d0-529269fb1459 */
+static const AudioUuid kFnbEffectQtiUUID = {static_cast<int32_t>(0x6bc88c84),
+                                  0xa544,
+                                  0x11e8,
+                                  0x98d0,
+                                  {0x52, 0x92, 0x69, 0xfb, 0x14, 0x59}};
+
 
 /**
  * @brief A map between effect name and effect type UUID.
@@ -459,6 +487,10 @@ static const std::map<const std::string /* effect type */, const AudioUuid&> kUu
         {"notification_helper", kNotificationVolumeListenerUUID},
         // {"audiosphere", kNotificationVolumeListenerUUID},
         {"quasar", kQuasarEffectQtiUUID},
+        {"audio_bmt", kBmtEffectQtiUUID},
+        {"audio_sumx", kSumxEffectQtiUUID},
+        {"audio_fnb", kFnbEffectQtiUUID},
+        {"audio_avc", kAvcEffectQtiUUID},
 };
 
 } // namespace aidl::qti::effects

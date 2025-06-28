@@ -346,7 +346,7 @@ ndk::ScopedAStatus qti::audio::core::ModulePrimary::setAudioPortConfig(const ::a
             break;
         }
     }
-    LOG(DEBUG) << "the module list is not empty";
+    LOG(VERBOSE) << "the module list is not empty";
     auto iter = list.begin();
     auto route_portid = route->sourcePortIds.begin();
     for (iter; route_portid!=route->sourcePortIds.end(); iter++) {
@@ -387,7 +387,6 @@ ndk::ScopedAStatus qti::audio::core::ModulePrimary::setAudioPortConfig(const ::a
                 }
                 LOG(DEBUG) << "gain is:" << volume;
                 LOG(DEBUG) << "volume is:" << vol[0];
-                (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(outIter))->setAddress(port.device.address.get<AudioDeviceAddress::Tag::id>());
                 (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(outIter))->setHwVolume(vol);
                 LOG(DEBUG) << "volume set :" << vol[0];
                 route_portid++;
@@ -624,7 +623,6 @@ void ModulePrimary::onSetGenericParameters(const std::vector<VendorParameter>& p
 
 void MuteConfig::set_mute_config_for_address(char* address, bool muted, float volume) {
     LOG(DEBUG) << __func__ << ": Enter, muted: " << muted << ", address: " << address;
-    bool is_muted = false;
 
     ModulePrimary::outListMutex.lock();
 
@@ -636,22 +634,12 @@ void MuteConfig::set_mute_config_for_address(char* address, bool muted, float vo
         if (stream) {
             auto streamOutPrimary = std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(stream);
             if (std::strcmp(streamOutPrimary->getAddress().c_str(), address) == 0) {
-                LOG(DEBUG) << "Mute applied to stream with address: " << address;
-                if (muted) {
-                   if(!is_muted) {
-                        (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(stream))->getHwVolume(&getVol);
-                        is_muted  = true;
-                    }
-                    std::vector<float> vol;
-                    vol.push_back(volume);
-                    vol.push_back(volume);
-                    LOG(DEBUG)<<"gain is:"<<volume;
-                    LOG(DEBUG)<<"volume is:"<<vol[0];
-                    (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(stream))->setHwVolume(vol);
-                    LOG(DEBUG)<<"volume set :"<<vol[0];
-               } else {
-                    (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(stream))->setHwVolume(getVol);
-                    is_muted  = false;
+                LOG(DEBUG) << (muted == 1 ? "Mute" : "Unmute") << " applied to stream with address: " << address;
+                streamOutPrimary->mMuted = muted;
+                pal_stream_handle_t* pal_handle = streamOutPrimary->getPalHandle();
+                if(pal_handle) {
+                        LOG(DEBUG) << "valid pal handle for " << address << ": to " << muted;
+                        pal_stream_set_mute(pal_handle, muted);
                 }
             }
             stream.reset();
@@ -662,13 +650,60 @@ void MuteConfig::set_mute_config_for_address(char* address, bool muted, float vo
     ModulePrimary::outListMutex.unlock();
 }
 
- void extn_set_mute_config_for_address(char* address, bool muted, float volume)
+void MuteConfig::set_duck_config_for_address(char* address, bool duck, float volume) {
+    LOG(DEBUG) << __func__ << ": Enter, Ducked: " << duck << ", address: " << address;
+    bool is_ducked = false;
+
+    ModulePrimary::outListMutex.lock();
+
+    for (auto weakStream : ModulePrimary::getOutStreams()) {
+        if (weakStream.expired()) {
+            LOG(DEBUG) << "stream empty: ";
+        }
+        auto stream = weakStream.lock();
+        if (stream) {
+            auto streamOutPrimary = std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(stream);
+            if (std::strcmp(streamOutPrimary->getAddress().c_str(), address) == 0) {
+                if (duck) {
+                   if(!is_ducked) {
+                        (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(stream))->getHwVolume(&getVol);
+                        is_ducked = true;
+                    }
+                    std::vector<float> vol;
+                    vol.push_back(volume);
+                    vol.push_back(volume);
+                    LOG(DEBUG)<<"gain is:"<<volume;
+                    LOG(DEBUG)<<"volume is:"<<vol[0];
+                    (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(stream))->setHwVolume(vol);
+                    LOG(DEBUG)<<"volume set :"<<vol[0];
+                    LOG(DEBUG) << "Ducked volume applied to stream with address: " << address;
+               } else {
+                    (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(stream))->setHwVolume(getVol);
+                    LOG(DEBUG) << "Unducked volume applied to stream with address: " << address;
+                    is_ducked  = false;
+                }
+            }
+            stream.reset();
+       } else {
+            LOG(DEBUG) << "failed to generate shared pointer";
+        }
+    }
+    ModulePrimary::outListMutex.unlock();
+}
+
+void extn_set_mute_config_for_address(char* address, bool muted, float volume)
 {
     LOG(DEBUG)<< __func__ << " mute:" << muted  << "address:" << address;
     auto& muteConfigInst = MuteConfig::GetInstance();
     return muteConfigInst.set_mute_config_for_address(address, muted, volume);
 }
 
+void extn_set_duck_config_for_address(char* address, bool duck, float volume)
+{
+    LOG(DEBUG)<< __func__ << " duck:" << duck  << "address:" << address;
+    auto& muteConfigInst = MuteConfig::GetInstance();
+    return muteConfigInst.set_duck_config_for_address(address, duck, volume);
+}
 
 void ModulePrimary::onSetHDRParameters(const std::vector<VendorParameter>& params) {
     for (const auto& param : params) {

@@ -34,6 +34,7 @@ typedef enum power_policy_status_t {
 extern "C" void extn_out_set_power_policy(uint8_t enable);
 extern "C" void extn_in_set_power_policy(uint8_t enable);
 extern "C" void extn_set_mute_config_for_address(char* address, bool muted, float volume);
+extern "C" void extn_set_duck_config_for_address(char* address, bool duck, float volume);
 
 namespace qti::audio::core {
 
@@ -247,6 +248,7 @@ public:
     }
     ModuleConfig& getConfig();
     static void set_mute_config_for_address(char* address, bool muted, float volume);
+    static void set_duck_config_for_address(char* address, bool duck, float volume);
 
 private:
     MuteConfig() {

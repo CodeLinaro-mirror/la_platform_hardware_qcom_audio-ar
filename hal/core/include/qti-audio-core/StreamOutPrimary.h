@@ -9,13 +9,14 @@
 #include <qti-audio-core/HalOffloadEffects.h>
 #include <qti-audio-core/Stream.h>
 #include <qti-audio-core/PlatformStreamCallback.h>
+#include <aidl/android/media/audio/common/AudioOutputFlags.h>
 
 #define LOW_LATENCY_PLATFORM_DELAY (13*1000LL)
 #define DEEP_BUFFER_PLATFORM_DELAY (70*1000LL)
 #define PCM_OFFLOAD_PLATFORM_DELAY (30*1000LL)
 #define MMAP_PLATFORM_DELAY        (3*1000LL)
 #define ULL_PLATFORM_DELAY         (4*1000LL)
-using ::aidl::android::media::audio::common::AudioDevice;
+
 namespace qti::audio::core {
 
 class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public PlatformStreamCallback {
@@ -29,7 +30,7 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
 
     virtual ~StreamOutPrimary() override;
     int32_t setAggregateSourceMetadata(bool voiceActive) override;
-    std::string getAddress() const;
+    std::string getAddress() { return busAddr; };
     std::string setAddress(std::string Address);
 
     // Methods of 'DriverInterface'.
@@ -89,20 +90,37 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
                                            int32_t* bufferSizeFrames) override;
 
     void onClose() override { defaultOnClose(); }
-
     ndk::ScopedAStatus setLatencyMode(
                            ::aidl::android::media::audio::common::AudioLatencyMode in_mode) override;
     ndk::ScopedAStatus getRecommendedLatencyModes(
         std::vector<::aidl::android::media::audio::common::AudioLatencyMode>* _aidl_return) override;
 
     bool isStreamOutPrimary() { return (mTag == Usecase::PRIMARY_PLAYBACK) ? true : false; }
+    bool isStreamOutMedia() { return (mTag == Usecase::MEDIA_PLAYBACK) ? true : false; }
     static std::mutex sourceMetadata_mutex_;
 
     // Methods from PlatformStreamCallback
     void onTransferReady() override;
     void onDrainReady() override;
     void onError() override;
+    std::vector<::aidl::android::media::audio::common::AudioDevice> mAudioDevices; /* AudioDevices for Effects */
     uint64_t mBytesWritten; /* total bytes written, not cleared when entering standby */
+    bool mMuted = false;
+    std::vector <::aidl::android::media::audio::common::AudioDevice>& getAudioDevice() {
+        return mAudioDevices;
+    }
+    /* returns IoHandle needed by effects context */
+    int getIoHandle() {
+        return ioHandle_l;
+    }
+    /* returns outFlags for effects context */
+    int32_t getOutFlags() {
+        return outFlags;
+    }
+    /* return mPalHandle */
+    pal_stream_handle_t* getPalHandle() {
+        return mPalHandle;
+   }
   protected:
     /*
      * opens, configures and starts pal stream, also validates the pal handle.
@@ -165,13 +183,14 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     AudioExtension& mAudExt{AudioExtension::getInstance()};
     int64_t GetSourceLatency();
   private:
+    int32_t outFlags;
     std::string mLogPrefix = "";
     bool isHwVolumeSupported();
     bool isHwFlushSupported();
     bool isHwPauseSupported();
     struct BufferConfig getBufferConfig();
     std::string busAddr = "";
-
+    int ioHandle_l;
     // optional buffer format converter, if stream input and output formats are different
     std::optional<std::unique_ptr<BufferFormatConverter>> mBufferFormatConverter;
 };
