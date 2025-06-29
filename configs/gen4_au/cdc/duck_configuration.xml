@@ -3,42 +3,57 @@
 Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
 SPDX-License-Identifier: BSD-3-Clause-Clear
 -->
-<CarAudioDuckingConfiguration version="1">
-    <priorities>
-        <!-- Gain values below are default values, internally for usecases like NAV_DUCKING &
-        ADAS_DUCKING the attenutation target is read internally, default to be used later as needed -->
-        <!-- For CYBER MUTE & TCU MUTE when active mute value picked from here i.e -9000.0 -->
-        <!-- Define a rule where the media bus is ducked when nav2 is incoming -->
-        <priority in_src="ASSISTANCE_NAVIGATION_GUIDANCE" running_src="MEDIA" duck="true" Gain="-9000" vol_override="false"/>
-        <priority in_src="ROAD_ADAS" running_src="MEDIA" duck="true" Gain="-6750" vol_override="false"/>
-        <priority in_src="VEHICLE_WARNING" running_src="MEDIA" duck="true" Gain="-6750" vol_override="false"/>
-        <priority in_src="AM" running_src="MEDIA" duck="true" Gain="-150" vol_override="false"/>
-        <priority in_src="FM" running_src="MEDIA" duck="true" Gain="-120" vol_override="false"/>
-        <priority in_src="RADIO_AAM_MUTE_ORDER" running_src="MEDIA" duck="true" Gain="-4000" vol_override="false"/>
-        <priority in_src="NIGHT_MODE" running_src="MEDIA" duck="true" Gain="-4000" vol_override="false"/>
-        <priority in_src="DEVICE_TEMPERATURE_STATUS" running_src="MEDIA" duck="true" Gain="-4000" vol_override="false"/>
-        <priority in_src="THERMAL_MITIGATION" running_src="MEDIA" duck="true" Gain="-2250" vol_override="false"/>
-        <priority in_src="VEHICLE_SAFETY_WARNING" running_src="BUS00_MEDIA" duck="true" Gain="-9000" vol_override="true"/>
-        <priority in_src="CYBER" running_src="BUS00_MEDIA" duck="true" Gain="-9000" vol_override="true"/>
-        <priority in_src="CYBER" running_src="BUS01_SYS_NOTIFICATION" duck="true" Gain="-9000" vol_override="true"/>
-        <priority in_src="CYBER" running_src="BUS02_NAV_GUIDANCE" duck="true" Gain="-9000" vol_override="true"/>
-        <priority in_src="CYBER" running_src="BUS03_PHONE" duck="true" Gain="-9000" vol_override="true"/>
-        <priority in_src="CYBER" running_src="BUS0F_NAV_GUIDANCE2" duck="true" Gain="-9000" vol_override="true"/>
-        <priority in_src="TCU" running_src="BUS00_MEDIA" duck="true" Gain="-9000" vol_override="true"/>
-        <priority in_src="TCU" running_src="BUS01_SYS_NOTIFICATION" duck="true" Gain="-9000" vol_override="true"/>
-        <priority in_src="TCU" running_src="BUS02_NAV_GUIDANCE" duck="true" Gain="-9000" vol_override="true"/>
-        <priority in_src="TCU" running_src="BUS03_PHONE" duck="true" Gain="-9000" vol_override="true"/>
-        <priority in_src="TCU" running_src="BUS0F_NAV_GUIDANCE2" duck="true" Gain="-9000" vol_override="true"/>
-        <priority in_src="STATIC_POWER_LIMITATION" running_src="BUS00_MEDIA" duck="true" Gain="-9000" vol_override="true"/>
-        <priority in_src="STATIC_POWER_LIMITATION" running_src="BUS01_SYS_NOTIFICATION" duck="true" Gain="-9000" vol_override="true"/>
-        <priority in_src="STATIC_POWER_LIMITATION" running_src="BUS02_NAV_GUIDANCE" duck="true" Gain="-9000" vol_override="true"/>
-        <priority in_src="STATIC_POWER_LIMITATION" running_src="BUS03_PHONE" duck="true" Gain="-9000" vol_override="true"/>
-        <priority in_src="STATIC_POWER_LIMITATION" running_src="BUS0F_NAV_GUIDANCE2" duck="true" Gain="-9000" vol_override="true"/>
-        <priority in_src="DELIVERY_MODE" running_src="BUS00_MEDIA" duck="true" Gain="-9000" vol_override="true"/>
-        <priority in_src="DELIVERY_MODE" running_src="BUS01_SYS_NOTIFICATION" duck="true" Gain="-9000" vol_override="true"/>
-        <priority in_src="DELIVERY_MODE" running_src="BUS02_NAV_GUIDANCE" duck="true" Gain="-9000" vol_override="true"/>
-        <priority in_src="DELIVERY_MODE" running_src="BUS03_PHONE" duck="true" Gain="-9000" vol_override="true"/>
-        <priority in_src="DELIVERY_MODE" running_src="BUS0F_NAV_GUIDANCE2" duck="true" Gain="-9000" vol_override="true"/>
-        <priority in_src="CP_DUCK" running_src="MEDIA" duck="true" Gain="-9000" vol_override="false"/>
-    </priorities>
+
+<CarAudioDuckingConfiguration>
+
+    <duckingRules>
+        <rule sourceType="AudioUsage" targetType="String" source="ASSISTANCE_NAVIGATION_GUIDANCE" target="BUS00_MEDIA" duck="true" gain="-9000" volumeOverride="false"/>
+        <rule sourceType="UseCase" targetType="String" source="ROAD_ADAS" target="BUS00_MEDIA" duck="true" gain="-6750" volumeOverride="false"/>
+        <rule sourceType="UseCase" targetType="String" source="VEHICLE_WARNING" target="BUS00_MEDIA" duck="true" gain="-6750" volumeOverride="false"/>
+        <rule sourceType="UseCase" targetType="String" source="VEHICLE_SAFETY_WARNING" target="BUS00_MEDIA" duck="true" gain="-9000" volumeOverride="false"/>
+        <rule sourceType="String" targetType="String" source="RADIO_AAM_MUTE_ORDER" target="BUS00_MEDIA" duck="true" gain="-4000" volumeOverride="false"/>
+        <rule sourceType="String" targetType="String" source="NIGHT_MODE" target="BUS00_MEDIA" duck="true" gain="-4000" volumeOverride="false"/>
+        <rule sourceType="String" targetType="String" source="DEVICE_TEMPERATURE_STATUS" target="BUS00_MEDIA" duck="true" gain="-4000" volumeOverride="false"/>
+        <rule sourceType="String" targetType="String" source="THERMAL_MITIGATION" target="BUS00_MEDIA" duck="true" gain="-2250" volumeOverride="false"/>
+        <rule sourceType="Type" targetType="String" source="CYBER" target="BUS00_MEDIA" duck="true" gain="-9000" volumeOverride="true"/>
+        <rule sourceType="Type" targetType="String" source="CYBER" target="BUS01_SYS_NOTIFICATION" duck="true" gain="-9000" volumeOverride="true"/>
+        <rule sourceType="Type" targetType="String" source="CYBER" target="BUS02_NAV_GUIDANCE" duck="true" gain="-9000" volumeOverride="true"/>
+        <rule sourceType="Type" targetType="String" source="CYBER" target="BUS03_PHONE" duck="true" gain="-9000" volumeOverride="true"/>
+        <rule sourceType="Type" targetType="String" source="CYBER" target="BUS0F_NAV_GUIDANCE2" duck="true" gain="-9000" volumeOverride="true"/>
+        <rule sourceType="Type" targetType="String" source="TCU" target="BUS00_MEDIA" duck="true" gain="-9000" volumeOverride="true"/>
+        <rule sourceType="Type" targetType="String" source="TCU" target="BUS01_SYS_NOTIFICATION" duck="true" gain="-9000" volumeOverride="true"/>
+        <rule sourceType="Type" targetType="String" source="TCU" target="BUS02_NAV_GUIDANCE" duck="true" gain="-9000" volumeOverride="true"/>
+        <rule sourceType="Type" targetType="String" source="TCU" target="BUS03_PHONE" duck="true" gain="-9000" volumeOverride="true"/>
+        <rule sourceType="Type" targetType="String" source="TCU" target="BUS0F_NAV_GUIDANCE2" duck="true" gain="-9000" volumeOverride="true"/>
+        <rule sourceType="Type" targetType="String" source="STATIC_POWER_LIMITATION" target="BUS00_MEDIA" duck="true" gain="-9000" volumeOverride="true"/>
+        <rule sourceType="Type" targetType="String" source="STATIC_POWER_LIMITATION" target="BUS01_SYS_NOTIFICATION" duck="true" gain="-9000" volumeOverride="true"/>
+        <rule sourceType="Type" targetType="String" source="STATIC_POWER_LIMITATION" target="BUS02_NAV_GUIDANCE" duck="true" gain="-9000" volumeOverride="true"/>
+        <rule sourceType="Type" targetType="String" source="STATIC_POWER_LIMITATION" target="BUS03_PHONE" duck="true" gain="-9000" volumeOverride="true"/>
+        <rule sourceType="Type" targetType="String" source="STATIC_POWER_LIMITATION" target="BUS0F_NAV_GUIDANCE2" duck="true" gain="-9000" volumeOverride="true"/>
+        <rule sourceType="Type" targetType="String" source="DELIVERY_MODE" target="BUS00_MEDIA" duck="true" gain="-9000" volumeOverride="true"/>
+        <rule sourceType="Type" targetType="String" source="DELIVERY_MODE" target="BUS01_SYS_NOTIFICATION" duck="true" gain="-9000" volumeOverride="true"/>
+        <rule sourceType="Type" targetType="String" source="DELIVERY_MODE" target="BUS02_NAV_GUIDANCE" duck="true" gain="-9000" volumeOverride="true"/>
+        <rule sourceType="Type" targetType="String" source="DELIVERY_MODE" target="BUS03_PHONE" duck="true" gain="-9000" volumeOverride="true"/>
+        <rule sourceType="Type" targetType="String" source="DELIVERY_MODE" target="BUS0F_NAV_GUIDANCE2" duck="true" gain="-9000" volumeOverride="true"/>
+        <rule sourceType="String" targetType="String" source="CP_DUCK" target="BUS00_MEDIA" duck="true" gain="-9000" volumeOverride="false"/>
+    </duckingRules>
+
+    <reasonsMap>
+        <entry streamType="ROAD_ADAS" MuteOrderType="BLOCKED" reason="REMOTE_MUTE" sourceType="UseCase"/>
+        <entry streamType="ROAD_ADAS" MuteOrderType="UNBLOCKED" reason="ADAS_DUCKING" sourceType="UseCase"/>
+        <entry streamType="VEHICLE_WARNING" MuteOrderType="BLOCKED" reason="REMOTE_MUTE" sourceType="UseCase"/>
+        <entry streamType="VEHICLE_SAFETY_WARNING" MuteOrderType="BLOCKED" reason="REMOTE_MUTE" sourceType="UseCase"/>
+        <entry streamType="VEHICLE_WARNING" MuteOrderType="UNBLOCKED" reason="ADAS_DUCKING" sourceType="UseCase"/>
+        <entry streamType="ASSISTANCE_NAVIGATION_GUIDANCE" reason="NAV_DUCKING" sourceType="AudioUsage"/>
+        <entry streamType="TCU" reason="TCU_MUTE" sourceType="Type"/>
+        <entry streamType="STATIC_POWER_LIMITATION" reason="TCU_MUTE" sourceType="Type"/>
+        <entry streamType="DELIVERY_MODE" reason="TCU_MUTE" sourceType="Type"/>
+        <entry streamType="CYBER" reason="FORCED_MASTER_MUTE" sourceType="Type"/>
+        <entry streamType="RADIO_AAM_MUTE_ORDER" reason="ADAS_DUCKING" sourceType="String"/>
+        <entry streamType="NIGHT_MODE" reason="ADAS_DUCKING" sourceType="String"/>
+        <entry streamType="DEVICE_TEMPERATURE_STATUS" reason="THERMAL_LIMITATION" sourceType="String"/>
+        <entry streamType="THERMAL_MITIGATION" reason="THERMAL_LIMITATION" sourceType="String"/>
+        <entry streamType="CP_DUCK" reason="PROJECTION_DUCKING" sourceType="String"/>
+    </reasonsMap>
+
 </CarAudioDuckingConfiguration>

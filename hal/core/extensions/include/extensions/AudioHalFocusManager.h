@@ -35,6 +35,7 @@ using ::aidl::android::hardware::automotive::audiocontrol::Reasons;
 using ::aidl::android::hardware::automotive::audiocontrol::AudioGainConfigInfo;
 using ::aidl::alliance::hardware::automotive::audiocontrol::internal::IAudioControlInternal;
 using UseCase = ::aidl::ampere::hardware::interfaces::automotive::audioparameterparser::AudioControlVendorParameterExt::AudioFocusRequest::UseCase;
+using MuterOderType = ::aidl::ampere::hardware::interfaces::automotive::audioparameterparser::AudioControlVendorParameterExt::AudioFocusRequest::MuterOderType;
 using Type = ::aidl::ampere::hardware::interfaces::automotive::audioparameterparser::AudioControlVendorParameterExt::MasterMuteRequest::Type;
 using RadioAudioSource = ::aidl::ampere::hardware::interfaces::automotive::audioparameterparser::RadioVendorParameterExt::AudioSource;
 #define AWX_VOLUME_RAMP_SHAPE 0x11112504
@@ -89,7 +90,6 @@ struct FocusAction {
     FocusCommand command;
 };
 
-// class FocusStreamUpdateCallback;
 class FocusStreamUpdateCallback {
     public:
         ndk::ScopedAStatus onMetadataUpdated(bool doDuck, float gain){
@@ -109,6 +109,7 @@ struct FocusInfo {
         Reasons reason;
         pal_stream_handle_t** mPalHandle = nullptr;
         int rampDuration = -1;
+        MuterOderType muteOrderType = MuterOderType::NONE;
 };
 
 struct RampParams {
@@ -141,35 +142,18 @@ class AudioFocusService {
         int32_t requestFocus(const FocusInfo focusInfo, int64_t* focusId);
         int32_t abandonFocus(const int64_t focusId);
         int32_t updateVolume(const int64_t focusId, const float gain, const bool isExternalGain);
-        //::ndk::ScopedAStatus syncVolume(std::vector< std::pair<AudioDevice, float> > &deviceVolumes);
         int32_t getNearestIndex(int32_t gain);
-
+        static const std::unordered_map<std::string,
+            std::unordered_map<std::string, StreamType>> usageMap;
+        static std::unordered_map<StreamType,
+            std::unordered_map<MuterOderType, Reasons>> reasonsMap;
+        static const std::unordered_map<std::string, MuterOderType> muteOrderStrtoAidl;
+        static const std::unordered_map<std::string, Reasons> reasonStrtoAidl;
     private:
         const char* externalVolumeConfiguration = "/vendor/etc/audio_policy_engine_default_volumes.xml";
         std::unordered_map<int64_t, FocusInfo> registeredFocusCallbacks;
         std::unordered_map<int64_t, std::unordered_set<int64_t> > registeredStreams;
         std::unordered_set<int64_t> globalActiveFocusSessions;
-        std::map<StreamType, Reasons>
-            reasonsMap = {{ AudioUsage::ASSISTANCE_NAVIGATION_GUIDANCE,
-                            Reasons::NAV_DUCKING},
-                        { UseCase::ROAD_ADAS,
-                            Reasons::ADAS_DUCKING},
-                        { UseCase::VEHICLE_SAFETY_WARNING,
-                            Reasons::REMOTE_MUTE},
-                        { UseCase::VEHICLE_WARNING,
-                            Reasons::ADAS_DUCKING},
-                        { Type::TCU, Reasons::TCU_MUTE},
-                        { Type::STATIC_POWER_LIMITATION, Reasons::TCU_MUTE},
-                        { Type::DELIVERY_MODE, Reasons::TCU_MUTE},
-                        { Type::CYBER, Reasons::FORCED_MASTER_MUTE},
-                        {"RADIO_AAM_MUTE_ORDER",
-                            Reasons::ADAS_DUCKING},
-                        {"NIGHT_MODE",
-                            Reasons::ADAS_DUCKING},
-                        {"DEVICE_TEMPERATURE_STATUS",
-                            Reasons::THERMAL_LIMITATION},
-                        { "THERMAL_MITIGATION", Reasons::THERMAL_LIMITATION},
-                        { "CP_DUCK", Reasons::PROJECTION_DUCKING},};
         std::map<AudioUsage, RampParams> rampMap = {
             {AudioUsage::NOTIFICATION_TELEPHONY_RINGTONE, {RAMP_SHAPE_EXP, 20,20}},
             {AudioUsage::VOICE_COMMUNICATION, {RAMP_SHAPE_EXP,20,20}},
@@ -180,6 +164,10 @@ class AudioFocusService {
         };
         bool isMediaRampEnforced = false;
         bool isCarPlayRampEnforce = false;
+        float cachedMediaVolume = 1.0;
+        bool restoreMediaCachedVolume();
+        bool cacheMediaVolume();
+        void resetCachedMediaVolume();
         void enforceRampParameters(const std::vector<Reasons> duckReasons);
         std::vector<AudioGainConfigInfo> agcis;
         const std::map<int32_t, int32_t> volumeMap = {
@@ -193,7 +181,6 @@ class AudioFocusService {
             {-2700, 28}, {-2475, 29}, {-2250, 30}, {-2025, 31},
             {-1800, 32}, {-1575, 33}, {-1350, 34}, {-1125, 35},
             {-900, 36}, {-675, 37}, {-450, 38}, {-225, 39}, {0, 40}};
-
         void parseVolumeProfile();
         void processVolumePoints(const std::vector<std::string> &points);
 
@@ -203,15 +190,17 @@ class AudioFocusService {
         void restoreBusVolumes();
         bool isMuteAbandonRequest(int64_t focusId);
         void syncVolumeChanges();
-        bool nonReportReasons(StreamType usage);
+        bool nonBlockingReasons(StreamType usage, MuterOderType muteOrderType);
         static void threadLoop(AudioFocusService* focusService);
         bool checkIfExists(StreamType usage1, StreamType usage2);
         int32_t generateUUID();
         void reportGainChanges();
         void populateReasonsnGains(int64_t focusId);
         bool isThermalFocusId(int64_t focusId);
-
-};
-
+        bool isAudioOnMediaBus(int64_t focusId);
+        void resetNonBlockingReasons(int64_t focusId);
+        void resetDuckFocusId(int64_t focusId);
+        void reportThermalReason(int64_t focusId, int64_t curFocusId);
+    };
 }
 

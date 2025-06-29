@@ -694,25 +694,25 @@ ndk::ScopedAStatus StreamOutPrimary::getHwVolume(std::vector<float>* _aidl_retur
 }
 
 ndk::ScopedAStatus StreamOutPrimary::setHwVolume(const std::vector<float>& in_channelVolumes) {
-    std::vector<float> channelVolumes = in_channelVolumes;
     auto sourceMetadata = std::get<SourceMetadata>(mMetadata);
+    std::vector<float> updatedChannelVolumes = in_channelVolumes;
 
     mVolumeGaincheck=property_get_bool(mGainVolumecheckProperty.c_str(),false);
     if (!mHwVolumeSupported) {
         return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
     }
 
-    if (mVolumes.size() != channelVolumes.size()) {
+    if (mVolumes.size() != in_channelVolumes.size()) {
         LOG(ERROR) << __func__ << mLogPrefix << " channel count mismatch with port, expected "
-                   << mVolumes.size() << " got " << channelVolumes.size();
+                   << mVolumes.size() << " got " << in_channelVolumes.size();
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
     }
     if (!mVolumeGaincheck) {
         auto isVolumeInRange=[](const std::vector<float>& volumes) {
             return std::all_of(volumes.begin(),volumes.end(),[](float vol) { return (vol >= 0.0f && vol <= 1.0f); });
         };
-        if (!isVolumeInRange(channelVolumes)) {
-            LOG(DEBUG) << __func__ << mLogPrefix << "out of range volume " << ::android::internal::ToString(channelVolumes);
+        if (!isVolumeInRange(in_channelVolumes)) {
+            LOG(DEBUG) << __func__ << mLogPrefix << "out of range volume " << ::android::internal::ToString(in_channelVolumes);
             return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
         }
     }
@@ -730,10 +730,10 @@ ndk::ScopedAStatus StreamOutPrimary::setHwVolume(const std::vector<float>& in_ch
     }
 #endif
     if (!mPalHandle) {
-        mVolumes = channelVolumes;
+        mVolumes = in_channelVolumes;
         mUseCachedVolume = true;
         LOG(DEBUG) << __func__ << mLogPrefix << " cache volume "
-                   << ::android::internal::ToString(channelVolumes);
+                   << ::android::internal::ToString(in_channelVolumes);
         return ndk::ScopedAStatus::ok();
     }
 
@@ -744,9 +744,9 @@ ndk::ScopedAStatus StreamOutPrimary::setHwVolume(const std::vector<float>& in_ch
             for (const auto& [sourceTypeKey, sourceGainValue] : sourceGainTable) {
                 if (sourceTypeKey == str) {
                     LOG(DEBUG) << "USAGE matched, gain added: " << sourceGainValue << " sourceTypeKey: " << sourceTypeKey;
-                    for (float& volume : channelVolumes) {
-                        volume += sourceGainValue;
-                        LOG(DEBUG) << "updated volumes : " << volume;
+                    for (size_t i = 0; i < in_channelVolumes.size(); ++i) {
+                        updatedChannelVolumes[i] = in_channelVolumes[i] + sourceGainValue;
+                        LOG(DEBUG) << "updated volumes : " << updatedChannelVolumes[i];
                     }
                     break;
                 } else {
@@ -757,11 +757,11 @@ ndk::ScopedAStatus StreamOutPrimary::setHwVolume(const std::vector<float>& in_ch
         }
     }
 
-    if (int32_t ret = mPlatform.setVolume(mPalHandle, channelVolumes); ret) {
+    if (int32_t ret = mPlatform.setVolume(mPalHandle, updatedChannelVolumes); ret) {
         LOG(ERROR) << __func__ << mLogPrefix << " failed to set volume";
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
     }
-    mVolumes = channelVolumes;
+    mVolumes = in_channelVolumes;
 
     LOG(DEBUG) << __func__ << mLogPrefix  << "mVolumes" << ::android::internal::ToString(mVolumes);
     return ndk::ScopedAStatus::ok();
@@ -1125,10 +1125,10 @@ void StreamOutPrimary::configure() {
         }
         ModulePrimary::outListMutex.unlock();
     }
-    setHwVolume(mVolumes);
 #ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
     requestFocus();
 #endif
+    setHwVolume(mVolumes);
     if (mTag == Usecase::HAPTICS_PLAYBACK) {
 
         hapticChannelLayout = AudioChannelLayout::make<AudioChannelLayout::Tag::layoutMask>
