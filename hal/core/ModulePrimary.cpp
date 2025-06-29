@@ -31,6 +31,7 @@
 #include <android/binder_ibinder.h>
 #include <android/binder_manager.h>
 #include <error/Result.h>
+#include <fmt/ranges.h>
 #include <cmath>
 #ifdef ENABLE_QCOM_AMPERE_AUDIO
 #include <extensions/AudioHalFocusManager.h>
@@ -113,7 +114,7 @@ namespace qti::audio::core {
 
 std::vector<std::weak_ptr<::qti::audio::core::StreamOut>> ModulePrimary::mStreamsOut;
 std::vector<std::weak_ptr<::qti::audio::core::StreamIn>> ModulePrimary::mStreamsIn;
-std::string qti::audio::core::ModulePrimary::globalAudioSource = "other";
+std::string qti::audio::core::ModulePrimary::globalAudioSource = "DEFAULT";
 
 #ifdef ENABLE_QCOM_AMPERE_AUDIO
 std::unordered_map<std::string, FocusSession> ModulePrimary::mActiveFocusDevices;
@@ -186,41 +187,48 @@ ndk::ScopedAStatus qti::audio::core::ModulePrimary::setAudioPortConfig(const ::a
             break;
         }
     }
-    LOG(DEBUG) << "the module list is not empty";
-    auto iter = list.begin();
-    auto route_portid = route->sourcePortIds.begin();
-    for (iter; route_portid!=route->sourcePortIds.end(); iter++) {
-        if(iter == list.end()) {
-           iter = list.begin();
-           LOG(DEBUG) << __func__ << "port not found " << *route_portid;
-           route_portid++;
-        }
+    LOG(DEBUG) << "The module list is not empty";
+
+    // Get the ports to handle
+    auto portsToHandle = route->sourcePortIds;
+
+    // Iterate over the list
+    for (auto iter = list.begin(); iter != list.end() && !portsToHandle.empty(); ++iter) {
+        // Try to lock the iterator
         auto outIter = iter->lock();
         if (outIter) {
-            auto &mcontext = (*outIter).getStreamContext();
-            auto &list_audioportconfig = mcontext.getMixPortConfig();
-            list_id = list_audioportconfig.portId;
-            int no_of_channels = (int)getChannelCount(list_audioportconfig.channelMask.value());
-            if (list_id == (*route_portid)) {
-                std::vector<float> vol;
-                LOG(DEBUG) << "Found the stream at id" << list_id;
-                int iter_channel;
-                for(iter_channel = 0; iter_channel<no_of_channels; iter_channel++) {
-                    vol.push_back(volume);
-                }
-                LOG(DEBUG) << "gain is:" << volume;
-                LOG(DEBUG) << "volume is:" << vol[0];
+            // Get the stream context and mix port config
+            auto& mcontext = outIter->getStreamContext();
+            auto& listAudioPortConfig = mcontext.getMixPortConfig();
+
+            // Get the port ID and channel count
+            int listId = listAudioPortConfig.portId;
+            int numChannels = static_cast<int>(getChannelCount(listAudioPortConfig.channelMask.value()));
+
+            // Check if the port ID is in the ports to handle
+            if (std::find(portsToHandle.begin(), portsToHandle.end(), listId) != portsToHandle.end()) {
+                // Create a vector to store the volume values
+                std::vector<float> volumes(numChannels, volume);
+
+                // Log the stream ID and volume
+                LOG(DEBUG) << "Found the stream at ID: " << listId << " Gain is: " << volume << " Volume is: " << volumes[0];
+                // Set the hardware volume
                 auto streamObj = std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(outIter);
-                streamObj->setHwVolume(vol);
-                LOG(DEBUG) << "volume set :" << vol[0];
-                route_portid++;
+                streamObj->setHwVolume(volumes);
+                LOG(DEBUG) << "Volume set: " << volumes[0];
+                // Remove the port ID from the ports to handle
+                std::erase(portsToHandle, listId);
             }
-            outIter.reset();
+        } else {
+            LOG(DEBUG) << "Error in generation of shared pointer";
         }
-        else {
-                 LOG(DEBUG) << "error in generation of shared pointer";
-        }
+        outIter.reset();
     }
+
+// Log any unhandled ports
+if (!portsToHandle.empty()) {
+    LOG(DEBUG) << "Unhandled ports for volume change: " << fmt::format("{}", portsToHandle);
+}
     return ndk::ScopedAStatus::ok();
 }
 
@@ -1010,6 +1018,7 @@ std::vector<AudioGainConfigInfo> ModulePrimary::getAudioGainConfigsForSinks() {
         FocusSession focusSessioninfo((int64_t)(focusRequest.soundId));
         focusInfo.usage = focusRequest.useCase;
         focusInfo.gain = -1000.0;
+        focusInfo.muteOrderType = focusRequest.muteOrderType;
         mAudExt.mAutoAudioHalPriorityExtension->requestFocus(focusInfo, &focusSessioninfo.FocusId);
         LOG(INFO) << "Focus Id: " << focusRequest.soundId;
 

@@ -1025,6 +1025,10 @@ static int32_t stop_hfp() {
     int32_t ret = 0;
 
     LOG(DEBUG) << __func__ << " HFP stop enter";
+    if (hfpmod.is_hfp_running != true) {
+        LOG(DEBUG) << __func__ << " Already cleanup happened";
+        return 0;
+    }
     hfpmod.is_hfp_running = false;
     stop_hfp_thread();
     if (hfpmod.rx_stream_handle) {

@@ -104,6 +104,8 @@ public:
 
 class SpeakerGroupAvailCallback final :
     public aidl::android::hardware::automotive::vehicle::BnVehicleCallback {
+    void processVehiclePropValue(const
+            aidl::android::hardware::automotive::vehicle::VehiclePropValue vehiclePropValue);
 public:
     ndk::ScopedAStatus onGetValues(
             const aidl::android::hardware::automotive::vehicle::GetValueResults& results) override;
@@ -118,6 +120,8 @@ public:
 
 class AudioFailureDetectCallback final :
     public aidl::android::hardware::automotive::vehicle::BnVehicleCallback {
+    void processVehiclePropValue(const
+            aidl::android::hardware::automotive::vehicle::VehiclePropValue vehiclePropValue);
 public:
     ndk::ScopedAStatus onGetValues(
             const aidl::android::hardware::automotive::vehicle::GetValueResults& results) override;
