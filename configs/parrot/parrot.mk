@@ -381,6 +381,10 @@ PRODUCT_PROPERTY_OVERRIDES += \
 PRODUCT_PROPERTY_OVERRIDES += \
     vendor.audio.ull_record_period_multiplier=2
 
+# Disable CRS calls
+PRODUCT_PROPERTY_OVERRIDES += \
+    vendor.audio.crs_call_disabled=true
+
 ##Ambisonic Capture
 PRODUCT_PROPERTY_OVERRIDES += \
 persist.vendor.audio.ambisonic.capture=false \
