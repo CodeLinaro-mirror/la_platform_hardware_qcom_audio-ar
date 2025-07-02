@@ -17,6 +17,7 @@ AUDIO_AGM += libagm
 AUDIO_AGM += agmplay
 AUDIO_AGM += agmcap
 AUDIO_AGM += agm_ls_be
+AUDIO_AGM += early_audio
 AUDIO_AGM += libagmmixer
 AUDIO_AGM += agmcompressplay
 AUDIO_AGM += libagm_mixer_plugin
