@@ -56,10 +56,6 @@
 #include <qti-audio-core/Stream.h>
 #include <memory>
 
-#define MIN_VOLUME_GAIN_MB -6000
-#define MAX_VOLUME_GAIN_MB 600
-#define MIN_VOLUME_GAIN 0.0f
-#define MAX_VOLUME_GAIN 1.0f
 #define AUDIO_PARAMETER_KEY_BALANCE "Balance"
 #define AUDIO_PARAMETER_KEY_FADER "Fader"
 #define AUDIO_PARAMETER_KEY_ISFADERAVAILABLE "isFaderAvailable"
@@ -132,27 +128,17 @@ std::mutex ModulePrimary::inListMutex;
 ndk::ScopedAStatus qti::audio::core::ModulePrimary::setAudioPortConfig(const ::aidl::android::media::audio::common::AudioPortConfig& in_requested,::aidl::android::media::audio::common::AudioPortConfig* out_suggested,bool* _aidl_return)
 {
     int list_id,Requsted_id;
-    LOG(DEBUG) << "setaudioportconfig module primary";
-    mVolumeGaincheck = property_get_bool(mGainVolumecheckProperty.c_str(),false);
-    Module::setAudioPortConfig(in_requested,out_suggested,_aidl_return);
+    LOG(DEBUG) << "setAudioPortConfig ModulePrimary";
+    ndk::ScopedAStatus status = Module::setAudioPortConfig(in_requested,out_suggested,_aidl_return);
+    if (!status.isOk()) {
+            return status;
+        }
     float volume;
     if (in_requested.gain.has_value()) {
         if (in_requested.gain->values.empty()) {
             return ndk::ScopedAStatus::ok();
         }
-        if (!mVolumeGaincheck) {
-            if (in_requested.gain->values[0] >= MAX_VOLUME_GAIN_MB) {
-                volume = MAX_VOLUME_GAIN;
-            } else {
-                if (in_requested.gain->values[0] <= MIN_VOLUME_GAIN_MB) {
-                    volume = MIN_VOLUME_GAIN;
-                } else {
-                    volume=pow(10,(((float)(in_requested.gain->values[0]))-600)/2200);
-                }
-            }
-        } else {
-            volume = (static_cast<float>(in_requested.gain->values[0]));
-        }
+    volume = (static_cast<float>(in_requested.gain->values[0]));
 #ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
         LOG(DEBUG) << __func__ << ": requested " << in_requested.toString();
         if (in_requested.ext.getTag() == AudioPortExt::device) {
@@ -214,7 +200,7 @@ ndk::ScopedAStatus qti::audio::core::ModulePrimary::setAudioPortConfig(const ::a
                 LOG(DEBUG) << "Found the stream at ID: " << listId << " Gain is: " << volume << " Volume is: " << volumes[0];
                 // Set the hardware volume
                 auto streamObj = std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(outIter);
-                streamObj->setHwVolume(volumes);
+                streamObj->setPALVolume(volumes);
                 LOG(DEBUG) << "Volume set: " << volumes[0];
                 // Remove the port ID from the ports to handle
                 std::erase(portsToHandle, listId);
@@ -1241,14 +1227,16 @@ void MuteConfig::set_mute_config_for_address(char* address, bool muted, float vo
                         is_muted  = true;
                     }
                     std::vector<float> vol;
-                    vol.push_back(volume);
-                    vol.push_back(volume);
                     LOG(DEBUG)<<"gain is:"<<volume;
-                    LOG(DEBUG)<<"volume is:"<<vol[0];
-                    (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(stream))->setHwVolume(vol);
+                    int channel=getVol.size(),i;
+                    for (i=0;i<channel;i++)
+                        vol.push_back(volume);
+                    LOG(DEBUG)<<"gain is:"<<::android::internal::ToString(vol);
+
+                    (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(stream))->setPALVolume(vol);
                     LOG(DEBUG)<<"volume set :"<<vol[0];
                } else {
-                    (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(stream))->setHwVolume(getVol);
+                    (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(stream))->setPALVolume(getVol);
                     is_muted  = false;
                 }
             }

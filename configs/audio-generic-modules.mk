@@ -52,6 +52,8 @@ MM_AUDIO += libsoundtriggerhal.qti
 MM_AUDIO += libadm
 MM_AUDIO += libAlacSwDec
 MM_AUDIO += libApeSwDec
+MM_AUDIO += libhapticgeneratoraidl
+MM_AUDIO += libpreprocessingaidl
 MM_AUDIO += libcapiv2svacnnvendor
 MM_AUDIO += libcapiv2svarnnvendor
 MM_AUDIO += libcapiv2udk7vendor
@@ -100,6 +102,9 @@ AUDIO_TESTS += VtsHalAECTargetTest
 AUDIO_TESTS += VtsHalAGC1TargetTest
 AUDIO_TESTS += VtsHalAGC2TargetTest
 AUDIO_TESTS += VtsHalNSTargetTest
+AUDIO_TESTS += VtsHalBassBoostTargetTest
+AUDIO_TESTS += VtsHalSoundDoseFactoryTargetTest
+AUDIO_TESTS += VtsAidlHalAudioControlTest
 endif
 
 AUDIO_GENERIC_MODULES += $(MM_AUDIO)

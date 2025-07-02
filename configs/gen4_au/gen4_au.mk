@@ -69,11 +69,11 @@ MM_AUDIO_ENABLED_SAFX := true
 AUDIO_FEATURE_ENABLED_HW_ACCELERATED_EFFECTS := false
 AUDIO_FEATURE_ENABLED_AUDIOSPHERE := false
 AUDIO_FEATURE_ENABLED_USB_TUNNEL := false
-AUDIO_FEATURE_ENABLED_A2DP_OFFLOAD := false
+AUDIO_FEATURE_ENABLED_A2DP_OFFLOAD := true
 AUDIO_FEATURE_ENABLED_3D_AUDIO := false
 AUDIO_FEATURE_ENABLED_AHAL_EXT := false
 DOLBY_ENABLE := false
-AUDIO_FEATURE_ENABLED_EXTENDED_COMPRESS_FORMAT := true 
+AUDIO_FEATURE_ENABLED_EXTENDED_COMPRESS_FORMAT := true
 endif
 
 USE_XML_AUDIO_POLICY_CONF := 1
@@ -231,11 +231,7 @@ PRODUCT_COPY_FILES += \
 # gen4_gvm_gy specific configuration files
 ifeq ($(TARGET_USES_GY), true)
 PRODUCT_COPY_FILES += \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/mixer_paths_VIOSND.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_VIOSND.xml \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/audio_policy_configuration_7_0_pure.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_configuration.xml
-else
-PRODUCT_COPY_FILES += \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_policy_configuration_7_0.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_configuration.xml
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/mixer_paths_VIOSND.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_VIOSND.xml
 endif # ends TARGET_USES_GY
 endif # ends TARGET_GVMGH_SPECIFIC, false
 endif # ends ENABLE_HYP
@@ -459,7 +455,7 @@ vendor.audio.flac.sw.decoder.24bit=false
 
 # A2DP offload support
 PRODUCT_PROPERTY_OVERRIDES += \
-ro.bluetooth.a2dp_offload.supported=false
+ro.bluetooth.a2dp_offload.supported=true
 
 # Disable A2DP offload
 PRODUCT_PROPERTY_OVERRIDES += \
@@ -477,7 +473,7 @@ endif
 ifeq ($(ENABLE_HYP), true)
 ifeq ($(TARGET_GVMGH_SPECIFIC), false)
 PRODUCT_PROPERTY_OVERRIDES += \
-persist.bluetooth.a2dp_offload.disabled=true
+persist.bluetooth.a2dp_offload.disabled=false
 else
 PRODUCT_PROPERTY_OVERRIDES += \
 persist.bluetooth.a2dp_offload.disabled=false
@@ -701,50 +697,6 @@ vendor.audio.feature.arpowerpolicy.enable=true
 endif # ends TARGET_USES_GY
 endif
 
-# for HIDL related packages
-PRODUCT_PACKAGES += \
-    android.hardware.audio@2.0-service \
-    android.hardware.audio@2.0-impl \
-    android.hardware.audio.effect@2.0-impl \
-    android.hardware.soundtrigger@2.1-impl \
-    android.hardware.soundtrigger@2.2-impl \
-    android.hardware.soundtrigger@2.3-impl \
-    android.hardware.audio@4.0 \
-    android.hardware.audio.common@4.0 \
-    android.hardware.audio.common@4.0-util \
-    android.hardware.audio@4.0-impl \
-    android.hardware.audio.effect@4.0 \
-    android.hardware.audio.effect@4.0-impl
-
-# enable audio hidl hal 5.0
-PRODUCT_PACKAGES += \
-    android.hardware.audio@5.0 \
-    android.hardware.audio.common@5.0 \
-    android.hardware.audio.common@5.0-util \
-    android.hardware.audio@5.0-impl \
-    android.hardware.audio.effect@5.0 \
-    android.hardware.audio.effect@5.0-impl
-
-# enable audio hidl hal 6.0
-PRODUCT_PACKAGES += \
-    android.hardware.audio@6.0 \
-    android.hardware.audio.common@6.0 \
-    android.hardware.audio.common@6.0-util \
-    android.hardware.audio@6.0-impl \
-    android.hardware.audio.effect@6.0 \
-    android.hardware.audio.effect@6.0-impl
-
-# enable audio hidl hal 7.0
-ifneq ( ,$(filter U UpsideDownCake 14 V VanillaIceCream 15, $(PLATFORM_VERSION)))
-PRODUCT_PACKAGES += \
-    android.hardware.audio@7.0 \
-    android.hardware.audio.common@7.0 \
-    android.hardware.audio.common@7.0-util \
-    android.hardware.audio@7.0-impl \
-    android.hardware.audio.effect@7.0 \
-    android.hardware.audio.effect@7.0-impl
-endif
-
 PRODUCT_PACKAGES_ENG += \
     VoicePrintTest \
     VoicePrintDemo
@@ -784,5 +736,13 @@ endif
 ifeq ($(TARGET_USES_CDC_HW), true)
 include vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/cdc/audio_cdc_modules.mk
 endif
+PRODUCT_PROPERTY_OVERRIDES += \
+persist.vendor.service.bt.a2dp.sink=true
+
+PRODUCT_PROPERTY_OVERRIDES += \
+ ro.bluetooth.a2dp_offload.supported=true
+
+PRODUCT_ODM_PROPERTIES += \
+ vendor.audio.feature.a2dp_offload.enable=true
 
 endif # AUDIO_FRAMEWORK_AUDIOREACH
