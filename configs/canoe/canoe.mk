@@ -33,53 +33,19 @@ ifneq ($(strip $(TARGET_USES_RRO)), true)
 #Audio Specific device overlays
 DEVICE_PACKAGE_OVERLAYS += vendor/qcom/opensource/audio-hal/primary-hal/configs/common/overlay
 endif
-PRODUCT_PACKAGES += fai__2.7.5_0.0__3.0.0_0.0__3.1.1.0_0.0__3.2.0_0.0__eai_2.7_enpu_v3.pmd
-PRODUCT_PACKAGES += fai__4.8.2_0.0__3.0.0_0.0__3.1.1.0_0.0__3.2.0_0.0__eai_2.7_enpu_v3.pmd
-PRODUCT_PACKAGES += fai__2.6.3_0.0__3.0.0_0.0__3.1.1.0_0.0__3.2.0_0.0__eai_2.7_enpu_v3.pmd
-PRODUCT_PACKAGES += fai__2.0.0_0.1__3.0.0_0.0__3.1.0_0.0__3.2.0_0.0__eai_2.7_enpu3.pmd
-PRODUCT_PACKAGES += fai__2.6.5_0.0__3.0.0_0.0__3.1.0_0.0__3.2.0_0.0__eai_2.10_enpuv3.pmd
-PRODUCT_PACKAGES += fai__2.7.8_0.0__3.0.0_0.0__3.1.0_0.0__3.2.0_0.0__eai_2.10_enpuv3.pmd
-PRODUCT_PACKAGES += fai__4.8.3_0.0__3.0.0_0.0__3.1.0_0.0__3.2.0_0.0__eai_2.10_enpuv3.pmd
-PRODUCT_PACKAGES += fai__3.0.0_0.0__eai_2.10_enpuv3.pmd
-PRODUCT_PACKAGES += fai__2.6.5_0.0__3.0.0_0.0__3.1.1_0.0__3.2.0_0.0__eai_2.10_enpuv3.pmd
-PRODUCT_PACKAGES += fai__2.7.8_0.0__3.0.0_0.0__3.1.1_0.0__3.2.0_0.0__eai_2.10_enpuv3.pmd
-PRODUCT_PACKAGES += fai__4.8.4_0.0__3.0.0_0.0__3.1.1_0.0__3.2.0_0.0__eai_2.10_enpuv3.pmd
-PRODUCT_PACKAGES += fai__2.6.3_0.0__3.0.0_0.0__3.1.1_0.0__3.2.0_0.1__eai_2.10_enpuv3.pmd
-PRODUCT_PACKAGES += fai__2.7.5_0.0__3.0.0_0.0__3.1.1_0.0__3.2.0_0.1__eai_2.10_enpuv3.pmd
-PRODUCT_PACKAGES += fai__2.7.8_0.0__3.0.0_0.0__3.1.1_0.0__3.2.0_0.1__eai_2.10_enpuv3.pmd
-PRODUCT_PACKAGES += fai__4.8.4_0.0__3.0.0_0.0__3.1.1_0.0__3.2.0_0.1__eai_2.10_enpuv3.pmd
-PRODUCT_PACKAGES += fai__2.6.3_0.0__3.0.0_0.0__3.1.1_0.0__3.2.0_0.1__eai_3.0_enpuv4.pmd
-PRODUCT_PACKAGES += fai__2.7.5_0.0__3.0.0_0.0__3.1.1_0.0__3.2.0_0.1__eai_3.0_enpuv4.pmd
-PRODUCT_PACKAGES += fai__2.7.8_0.0__3.0.0_0.0__3.1.1_0.0__3.2.0_0.1__eai_3.0_enpuv4.pmd
-PRODUCT_PACKAGES += fai__4.8.4_0.0__3.0.0_0.0__3.1.1_0.0__3.2.0_0.1__eai_3.0_enpuv4.pmd
-PRODUCT_PACKAGES += fai__2.7.2_0.0__3.0.0_0.0__3.1.1_0.0__3.2.0_0.1__eai_3.4_enpuv4.pmd
-PRODUCT_PACKAGES += fai__2.7.6_0.0__3.0.0_0.0__3.1.1_0.0__3.2.0_0.1__eai_3.4_enpuv4.pmd
-PRODUCT_PACKAGES += fai__2.7.7_0.0__3.0.0_0.0__3.1.1_0.0__3.2.0_0.1__eai_3.4_enpuv4.pmd
-PRODUCT_PACKAGES += fai__2.9.0_1.0__3.0.0_0.0__3.1.1_0.0__3.2.0_0.1__eai_3.4_enpuv4.pmd
-PRODUCT_PACKAGES += fai__2.9.2_0.0__3.0.0_0.0__3.1.1_0.0__3.2.0_0.1__eai_3.4_enpuv4.pmd
-PRODUCT_PACKAGES += fai__4.8.4_0.0__3.0.0_0.0__3.1.1_0.0__3.2.0_0.1__eai_3.4_enpuv4.pmd
-PRODUCT_PACKAGES += fai__8.0.2_0.0__3.0.0_0.0__3.1.1_0.0__3.2.0_0.1__eai_3.4_enpuv4.pmd
-PRODUCT_PACKAGES += fai__2.9.2_1.0__3.0.0_0.0__3.1.1_0.0__3.2.0_0.0__eai_3.4_enpuv4.pmd
-PRODUCT_PACKAGES += fai__3.0.0_0.0__eai_3.4_enpuv4.pmd
-PRODUCT_PACKAGES += fai__2.7.2_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_4.2_enpuv5.pmd
-PRODUCT_PACKAGES += fai__2.9.0_1.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_4.2_enpuv5.pmd
-PRODUCT_PACKAGES += fai__2.9.2_1.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_4.2_enpuv5.pmd
-PRODUCT_PACKAGES += fai__4.8.4_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_4.2_enpuv5.pmd
-PRODUCT_PACKAGES += fai__8.0.2_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_4.2_enpuv5.pmd
-PRODUCT_PACKAGES += fai__3.0.0_0.0__eai_4.2_enpuv5.pmd
-PRODUCT_PACKAGES += fai__2.7.2_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_4.6_enpuv5.pmd
-PRODUCT_PACKAGES += fai__2.9.0_1.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_4.6_enpuv5.pmd
-PRODUCT_PACKAGES += fai__2.9.2_1.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_4.6_enpuv5.pmd
-PRODUCT_PACKAGES += fai__4.8.4_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_4.6_enpuv5.pmd
-PRODUCT_PACKAGES += fai__8.0.2_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_4.6_enpuv5.pmd
-PRODUCT_PACKAGES += fai__8.0.3_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_4.6_enpuv5.pmd
-PRODUCT_PACKAGES += fai__3.0.0_0.0__eai_4.6_enpuv5.pmd
 PRODUCT_PACKAGES += fai__2.7.2_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_5.3.0_enpuv6.pmd
 PRODUCT_PACKAGES += fai__2.9.0_1.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_5.3.0_enpuv6.pmd
 PRODUCT_PACKAGES += fai__2.9.2_1.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_5.3.0_enpuv6.pmd
 PRODUCT_PACKAGES += fai__4.8.4_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_5.3.0_enpuv6.pmd
 PRODUCT_PACKAGES += fai__8.0.2_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_5.3.0_enpuv6.pmd
 PRODUCT_PACKAGES += fai__3.0.0_0.0__eai_5.3.0_enpuv6.pmd
+PRODUCT_PACKAGES += fai__2.7.2_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_5.6.0_enpuv6.pmd
+PRODUCT_PACKAGES += fai__2.9.0_1.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_5.6.0_enpuv6.pmd
+PRODUCT_PACKAGES += fai__2.9.2_1.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_5.6.0_enpuv6.pmd
+PRODUCT_PACKAGES += fai__4.8.21_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_5.6.0_enpuv6.pmd
+PRODUCT_PACKAGES += fai__8.0.3_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_5.6.0_enpuv6.pmd
+PRODUCT_PACKAGES += fai__8.0.2_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_5.6.0_enpuv6.pmd
+PRODUCT_PACKAGES += fai__3.0.0_0.0__eai_5.6.0_enpuv6.pmd
 
 # Adding WNR Model File
 #PRODUCT_PACKAGES += wind_filter__1.0__48k__2ch__16b__eai_5.5.eai
@@ -105,11 +71,13 @@ PRODUCT_COPY_FILES += \
     $(CONFIG_PAL_SRC_DIR)/mixer_paths_canoe_atp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_canoe_atp.xml \
     $(CONFIG_PAL_SRC_DIR)/mixer_paths_canoe_cdp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_canoe_cdp.xml \
     $(CONFIG_PAL_SRC_DIR)/mixer_paths_canoe_cdp_wsa884x.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_canoe_cdp_wsa884x.xml \
+    $(CONFIG_PAL_SRC_DIR)/mixer_paths_canoe_cdp_wsa885xi2s.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_canoe_cdp_wsa885xi2s.xml \
     $(CONFIG_PAL_SRC_DIR)/mixer_paths_canoe_qrd.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_canoe_qrd.xml \
     $(CONFIG_PAL_SRC_DIR)/mixer_paths_canoe_qrd_wsa884x.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_canoe_qrd_wsa884x.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_canoe_atp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_canoe_atp.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_canoe_cdp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_canoe_cdp.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_canoe_cdp_wsa884x.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_canoe_cdp_wsa884x.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_canoe_cdp_wsa885xi2s.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_canoe_cdp_wsa885xi2s.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_canoe_mtp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_canoe_mtp.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_canoe_mtp_qmp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_canoe_mtp_qmp.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_canoe_mtp_wsa884x.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_canoe_mtp_wsa884x.xml \

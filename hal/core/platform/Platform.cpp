@@ -1303,7 +1303,8 @@ PlaybackRateStatus Platform::setPlaybackRate(
 }
 
 int Platform::getRecommendedLatencyModes(
-          std::vector<::aidl::android::media::audio::common::AudioLatencyMode>* _aidl_return) {
+          std::vector<::aidl::android::media::audio::common::AudioLatencyMode>* _aidl_return,
+          pal_device_id_t dev_id) {
 
      size_t size;
      int ret = 0;
@@ -1313,7 +1314,7 @@ int Platform::getRecommendedLatencyModes(
          return -ENOMEM;
      }
 
-     palLatencyModeInfo->dev_id = PAL_DEVICE_OUT_BLUETOOTH_A2DP;
+     palLatencyModeInfo->dev_id = dev_id;
      palLatencyModeInfo->num_modes = PAL_MAX_LATENCY_MODES;
      void *palLatencyModeInfoPtr = palLatencyModeInfo.get();
 
@@ -1470,7 +1471,7 @@ void Platform::updateHotwordPortConfig(
     }
 }
 
-int Platform::setLatencyMode(uint32_t mode) {
+int Platform::setLatencyMode(uint32_t mode, pal_device_id_t dev_id) {
 
      int ret = 0;
      auto palLatencyModeInfo = std::make_unique<pal_param_latency_mode_t>();
@@ -1479,7 +1480,7 @@ int Platform::setLatencyMode(uint32_t mode) {
          return -ENOMEM;
      }
 
-     palLatencyModeInfo->dev_id = PAL_DEVICE_OUT_BLUETOOTH_A2DP;
+     palLatencyModeInfo->dev_id = dev_id;
      palLatencyModeInfo->num_modes = 1;
      palLatencyModeInfo->modes[0] = (uint32_t)mode;
 
