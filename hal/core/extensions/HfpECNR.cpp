@@ -20,6 +20,7 @@
 
 #include <pthread.h>
 #include <extensions/hal_ecnr.h>
+#include <extensions/AudioVolume.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -519,11 +520,10 @@ static int32_t hfp_set_volume(float value) {
     struct pal_volume_data *pal_volume = NULL;
 
     LOG(VERBOSE) << __func__ << " entry";
-    //Volume Conversion to MB, AWX module supports only MB
-    value = MIN_VOLUME_GAIN_MB + (MAX_VOLUME_RANGE * value);
 
-    hfpmod.hfp_volume = value;
+    hfpmod.hfp_volume = ::qti::audio::oem::volume::AudioVolume::getInstance().getNearestAttenuation(value,UNMUTABLE_VOL_CURVE);
 
+    LOG(DEBUG) << __func__ << " VALUE" << hfpmod.hfp_volume;
     if (!hfpmod.is_hfp_running) {
         LOG(VERBOSE) << __func__ << " HFP not active, ignoring set_hfp_volume call";
         return -EIO;
