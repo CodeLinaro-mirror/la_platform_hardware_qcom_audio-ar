@@ -279,9 +279,12 @@ void Telephony::setDevices(const std::vector<AudioDevice>& devices, const bool u
         if (isAnyCallActive() &&
             (mTxDevice.type.type != devices[0].type.type)) {
             if (isUsbDevice(devices[0]) && isUsbDevice(mRxDevice)) {
-                if (isUsbDeviceConnected(devices[0]))
-                    mTxDevice = devices[0];
+                if (!isUsbDeviceConnected(devices[0])) {
+                    LOG(DEBUG) << __func__ << ": usb_tx is not connected ";
+                    return;
+                }
             }
+            mTxDevice = devices[0];
             updateDevices();
        }
     }
