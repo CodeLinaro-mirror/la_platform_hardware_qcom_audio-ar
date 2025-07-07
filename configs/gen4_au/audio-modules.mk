@@ -94,6 +94,9 @@ endif
 AUDIO_MODULES += $(AUDIO_PAL)
 AUDIO_MODULES += $(AUDIO_ACDB)
 
+# Qti GEF AR
+AUDIO_MODULES += libqtigefar
+
 # AWE PAL PLUGIN and dependency packages
 ifneq (,$(filter gen4_gvm_gy gen5_gvm gen5_gvm_gy, $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)))
 AUDIO_AWE += libsession_awe
