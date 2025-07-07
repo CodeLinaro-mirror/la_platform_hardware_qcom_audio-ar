@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -105,6 +105,9 @@ StreamOutPrimary::StreamOutPrimary(StreamContext&& context, const SourceMetadata
     }
 
     mHwVolumeSupported = isHwVolumeSupported();
+    mHwPauseSupported = isHwPauseSupported();
+    mHwFlushSupported = isHwFlushSupported();
+    LOG(VERBOSE) << __func__ << " Hwpause: " << mHwPauseSupported << " HwFlush: " << mHwFlushSupported;
     mVolumes.resize(getChannelCount(mMixPortConfig.channelMask.value()));
     int i,channel = mVolumes.size();
     for ( i = 1; i < channel; i++ )
@@ -139,6 +142,31 @@ bool StreamOutPrimary::isHwVolumeSupported() {
     }
     return false;
 }
+
+
+bool StreamOutPrimary::isHwPauseSupported() {
+    switch (mTag) {
+        case Usecase::COMPRESS_OFFLOAD_PLAYBACK:
+        case Usecase::PCM_OFFLOAD_PLAYBACK:
+            return true;
+        default:
+            break;
+    }
+    return false;
+}
+
+
+bool StreamOutPrimary::isHwFlushSupported() {
+    switch (mTag) {
+        case Usecase::COMPRESS_OFFLOAD_PLAYBACK:
+        case Usecase::PCM_OFFLOAD_PLAYBACK:
+            return true;
+        default:
+            break;
+    }
+    return false;
+}
+
 
 struct BufferConfig StreamOutPrimary::getBufferConfig() {
     return mPlatform.getBufferConfig(mMixPortConfig, mTag);
@@ -304,7 +332,7 @@ ndk::ScopedAStatus StreamOutPrimary::configureMMapStream(int32_t* fd, int64_t* b
     }
 
     if (!mHwFlushSupported) {
-        LOG(VERBOSE) << __func__ << mLogPrefix << " unsupported operation!!, Hence ignored";
+        LOG(DEBUG) << __func__ << mLogPrefix << " unsupported operation!!, Hence ignored";
         return ::android::OK;
     }
 
@@ -316,12 +344,16 @@ ndk::ScopedAStatus StreamOutPrimary::configureMMapStream(int32_t* fd, int64_t* b
     } else if (mTag == Usecase::PCM_OFFLOAD_PLAYBACK) {
         std::get<PcmOffloadPlayback>(mExt).getPositionInFrames(mPalHandle);
     }
-
-    if (int32_t ret = ::pal_stream_flush(mPalHandle); ret) {
+    int32_t ret = 0;
+    /* during a seek operation when the seekbar is moved to a new
+    time stamp the existing buffer must be flushed and new or latest audio frame must
+    be sent into the buffer to, remove the older seekbar position data remove the current data
+    using pal_stream_flush */
+    if (ret = ::pal_stream_flush(mPalHandle); ret) {
         LOG(ERROR) << __func__ << mLogPrefix << " failed to flush the stream, ret:" << ret;
         return ret;
     }
-
+    LOG(VERBOSE) << " pal_stream_flush: status: " << ret;
     // after flush operation
     if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK) {
         std::get<CompressPlayback>(mExt).onFlush();
@@ -344,8 +376,10 @@ ndk::ScopedAStatus StreamOutPrimary::configureMMapStream(int32_t* fd, int64_t* b
     }
 
     if (!mHwPauseSupported) {
-        LOG(VERBOSE) << __func__ << mLogPrefix << " unsupported operation!!, Hence ignored";
+        LOG(DEBUG) << __func__ << mLogPrefix << " unsupported operation!!, Hence ignored";
         return ::android::OK;
+    }  else {
+        LOG(DEBUG) << " Hw pause support: " << mHwPauseSupported;
     }
     // AAUdio/mmap triggres stop for pause, so we can ignore here
     if (mTag == Usecase::LOW_LATENCY_PLAYBACK || mTag == Usecase::ULL_PLAYBACK ||
@@ -353,14 +387,14 @@ ndk::ScopedAStatus StreamOutPrimary::configureMMapStream(int32_t* fd, int64_t* b
         LOG(VERBOSE) << __func__ << mLogPrefix << " unsupported operation!!, Hence ignored";
         return ::android::OK;
     }
-
-    if (int32_t ret = pal_stream_pause(mPalHandle); ret) {
+    int32_t ret = 0;
+    if (ret = pal_stream_pause(mPalHandle); ret) {
         LOG(ERROR) << __func__ << mLogPrefix
                    << " failed to pause the stream, ret:" << std::to_string(ret);
         return ret;
     }
     mIsPaused = true;
-    LOG(DEBUG) << __func__ << mLogPrefix;
+    LOG(DEBUG) << __func__ << mLogPrefix << " pal_stream_pause: status: " << ret;
     return ::android::OK;
 }
 
