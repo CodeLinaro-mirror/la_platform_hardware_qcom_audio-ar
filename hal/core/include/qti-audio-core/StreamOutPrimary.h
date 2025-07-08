@@ -184,6 +184,7 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     int64_t GetSourceLatency();
   private:
     int32_t outFlags;
+    std::mutex mPalHandleMutex;   /* mutex for palhandle */
     std::string mLogPrefix = "";
     bool isHwVolumeSupported();
     bool isHwFlushSupported();

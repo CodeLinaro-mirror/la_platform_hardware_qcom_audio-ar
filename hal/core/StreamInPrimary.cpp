@@ -950,10 +950,11 @@ void StreamInPrimary::applyEffects() {
 
 void StreamInPrimary::shutdown_I() {
     LOG(DEBUG) << __func__ << mLogPrefix;
-
     if (mTag == Usecase::MMAP_RECORD) {
         std::get<MMapRecord>(mExt).setPalHandle(nullptr);
     }
+    mPalHandleMutex.lock();
+    LOG(DEBUG) << " stream handle: " << mPalHandle;
     mEffectsApplied = true;
     if (mPalHandle != nullptr) {
         if (mTag == Usecase::HOTWORD_RECORD) {
@@ -964,6 +965,7 @@ void StreamInPrimary::shutdown_I() {
         }
     }
     mPalHandle = nullptr;
+    mPalHandleMutex.unlock();
 }
 
 ::android::status_t StreamInPrimary::burstZero() {
