@@ -193,6 +193,7 @@ AUDIO_MODULES += libvui_utils
 AUDIO_MODULES += libVoiceSdk
 AUDIO_MODULES += libtensorflowlite_c
 AUDIO_MODULES += libqasr
+AUDIO_MODULES += qasr_vintf.xml
 
 AUDIO_MODULES += $(AUDIO_AGM)
 AUDIO_MODULES += $(AUDIO_PAL)
@@ -206,7 +207,8 @@ AUDIO_MODULES += libsoundtriggerhal.qti
 AUDIO_MODULES += \
     liblistensoundmodelaidl \
     liblistensoundmodel2vendor \
-    vendor.qti.hardware.ListenSoundModelAidl-V1-ndk.vendor
+    vendor.qti.hardware.ListenSoundModelAidl-V1-ndk.vendor \
+    Manifest_IListenSoundModel.xml
 
 # AIDL Audio modules
 
