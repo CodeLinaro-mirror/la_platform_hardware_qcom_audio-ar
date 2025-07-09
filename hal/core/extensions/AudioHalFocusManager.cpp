@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
+* Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 * SPDX-License-Identifier: BSD-3-Clause-Clear
 */
 
@@ -476,6 +476,26 @@ namespace qti::audio::core {
         }
     }
 
+    void AudioFocusService::getAllActiveReasons(std::vector<Reasons> &activeReasons) {
+        for (auto &entry: registeredStreams) {
+            auto focusId = entry.first;
+            auto duckFocusIds = entry.second;
+            if (!duckFocusIds.empty()) {
+                for (auto duckFocusId : duckFocusIds) {
+                    auto usage = registeredFocusCallbacks[duckFocusId].usage;
+                    auto muteOrderType = registeredFocusCallbacks[duckFocusId].muteOrderType;
+                    if (reasonsMap.count(usage) && reasonsMap[usage].count(muteOrderType)) {
+                        auto reason = reasonsMap[usage][muteOrderType];
+                        if (std::count(activeReasons.begin(), activeReasons.end(), reason) == 0) {
+                            activeReasons.push_back(reason);
+                        }
+                    }
+                }
+            }
+        }
+        return;
+    }
+
     void AudioFocusService::reportGainChanges() {
         std::vector<Reasons> duckReasons;
         std::vector<AudioGainConfigInfo> duckAgcis;
@@ -535,6 +555,12 @@ namespace qti::audio::core {
                 if (duckReasons.empty()) {
                     restoreMediaCachedVolume();
                 } else {
+                    {//handle thermal case
+                        if (std::count(duckReasons.begin(), duckReasons.end(), Reasons::THERMAL_LIMITATION)) {
+                            duckReasons.clear();
+                            getAllActiveReasons(duckReasons);
+                        }
+                    }
                     cacheMediaVolume();
                     syncVolumeChanges();
                 }
@@ -566,7 +592,8 @@ namespace qti::audio::core {
 
         auto activeFocusInfo = registeredFocusCallbacks[focusId];
         auto address = activeFocusInfo.device.address.get<AudioDeviceAddress::Tag::id>();
-        float mostCriticalGain = activeFocusInfo.gain, gain;
+        float mostCriticalGain = 0.0;
+        float gain;
         std::unordered_set<Reasons> reasons;
 
         if (address.empty()) {
@@ -627,6 +654,7 @@ namespace qti::audio::core {
         return false;
     }
 
+
     bool AudioFocusService::isAudioOnMediaBus(int64_t focusId) {
         auto &focusInfo = registeredFocusCallbacks[focusId];
         if (auto address = focusInfo.device.address.get<AudioDeviceAddress::Tag::id>();
@@ -659,6 +687,7 @@ namespace qti::audio::core {
         for (auto itr = duckFocusIds.begin(); itr != duckFocusIds.end();) {
                 auto &focusInfo = registeredFocusCallbacks[*itr];
             if (nonBlockingReasons(focusInfo.usage, focusInfo.muteOrderType)) {
+                LOG(INFO) << "Resetting ADAS_DUCKING";
                 itr = duckFocusIds.erase(itr);
                 populateReasonsnGains(mediaFocusId);
             } else {
@@ -715,10 +744,7 @@ namespace qti::audio::core {
         return false;
     }
 
-    void AudioFocusService::reportThermalReason(int64_t thermalFocusId, int64_t curFocusId) {
-        auto curIndex = getNearestIndex(registeredFocusCallbacks[curFocusId].gain);
-        auto index = getNearestIndex(registeredFocusCallbacks[thermalFocusId].gain);
-        if (curIndex >= index) {
+    void AudioFocusService::reportThermalReason(int64_t thermalFocusId, int32_t index) {
             //thermal was the one ducking the system currently, thermal's at same index
             //let's set persistent volume to thermal itself and report it.
             LOG(INFO) << "report device gain changed";
@@ -739,8 +765,10 @@ namespace qti::audio::core {
                         LOG(INFO) << "Synced duckVolume for focusID " << focusId;
                     }
                 }
-                auto ret = audioControlService->reportAudioDeviceGainChanged({Reasons::EXTERNAL_AMP_VOL_FEEDBACK},
-                                                                            {agci});
+            std::vector<Reasons> activeReasons;
+            getAllActiveReasons(activeReasons); //thermal should also captured with this call
+            activeReasons.insert(activeReasons.end(), {Reasons::EXTERNAL_AMP_VOL_FEEDBACK});
+            auto ret = audioControlService->reportAudioDeviceGainChanged(activeReasons, {agci});
                 if (!ret.isOk()) {
                     LOG(ERROR) << __func__ << ": Unable to report audio gain changed ";
                     return;
@@ -749,7 +777,6 @@ namespace qti::audio::core {
                 }
             } else {
                 LOG(ERROR) << "Faild to report device gain change";
-            }
         }
     }
 
@@ -826,9 +853,6 @@ namespace qti::audio::core {
                 auto curFocusId = entry.first;
                 if (duckFocusIds.find(focusId) != duckFocusIds.end()) {
                     duckFocusIds.erase(focusId);
-                    if (isThermalFocusId(focusId)) {
-                        reportThermalReason(focusId, curFocusId);
-                    }
                     populateReasonsnGains(curFocusId);
                 } else if (duckFocusIds.size() > 0) {
                     populateReasonsnGains(curFocusId);
@@ -849,9 +873,34 @@ namespace qti::audio::core {
         return;
     }
 
+    //TODO: handle for cases with external gain
     void AudioFocusService::handleVolumeChange(int64_t focusId, float gain, bool isExternalGain) {
         auto incomingGainIndex = getNearestIndex(gain);
         auto curGainIndex = getNearestIndex(registeredFocusCallbacks[focusId].gain);
+        //check if incoming request is audio over MEDIA bus
+        if (isAudioOnMediaBus(focusId)) {
+            //thermal update needed always when volume change happens
+            if (incomingGainIndex != curGainIndex) {
+                resetNonBlockingReasons(focusId);
+                reportGainChanges();
+            }
+
+            if (registeredStreams.count(focusId)) { //loop through active focus sessions for streams
+                auto &duckFocusIds = registeredStreams[focusId];
+                for (auto focusIdEntry: duckFocusIds) {
+                    if (isThermalFocusId(focusIdEntry)) {
+                        auto thermalGainIndex = getNearestIndex(registeredFocusCallbacks[focusIdEntry].gain);
+                        if (incomingGainIndex >= thermalGainIndex) { //strictly higher should never happen
+                            reportThermalReason(focusIdEntry, thermalGainIndex);
+                            return;
+                        }
+                    }
+                }
+            } else {
+                LOG(ERROR) << "Volume change on focusId that's not registered";
+                return;
+            }
+        }
         if (incomingGainIndex == curGainIndex &&
             registeredFocusCallbacks[focusId].isExternalGain == isExternalGain) {
                 return;
@@ -860,23 +909,6 @@ namespace qti::audio::core {
         registeredFocusCallbacks[focusId].isExternalGain = isExternalGain;
         LOG(INFO) << "Volume updated for focus ID " << focusId;
         resetCachedMediaVolume();
-        auto &duckFocusIds = registeredStreams[focusId];
-        //no need to recompute, since focus doesn't change
-        if (duckFocusIds.size() == 0) {
-            return;
-        }
-
-        //check if incoming request is audio over MEDIA bus
-        if (isAudioOnMediaBus(focusId)) {
-            resetNonBlockingReasons(focusId);
-        }
-        for (auto entry: registeredStreams) { //loop through active focus sessions for streams
-            auto activeFocusId = entry.first;
-            if (registeredStreams[activeFocusId].size()) {
-                populateReasonsnGains(activeFocusId);
-            }
-        }
-        reportGainChanges();
         return;
     }
 
