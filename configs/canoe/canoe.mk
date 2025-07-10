@@ -83,6 +83,11 @@ PRODUCT_COPY_FILES += \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_canoe_mtp_wsa884x.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_canoe_mtp_wsa884x.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_canoe_qrd.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_canoe_qrd.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_canoe_qrd_wsa884x.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_canoe_qrd_wsa884x.xml \
+    $(CONFIG_PAL_SRC_DIR)/mcs_defs_canoe_cdp_wsa885xi2s.xml:$(CONFIG_SKU_OUT_DIR)/mcs_defs_canoe_cdp_wsa885xi2s.xml \
+    $(CONFIG_PAL_SRC_DIR)/mcs_defs_canoe_mtp.xml:$(CONFIG_SKU_OUT_DIR)/mcs_defs_canoe_mtp.xml \
+    $(CONFIG_PAL_SRC_DIR)/mcs_defs_canoe_mtp_wsa884x.xml:$(CONFIG_SKU_OUT_DIR)/mcs_defs_canoe_mtp_wsa884x.xml \
+    $(CONFIG_PAL_SRC_DIR)/mcs_defs_canoe_qrd.xml:$(CONFIG_SKU_OUT_DIR)/mcs_defs_canoe_qrd.xml \
+    $(CONFIG_PAL_SRC_DIR)/mcs_defs_canoe_qrd_wsa884x.xml:$(CONFIG_SKU_OUT_DIR)/mcs_defs_canoe_qrd_wsa884x.xml \
     $(CONFIG_PAL_SRC_DIR)/usecaseKvManager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usecaseKvManager.xml \
     $(CONFIG_PAL_SRC_DIR)/Hapticsconfig.xml:$(TARGET_COPY_OUT_VENDOR)/etc/Hapticsconfig.xml \
     $(CONFIG_PAL_SRC_DIR)/plugin_manager.xml:$(CONFIG_SKU_OUT_DIR)/plugin_manager.xml \
