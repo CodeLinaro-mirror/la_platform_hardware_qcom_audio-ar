@@ -298,7 +298,6 @@ class ModulePrimary final : public Module {
     std::vector<AudioGainConfigInfo> getAudioGainConfigsForSinks();
 #endif
   protected:
-    bool mVolumeGaincheck=false;
     const SetParameterToFeatureMap mSetParameterToFeatureMap{fillSetParameterToFeatureMap()};
     const FeatureToSetHandlerMap mFeatureToSetHandlerMap{fillFeatureToSetHandlerMap()};
     const GetParameterToFeatureMap mGetParameterToFeatureMap{fillGetParameterToFeatureMap()};
@@ -315,7 +314,6 @@ class ModulePrimary final : public Module {
             const ::aidl::android::hardware::audio::core::VendorParameter&);
     static std::unordered_map<std::string, FocusSession> mActiveFocusDevices;
 #endif
-    const std::string mGainVolumecheckProperty{"vendor.audio.feature.oemgainconversion.enable"};
     bool mOffloadSpeedSupported;
 };
 
