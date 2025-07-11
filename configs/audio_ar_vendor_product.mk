@@ -8,6 +8,7 @@ endif
 ifeq ($(TARGET_USES_AUDIOLITE),true)
 AUDIO_USE_STUB_HAL := true
 endif #ends TARGET_USES_AUDIOLITE
+AUDIO_USES_AR_AWE := false
 
 # MM_AUDIO_AR
 ifeq ($(TARGET_GVMGH_SPECIFIC), false)
@@ -47,6 +48,7 @@ MM_AUDIO_AR += libicc_pal
 MM_AUDIO_AR += libqcompostprocbundle.ar
 MM_AUDIO_AR += libqcomvisualizer.ar
 MM_AUDIO_AR += libqcomvoiceprocessing.ar
+MM_AUDIO_AR += libawe_pal
 
 ifeq ($(ENABLE_HYP), false)
 ifeq ($(TARGET_GVMGH_SPECIFIC), false)
