@@ -73,6 +73,7 @@ class StreamInPrimary : public StreamIn, public StreamCommonImpl {
     static std::mutex sinkMetadata_mutex_;
     void checkHearingAidRoutingForVoice(const Metadata& metadata, bool voiceActive);
     int64_t GetSourceLatency();
+    bool get_hw_ts_enable();
 
   protected:
     /*

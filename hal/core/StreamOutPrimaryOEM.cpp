@@ -108,6 +108,12 @@ void StreamOutPrimaryOEM::shutdown() {
 ::android::status_t StreamOutPrimaryOEM::transfer(void* buffer, size_t frameCount,
                                                size_t* actualFrameCount, int32_t* latencyMs) {
 
+    uint64_t signed_frames = 0;
+    uint64_t written_frames = 0;
+    uint64_t kernel_frames = 0;
+    uint64_t dsp_frames = 0;
+    uint64_t bt_extra_frames = 0;
+    uint64_t kernel_buffer_size = 0;
     int ret = 0 ;
     if (!mPalHandle) {
         // configure on first transfer or after stand by
@@ -299,6 +305,18 @@ write_without_process:
 skip_write :
 #endif
         *actualFrameCount = frameCount;
+        /* This adjustment accounts for buffering after app processor
+        * It is based on estimated DSP latency per use case, rather than exact.
+        */
+
+        dsp_frames = StreamOutPrimary::GetRenderLatency(getAddress()) * (getStreamContext().getSampleRate()) / 1000000LL;
+        mBytesWritten += bytesWritten;
+        struct BufferConfig BufferConfig_ = getBufferConfigOEM();
+        written_frames = mBytesWritten / mFrameSizeBytes;
+        kernel_buffer_size = BufferConfig_.bufferSize * BufferConfig_.bufferCount;
+        kernel_frames = kernel_buffer_size / mFrameSizeBytes;
+        if (written_frames >= (kernel_frames + dsp_frames))
+            signed_frames = written_frames - (kernel_frames + dsp_frames);
 #ifdef VERY_VERBOSE_LOGGING
         LOG(VERBOSE) << __func__ << mLogPrefixOEM << ": byteswritten: " << bytesWritten;
 #endif
@@ -309,6 +327,10 @@ skip_write :
             const auto& btlatencyMs = mPlatform.getBluetoothLatencyMs(mConnectedDevices);
             *latencyMs += btlatencyMs;
         }
+#ifdef VERY_VERBOSE_LOGGING
+        LOG(DEBUG) << "signed frames " << signed_frames << " written frames "<< written_frames
+        << " kernel frames " << kernel_frames << " dsp frames " << dsp_frames;
+#endif
     }
     return ::android::OK;
 }

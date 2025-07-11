@@ -346,11 +346,15 @@ void StreamInPrimary::resume() {
     std::this_thread::sleep_for(std::chrono::milliseconds((sleepFrameCount * 1000) / sampleRate));
     return ::android::OK;
 }
-
+bool StreamInPrimary::get_hw_ts_enable() {
+    hw_ts_enable = property_get_bool("persist.vendor.audio.hw_ts_enable",false);
+    return hw_ts_enable;
+}
 int64_t StreamInPrimary::GetSourceLatency() {
     auto attr = mPlatform.getPalStreamAttributes(mMixPortConfig, true);
     switch (attr->type) {
         case PAL_STREAM_DEEP_BUFFER:
+        case PAL_STREAM_CAPTURE_BUS:
             return DEEP_BUFFER_PLATFORM_CAPTURE_DELAY;
         case PAL_STREAM_LOW_LATENCY:
             return LOW_LATENCY_PLATFORM_CAPTURE_DELAY;
