@@ -4,7 +4,7 @@ $(warning use audio in stub mode)
 
 # AudioPolicyConfigs
 APM_CONFIG_SRC_PATH := frameworks/av/services/audiopolicy/config
-ifeq ($(call is-board-platform-in-list, vienna), true)
+ifeq ($(TARGET_BOARD_PLATFORM), vienna)
 APM_CONFIG_DST_PATH := $(TARGET_COPY_OUT_VENDOR)/etc
 else
 APM_CONFIG_DST_PATH := $(TARGET_COPY_OUT_VENDOR)/etc/audio

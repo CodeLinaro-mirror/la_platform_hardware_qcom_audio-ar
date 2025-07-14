@@ -10,6 +10,8 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
     -->
     <library name = "agmservice" libraryName="libagmipcservice.so"
             method="registerService" mandatory="true"/>
+    <library name = "codecservice" libraryName="libcodecipcservice.so"
+            method="registerCodecIpcService" mandatory="true"/>
     <library name = "palservice" libraryName="libpalipcservice.so"
             method="registerService" mandatory="true"/>
     <library name = "paleventnotifierservice" libraryName="libpaleventnotifier.so"
