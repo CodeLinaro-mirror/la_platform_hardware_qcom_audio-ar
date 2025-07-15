@@ -682,7 +682,12 @@ LOCAL_SHARED_LIBRARIES := \
     alliance.hardware.automotive.audiocontrol.internal-V2-ndk \
     android.hardware.audio.core.sounddose-V1-ndk \
     android.hardware.automotive.audiocontrol-V4-ndk \
-    ampere.hardware.interfaces.automotive.audioparameterparser-V1-ndk
+    ampere.hardware.interfaces.automotive.audioparameterparser-V1-ndk \
+    android.hardware.automotive.vehicle-V4-ndk \
+    android.hardware.automotive.vehicle@2.0 \
+    VehicleHalUtils \
+    android-automotive-large-parcelable-lib \
+    android.hardware.automotive.vehicle.property-V3-ndk
 
 LOCAL_HEADER_LIBRARIES :=  \
     libaudio_system_headers \

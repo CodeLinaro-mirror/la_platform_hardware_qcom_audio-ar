@@ -55,6 +55,7 @@ enum FocusCommand{
     REQUEST_FOCUS = 0,
     ABANDON_FOCUS,
     UPDATE_VOLUME,
+    UPDATE_FOCUS_REQUEST,
     EXIT,
 };
 
@@ -139,9 +140,11 @@ class AudioFocusService {
         void handleFocusRequest(int64_t focusId);
         void handleFocusAbandon(int64_t focusId);
         void handleVolumeChange(int64_t focusId, float gain, bool isExternalGain);
+        void handleUpdateFocusRequest();
         int32_t requestFocus(const FocusInfo focusInfo, int64_t* focusId);
         int32_t abandonFocus(const int64_t focusId);
         int32_t updateVolume(const int64_t focusId, const float gain, const bool isExternalGain);
+        int32_t updateFocusRequest(const int64_t focusId, float gain);
         int32_t getNearestIndex(int32_t gain);
         static const std::unordered_map<std::string,
             std::unordered_map<std::string, StreamType>> usageMap;
