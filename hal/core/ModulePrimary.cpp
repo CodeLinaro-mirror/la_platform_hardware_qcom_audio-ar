@@ -124,7 +124,7 @@ std::vector<float> qti::audio::core::MuteConfig::getVol = {-3600.0f, -3600.0f};
 
 std::mutex ModulePrimary::outListMutex;
 std::mutex ModulePrimary::inListMutex;
-
+#define MEDIA_BUS "BUS00_MEDIA"
 ndk::ScopedAStatus qti::audio::core::ModulePrimary::setAudioPortConfig(const ::aidl::android::media::audio::common::AudioPortConfig& in_requested,::aidl::android::media::audio::common::AudioPortConfig* out_suggested,bool* _aidl_return)
 {
     int list_id,Requsted_id;
@@ -147,6 +147,11 @@ ndk::ScopedAStatus qti::audio::core::ModulePrimary::setAudioPortConfig(const ::a
                      devicePort.device.type.connection.empty())) {
                 if (auto address = devicePort.device.address.get<AudioDeviceAddress::Tag::id>();
                         !address.empty()) {
+                    //update thermal derating algo of latest volume
+                    //TODO: Elimnate hard dependency on MEDIA_BUS
+                    if (address == MEDIA_BUS) {
+                        mAudExt.mAAutoVhalPriorityExtension->setMediaGain(volume);
+                    }
                     setUpPriorityFocus();
                     if (mActiveFocusDevices.find(address) != mActiveFocusDevices.end()) {
                         mAudExt.mAutoAudioHalPriorityExtension->updateVolume(mActiveFocusDevices[address].FocusId, volume, false /*internal volume change*/);

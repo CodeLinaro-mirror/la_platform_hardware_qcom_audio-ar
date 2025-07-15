@@ -696,6 +696,18 @@ namespace qti::audio::core {
         }
         return;
     }
+
+    void AudioFocusService::handleUpdateFocusRequest() {
+        std::unordered_set<int64_t> duckFocusIds;
+        for (auto entry: registeredStreams) { //loop through active focus sessions for streams
+            auto activeFocusId = entry.first;
+            if (registeredStreams[activeFocusId].size()) {
+                populateReasonsnGains(activeFocusId);
+            }
+        }
+        reportGainChanges();
+    }
+
     void AudioFocusService::handleFocusRequest(int64_t focusId) {
         //set ramp params
         auto mPalHandle = registeredFocusCallbacks[focusId].mPalHandle;
@@ -944,6 +956,10 @@ namespace qti::audio::core {
                     case FocusCommand::UPDATE_VOLUME:
                         LOG(INFO) << "Volume updated for: " << focusId;
                         focusService->handleVolumeChange(focusId, gain, isExternalGain);
+                        break;
+                    case FocusCommand::UPDATE_FOCUS_REQUEST:
+                        LOG(INFO) << "Update Focus Requested for: " << focusId;
+                        focusService->handleUpdateFocusRequest();
                         break;
                     case FocusCommand::EXIT:
                         LOG(INFO) << "Exiting focus thread";
@@ -1194,7 +1210,21 @@ namespace qti::audio::core {
         cv.notify_one();
         return 0;
     }
+    int32_t AudioFocusService::updateFocusRequest(const int64_t focusId, float gain){
 
+        {
+            std::lock_guard<std::mutex> _lock(mtx);
+            if (registeredFocusCallbacks.count(focusId)) {
+                registeredFocusCallbacks[focusId].gain = gain;
+            } else {
+                LOG(ERROR) << "focusId : " << focusId << " Invalid";
+                return -1;
+            }
+            focusQueue.push(FocusAction(FocusCommand::UPDATE_FOCUS_REQUEST, focusId));
+        }
+        cv.notify_one();
+        return 0;
+    }
 
     extern "C" __attribute__((visibility("default")))
     int32_t requestFocus(const FocusInfo focusInfo, int64_t* focusId)  {
@@ -1225,6 +1255,16 @@ namespace qti::audio::core {
         }
         return AudioFocusService::getFocusServiceInstance()
                             .abandonFocus(focusId);
+    }
+
+    extern "C" __attribute__((visibility("default")))
+    int32_t updateFocusRequest(const int64_t focusId, float gain){
+        if (focusId < 0) {
+            LOG(INFO) << "Invalid focus Id" << focusId;
+            return -1;
+        }
+        return AudioFocusService::getFocusServiceInstance()
+                            .updateFocusRequest(focusId, gain);
     }
 
 }

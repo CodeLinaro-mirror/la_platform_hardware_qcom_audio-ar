@@ -37,6 +37,22 @@
 #include "include/extensions/AudioConfig.h"
 
 #include <cstdlib>
+#include <aidl/android/hardware/automotive/vehicle/BnVehicleCallback.h>
+#include <aidl/android/hardware/automotive/vehicle/IVehicleCallback.h>
+
+#include <aidl/android/hardware/automotive/vehicle/IVehicle.h>
+#include <aidl/android/hardware/automotive/vehicle/SetValueRequest.h>
+#include <aidl/android/hardware/automotive/vehicle/SetValueRequests.h>
+
+#include <aidl/android/hardware/automotive/vehicle/GetValueRequest.h>
+#include <aidl/android/hardware/automotive/vehicle/SetValueRequests.h>
+
+#include <aidl/android/hardware/automotive/vehicle/SetValueResults.h>
+#include <aidl/android/hardware/automotive/vehicle/GetValueResults.h>
+#include <aidl/android/hardware/automotive/vehicle/StatusCode.h>
+#include <LargeParcelableBase.h>
+#include <chrono>
+#include <thread>
 
 #define MIN_NIGHT_MODE 0
 #define MAX_NIGHT_MODE 1
@@ -47,6 +63,7 @@
 #define DEFAULT_GAIN_VALUE -4000
 #define MIN_THERMAL_VALUE 0
 #define MAX_THERMAL_VALUE 120
+#define DP_TO_MDB 100
 // Define the macro for the Priority Focus library name
 #define PRIORITY_LIB "libaudiohalpriorityextn.so"
 
@@ -61,6 +78,10 @@ using ::android::frameworks::automotive::vhal::IHalPropValue;
 using ::aidl::android::hardware::automotive::vehicle::RawPropValues;
 using aidl::android::media::audio::common::AudioDeviceType;
 using namespace ::qti::audio::oem::config;
+
+std::shared_ptr<aidl::android::hardware::automotive::vehicle::IVehicle> mVhal;
+using ::aidl::android::hardware::automotive::vehicle::IVehicle;
+using ::android::automotive::car_binder_lib::LargeParcelableBase;
 
 #ifdef ENABLE_VHAL_TEST_WITH_KITCHENSINK
 const int32_t ThermalPropertyId = 356517121; //VehicleProperty::HVAC_FAN_DIRECTION
@@ -88,6 +109,86 @@ const int32_t RearRightDoorPropertyId = 322964416;
 
 void* FocusHandler::mHandle = nullptr;
 std::map< std::string, std::vector<int64_t>> FocusHandler::focusIdMap;
+FocusHandler g_focusHandler(PRIORITY_LIB);
+
+std::mutex mtx, vhalCallbackMutex;
+std::condition_variable cv, cvTemp;
+bool isDeratingEnabled = false;
+bool isTemperatureInfoAvailable = false;
+static qti::audio::core::FocusSession focusSessionInfo;
+static float mediaGain = 0.0;
+
+//to be set by HAL as part of any volume update
+extern "C" __attribute__((visibility("default"))) void setMediaGain(float gain) {
+    mediaGain = gain;
+    return;
+}
+
+float getCurrentMediaGain() {
+    return mediaGain;
+}
+static int uuid = 0;
+std::shared_ptr<IVehicle> getVhalService() {
+    if (mVhal == nullptr) {
+        std::string serviceName =
+                std::string().append(IVehicle::descriptor).append("/default");
+
+        if (!AServiceManager_isDeclared(serviceName.c_str())) {
+            LOG(ERROR) <<"IVehicle not declared, exiting";
+            return nullptr;
+        }
+
+        AIBinder* binder = AServiceManager_waitForService(serviceName.c_str());
+        if (binder != nullptr) {
+            ndk::SpAIBinder spBinder(binder);
+            std::shared_ptr<IVehicle> service =
+                                IVehicle::fromBinder(spBinder);
+            if (service != nullptr) {
+                mVhal = service;
+                LOG(INFO) << "Connected to IVehicle service";
+            } else {
+                LOG(ERROR) << "Can't connect to IVehicle service";
+            }
+        } else {
+            LOG(ERROR) << "Failed to get service handle for " << serviceName;
+        }
+    }
+    return mVhal;
+}
+
+int getUUID() {
+    return (++uuid) % INT_MAX;
+}
+
+void triggerFocusRequest(float volLimit) {
+
+    if (volLimit < MIN_VOLUME) {
+        volLimit = MIN_VOLUME;
+    } else if (volLimit > MAX_VOLUME) {
+        //shouldn't hit this case
+        volLimit = MAX_VOLUME;
+    }
+    LOG(INFO) << "Limiting Volume to due to THERMAL LIMITATION to : " << volLimit;
+    if (focusSessionInfo.FocusId != -1) {
+        g_focusHandler.updateFocusRequest(focusSessionInfo.FocusId, volLimit);
+    } else {
+        qti::audio::core::FocusInfo focusInfo;
+        focusInfo.usage = "DEVICE_TEMPERATURE_STATUS";
+        focusInfo.isExternalGain = true;
+        focusInfo.gain = volLimit;
+        g_focusHandler.requestFocus(focusInfo, &focusSessionInfo.FocusId);
+    }
+}
+
+void triggerFocusAbandon() {
+    LOG(INFO) << "Disabling Thermal Volume Restriction";
+    g_focusHandler.abandonFocus(focusSessionInfo.FocusId);
+    focusSessionInfo.FocusId = -1;
+}
+
+static int32_t OTWTemperature; //to be updated as part of OTW intimation 
+                        //from VHAL
+static bool isOTWStatusSet = false;
 
 FocusHandler::FocusHandler(const std::string& libName) {
     // Load the shared library
@@ -102,6 +203,7 @@ FocusHandler::FocusHandler(const std::string& libName) {
         // Retrieve function pointers
         requestFocusFunc = (RequestFocusType)dlsym(mHandle, "requestFocus");
         abandonFocusFunc = (AbandonFocusType)dlsym(mHandle, "abandonFocus");
+        updateFocusRequestFunc = (UpdateFocusRequestType)dlsym(mHandle, "updateFocusRequest");
         const char* dlsym_error = dlerror();
         if (dlsym_error) {
             LOG(ERROR) << __func__ << ": dlsym failed for Focus functions " << dlerror();
@@ -126,6 +228,13 @@ int FocusHandler::requestFocus(const qti::audio::core::FocusInfo& focusInfo, int
     return -1;
 }
 
+int FocusHandler::updateFocusRequest(const int64_t focusId, float gain) {
+    if (updateFocusRequestFunc) {
+        return updateFocusRequestFunc(focusId, gain);
+    }
+    return -1;
+}
+
 bool FocusHandler::isValid() {
     return mHandle != nullptr;
 }
@@ -138,17 +247,14 @@ int FocusHandler::abandonFocus(int64_t focusId) {
 }
 
 float getAttenuationTarget(){
-    // return -4000;
     LOG(DEBUG) << __func__ << ": Enter " ;
     ::qti::audio::oem::config::AudioConfigType req = AUDIO_CONFIG_ATTENUATION_TARGET ;
     ::qti::audio::oem::config::AudioConfigData configData;
     ::qti::audio::oem::config::AudioConfigManager::getInstance().getAudioConfigValue(req,&configData);
     LOG(DEBUG) << "Attenuation value returned from getAudioConfigValue is: " << configData.defaultValue;
-
     return configData.defaultValue;
 }
 
-FocusHandler g_focusHandler(PRIORITY_LIB);
 #ifdef ENABLE_QCOM_VHAL_NIGHTMODE
 struct vhal_data* Vhal_Data::vhal_data = nullptr;
 #endif
@@ -177,6 +283,35 @@ bool subscribeToVHal(ISubscriptionClient* client, int32_t paramId){
     }
     return true;
 }
+}
+
+bool parseOTWStatus(std::vector<int32_t> &values) {
+    if (values.size() < DeviceTemperatureIndex::MAX_ENTRIES) {
+        LOG(ERROR) << "Invalid size for DEVICE_TEMPERATURE_STATUS payload";
+        return false;
+    }
+    return values[DeviceTemperatureIndex::AMP1_GLOBAL_OTW] == 0x1 ||
+            values[DeviceTemperatureIndex::AMP2_GLOBAL_OTW] == 0x1 ||
+            values[DeviceTemperatureIndex::EXT_AMP1_GLOBAL_OTW] == 0x1 ||
+            values[DeviceTemperatureIndex::EXT_AMP2_GLOBAL_OTW] == 0x1;
+}
+
+int32_t parseOTWTemperature(std::vector<int32_t> &values) {
+    if (values.size() < DeviceTemperatureIndex::MAX_ENTRIES) {
+        LOG(ERROR) << "Invalid size for DEVICE_TEMPERATURE_STATUS payload";
+        return -1;
+    }
+    int32_t temperature = 0xFF;
+    if (values[DeviceTemperatureIndex::AMP1_GLOBAL_OTW]) {
+        temperature = values[DeviceTemperatureIndex::AMP1_GLOBAL_TEMPERATURE];
+    } else if (values[DeviceTemperatureIndex::AMP2_GLOBAL_OTW]) {
+        temperature = values[DeviceTemperatureIndex::AMP2_GLOBAL_TEMPERATURE];
+    } else if (values[DeviceTemperatureIndex::EXT_AMP1_GLOBAL_OTW]) {
+        temperature = values[DeviceTemperatureIndex::EXT_AMP1_GLOBAL_TEMPERATURE];
+    } else if (values[DeviceTemperatureIndex::EXT_AMP2_GLOBAL_OTW]) {
+        temperature = values[DeviceTemperatureIndex::EXT_AMP2_GLOBAL_TEMPERATURE];
+    }
+    return temperature;
 }
 
 void AudioVHALListener::onPropertyEvent(const std::vector<std::unique_ptr<IHalPropValue>>& values) {
@@ -285,16 +420,30 @@ void AudioVHALListener::onPropertyEvent(const std::vector<std::unique_ptr<IHalPr
             }
         }
         if (value->getPropId() == ThermalPropertyId) {
-            if (value->getInt32Values().size() < 1) {
-                LOG(ERROR) << "Invalid Thermal Property size, empty value :" << value->getInt32Values().size();
+            auto tempInfo = value->getInt32Values();
+            if (tempInfo.empty()) {
+                LOG(ERROR) << "Thermal Event Received, Payload Empty";
                 goto exit;
-            } else {
-                if (value->getInt32Values()[0] < MIN_THERMAL_VALUE || value->getInt32Values()[0] > MAX_THERMAL_VALUE) {
-                    LOG(ERROR) << "Invalid Thermal Property value :" << value->getInt32Values()[0];
+            } else if (!isDeratingEnabled) {
+                //change to verbose
+                LOG(INFO) << "Thermal Event Received, Device Temperature:" << tempInfo[0];
+                for (auto it: tempInfo) {
+                    LOG(INFO) << it << " ";
                 }
-                else{
-                    LOG(DEBUG) << "Event Notify: New Thermal Property event received. Val:" << value->getInt32Values()[0];
-                    handler_thermal(value->getInt32Values()[0]);
+                isOTWStatusSet = parseOTWStatus(tempInfo);
+                if (isOTWStatusSet) {
+                    if (auto temperature = parseOTWTemperature(tempInfo); temperature != 0xFF) {
+                        triggerFocusRequest(getCurrentMediaGain());
+                        OTWTemperature = temperature;
+                    } else {
+                        triggerFocusAbandon();
+                        LOG(ERROR) << "OTW set, but failed to get OTW temperature, "
+                            "derating not triggered";
+                        isOTWStatusSet = false;
+                        return;
+                    }
+                    isDeratingEnabled = true;
+                    cv.notify_one();
                 }
             }
         }
@@ -419,78 +568,196 @@ exit:
 }
 #endif
 
-extern "C" __attribute__((visibility("default"))) void handler_thermal(int32_t temperature){
-    LOG(DEBUG) << __func__ << ": Enter " ;
-    qti::audio::core::FocusSession focusSessionInfo;
-    float gainValue;
-    qti::audio::core::FocusInfo focusInfo;
-    focusInfo.usage = "DEVICE_TEMPERATURE_STATUS";
-    focusInfo.isExternalGain = true;
+class OTWTemperatureCallback final :
+    public aidl::android::hardware::automotive::vehicle::BnVehicleCallback {
 
-    ThermalParser parser; // to parse thermal conditions XML
-    FILE* file = NULL;
-    file = fopen(TEMPERATURE_XML_PATH, "r");
-    if(!file){
-        LOG(ERROR) << __func__ <<  " File not present: " << TEMPERATURE_XML_PATH;
-        return;
-    }
-    else{
-        LOG(ERROR) << __func__ <<  " File present" << TEMPERATURE_XML_PATH;
-    }
-    fclose(file);
-
-    if (parser.parseConfig(TEMPERATURE_XML_PATH)) {
-        const auto& conditions = parser.getConditions();
-        for(const auto& condn : conditions){
-
-            // Extract the attributes
-            int tempLower = condn.tempLower;
-            int tempUpper = condn.tempUpper;
-            gainValue = condn.gain;
-            focusInfo.gain = gainValue;
-
-            if (temperature >= tempLower && temperature <= tempUpper) {
-                if(gainValue == 0) {
-                    LOG(DEBUG) << "No vol limit, unducking"; //unduck
-                    const auto& it = FocusHandler::focusIdMap.find("DEVICE_TEMPERATURE_STATUS");
-                    if(it != FocusHandler::focusIdMap.end() && !it->second.empty()) {
-                        while( !it->second.empty()){
-                            focusSessionInfo.FocusId = it->second.back(); // Retrieving the last Id value
-                            LOG(DEBUG) << __func__ << ": Releasing DEVICE_TEMPERATURE_STATUS audio focus: " << focusSessionInfo.FocusId;
-                            if (!g_focusHandler.isValid()) {
-                                LOG(ERROR) << "Failed to initialize g_focusHandler";
-                                return;
-                            }
-                            g_focusHandler.abandonFocus(focusSessionInfo.FocusId);
-                            focusSessionInfo.FocusId = 0;
-                            it->second.pop_back();
-                        }
+public:
+    ndk::ScopedAStatus onGetValues(
+            const aidl::android::hardware::automotive::vehicle::GetValueResults& results) {
+        LOG(INFO) << __func__ << "onGetValues called";
+        {
+            for (auto entry: results.payloads) {
+                LOG(INFO) << "RequestId: " << (long)entry.requestId
+                    << " result: " << (int)entry.status;
+                if (entry.status == aidl::android::hardware::automotive::vehicle::StatusCode::OK) {
+                    if (entry.prop.has_value()) {
+                        processVehiclePropValue(entry.prop.value());
+                    } else {
+                        LOG(ERROR) << "Payload is null";
+                        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
                     }
-                    else{
-                        LOG(ERROR) << "No DEVICE_TEMPERATURE_STATUS Focus Session to unduck";
-                        goto exit;
-                    }
-                }
-                else {
-                    LOG(DEBUG) << "Ducking to Vol limit =" << gainValue;//duck
-                    if (!g_focusHandler.isValid()) {
-                        LOG(ERROR) << "Failed to initialize g_focusHandler";
-                        return;
-                    }
-                    g_focusHandler.requestFocus(focusInfo, &focusSessionInfo.FocusId);
-                    LOG(INFO) << "Focus Id for DEVICE_TEMPERATURE_STATUS " << focusSessionInfo.FocusId;
-                    const auto& it = FocusHandler::focusIdMap.find("DEVICE_TEMPERATURE_STATUS");
-                    if(it != FocusHandler::focusIdMap.end())
-                        it->second.push_back(focusSessionInfo.FocusId);
-                    else
-                        FocusHandler::focusIdMap.insert({"DEVICE_TEMPERATURE_STATUS", {focusSessionInfo.FocusId}});
+                } else {
+                    LOG(ERROR) << "getValues failed !!, status : " << (int)entry.status;
+                    return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
                 }
             }
         }
+        return ndk::ScopedAStatus::ok();
     }
-exit:
+
+    ndk::ScopedAStatus onSetValues(
+            const aidl::android::hardware::automotive::vehicle::SetValueResults& results) {
+        LOG(INFO) << "onSetValues called";
+        return ndk::ScopedAStatus::ok();
+    }
+
+    ndk::ScopedAStatus onPropertySetError(
+            const aidl::android::hardware::automotive::vehicle::VehiclePropErrors&) {
+        LOG(INFO) << "onPropertySetError called";
+        return ndk::ScopedAStatus::ok();
+    }
+
+    ndk::ScopedAStatus onPropertyEvent(
+            const aidl::android::hardware::automotive::vehicle::VehiclePropValues& vehiclePropValues,
+            int32_t) {
+        LOG(DEBUG) << __func__ << ": Enter " ;
+        return ndk::ScopedAStatus::ok();
+    }
+
+    void processVehiclePropValue(const
+            aidl::android::hardware::automotive::vehicle::VehiclePropValue vehiclePropValue) {
+        int32_t propId = -1, areadId = -1;
+        propId = vehiclePropValue.prop;
+        areadId = vehiclePropValue.areaId;
+        LOG(DEBUG) << __func__ << ": PropId : " << propId << ": areaId : " << areadId;
+
+        if (propId != ThermalPropertyId) {
+            LOG(ERROR) << __func__ << "Callback PropId not matching with THERMAL PROP ID";
+        } else {
+            std::vector<int32_t> tempInfo = vehiclePropValue.value.int32Values;
+            for (auto it: tempInfo) {
+                LOG(INFO) << it << " ";
+            }
+            isOTWStatusSet = parseOTWStatus(tempInfo);
+            if (isOTWStatusSet) {
+                if (auto temperature = parseOTWTemperature(tempInfo); temperature != 0xFF) {
+                    OTWTemperature = temperature;
+                } else {
+                    LOG(ERROR) << "OTW set, but failed to get OTW temperature";
+                    isOTWStatusSet = false;
+                }
+            }
+        }
+        isTemperatureInfoAvailable = true;
+        cvTemp.notify_one();
+        return;
+    }
+};
+
+ndk::ScopedAStatus getPropertyValues(int32_t propId,
+        std::shared_ptr<aidl::android::hardware::automotive::vehicle::IVehicleCallback> callback) {
+
+    ::aidl::android::hardware::automotive::vehicle::GetValueRequest
+             request =  ::aidl::android::hardware::automotive::vehicle::GetValueRequest{
+                                            .requestId = (long)(getUUID()),
+                                            .prop = aidl::android::hardware::automotive::vehicle::VehiclePropValue{
+                                                        .prop = propId,
+                                                    },
+                                        };
+    ::aidl::android::hardware::automotive::vehicle::GetValueRequests requests;
+    requests.payloads = {request};
+    auto result = LargeParcelableBase::parcelableToStableLargeParcelable(requests);
+    if (!result.ok()) {
+        LOG(INFO) << "conversion to parcelable failed!!";
+        return ndk::ScopedAStatus::ok();
+    }
+    if (result.value() != nullptr) {
+        requests.sharedMemoryFd = std::move(*result.value());
+        requests.payloads.clear();
+    }
+
+    //auto vehicleCallback = ndk::SharedRefBase::make<AudioDiagVehicleCallback>();
+    auto callbackClient =
+    ::aidl::android::hardware::automotive::vehicle::IVehicleCallback::fromBinder(callback->asBinder());
+    auto mVhal = getVhalService();
+    auto status = mVhal->getValues(callbackClient, requests);
+    if (!status.isOk() ) {
+       LOG(INFO) << "getValues failed: " << status.getMessage();
+    }
+    return ndk::ScopedAStatus::ok();
+}
+
+
+void getCurrentTemperatureInfo() {
+    getPropertyValues(ThermalPropertyId, ndk::SharedRefBase::make<OTWTemperatureCallback>());
+    std::unique_lock _lock(vhalCallbackMutex);
+    LOG(INFO) << "Wating for temperature info";
+    cvTemp.wait(_lock, []{ return isTemperatureInfoAvailable;});
+    isTemperatureInfoAvailable = false;
+    return;
+}
+
+int32_t getCnfAttachTimeMs() {
+    ::qti::audio::oem::config::AudioConfigType req = AUDIO_CONFIG_THERMAL_ATTACK_TIME;
+    ::qti::audio::oem::config::AudioConfigData configData;
+    ::qti::audio::oem::config::AudioConfigManager::getInstance().getAudioConfigValue(req, &configData);
+    LOG(VERBOSE) << "CNF_ATTACK_TIME_MS: " << configData.defaultValue;
+    return configData.defaultValue;
+}
+
+int32_t getCnfReleaseTimeMs() {
+    ::qti::audio::oem::config::AudioConfigType req = AUDIO_CONFIG_THERMAL_RELEASE_TIME;
+    ::qti::audio::oem::config::AudioConfigData configData;
+    ::qti::audio::oem::config::AudioConfigManager::getInstance().getAudioConfigValue(req, &configData);
+    LOG(VERBOSE) << "CNF_RELEASE_TIME_MS: " << configData.defaultValue;
+    return configData.defaultValue;
+}
+
+int32_t getCnfDeltaStepMdb() {
+    ::qti::audio::oem::config::AudioConfigType req = AUDIO_CONFIG_THERMAL_DELTA_STEP;
+    ::qti::audio::oem::config::AudioConfigData configData;
+    ::qti::audio::oem::config::AudioConfigManager::getInstance().getAudioConfigValue(req, &configData);
+    LOG(VERBOSE) << "CNF_DELTA_STEP_MDB: " << configData.defaultValue*DP_TO_MDB;
+    return configData.defaultValue*DP_TO_MDB;
+}
+
+void thermalDeratingLoop() {
+    LOG(INFO) << "threadLoop started for Thermal Derating";
+    std::unique_lock _lock(mtx);
+    while (true) {
+        LOG(INFO) << "Waiting for OTW";
+        cv.wait(_lock, []{ return isDeratingEnabled;});
+        //there's already a request to block volume increase
+        //sleep for sometime to assess volume changes
+        int32_t volumeLimit;
+        int32_t curTemp, prevTemp = OTWTemperature; //OK to not do a get, as value updated from OTW callback
+        volumeLimit = getCurrentMediaGain();
+        std::this_thread::sleep_for(std::chrono::milliseconds(getCnfAttachTimeMs()));
+        while (true) {
+            getCurrentTemperatureInfo(); //trigger a call to VHAL, blocked till get completes
+                                        //update OTW status and OTW temperature
+            curTemp = OTWTemperature;
+            if (!isOTWStatusSet) {
+                triggerFocusAbandon();
+                isDeratingEnabled = false;
+                break;
+            }
+            isOTWStatusSet = false;
+            if (curTemp - prevTemp >= 0) {
+                volumeLimit -= getCnfDeltaStepMdb();
+                triggerFocusRequest(volumeLimit);
+                std::this_thread::sleep_for(std::chrono::milliseconds(getCnfAttachTimeMs()));
+            } else {
+                volumeLimit += getCnfDeltaStepMdb();
+                if (volumeLimit >= 0) {
+                    triggerFocusAbandon();
+                    isDeratingEnabled = false;
+                    break;
+                }
+                triggerFocusRequest(volumeLimit);
+                std::this_thread::sleep_for(std::chrono::milliseconds(getCnfReleaseTimeMs()));
+            }
+            prevTemp = curTemp;
+        }
+    }
     LOG(DEBUG) << __func__ << ": Exit ";
     return;
+}
+std::unique_ptr<std::thread> mThread = std::make_unique<std::thread>(&thermalDeratingLoop);
+
+extern "C" __attribute__((visibility("default")))int priority_deinit(void) {
+    //join the derating threadLoop
+    return 0;
 }
 
 extern "C" __attribute__((visibility("default")))int priority_init(void)
