@@ -720,8 +720,6 @@ ndk::ScopedAStatus StreamOutPrimary::getHwVolume(std::vector<float>* _aidl_retur
 }
 
 ndk::ScopedAStatus StreamOutPrimary::setHwVolume(const std::vector<float>& in_channelVolumes) {
-    struct str_parms* hfp_parms = nullptr;
-    std::string kvpairs = "";
     if (!mHwVolumeSupported) {
         return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
     }
@@ -744,6 +742,11 @@ ndk::ScopedAStatus StreamOutPrimary::setHwVolume(const std::vector<float>& in_ch
         LOG(ERROR) << __func__ << mLogPrefix << " out of range volume "
                    << ::android::internal::ToString(in_channelVolumes);
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
+    }
+
+    //to do create google bug
+    if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK || mTag == Usecase::PCM_OFFLOAD_PLAYBACK) {
+        return ndk::ScopedAStatus::ok();
     }
 
     if (!mPalHandle) {
