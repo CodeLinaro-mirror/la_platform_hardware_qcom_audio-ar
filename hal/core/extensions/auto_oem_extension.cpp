@@ -159,15 +159,15 @@ bool subscribeToVHal(ISubscriptionClient* client, VehicleProperty propertyId) {
 void AudioVehicleListener::onPropertyEvent(const std::vector<std::unique_ptr<IHalPropValue>>& values) {
     for(const auto& value : values) {
         int32_t propId = value->getPropId();
-        LOG(DEBUG) << __func__ << ": PropId : " << propId;
+        LOG(VERBOSE) << __func__ << ": PropId : " << propId;
         int32_t area = value->getAreaId();
-        LOG(DEBUG) << __func__ << ": areaId : " << area;
+        LOG(VERBOSE) << __func__ << ": areaId : " << area;
         if (value->getPropId() == static_cast<int32_t>(SpeedpropertyId)) {
             if (value->getFloatValues().size() < 1) {
                 LOG(ERROR) << "Invalid PERF_VEHICLE_SPEED getFloatValues size, empty value :" << value->getFloatValues().size();
                 goto exit;
             } else {
-                LOG(DEBUG) << "Event Notify: New Vehicle Speed event received. Val:" << value->getFloatValues()[0];
+                LOG(VERBOSE) << "Event Notify: New Vehicle Speed event received. Val:" << value->getFloatValues()[0];
                 auto status = set_vehicle_speed(value->getFloatValues()[0]);
                 if (status != 0) {
                     LOG(ERROR) << "Failed to set perf_vehicle_speed";
@@ -364,7 +364,7 @@ exit:
 }
 
 void update_vehicle_speed_pal_param(param_type2_t *params) {
-    LOG(DEBUG) << "Enter " << __func__;
+    LOG(VERBOSE) << "Enter " << __func__;
 
     aidl::qti::awx::pal_awx_param_t *pal_param = (aidl::qti::awx::pal_awx_param_t *)malloc(sizeof(aidl::qti::awx::pal_awx_param_t));
 
@@ -373,7 +373,7 @@ void update_vehicle_speed_pal_param(param_type2_t *params) {
             pal_param->param_id = PERF_VEHICLE_SPEED_PARAM_ID;
             pal_param->param_size = sizeof(param_type2_t);
             pal_param->data = (void *)params;
-            LOG(DEBUG) << __func__ << ": Successfully created pal_param";
+            LOG(VERBOSE) << __func__ << ": Successfully created pal_param";
             aidl::qti::awx::PalParamDelegator::AWX_set_param(pal_param, aidl::qti::awx::SYNC_WITHOUT_AUDIO_BUS);
         }
         else {
@@ -592,8 +592,22 @@ extern "C" __attribute__((visibility("default")))int oem_init(void)
     ::qti::audio::oem::config::AudioConfigData configData;
     ::qti::audio::oem::config::AudioConfigManager::getInstance().getAudioConfigValue(req,&configData);
     std::string s = std::to_string(configData.defaultValue);
-    LOG(ERROR) << "String " << s << " Integer " << configData.defaultValue;
+    LOG(VERBOSE) << "String " << s << " Integer " << configData.defaultValue;
     property_set("persist.vendor.max_vol_startup",s.c_str());
+
+    // Set property for default Ambiance
+    ::qti::audio::oem::config::AudioConfigData ambConfigData;
+    ::qti::audio::oem::config::AudioConfigManager::getInstance().getAudioConfigValue(AUDIO_CONFIG_DEFAULT_AMBIANCE,&ambConfigData);
+    std::string ambianceString = std::to_string(ambConfigData.defaultValue);
+    LOG(VERBOSE) << "String " << s << " Integer " << ambConfigData.defaultValue;
+    property_set("persist.vendor.default_ambiance",ambianceString.c_str());
+
+    // Set Property for default AGC state
+    ::qti::audio::oem::config::AudioConfigData agcConfigData;
+    ::qti::audio::oem::config::AudioConfigManager::getInstance().getAudioConfigValue(AUDIO_CONFIG_DEFAULT_AGC_STATE,&agcConfigData);
+    std::string agcS = std::to_string(agcConfigData.defaultValue);
+    LOG(VERBOSE) << "String " << s << " Integer " << agcConfigData.defaultValue;
+    property_set("persist.vendor.default_agc",agcS.c_str());
 
     return retValue;
 
