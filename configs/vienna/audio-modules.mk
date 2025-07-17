@@ -112,6 +112,7 @@ AUDIO_TEST += ar_util_in_test_example
 
 
 AUDIO_MODULES := ftm_test_config
+AUDIO_MODULES += ftm_test_config_vienna-snd-card
 AUDIO_MODULES += ftm_test_config_sun-qrd-snd-card
 AUDIO_MODULES += ftm_test_config_sun-qrd-sku2-snd-card
 AUDIO_MODULES += audioadsprpcd
@@ -195,6 +196,10 @@ AUDIO_MODULES += \
     libaudiocorehal.qti \
     libaudiocorehal.default \
     libaudioeffecthal.qti
+
+#audio vibrator
+AUDIO_MODULES += vendor.qti.hardware.vibrator.impl
+AUDIO_MODULES += vendor.qti.hardware.vibrator.service
 
 # AIDL AHAL VENDOR EXTENSION
 AUDIO_MODULES += \
