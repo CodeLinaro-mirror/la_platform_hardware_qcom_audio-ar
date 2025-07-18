@@ -25,8 +25,8 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 # IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-# Changes from Qualcomm Innovation Center are provided under the following license:
-# Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+# Changes from Qualcomm Technologies, Inc. are provided under the following license:
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 # SPDX-License-Identifier: BSD-3-Clause-Clear
 
 
@@ -40,6 +40,20 @@ service vendor.audio-hal /vendor/bin/hw/android.hardware.audio.service
     ioprio rt 4
     writepid /dev/cpuset/foreground/tasks /dev/stune/foreground/tasks
     onrestart restart audioserver
+
+service tdm-clock-output /vendor/bin/agmcap /dev/null -D 100 -d 101 -c 1 -r 48000 -i TDM-LPAIF-TX-PRIMARY -skv 0xB1000001 -dkv 0xA3000008 -ikv 1
+    class late_start
+    user audio
+    group audio system
+    seclabel u:object_r:vendor_qti_init_shell:s0
+    disabled
+    onrestart restart tdm-clock-output
+
+on property:init.svc.vendor.audio-hal=running
+    start tdm-clock-output
+
+on property:init.svc.vendor.audio-hal=stopped
+    stop tdm-clock-output
 
 # SSR trigger for audio subsystem
 on property:vendor.audio.ssr.trigger=1
