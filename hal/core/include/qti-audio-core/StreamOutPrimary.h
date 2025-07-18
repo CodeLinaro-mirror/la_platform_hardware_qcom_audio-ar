@@ -70,6 +70,7 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
 
     ndk::ScopedAStatus getHwVolume(std::vector<float>* _aidl_return) override;
     ndk::ScopedAStatus setHwVolume(const std::vector<float>& in_channelVolumes) override;
+    ndk::ScopedAStatus setPALVolume(const std::vector<float>& in_channelVolumes);
 
     ndk::ScopedAStatus getPlaybackRateParameters(
             ::aidl::android::media::audio::common::AudioPlaybackRate* _aidl_return) override;
@@ -159,7 +160,6 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     AudioExtension& mAudExt{AudioExtension::getInstance()};
 
   private:
-    const std::string mGainVolumecheckProperty{"vendor.audio.feature.oemgainconversion.enable"};
     std::string mLogPrefix = "";
     bool mIsMMapStarted = false;
     bool isHwVolumeSupported();
