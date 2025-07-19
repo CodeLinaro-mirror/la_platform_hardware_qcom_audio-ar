@@ -112,7 +112,8 @@ AUDIO_MODULES += ftm_test_config_canoe-qrd-snd-card
 AUDIO_MODULES += ftm_test_config_canoe-qrd-wsa884x-snd-card
 AUDIO_MODULES += ftm_test_config_alor-mtp-wcd9378-snd-card
 AUDIO_MODULES += ftm_test_config_alor-mtp-wcd939x-snd-card
-AUDIO_MODULES += ftm_test_config_alor-qrd-snd-card
+AUDIO_MODULES += ftm_test_config_alor-qrd-wsa884x-snd-card
+
 AUDIO_MODULES += audioadsprpcd
 AUDIO_MODULES += MTP_acdb_cal.acdb
 AUDIO_MODULES += MTP_workspaceFileXml.qwsp
