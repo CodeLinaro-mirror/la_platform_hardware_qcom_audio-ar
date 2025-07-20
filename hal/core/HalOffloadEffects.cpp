@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -23,14 +23,20 @@ void HalOffloadEffects::loadLibrary(std::string path) {
     // dlopen library and dlsym fptr.
     std::function<void(void *)> dlClose = [](void *handle) -> void {
         if (handle && dlclose(handle)) {
-            LOG(ERROR) << "dlclose failed " << dlerror();
+            const char* error = dlerror();
+            if (error != nullptr) {
+                LOG(ERROR) << "dlclose failed " << error;
+            }
         }
     };
 
     auto libHandle =
             std::unique_ptr<void, decltype(dlClose)>{dlopen(path.c_str(), RTLD_LAZY), dlClose};
     if (!libHandle) {
-        LOG(ERROR) << __func__ << ": dlopen failed for " << path << " " << dlerror();
+        const char* error = dlerror();
+        if (error != nullptr) {
+            LOG(ERROR) << __func__ << ": dlopen failed for " << path << " " << error;
+        }
         return;
     }
 
@@ -38,12 +44,18 @@ void HalOffloadEffects::loadLibrary(std::string path) {
     auto effectIntf = new OffloadEffectLibIntf{nullptr, nullptr};
     effectIntf->mStartEffect = (StartEffectFptr)dlsym(libHandle.get(), "startEffect");
     if (!effectIntf->mStartEffect) {
-        LOG(ERROR) << "startEffect is missing in " << path << dlerror();
+        const char* error = dlerror();
+        if (error != nullptr) {
+            LOG(ERROR) << "startEffect is missing in " << path << error;
+        }
         return;
     }
     effectIntf->mStopEffect = (StopEffectFptr)dlsym(libHandle.get(), "stopEffect");
     if (!effectIntf->mStopEffect) {
-        LOG(ERROR) << "stopEffect is missing in " << path << dlerror();
+        const char* error = dlerror();
+        if (error != nullptr) {
+            LOG(ERROR) << "stopEffect is missing in " << path << error;
+        }
         return;
     }
     LOG(DEBUG) << "found post proc library" << path;

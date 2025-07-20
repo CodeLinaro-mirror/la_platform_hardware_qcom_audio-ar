@@ -45,6 +45,10 @@ AudioConfigData AudioConfigManager::sgLoadDefaultconfig[MAX_CONFIG] = {
     {DEFAULT_AMBIANCE_STR, TYPE_INT, AMBIANCE_LEVEL_1, AMBIANCE_LEVEL_5, AMBIANCE_LEVEL_1},
     {DEFAULT_AGC_STATE_STR, TYPE_INT, FEATURE_DISABLED, FEATURE_ENABLED, FEATURE_ENABLED},
     {DEFAULT_VOLUME_STR, TYPE_INT, MIN_VOLUME, MAX_VOLUME, DEFAULT_VOLUME},
+    {THERMAL_PERIODICITY_STR,TYPE_INT,THERMAL_PERIODICITY_MIN,THERMAL_PERIODICITY_MAX,THERMAL_PERIODICITY_DEFAULT},
+    {THERMAL_ATTACK_TIME_STR,TYPE_INT,THERMAL_ATTACK_TIME_MIN,THERMAL_ATTACK_TIME_MAX,THERMAL_ATTACK_TIME_DEFAULT},
+    {THERMAL_RELEASE_TIME_STR,TYPE_INT,THERMAL_RELEASE_TIME_MIN,THERMAL_RELEASE_TIME_MAX,THERMAL_RELEASE_TIME_DEFAULT},
+    {THERMAL_DELTA_STEP_STR,TYPE_INT,THERMAL_DELTA_STEP_MIN,THERMAL_DELTA_STEP_MAX,THERMAL_DELTA_STEP_DEFAULT}
 };
 
 
@@ -175,6 +179,10 @@ void AudioConfigManager::readConfigHUB()
     LOG(DEBUG) << __func__ <<"Tone Controller Value is " <<audioFeature.tone_controller_bands();
     LOG(DEBUG) << __func__ <<"Sound stage Value is " <<audioFeature.sound_stage();
     LOG(DEBUG) << __func__ <<"Default Ambiance Value is " <<audioFeature.default_ambiance();
+    LOG(DEBUG) << __func__ <<"Temperature Periodicity is " <<audioFeature.thermal_periodicity();
+    LOG(DEBUG) << __func__ <<"Thermal Attack Time is " <<audioFeature.thermal_attack_time();
+    LOG(DEBUG) << __func__ <<"Thermal Release Time is " <<audioFeature.thermal_release_time();
+    LOG(DEBUG) << __func__ <<"Thermal Delta Step is " <<audioFeature.thermal_delta_step();
 
     int configValue = 0;
     bool configValuevalid = false;
@@ -216,6 +224,22 @@ void AudioConfigManager::readConfigHUB()
             break;
         case AUDIO_CONFIG_DEFAULT_AGC_STATE:
             configValue = audioFeature.agc_state();
+            configValuevalid = true;
+            break;
+        case AUDIO_CONFIG_THERMAL_PERIODICITY:
+            configValue = audioFeature.thermal_periodicity();
+            configValuevalid = true;
+            break;
+        case AUDIO_CONFIG_THERMAL_ATTACK_TIME:
+            configValue = audioFeature.thermal_attack_time();
+            configValuevalid = true;
+            break;
+        case AUDIO_CONFIG_THERMAL_RELEASE_TIME:
+            configValue = audioFeature.thermal_release_time();
+            configValuevalid = true;
+            break;
+        case AUDIO_CONFIG_THERMAL_DELTA_STEP:
+            configValue = audioFeature.thermal_delta_step();
             configValuevalid = true;
             break;
         default:

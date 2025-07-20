@@ -79,6 +79,7 @@ class StreamInPrimaryOEM : public StreamInPrimary{
     size_t mECNRFrameSizeBytes{0};
     int mScd_file_path_index_ul;
     int portid;
+    bool hw_ts_enable{false};
 #ifdef ECNR_HAL_TUNE
     tECNR_TuneIFData pECNR_TuneIFData;
 #endif

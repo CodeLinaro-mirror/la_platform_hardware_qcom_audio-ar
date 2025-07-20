@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
+* Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 * SPDX-License-Identifier: BSD-3-Clause-Clear
 */
 
@@ -55,6 +55,7 @@ enum FocusCommand{
     REQUEST_FOCUS = 0,
     ABANDON_FOCUS,
     UPDATE_VOLUME,
+    UPDATE_FOCUS_REQUEST,
     EXIT,
 };
 
@@ -139,9 +140,11 @@ class AudioFocusService {
         void handleFocusRequest(int64_t focusId);
         void handleFocusAbandon(int64_t focusId);
         void handleVolumeChange(int64_t focusId, float gain, bool isExternalGain);
+        void handleUpdateFocusRequest();
         int32_t requestFocus(const FocusInfo focusInfo, int64_t* focusId);
         int32_t abandonFocus(const int64_t focusId);
         int32_t updateVolume(const int64_t focusId, const float gain, const bool isExternalGain);
+        int32_t updateFocusRequest(const int64_t focusId, float gain);
         int32_t getNearestIndex(int32_t gain);
         static const std::unordered_map<std::string,
             std::unordered_map<std::string, StreamType>> usageMap;
@@ -183,7 +186,7 @@ class AudioFocusService {
             {-900, 36}, {-675, 37}, {-450, 38}, {-225, 39}, {0, 40}};
         void parseVolumeProfile();
         void processVolumePoints(const std::vector<std::string> &points);
-
+        void getAllActiveReasons(std::vector<Reasons> &activeReasons);
         std::shared_ptr<IAudioControlInternal> mAudioControlInternalService;
         std::shared_ptr<IAudioControlInternal> getAudioControlService();
         int32_t setRampParam(int32_t uptime, int32_t downtime, int32_t shape, pal_stream_handle_t* handle);
@@ -200,7 +203,7 @@ class AudioFocusService {
         bool isAudioOnMediaBus(int64_t focusId);
         void resetNonBlockingReasons(int64_t focusId);
         void resetDuckFocusId(int64_t focusId);
-        void reportThermalReason(int64_t focusId, int64_t curFocusId);
+        void reportThermalReason(int64_t thermalFocusId, int32_t index);
     };
 }
 

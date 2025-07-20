@@ -50,7 +50,7 @@
 #define ECNR_DUMP_FEATURE_PROP "vendor.audio.feature.ecnr.dump"
 #define VARIANT_PROP "vendor.audio.variant"
 #define TUNE_MODE_PROP "vendor.audio.ecnr.tune_mode"
-#define SCD_PATH "/data/audio/"
+#define SCD_PATH "/vendor/audio/tuning/"
 #define SCD_PATH_BK "/vendor/etc/ecnr_scd/"
 #define MAX_PARAM_FILES 2
 

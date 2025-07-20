@@ -153,6 +153,7 @@ typedef int (*update_volume_t)(const int64_t focusId, const float gain, bool isE
 
  //for VHAL
 typedef int (*priority_init_t)(void);
+typedef void (*set_media_gain_t)(float);
 
 #endif
 typedef void (*diagnostic_init_t)(void);
@@ -287,8 +288,10 @@ class AutoVhalPriorityExtension : public AudioExtensionBase {
   public:
     AutoVhalPriorityExtension();
     ~AutoVhalPriorityExtension();
+    set_media_gain_t setMediaGain;
   private:
-     priority_init_t priority_init;
+    priority_init_t priority_init;
+    priority_init_t priority_deinit;
 
 };
 #endif
@@ -369,7 +372,7 @@ class AudioExtension {
     std::unique_ptr<AutoAudioHALPriorityExtension>
       mAutoAudioHalPriorityExtension = std::make_unique<AutoAudioHALPriorityExtension>();
 
-    std::unique_ptr<AutoVhalPriorityExtension> mAAutoVhalPriorityExtensionn = std::make_unique<AutoVhalPriorityExtension>();
+    std::unique_ptr<AutoVhalPriorityExtension> mAAutoVhalPriorityExtension = std::make_unique<AutoVhalPriorityExtension>();
 #endif
     std::unique_ptr<KarokeExtension> mKarokeExtension = std::make_unique<KarokeExtension>();
     std::unique_ptr<GefExtension> mGefExtension = std::make_unique<GefExtension>();

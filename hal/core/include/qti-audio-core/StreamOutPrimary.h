@@ -15,6 +15,12 @@
 #ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
 #include <extensions/AudioHalFocusManager.h>
 #endif
+#define LOW_LATENCY_PLATFORM_DELAY (13*1000LL)
+#define DEEP_BUFFER_PLATFORM_DELAY (70*1000LL)
+#define PCM_OFFLOAD_PLATFORM_DELAY (30*1000LL)
+#define MMAP_PLATFORM_DELAY        (3*1000LL)
+#define ULL_PLATFORM_DELAY         (4*1000LL)
+
 namespace qti::audio::core {
 
 class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public PlatformStreamCallback {
@@ -43,6 +49,7 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
             ::aidl::android::hardware::audio::core::StreamDescriptor::Reply*
             /*reply*/) override;
     void shutdown() override;
+    ::android::status_t getHwTimeStamp(::aidl::android::hardware::audio::core::StreamDescriptor::Reply*);
 
     // methods of StreamCommonInterface
 
@@ -70,6 +77,7 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
 
     ndk::ScopedAStatus getHwVolume(std::vector<float>* _aidl_return) override;
     ndk::ScopedAStatus setHwVolume(const std::vector<float>& in_channelVolumes) override;
+    ndk::ScopedAStatus setPALVolume(const std::vector<float>& in_channelVolumes);
 
     ndk::ScopedAStatus getPlaybackRateParameters(
             ::aidl::android::media::audio::common::AudioPlaybackRate* _aidl_return) override;
@@ -98,6 +106,7 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     void onTransferReady() override;
     void onDrainReady() override;
     void onError() override;
+    uint64_t mBytesWritten; /* total bytes written, not cleared when entering standby */
 #ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
     void requestFocus();
     void abandonFocus();
@@ -115,8 +124,9 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
 
     // This API calls startEffect/stopEffect only on offload/pcm offload outputs.
     void enableOffloadEffects(const bool enable);
+    int64_t GetRenderLatency(std::string address);
 
-    // API which are *_I are internal 
+    // API which are *_I are internal
     ndk::ScopedAStatus configureConnectedDevices_I();
 
     const Usecase mTag;
@@ -157,9 +167,9 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     const ::aidl::android::media::audio::common::AudioPortConfig& mMixPortConfig;
     HalOffloadEffects& mHalEffects{HalOffloadEffects::getInstance()};
     AudioExtension& mAudExt{AudioExtension::getInstance()};
+    int64_t GetSourceLatency();
 
   private:
-    const std::string mGainVolumecheckProperty{"vendor.audio.feature.oemgainconversion.enable"};
     std::string mLogPrefix = "";
     bool mIsMMapStarted = false;
     bool isHwVolumeSupported();

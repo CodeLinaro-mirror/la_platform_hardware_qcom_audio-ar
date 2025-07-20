@@ -885,21 +885,21 @@ AutoAudioHALPriorityExtension::~AutoAudioHALPriorityExtension()
 
 AutoVhalPriorityExtension::AutoVhalPriorityExtension():AudioExtensionBase(kVhalPriorityLibrary){
 
-    if (!(priority_init = (priority_init_t)dlsym(mHandle, "priority_init")))
-        {
+    if (!(priority_init = (priority_init_t)dlsym(mHandle, "priority_init")) ||
+        !(priority_deinit = (priority_init_t)dlsym(mHandle, "priority_deinit")) ||
+            !(setMediaGain = (set_media_gain_t)dlsym(mHandle, "setMediaGain"))) {
             LOG(ERROR) << __func__ << "VHAL priority_init dlsym failed";
             if (mHandle) {
                 dlclose(mHandle);
                 mHandle = NULL;
             }
             priority_init = NULL;
-        }
-        else {
+            setMediaGain = NULL;
+        } else {
             LOG(INFO) << __func__ << "VHAL priority_init dlsym successful";
         }
 
-        if (priority_init)
-        {
+        if (priority_init) {
             LOG(INFO) << __func__ << "VHAL Priority Init call";
             priority_init();
         }
@@ -915,6 +915,10 @@ feature_disabled:
 AutoVhalPriorityExtension::~AutoVhalPriorityExtension()
 {
    LOG(INFO) << __func__ << " Enter";
+    if (priority_deinit) {
+        LOG(INFO) << __func__ << "VHAL Priority DeInit call";
+        priority_deinit();
+    }
      if (mHandle) {
         dlclose(mHandle);
         mHandle = NULL;

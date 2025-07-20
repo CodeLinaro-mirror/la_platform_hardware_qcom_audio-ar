@@ -12,6 +12,22 @@
 
 namespace {
 
+struct DeviceTemperatureIndex {
+    enum : int32_t {
+        TEMPERATURE = 0,
+        AD_DATA = 1,
+        AMP1_GLOBAL_TEMPERATURE = 2,
+        AMP1_GLOBAL_OTW = 3,
+        AMP2_GLOBAL_TEMPERATURE = 4,
+        AMP2_GLOBAL_OTW = 5,
+        EXT_AMP1_GLOBAL_TEMPERATURE = 6,
+        EXT_AMP1_GLOBAL_OTW = 7,
+        EXT_AMP2_GLOBAL_TEMPERATURE = 8,
+        EXT_AMP2_GLOBAL_OTW = 9,
+        MAX_ENTRIES = 10
+    };
+};
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -28,9 +44,10 @@ class FocusHandler {
         static void* mHandle;
         typedef int (*RequestFocusType)(const qti::audio::core::FocusInfo, int64_t*);
         typedef int (*AbandonFocusType)(int64_t);
+        typedef int (*UpdateFocusRequestType)(const int64_t, float);
         RequestFocusType requestFocusFunc;
         AbandonFocusType abandonFocusFunc;
-
+        UpdateFocusRequestType updateFocusRequestFunc;
     public:
         static std::map<std::string, std::vector<int64_t>> focusIdMap;
         FocusHandler(const std::string& libName);
@@ -38,6 +55,7 @@ class FocusHandler {
         bool isValid();
         int requestFocus(const qti::audio::core::FocusInfo& focusInfo, int64_t* focusId);
         int abandonFocus(int64_t focusId);
+        int updateFocusRequest(const int64_t focusId, float gain);
 };
 
 #ifdef ENABLE_QCOM_VHAL_NIGHTMODE

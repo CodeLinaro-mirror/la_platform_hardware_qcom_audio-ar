@@ -18,7 +18,7 @@
 #include <qti-audio-core/StreamOutPrimary.h>
 #include <qti-audio/PlatformConverter.h>
 #include <qti-audio-core/Parameters.h>
-
+#define INITIAL_VOLUME_VALUE  -3600
 using aidl::android::hardware::audio::common::AudioOffloadMetadata;
 using aidl::android::hardware::audio::common::getFrameSizeInBytes;
 using aidl::android::hardware::audio::common::SinkMetadata;
@@ -101,6 +101,11 @@ StreamOutPrimary::StreamOutPrimary(StreamContext&& context, const SourceMetadata
 
     mHwVolumeSupported = isHwVolumeSupported();
     mVolumes.resize(getChannelCount(mMixPortConfig.channelMask.value()));
+    int i,channel = mVolumes.size();
+    for ( i = 1; i < channel; i++ )
+    {
+        mVolumes[i]= mVolumes[0];
+    }
     std::ostringstream os;
     os << " : usecase: " << mTagName;
     os << " IoHandle: " << mMixPortConfig.ext.get<AudioPortExt::Tag::mix>().handle << " ";
@@ -246,7 +251,7 @@ ndk::ScopedAStatus StreamOutPrimary::configureMMapStream(int32_t* fd, int64_t* b
 
     LOG(INFO) << __func__ << mLogPrefix << ": stream is configured";
 
-    setHwVolume(mVolumes);
+    setPALVolume(mVolumes);
 
     return ndk::ScopedAStatus::ok();
 }
@@ -414,6 +419,12 @@ void StreamOutPrimary::resume() {
         LOG(ERROR) << "POWER POLICY OFFLINE please try again\n";
         return -EINVAL;
     }
+    uint64_t signed_frames = 0;
+    uint64_t written_frames = 0;
+    uint64_t kernel_frames = 0;
+    uint64_t dsp_frames = 0;
+    uint64_t bt_extra_frames = 0;
+    uint64_t kernel_buffer_size = 0;
     if (!mPalHandle) {
         // configure on first transfer or after stand by
         configure();
@@ -465,7 +476,18 @@ void StreamOutPrimary::resume() {
     }
 
     *actualFrameCount = static_cast<size_t>(bytesWritten / mFrameSizeBytes);
+    /* This adjustment accounts for buffering after app processor
+    * It is based on estimated DSP latency per use case, rather than exact.
+    */
 
+    dsp_frames = GetRenderLatency(getAddress()) * (getStreamContext().getSampleRate()) / 1000000LL;
+    mBytesWritten += bytesWritten;
+    struct BufferConfig BufferConfig_ = getBufferConfig();
+    written_frames = mBytesWritten / mFrameSizeBytes;
+    kernel_buffer_size = BufferConfig_.bufferSize * BufferConfig_.bufferCount;
+    kernel_frames = kernel_buffer_size / mFrameSizeBytes;
+    if (written_frames >= (kernel_frames + dsp_frames))
+        signed_frames = written_frames - (kernel_frames + dsp_frames);
 #ifdef VERY_VERBOSE_LOGGING
     LOG(VERBOSE) << __func__ << mLogPrefix << ": byteswritten: " << bytesWritten;
 #endif
@@ -476,6 +498,10 @@ void StreamOutPrimary::resume() {
         const auto& btlatencyMs = mPlatform.getBluetoothLatencyMs(mConnectedDevices);
         *latencyMs += btlatencyMs;
     }
+#ifdef VERY_VERBOSE_LOGGING
+    LOG(DEBUG) << "signed frames " << signed_frames << " written frames "<< written_frames
+    << " kernel frames " << kernel_frames << " dsp frames " << dsp_frames;
+#endif
     return ::android::OK;
 }
 
@@ -694,10 +720,6 @@ ndk::ScopedAStatus StreamOutPrimary::getHwVolume(std::vector<float>* _aidl_retur
 }
 
 ndk::ScopedAStatus StreamOutPrimary::setHwVolume(const std::vector<float>& in_channelVolumes) {
-    auto sourceMetadata = std::get<SourceMetadata>(mMetadata);
-    std::vector<float> updatedChannelVolumes = in_channelVolumes;
-
-    mVolumeGaincheck=property_get_bool(mGainVolumecheckProperty.c_str(),false);
     if (!mHwVolumeSupported) {
         return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
     }
@@ -707,14 +729,56 @@ ndk::ScopedAStatus StreamOutPrimary::setHwVolume(const std::vector<float>& in_ch
                    << mVolumes.size() << " got " << in_channelVolumes.size();
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
     }
-    if (!mVolumeGaincheck) {
-        auto isVolumeInRange=[](const std::vector<float>& volumes) {
-            return std::all_of(volumes.begin(),volumes.end(),[](float vol) { return (vol >= 0.0f && vol <= 1.0f); });
-        };
-        if (!isVolumeInRange(in_channelVolumes)) {
-            LOG(DEBUG) << __func__ << mLogPrefix << "out of range volume " << ::android::internal::ToString(in_channelVolumes);
-            return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
-        }
+    //mVolumes is initialized to INTITIAL_VOLUME_VALUE(-3600) as a workaround in
+    //case of HAL crash, this causes VTS failure when volume is overwritten and
+    //restore attempted again, causing out of bound error, check added to
+    //allow INITIAL_VOLUME_VALUE.
+    auto isVolumeInRange = [](const std::vector<float>& volumes) {
+        return std::all_of(volumes.begin(), volumes.end(),[](float vol) {
+        return ((vol >= 0.0f && vol <= 1.0f) || ( vol == INITIAL_VOLUME_VALUE ));});
+    };
+
+    if (!isVolumeInRange(in_channelVolumes)) {
+        LOG(ERROR) << __func__ << mLogPrefix << " out of range volume "
+                   << ::android::internal::ToString(in_channelVolumes);
+        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
+    }
+
+    //to do create google bug
+    if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK || mTag == Usecase::PCM_OFFLOAD_PLAYBACK) {
+        return ndk::ScopedAStatus::ok();
+    }
+
+    if (!mPalHandle) {
+        mVolumes = in_channelVolumes;
+        mUseCachedVolume = true;
+        LOG(DEBUG) << __func__ << mLogPrefix << " cache volume "
+                   << ::android::internal::ToString(in_channelVolumes);
+        return ndk::ScopedAStatus::ok();
+    }
+
+    if (int32_t ret = mPlatform.setVolume(mPalHandle, in_channelVolumes); ret) {
+        LOG(ERROR) << __func__ << mLogPrefix << " failed to set volume";
+        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
+    }
+
+    mVolumes = in_channelVolumes;
+
+    LOG(DEBUG) << __func__ << mLogPrefix << ::android::internal::ToString(mVolumes);
+    return ndk::ScopedAStatus::ok();
+}
+ndk::ScopedAStatus StreamOutPrimary::setPALVolume(const std::vector<float>& in_channelVolumes) {
+    auto sourceMetadata = std::get<SourceMetadata>(mMetadata);
+    std::vector<float> updatedChannelVolumes = in_channelVolumes;
+
+    if (!mHwVolumeSupported) {
+        return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
+    }
+
+    if (mVolumes.size() != in_channelVolumes.size()) {
+        LOG(ERROR) << __func__ << mLogPrefix << " channel count mismatch with port, expected "
+                   << mVolumes.size() << " got " << in_channelVolumes.size();
+        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
     }
 #ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
     //update focus service volume too if an entry exists
@@ -1128,7 +1192,7 @@ void StreamOutPrimary::configure() {
 #ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
     requestFocus();
 #endif
-    setHwVolume(mVolumes);
+    setPALVolume(mVolumes);
     if (mTag == Usecase::HAPTICS_PLAYBACK) {
 
         hapticChannelLayout = AudioChannelLayout::make<AudioChannelLayout::Tag::layoutMask>
@@ -1403,4 +1467,69 @@ void StreamOutPrimary::abandonFocus() {
     return;
 }
 #endif
+
+::android::status_t StreamOutPrimary::getHwTimeStamp(::aidl::android::hardware::audio::core::StreamDescriptor::Reply* reply) {
+    LOG(DEBUG) << "Enter :" << __func__;
+    if (!reply) {
+        LOG(ERROR) << "Null in reply - " << "Failed to get hw timestamp";
+        return ::android::INVALID_OPERATION;
+    }
+    // for stream out we use the system uptime as the time stamp
+    reply->observable.timeNs = ::android::uptimeNanos();
+    LOG(DEBUG) << "android::uptimeNanos() -> TimeStamp - reply->observable.timeNs: " << reply->observable.timeNs;
+    LOG(DEBUG) << "Exit : " << __func__;
+    return ::android::OK;
+}
+
+int64_t StreamOutPrimary::GetSourceLatency() {
+    auto attr = mPlatform.getPalStreamAttributes(mMixPortConfig, false);
+    switch (attr->type) {
+        case PAL_STREAM_DEEP_BUFFER:
+            return DEEP_BUFFER_PLATFORM_CAPTURE_DELAY;
+        case PAL_STREAM_LOW_LATENCY:
+            return LOW_LATENCY_PLATFORM_CAPTURE_DELAY;
+        case PAL_STREAM_VOIP_TX:
+            return VOIP_TX_PLATFORM_CAPTURE_DELAY;
+        case PAL_STREAM_RAW:
+            return RAW_STREAM_PLATFORM_CAPTURE_DELAY;
+            // TODO: Add more streamtypes if available in pal
+        default:
+            return 0;
+    }
+}
+
+int64_t StreamOutPrimary::GetRenderLatency(std::string address) {
+    auto streamAttributes_ = mPlatform.getPalStreamAttributes(mMixPortConfig, false);
+    int ret = -EINVAL;
+    long long latency = 0;
+    LOG(INFO) << __func__ << "type: " << streamAttributes_->type;
+
+    if (mPalHandle) {
+        ret = pal_stream_get_rendering_latency(mPalHandle, &latency);
+        LOG(INFO) << "ret " << ret << ", latency " << latency;
+        return latency;
+    }
+    switch (streamAttributes_->type) {
+        case PAL_STREAM_DEEP_BUFFER:
+        case PAL_STREAM_PLAYBACK_BUS:
+            if (((address.compare("BUS03_PHONE")) == 0) ||
+                ((address.compare("BUS01_SYS_NOTIFICATION")) == 0) ||
+                ((address.compare("BUS03_PHONE")) == 0)) {
+                return LOW_LATENCY_PLATFORM_DELAY;
+            } else {
+                return DEEP_BUFFER_PLATFORM_DELAY;
+            }
+        case PAL_STREAM_LOW_LATENCY:
+            return LOW_LATENCY_PLATFORM_DELAY;
+        case PAL_STREAM_COMPRESSED:
+        case PAL_STREAM_PCM_OFFLOAD:
+            return PCM_OFFLOAD_PLATFORM_DELAY;
+        case PAL_STREAM_ULTRA_LOW_LATENCY:
+            return ULL_PLATFORM_DELAY;
+        // TODO: Add more usecases/type as in current hal, once they are available in pal
+        default:
+            return 0;
+    }
+}
+
 } // namespace qti::audio::core

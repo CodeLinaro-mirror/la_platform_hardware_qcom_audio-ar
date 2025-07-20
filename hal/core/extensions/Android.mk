@@ -1,5 +1,57 @@
 LOCAL_PATH := $(call my-dir)
 
+#-------------------------------------------
+#            Build volume LIB
+#-------------------------------------------
+
+include $(CLEAR_VARS)
+
+LOCAL_MODULE := libVolumeCurve
+LOCAL_VENDOR_MODULE := true
+
+ifeq ($(TARGET_BOARD_AUTO),true)
+  LOCAL_CFLAGS += -DPLATFORM_AUTO
+endif
+
+LOCAL_SRC_FILES:= AudioVolume.cpp
+
+LOCAL_CFLAGS += \
+    -Wall \
+    -Werror \
+    -Wno-unused-function \
+    -Wno-unused-variable \
+    -Wno-missing-field-initializers \
+    -Wunused-parameter \
+    -Wextra
+
+LOCAL_CPPFLAGS += -fexceptions
+
+LOCAL_SHARED_LIBRARIES := \
+    libaudioroute \
+    libbase \
+    liblog \
+    libaudioutils \
+    libcutils \
+    libdl \
+    libexpat \
+    liblog \
+    libxml2 \
+    libaudioserviceexampleimpl
+
+
+LOCAL_C_INCLUDES := \
+    $(LOCAL_PATH)/include \
+    $(TOP)/vendor/qcom/opensource/pal \
+    $(TOP)/external/expat/lib \
+    $(TOP)/system/media/audio_utils/include \
+    $(call include-path-for, audio-route) \
+
+LOCAL_HEADER_LIBRARIES += libhardware_headers
+LOCAL_HEADER_LIBRARIES += libsystem_headers \
+                          libxsdc-utils
+
+include $(BUILD_SHARED_LIBRARY)
+
 
 #-------------------------------------------
 #            Build CONFIG LIB
@@ -212,7 +264,8 @@ LOCAL_SHARED_LIBRARIES := \
     libexpat \
     liblog \
     libar-pal \
-    libAudioCalibOem
+    libAudioCalibOem \
+    libVolumeCurve
 
 
 LOCAL_C_INCLUDES := \
@@ -629,7 +682,12 @@ LOCAL_SHARED_LIBRARIES := \
     alliance.hardware.automotive.audiocontrol.internal-V2-ndk \
     android.hardware.audio.core.sounddose-V1-ndk \
     android.hardware.automotive.audiocontrol-V4-ndk \
-    ampere.hardware.interfaces.automotive.audioparameterparser-V1-ndk
+    ampere.hardware.interfaces.automotive.audioparameterparser-V1-ndk \
+    android.hardware.automotive.vehicle-V4-ndk \
+    android.hardware.automotive.vehicle@2.0 \
+    VehicleHalUtils \
+    android-automotive-large-parcelable-lib \
+    android.hardware.automotive.vehicle.property-V3-ndk
 
 LOCAL_HEADER_LIBRARIES :=  \
     libaudio_system_headers \

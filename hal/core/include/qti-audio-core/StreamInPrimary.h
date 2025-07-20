@@ -35,6 +35,7 @@ class StreamInPrimary : public StreamIn, public StreamCommonImpl {
             ::aidl::android::hardware::audio::core::StreamDescriptor::Reply*
             /*reply*/) override;
     void shutdown() override;
+    ::android::status_t getHwTimeStamp(::aidl::android::hardware::audio::core::StreamDescriptor::Reply*);
 
     // methods of StreamCommonInterface
 
@@ -71,6 +72,8 @@ class StreamInPrimary : public StreamIn, public StreamCommonImpl {
     void onClose() override { defaultOnClose(); }
     static std::mutex sinkMetadata_mutex_;
     void checkHearingAidRoutingForVoice(const Metadata& metadata, bool voiceActive);
+    int64_t GetSourceLatency();
+    bool get_hw_ts_enable();
 
   protected:
     /*
@@ -88,6 +91,7 @@ class StreamInPrimary : public StreamIn, public StreamCommonImpl {
     const Usecase mTag;
     const std::string mTagName;
     const size_t mFrameSizeBytes;
+    uint64_t mBytesRead = 0; /* total bytes read, not cleared when entering standby */
 
     // All the public must check the validity of this resource, if using
     pal_stream_handle_t* mPalHandle{nullptr};
@@ -98,6 +102,7 @@ class StreamInPrimary : public StreamIn, public StreamCommonImpl {
     // references
     Platform& mPlatform{Platform::getInstance()};
     const ::aidl::android::media::audio::common::AudioPortConfig& mMixPortConfig;
+    struct timespec readAt;
 
   private:
     ::android::status_t onReadError(const size_t sleepFrameCount);
@@ -108,6 +113,7 @@ class StreamInPrimary : public StreamIn, public StreamCommonImpl {
     bool mNSEnabled = false;
     bool mEffectsApplied = true;
     bool mIsMMapStarted = false;
+    bool hw_ts_enable = false;
     std::string mLogPrefix = "";
 };
 

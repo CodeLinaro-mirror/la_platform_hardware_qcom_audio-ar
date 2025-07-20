@@ -63,6 +63,9 @@ StreamInPrimaryOEM::StreamInPrimaryOEM(StreamContext&& context, const SinkMetada
     mLogPrefixOEM = os.str();
     mScd_file_path_index_ul = INVALID_PATH;
 
+    hw_ts_enable = StreamInPrimary::get_hw_ts_enable();
+    LOG(DEBUG) << "hw_ts_enable is " << hw_ts_enable;
+    readAt = {0};
     LOG(INFO) << __func__ << mLogPrefixOEM;
 }
 
@@ -99,6 +102,18 @@ void StreamInPrimaryOEM::shutdown() {
         pal_buffer palBuffer{};
         palBuffer.buffer = static_cast<uint8_t*>(buffer);
         palBuffer.size = frameCount * mFrameSizeBytes;
+        palBuffer.ts = nullptr;
+        uint64_t signed_frames = 0;
+        uint64_t read_frames = 0;
+        uint64_t kernel_frames = 0;
+        size_t kernel_buffer_size = 0;
+#ifdef HARDWARE_TIMESTAMP
+        palBuffer.ts = (struct timespec *) calloc(1, 1 * sizeof(struct timespec));
+        if (!palBuffer.ts) {
+            LOG(ERROR) << "calloc failed for size: " << sizeof(struct timespec) << "for palBuffer.ts";
+            return ::android::NO_MEMORY;
+        }
+#endif
         if (ecnr_ecmx_buffer && ecnr_ecmx_buffer_size > 0) {
 //            LOG(DEBUG) << __func__ << mLogPrefixOEM << " raplace buffer for the ECMX";
             palBuffer.buffer = reinterpret_cast<uint8_t*>(ecnr_ecmx_buffer.get());
@@ -161,6 +176,16 @@ void StreamInPrimaryOEM::shutdown() {
             } else if (mTag == Usecase::VOIP_RECORD) {
                 *latencyMs = VoipRecordECNR::getLatency();
             }
+#ifndef HARDWARE_TIMESTAMP
+            clock_gettime(CLOCK_MONOTONIC, &readAt);
+#else
+            if(palBuffer.ts) {
+                readAt.tv_sec = palBuffer.ts->tv_sec;
+                readAt.tv_nsec = palBuffer.ts->tv_nsec;
+                free(palBuffer.ts);
+            }
+            LOG(DEBUG) << "hw timestamp sec: " << readAt.tv_sec << "  nsec: " << readAt.tv_nsec;
+#endif
 #ifdef ECNR_HAL_SRC_CP
             if (bytesRead < 0)
                 break;
@@ -292,6 +317,11 @@ void StreamInPrimaryOEM::shutdown() {
         if (bytesRead < 0) {
             LOG(ERROR) << __func__ << mLogPrefixOEM << " read failed, ret:" << std::to_string(bytesRead);
             *actualFrameCount = frameCount;
+#ifdef HARDWARE_TIMESTAMP
+        if (palBuffer.ts) {
+            free(palBuffer.ts);
+        }
+#endif
              return onReadErrorOEM(frameCount);
         } else {
 #ifdef PCM_DUMP_HAL_ENABLE
@@ -308,6 +338,21 @@ void StreamInPrimaryOEM::shutdown() {
         LOG(VERBOSE) << __func__ << mLogPrefixOEM << ": bytes read " << bytesRead << ", return frame count "
                      << *actualFrameCount;
 #endif
+        LOG(VERBOSE) << "bytes read: " << bytesRead;
+        mBytesRead += bytesRead;
+        LOG(VERBOSE) << "mBytes read: " << mBytesRead;
+        read_frames = mBytesRead / mFrameSizeBytes;
+        struct BufferConfig BufferConfig_ = getBufferConfigOEM();
+        kernel_buffer_size = BufferConfig_.bufferSize * BufferConfig_.bufferCount;
+        kernel_frames = kernel_buffer_size / mFrameSizeBytes;
+        signed_frames = read_frames + kernel_frames;
+        if (hw_ts_enable) {
+            LOG(DEBUG) << "signed frames " << signed_frames << " read frames " << read_frames <<
+            " kernel frames " << kernel_frames << " pal_stream_handle = " << mPalHandle << " timestamp = " << readAt.tv_nsec;
+        } else {
+            LOG(DEBUG) << "signed frames " << signed_frames << " read frames " << read_frames <<
+            " kernel frames " << kernel_frames << " pal_stream_handle = " << mPalHandle << " timestamp = " << readAt.tv_nsec;
+        }
     }
     return ::android::OK;
 }

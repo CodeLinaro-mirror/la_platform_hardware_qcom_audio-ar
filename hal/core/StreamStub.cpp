@@ -156,4 +156,9 @@ ndk::ScopedAStatus StreamOutStub::reconfigureConnectedDevices() {
     return ndk::ScopedAStatus::ok();
 }
 
+::android::status_t StreamStub::getHwTimeStamp(::aidl::android::hardware::audio::core::StreamDescriptor::Reply* reply) {
+    LOG(DEBUG) << "Unimplemented";
+    return ::android::OK;
+}
+
 } // namespace qti::audio::core
