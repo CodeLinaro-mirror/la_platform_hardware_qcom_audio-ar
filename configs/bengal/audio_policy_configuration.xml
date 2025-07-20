@@ -17,10 +17,9 @@
      limitations under the License.
 -->
 
-<!-- Changes from Qualcomm Innovation Center are provided under the following license:    -->
-<!--                                                                                      -->
-<!-- Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.        -->
-<!-- SPDX-License-Identifier: BSD-3-Clause-Clear                                          -->
+<!-- Changes from Qualcomm Technologies, Inc. are provided under the following license:-->
+<!-- Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.     -->
+<!-- SPDX-License-Identifier: BSD-3-Clause-Clear                            -->
 <audioPolicyConfiguration version="7.0" xmlns:xi="http://www.w3.org/2001/XInclude">
     <!-- version section contains a “version” tag in the form “major.minor” e.g version=”1.0” -->
 

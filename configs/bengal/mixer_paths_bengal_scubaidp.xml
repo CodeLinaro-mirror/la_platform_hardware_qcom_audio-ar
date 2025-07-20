@@ -25,9 +25,9 @@
 <!-- OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN -->
 <!-- IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                          -->
 
-<!--                                                                                      -->
-<!-- Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.                   -->
-<!-- SPDX-License-Identifier: BSD-3-Clause-Clear                                          -->
+<!-- Changes from Qualcomm Technologies, Inc. are provided under the following license:-->
+<!-- Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.     -->
+<!-- SPDX-License-Identifier: BSD-3-Clause-Clear                            -->
 <mixer>
     <!-- These are the initial mixer settings -->
     <ctl name="Voice Rx Device Mute" id="0" value="0" />
