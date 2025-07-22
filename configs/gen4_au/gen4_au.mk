@@ -175,14 +175,11 @@ PRODUCT_COPY_FILES += \
     #$(TOPDIR)frameworks/native/data/etc/android.hardware.audio.pro.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.pro.xml \
     $(TOPDIR)frameworks/native/data/etc/android.hardware.audio.low_latency.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.low_latency.xml
 
-# Choosing audio config file between pure and value added
-# ifeq ($(TARGET_FWK_SUPPORTS_FULL_VALUEADDS), true)
-# PRODUCT_COPY_FILES += \
-#    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_module_config_primary_va.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_module_config_primary.xml
-# else
+# push both value-added and pure xml files for runtime selection in AHAL
+PRODUCT_COPY_FILES += \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_module_config_primary_va.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_module_config_primary_va.xml
 PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_module_config_primary.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_module_config_primary.xml
-# endif
 
 # common configuration files
 PRODUCT_COPY_FILES += \
