@@ -112,7 +112,7 @@ class StreamInPrimary : public StreamIn, public StreamCommonImpl {
     ::android::status_t onReadError(const size_t sleepFrameCount);
     struct BufferConfig getBufferConfig();
     void applyEffects();
-
+    std::mutex mPalHandleMutex;   /* mutex for palhandle */
     bool mAECEnabled = false;
     bool mNSEnabled = false;
     bool mEffectsApplied = true;
