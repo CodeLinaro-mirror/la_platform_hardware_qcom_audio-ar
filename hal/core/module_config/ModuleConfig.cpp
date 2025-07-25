@@ -34,6 +34,7 @@
 #include <libxml/parser.h>
 #include <libxml/xinclude.h>
 #include <media/stagefright/foundation/MediaDefs.h>
+#include <android-base/properties.h>
 
 #include <map>
 #include <memory>
@@ -681,6 +682,16 @@ static std::unique_ptr<ModuleConfig> getModuleConfig(const xsd::Modules::Module&
 
 // static
 std::unique_ptr<ModuleConfig> ModuleConfig::getPrimaryConfiguration() {
+    //check pure vendor ro property
+    static std::string kPrimaryModuleConfigFileName = "";
+    auto isValueAdded = ::android::base::GetIntProperty<int32_t>("ro.vendor.qti.va_aosp.support", 0);
+    if (isValueAdded) {
+        LOG(INFO) << __func__ << " : Selecting Value-Added Configuration Xml";
+        kPrimaryModuleConfigFileName = kPrimaryModuleVaConfigFileName;
+    } else {
+        LOG(INFO) << __func__ << " : Selecting Pure Configuration Xml";
+        kPrimaryModuleConfigFileName = kPrimaryModulePureConfigFileName;
+    }
     auto xsdConfig =
             xsd::read(getReadAbleConfigurationFile(kPrimaryModuleConfigFileName.c_str()).c_str());
     if (!xsdConfig.has_value()) {
