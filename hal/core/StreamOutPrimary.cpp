@@ -1441,11 +1441,17 @@ void StreamOutPrimary::requestFocus() {
             LOG(ERROR) << __LINE__ << __func__ << " No tracks in metadata";
             return;
         }
-        auto curStreamUsage =
-                static_cast<::aidl::android::media::audio::common::AudioUsage>(tracks[0].usage);
+        auto playbackTrackMetadata = tracks[0];
+        std::string usageLiteral = ::aidl::android::media::audio::common::toString(
+                                            playbackTrackMetadata.usage);
+        std::vector<std::string> tags = playbackTrackMetadata.tags;
+        std::string streamType = usageLiteral;
+        for (auto tag: tags) {
+            streamType += "_" + tag;
+        }
         FocusInfo focusInfo;
         focusInfo.device = mConnectedDevices[0];
-        focusInfo.usage = curStreamUsage;
+        focusInfo.usage = streamType;
         focusInfo.gain = mVolumes[0];
         focusInfo.mPalHandle = &(this->mPalHandle);
         if (focusSessionInfo.FocusId  == -1) {

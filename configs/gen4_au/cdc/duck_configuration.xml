@@ -7,7 +7,7 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
 <CarAudioDuckingConfiguration>
 
     <duckingRules>
-        <rule sourceType="AudioUsage" targetType="String" source="ASSISTANCE_NAVIGATION_GUIDANCE" target="BUS00_MEDIA" duck="true" gain="-9000" volumeOverride="false"/>
+        <rule sourceType="String" targetType="String" source="ASSISTANCE_NAVIGATION_GUIDANCE" target="BUS00_MEDIA" duck="true" gain="-9000" volumeOverride="false"/>
         <rule sourceType="UseCase" targetType="String" source="ROAD_ADAS" target="BUS00_MEDIA" duck="true" gain="-6750" volumeOverride="false"/>
         <rule sourceType="UseCase" targetType="String" source="VEHICLE_WARNING" target="BUS00_MEDIA" duck="true" gain="-6750" volumeOverride="false"/>
         <rule sourceType="UseCase" targetType="String" source="VEHICLE_SAFETY_WARNING" target="BUS00_MEDIA" duck="true" gain="-9000" volumeOverride="false"/>
@@ -44,7 +44,7 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <entry streamType="VEHICLE_WARNING" MuteOrderType="BLOCKED" reason="REMOTE_MUTE" sourceType="UseCase"/>
         <entry streamType="VEHICLE_SAFETY_WARNING" MuteOrderType="BLOCKED" reason="REMOTE_MUTE" sourceType="UseCase"/>
         <entry streamType="VEHICLE_WARNING" MuteOrderType="UNBLOCKED" reason="ADAS_DUCKING" sourceType="UseCase"/>
-        <entry streamType="ASSISTANCE_NAVIGATION_GUIDANCE" reason="NAV_DUCKING" sourceType="AudioUsage"/>
+        <entry streamType="ASSISTANCE_NAVIGATION_GUIDANCE" reason="NAV_DUCKING" sourceType="String"/>
         <entry streamType="TCU" reason="TCU_MUTE" sourceType="Type"/>
         <entry streamType="STATIC_POWER_LIMITATION" reason="TCU_MUTE" sourceType="Type"/>
         <entry streamType="DELIVERY_MODE" reason="TCU_MUTE" sourceType="Type"/>
