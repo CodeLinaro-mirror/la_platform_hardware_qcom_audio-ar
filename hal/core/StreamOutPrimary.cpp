@@ -235,9 +235,9 @@ ndk::ScopedAStatus StreamOutPrimary::configureMMapStream(int32_t* fd, int64_t* b
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
     }
     attr->type = PAL_STREAM_ULTRA_LOW_LATENCY;
-    auto palDevices =
-            mPlatform.configureAndFetchPalDevices(mMixPortConfig, mTag, mConnectedDevices);
-    if (!palDevices.size()) {
+       auto palDevices = mPlatform.configureAndFetchPalDevices(mMixPortConfig, mTag, mConnectedDevices,
+                                                            true /*dummyDevice*/);
+	   if (!palDevices.size()) {
         LOG(ERROR) << __func__ << mLogPrefix << " no connected devices on stream";
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
     }
