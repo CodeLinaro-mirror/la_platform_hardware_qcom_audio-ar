@@ -6,6 +6,7 @@ PRODUCT_PACKAGES += \
     libAudioConfigOem \
     libAWXPAL \
     libAudioCalibOem \
+    libVolumeCurve
 
 PRODUCT_ODM_PROPERTIES += \
 vendor.audio.feature.oem_extension.enable=true

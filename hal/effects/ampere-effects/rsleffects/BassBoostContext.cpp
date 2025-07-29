@@ -62,7 +62,7 @@ RetCode BassBoostContext::disable() {
     LOG(DEBUG) << __func__ << " ioHandle " << getIoHandle();
     if (!isEffectActive()) return RetCode::ERROR_ILLEGAL_PARAMETER;
     mState = EffectState::INITIALIZED;
-    mBassBoostSyncParams.value = MAX_BASS_BOOST_VALUE ;
+    mBassBoostSyncParams.value = MIN_BASS_BOOST_VALUE ;
     setOffloadParameters();
     return RetCode::SUCCESS;
 }
@@ -92,12 +92,9 @@ RetCode BassBoostContext::stop() {
 
 int BassBoostContext::setOffloadParameters() {
 
-    if (mPalHandle) {
-        LOG(DEBUG) << " Bass BOOST value " << mBassBoostSyncParams.value;
-        setBassBoost(mBassBoostSyncParams.value);
-    } else {
-        LOG(DEBUG) << " PalHandle not set";
-    }
+    LOG(DEBUG) << " Bass BOOST value " << mBassBoostSyncParams.value;
+    setBassBoost(mBassBoostSyncParams.value);
+
     return 0;
 }
 
