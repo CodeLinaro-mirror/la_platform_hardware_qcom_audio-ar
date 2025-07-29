@@ -94,7 +94,7 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <mixPort name="rear_seat" role="source" flags="DEEP_BUFFER">
             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
-        <mixPort name="primary_out" role="source" flags="PRIMARY">
+        <mixPort name="primary_out" role="source" flags="FAST">
             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
         <mixPort name="low_latency_out_16bit" role="source" flags="FAST">
