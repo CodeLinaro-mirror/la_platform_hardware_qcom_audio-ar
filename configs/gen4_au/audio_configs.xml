@@ -42,7 +42,7 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <property name="persist.vendor.audio.va_concurrency_enabled" value="false"/>
         <property name="vendor.audio.av.streaming.offload.enable" value="false"/>
         <property name="vendor.audio.offload.track.enable" value="true"/>
-        <property name="vendor.audio.offload.multiple.enabled" value="false"/>
+        <property name="vendor.audio.offload.multiple.enabled" value="true"/>
         <property name="vendor.audio.rec.playback.conc.disabled" value="false"/>
         <property name="vendor.voice.conc.fallbackpath" value=""/>
         <property name="vendor.voice.dsd.playback.conc.disabled" value="true"/>
