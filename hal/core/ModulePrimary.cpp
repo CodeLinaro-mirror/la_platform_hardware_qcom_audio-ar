@@ -268,59 +268,6 @@ void ModulePrimary::dumpInternal(const std::string& identifier) {
     return;
 }
 
-std::vector<int32_t> getVolumeProfile(uint16_t bus_mask) {
-    LOG(DEBUG) << "Enter " << __func__;
-    int ret;
-    std::vector<int32_t> volumes(7, -1);
-
-    ::aidl::qti::awx::pal_awx_param_t pal_param;
-    memset(&pal_param, 0, sizeof(::aidl::qti::awx::pal_awx_param_t));
-
-    ::aidl::qti::awx::VolumeParams params;
-    params.eq_mask = bus_mask;
-    // params.eq_mask = SET; //setting all bus
-    memset(&params, 0, sizeof(::aidl::qti::awx::VolumeParams));
-
-    pal_param.param_id = PARAM_ID_VOLUME ;
-    pal_param.param_size = sizeof(::aidl::qti::awx::VolumeParams);
-    pal_param.data = &params;
-
-    aidl::qti::awx::effect_type type = ::aidl::qti::awx::effect_type::SYNC_WITH_AUDIO_BUS;
-    ret = ::aidl::qti::awx::PalParamDelegator::AWX_get_param(&pal_param, type);
-
-    std::string busTypes[] = {
-        "BUS00_MEDIA",             // bit0
-        "BUS01_SYS_NOTIFICATION",  // bit1
-        "BUS02_NAV_GUIDANCE",      // bit2
-        "BUS03_PHONE",             // bit3
-        "BUS0F_NAV_GUIDANCE2",     // bit4
-        "BUS01_no_ASIL",           // bit5
-        "BUS02_Road_ADAS"          // bit6
-    };
-    if (ret < 0) {
-        LOG(ERROR) << __func__ << "Error while fetching value returned with ret: " << ret;
-        return volumes;
-    }
-    else {
-        for(int i=0; i<7; i++){
-            if (bus_mask & (1 << (i))) {
-                int volValue = params.value[i] ;
-
-                if (volValue < MIN_VOLUME_VALUE || volValue > MAX_VOLUME_VALUE) {
-                    LOG(ERROR) << __func__ << "Unsupported volume value " << "for " << busTypes[i];
-                }
-                else{
-                    volumes[i] = params.value[i];
-                    LOG(DEBUG) << __func__ << " " << busTypes[i] << " Volume fetched successfully! ret: " << params.value[i];
-                }
-            }
-        }
-    }
-
-    LOG(DEBUG) << "Exit " << __func__;
-    return volumes;
-}
-
 binder_status_t ModulePrimary::dump(int fd, const char** args, uint32_t numArgs) {
     if (fd <= 0) {
         LOG(ERROR) << ": fd:" << fd << " dump error";
@@ -732,6 +679,26 @@ std::string ModulePrimary::carplayParamConverter(CarPlayVendorParameterExt::Rate
         LOG(DEBUG) << __func__ <<" Updated carplay_param: "<<carplay_param;
         return carplay_param;
 }
+int ModulePrimary::getMedia_volume() {
+    int volume = 0;
+    const auto& configs = getConfig().portConfigs;
+    for (const auto& portConfig : configs) {
+        if (portConfig.ext.getTag() == AudioPortExt::device) {
+            if (auto devicePort = portConfig.ext.get<AudioPortExt::device>();
+                    (devicePort.device.type.type == AudioDeviceType::OUT_BUS &&
+                     devicePort.device.type.connection.empty())) {
+                if (auto address = devicePort.device.address.get<AudioDeviceAddress::Tag::id>();
+                        !address.empty()) {
+                    if (address == MEDIA_BUS) {
+                        volume = portConfig.gain->values[0];
+                        LOG(DEBUG) << __func__ << " volume: " << volume;
+                    }
+                }
+            }
+        }
+    }
+    return volume;
+}
 
 ::android::status_t ModulePrimary::setCarPlayParameter(const VendorParameter& param) {
     struct str_parms* parms = NULL;
@@ -851,7 +818,8 @@ std::string ModulePrimary::carplayParamConverter(CarPlayVendorParameterExt::Rate
                 return ::android::BAD_VALUE;
             }
             focusInfo.usage = "CP_DUCK";
-            focusInfo.gain = Vol_to_mdB(aidlDuckAudio.targetVolume);
+            focusInfo.gain = Vol_to_mdB(aidlDuckAudio.targetVolume) + static_cast<float>(getMedia_volume());
+            LOG(DEBUG) << __func__ << " focusInfo.gain: " << focusInfo.gain;
             focusInfo.isExternalGain = true;
             focusInfo.rampDuration = aidlDuckAudio.rampDurationSec * 1000;
             mAudExt.mAutoAudioHalPriorityExtension->requestFocus(focusInfo, &focusSessionInfo.FocusId);

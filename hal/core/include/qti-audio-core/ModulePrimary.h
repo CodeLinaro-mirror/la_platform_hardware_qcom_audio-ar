@@ -315,6 +315,7 @@ class ModulePrimary final : public Module {
     static std::unordered_map<std::string, FocusSession> mActiveFocusDevices;
 #endif
     bool mOffloadSpeedSupported;
+    int getMedia_volume();
 };
 
 class MuteConfig {
