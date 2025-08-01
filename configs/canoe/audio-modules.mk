@@ -40,7 +40,6 @@ endif
 #PAL Service
 AUDIO_PAL += libpalclient
 AUDIO_PAL += libpalipcservice
-AUDIO_PAL += libpaleventnotifier
 #PAL Stream Modules
 AUDIO_PAL += libstream_compress
 AUDIO_PAL += libstream_incall
