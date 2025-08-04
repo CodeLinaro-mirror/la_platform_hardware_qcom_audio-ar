@@ -432,16 +432,6 @@ void AudioVHALListener::onPropertyEvent(const std::vector<std::unique_ptr<IHalPr
                 }
                 isOTWStatusSet = parseOTWStatus(tempInfo);
                 if (isOTWStatusSet) {
-                    if (auto temperature = parseOTWTemperature(tempInfo); temperature != 0xFF) {
-                        triggerFocusRequest(getCurrentMediaGain());
-                        OTWTemperature = temperature;
-                    } else {
-                        triggerFocusAbandon();
-                        LOG(ERROR) << "OTW set, but failed to get OTW temperature, "
-                            "derating not triggered";
-                        isOTWStatusSet = false;
-                        return;
-                    }
                     isDeratingEnabled = true;
                     cv.notify_one();
                 }
@@ -568,123 +558,53 @@ exit:
 }
 #endif
 
-class OTWTemperatureCallback final :
-    public aidl::android::hardware::automotive::vehicle::BnVehicleCallback {
+std::pair<int32_t, bool> processVehiclePropValue(std::unique_ptr<IHalPropValue> &propValueResult) {
+    int32_t propId = -1, areadId = -1;
+    propId = propValueResult->getPropId();
+    areadId = propValueResult->getAreaId();
+    LOG(DEBUG) << __func__ << ": PropId : " << propId << ": areaId : " << areadId;
 
-public:
-    ndk::ScopedAStatus onGetValues(
-            const aidl::android::hardware::automotive::vehicle::GetValueResults& results) {
-        LOG(INFO) << __func__ << "onGetValues called";
-        {
-            for (auto entry: results.payloads) {
-                LOG(INFO) << "RequestId: " << (long)entry.requestId
-                    << " result: " << (int)entry.status;
-                if (entry.status == aidl::android::hardware::automotive::vehicle::StatusCode::OK) {
-                    if (entry.prop.has_value()) {
-                        processVehiclePropValue(entry.prop.value());
-                    } else {
-                        LOG(ERROR) << "Payload is null";
-                        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
-                    }
-                } else {
-                    LOG(ERROR) << "getValues failed !!, status : " << (int)entry.status;
-                    return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
-                }
+    bool isOTWStatusSet = false;
+    int32_t OTWTemperature = 0xFF;
+    if (propId != ThermalPropertyId) {
+        LOG(ERROR) << __func__ << "Callback PropId not matching with THERMAL PROP ID";
+    } else {
+        std::vector<int32_t> tempInfo = propValueResult->getInt32Values();
+        for (auto it: tempInfo) {
+            LOG(INFO) << it << " ";
+        }
+        isOTWStatusSet = parseOTWStatus(tempInfo);
+        if (isOTWStatusSet) {
+            if (auto temperature = parseOTWTemperature(tempInfo); temperature != 0xFF) {
+                OTWTemperature = temperature;
+            } else {
+                LOG(ERROR) << "OTW set, but failed to get OTW temperature";
+                isOTWStatusSet = false;
             }
         }
-        return ndk::ScopedAStatus::ok();
     }
-
-    ndk::ScopedAStatus onSetValues(
-            const aidl::android::hardware::automotive::vehicle::SetValueResults& results) {
-        LOG(INFO) << "onSetValues called";
-        return ndk::ScopedAStatus::ok();
-    }
-
-    ndk::ScopedAStatus onPropertySetError(
-            const aidl::android::hardware::automotive::vehicle::VehiclePropErrors&) {
-        LOG(INFO) << "onPropertySetError called";
-        return ndk::ScopedAStatus::ok();
-    }
-
-    ndk::ScopedAStatus onPropertyEvent(
-            const aidl::android::hardware::automotive::vehicle::VehiclePropValues& vehiclePropValues,
-            int32_t) {
-        LOG(DEBUG) << __func__ << ": Enter " ;
-        return ndk::ScopedAStatus::ok();
-    }
-
-    void processVehiclePropValue(const
-            aidl::android::hardware::automotive::vehicle::VehiclePropValue vehiclePropValue) {
-        int32_t propId = -1, areadId = -1;
-        propId = vehiclePropValue.prop;
-        areadId = vehiclePropValue.areaId;
-        LOG(DEBUG) << __func__ << ": PropId : " << propId << ": areaId : " << areadId;
-
-        if (propId != ThermalPropertyId) {
-            LOG(ERROR) << __func__ << "Callback PropId not matching with THERMAL PROP ID";
-        } else {
-            std::vector<int32_t> tempInfo = vehiclePropValue.value.int32Values;
-            for (auto it: tempInfo) {
-                LOG(INFO) << it << " ";
-            }
-            isOTWStatusSet = parseOTWStatus(tempInfo);
-            if (isOTWStatusSet) {
-                if (auto temperature = parseOTWTemperature(tempInfo); temperature != 0xFF) {
-                    OTWTemperature = temperature;
-                } else {
-                    LOG(ERROR) << "OTW set, but failed to get OTW temperature";
-                    isOTWStatusSet = false;
-                }
-            }
-        }
-        isTemperatureInfoAvailable = true;
-        cvTemp.notify_one();
-        return;
-    }
-};
-
-ndk::ScopedAStatus getPropertyValues(int32_t propId,
-        std::shared_ptr<aidl::android::hardware::automotive::vehicle::IVehicleCallback> callback) {
-
-    ::aidl::android::hardware::automotive::vehicle::GetValueRequest
-             request =  ::aidl::android::hardware::automotive::vehicle::GetValueRequest{
-                                            .requestId = (long)(getUUID()),
-                                            .prop = aidl::android::hardware::automotive::vehicle::VehiclePropValue{
-                                                        .prop = propId,
-                                                    },
-                                        };
-    ::aidl::android::hardware::automotive::vehicle::GetValueRequests requests;
-    requests.payloads = {request};
-    auto result = LargeParcelableBase::parcelableToStableLargeParcelable(requests);
-    if (!result.ok()) {
-        LOG(INFO) << "conversion to parcelable failed!!";
-        return ndk::ScopedAStatus::ok();
-    }
-    if (result.value() != nullptr) {
-        requests.sharedMemoryFd = std::move(*result.value());
-        requests.payloads.clear();
-    }
-
-    //auto vehicleCallback = ndk::SharedRefBase::make<AudioDiagVehicleCallback>();
-    auto callbackClient =
-    ::aidl::android::hardware::automotive::vehicle::IVehicleCallback::fromBinder(callback->asBinder());
-    auto mVhal = getVhalService();
-    auto status = mVhal->getValues(callbackClient, requests);
-    if (!status.isOk() ) {
-       LOG(INFO) << "getValues failed: " << status.getMessage();
-    }
-    return ndk::ScopedAStatus::ok();
+    return {OTWTemperature, isOTWStatusSet};
 }
 
+std::shared_ptr<IVhalClient> getVhalClient() {
+    static std::shared_ptr<IVhalClient> vhalClient;
+    if (vhalClient == nullptr) {
+        vhalClient = IVhalClient::create();
+    }
+    return vhalClient;
+}
 
-void getCurrentTemperatureInfo() {
-    getPropertyValues(ThermalPropertyId, ndk::SharedRefBase::make<OTWTemperatureCallback>());
-    std::unique_lock _lock(vhalCallbackMutex);
-    LOG(INFO) << "Wating for temperature info";
-    cvTemp.wait(_lock, []{ return isTemperatureInfoAvailable;});
-    isTemperatureInfoAvailable = false;
-    return;
+std::pair<int32_t, bool> getOTWInfo() {
+    auto vhalClient = getVhalClient();
+    auto propValue = vhalClient->createHalPropValue(ThermalPropertyId);
+    auto vhalClientResult = vhalClient->getValueSync(*propValue);
+    if (vhalClientResult.ok()) {
+        auto propValueResult = std::move(vhalClientResult.value());
+        return processVehiclePropValue(propValueResult);
+    } else {
+        LOG(ERROR) << "Error fetching temperature info from VHAL";
+        return {0xFF, false};
+    }
 }
 
 int32_t getCnfAttachTimeMs() {
@@ -717,22 +637,35 @@ void thermalDeratingLoop() {
     while (true) {
         LOG(INFO) << "Waiting for OTW";
         cv.wait(_lock, []{ return isDeratingEnabled;});
+        int32_t curTemp, prevTemp;
+        bool isOTWStatusSet;
+        int32_t volumeLimit = getCurrentMediaGain();
+        std::pair<int32_t, bool> OTWInfo = getOTWInfo();
+        curTemp = OTWInfo.first;
+        isOTWStatusSet = OTWInfo.second;
+        if (isOTWStatusSet) {
+            triggerFocusRequest(volumeLimit);
+            prevTemp = curTemp;
+        } else {
+            triggerFocusAbandon();
+            LOG(ERROR) << "OTW set, but failed to get OTW temperature, "
+                "derating not triggered";
+            isDeratingEnabled = false;
+            break;
+        }
         //there's already a request to block volume increase
         //sleep for sometime to assess volume changes
-        int32_t volumeLimit;
-        int32_t curTemp, prevTemp = OTWTemperature; //OK to not do a get, as value updated from OTW callback
-        volumeLimit = getCurrentMediaGain();
         std::this_thread::sleep_for(std::chrono::milliseconds(getCnfAttachTimeMs()));
         while (true) {
-            getCurrentTemperatureInfo(); //trigger a call to VHAL, blocked till get completes
-                                        //update OTW status and OTW temperature
-            curTemp = OTWTemperature;
+            OTWInfo = getOTWInfo(); //trigger a call to VHAL, blocked till get completes
+                                    //update OTW status and OTW temperature
+            curTemp = OTWInfo.first;
+            isOTWStatusSet = OTWInfo.second;
             if (!isOTWStatusSet) {
                 triggerFocusAbandon();
                 isDeratingEnabled = false;
                 break;
             }
-            isOTWStatusSet = false;
             if (curTemp - prevTemp >= 0) {
                 volumeLimit -= getCnfDeltaStepMdb();
                 triggerFocusRequest(volumeLimit);
@@ -772,7 +705,7 @@ extern "C" __attribute__((visibility("default")))int priority_init(void)
     // Connect to the Vehicle HAL so we can monitor state
     std::shared_ptr<IVhalClient> pVnet;
     LOG(INFO) << "Connecting to Vehicle HAL";
-    pVnet = IVhalClient::create();
+    pVnet = getVhalClient();
     if (pVnet == nullptr) {
         LOG(ERROR) << "Vehicle HAL getService returned NULL.  Exiting.";
         return EXIT_FAILURE;
