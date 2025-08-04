@@ -15,8 +15,7 @@
  */
 
 /*
- * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -400,6 +399,12 @@ constexpr U makeBitPositionFlagMask(std::initializer_list<E> flags) {
         result |= makeBitPositionFlagMask(flag);
     }
     return result;
+}
+
+template <typename E, typename U = std::underlying_type_t<E>,
+          typename = std::enable_if_t<is_bit_position_enum<E>::value>>
+constexpr bool areAllBitPositionFlagsSet(U mask, std::initializer_list<E> flags) {
+    return (mask & makeBitPositionFlagMask<E>(flags)) == makeBitPositionFlagMask<E>(flags);
 }
 
 template <typename E, typename U = std::underlying_type_t<E>,

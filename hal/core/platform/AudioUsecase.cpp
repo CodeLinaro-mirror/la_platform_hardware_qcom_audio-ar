@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 #define LOG_TAG "AHAL_Usecase_QTI"
@@ -433,6 +433,23 @@ int32_t CompressPlayback::palCallback(pal_stream_handle_t* palHandle, uint32_t e
             compressPlayback->mPlatformStreamCallback->onDrainReady();
         } break;
         case PAL_STREAM_CBK_EVENT_PARTIAL_DRAIN_READY: {
+            {
+                /**
+                 * Once we receive the "EARLY EOS notification" from the PAL layer below,
+                 * we drain the stream for "FULL EOS" because HAL is responsible for delivering
+                 * the "FULL EOS" for each clip without framework involvement, especially during
+                 * the clip transition.
+                 * Although this platform logic can be accommodated in the layers below,
+                 * hence adding this TODO for platform behavior change.
+                 */
+                if (int32_t ret = ::pal_stream_drain(compressPlayback->mCompressPlaybackHandle,
+                                                     PAL_DRAIN);
+                    ret) {
+                    LOG(ERROR) << __func__
+                               << " failed to FULL EOS drain after EARLY EOS notification, ret:"
+                               << ret;
+                }
+            }
             compressPlayback->mPlatformStreamCallback->onDrainReady();
             // gapless resets in PAL, when partial drain is received,
             compressPlayback->mIsGaplessConfigured = false;
