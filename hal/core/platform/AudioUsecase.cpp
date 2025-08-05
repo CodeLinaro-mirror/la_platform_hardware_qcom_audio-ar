@@ -76,11 +76,16 @@ Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConf
 //end
     constexpr auto deepBufferPlaybackFlags =
             static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DEEP_BUFFER));
-    constexpr auto compressOffloadPlaybackFlags =
+    constexpr auto compressOffloadGaplessPlaybackFlags =
             static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DIRECT) |
                                  1 << flagCastToint(AudioOutputFlags::COMPRESS_OFFLOAD) |
                                  1 << flagCastToint(AudioOutputFlags::NON_BLOCKING) |
                                  1 << flagCastToint(AudioOutputFlags::GAPLESS_OFFLOAD));
+    /* seperating gapless offload and non-gapless offload flags */
+    constexpr auto compressOffloadPlaybackFlags =
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DIRECT) |
+                                 1 << flagCastToint(AudioOutputFlags::COMPRESS_OFFLOAD) |
+                                 1 << flagCastToint(AudioOutputFlags::NON_BLOCKING));
     constexpr auto fastRecordFlags =
             static_cast<int32_t>(1 << flagCastToint(AudioInputFlags::FAST));
     constexpr auto ullRecordFlags = static_cast<int32_t>(
@@ -137,7 +142,9 @@ Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConf
             tag = Usecase::DEEP_BUFFER_PLAYBACK;
         } else if (outFlags == lowLatencyPlaybackFlags) {
             tag = Usecase::LOW_LATENCY_PLAYBACK;
-        } else if (outFlags == compressOffloadPlaybackFlags) {
+        } else if ((outFlags == compressOffloadPlaybackFlags) ||
+                   (outFlags == compressOffloadGaplessPlaybackFlags)) {
+        /* mapping gapless offload and non-gapless offload to compress offload usecase */
             tag = Usecase::COMPRESS_OFFLOAD_PLAYBACK;
         } else if (outFlags == pcmOffloadPlaybackFlags) {
             tag = Usecase::PCM_OFFLOAD_PLAYBACK;
@@ -232,11 +239,16 @@ Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConf
 //end
     constexpr auto deepBufferPlaybackFlags =
             static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DEEP_BUFFER));
-    constexpr auto compressOffloadPlaybackFlags =
+    constexpr auto compressOffloadGaplessPlaybackFlags =
             static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DIRECT) |
                                  1 << flagCastToint(AudioOutputFlags::COMPRESS_OFFLOAD) |
                                  1 << flagCastToint(AudioOutputFlags::NON_BLOCKING) |
                                  1 << flagCastToint(AudioOutputFlags::GAPLESS_OFFLOAD));
+    /* seperating gapless offload and non-gapless offload flags */
+    constexpr auto compressOffloadPlaybackFlags =
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DIRECT) |
+                                 1 << flagCastToint(AudioOutputFlags::COMPRESS_OFFLOAD) |
+                                 1 << flagCastToint(AudioOutputFlags::NON_BLOCKING));
     constexpr auto fastRecordFlags =
             static_cast<int32_t>(1 << flagCastToint(AudioInputFlags::FAST));
     constexpr auto ullRecordFlags = static_cast<int32_t>(
@@ -305,7 +317,9 @@ Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConf
             tag = Usecase::DEEP_BUFFER_PLAYBACK;
         } else if (outFlags == lowLatencyPlaybackFlags) {
             tag = Usecase::LOW_LATENCY_PLAYBACK;
-        } else if (outFlags == compressOffloadPlaybackFlags) {
+        } else if ((outFlags == compressOffloadPlaybackFlags) ||
+                   (outFlags == compressOffloadGaplessPlaybackFlags)) {
+        /* mapping gapless offload and non-gapless offload to compress offload usecase */
             tag = Usecase::COMPRESS_OFFLOAD_PLAYBACK;
         } else if (outFlags == pcmOffloadPlaybackFlags) {
             tag = Usecase::PCM_OFFLOAD_PLAYBACK;
