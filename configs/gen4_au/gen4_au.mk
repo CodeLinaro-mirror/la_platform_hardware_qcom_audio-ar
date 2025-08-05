@@ -329,7 +329,7 @@ vendor.audio.parser.ip.buffer.size=262144
 ifeq ($(ENABLE_HYP), true)
 ifeq ($(TARGET_GVMGH_SPECIFIC), false)
 PRODUCT_PROPERTY_OVERRIDES += \
-persist.bluetooth.a2dp_offload.disabled=true
+persist.bluetooth.a2dp_offload.disabled=false
 else
 PRODUCT_PROPERTY_OVERRIDES += \
 persist.bluetooth.a2dp_offload.disabled=false
@@ -497,6 +497,16 @@ PRODUCT_PACKAGES_ENG += \
 
 PRODUCT_PACKAGES_DEBUG += \
     AudioSettings
+
+
+PRODUCT_PROPERTY_OVERRIDES += \
+persist.vendor.service.bt.a2dp.sink=true
+
+PRODUCT_PROPERTY_OVERRIDES += \
+ro.bluetooth.a2dp_offload.supported=true
+
+PRODUCT_ODM_PROPERTIES += \
+vendor.audio.feature.a2dp_offload.enable=true
 
 # for AudioReach HAL
 PRODUCT_PACKAGES += \
