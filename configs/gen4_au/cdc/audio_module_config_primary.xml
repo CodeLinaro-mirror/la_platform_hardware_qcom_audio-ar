@@ -33,9 +33,6 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <mixPort name="nav_guidance" role="source"  flags="DEEP_BUFFER">
             <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
-        <mixPort name="nav_guidance_primary" role="source" flags="PRIMARY">
-            <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
-        </mixPort>
         <mixPort name="phone" role="source" flags="DEEP_BUFFER">
             <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
