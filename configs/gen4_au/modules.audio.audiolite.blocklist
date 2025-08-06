@@ -15,4 +15,5 @@ blocklist q6_pdr_dlkm
 blocklist audio_prm_dlkm
 blocklist coupled_ssr_dlkm
 blocklist msm_virtio_snd
-blocklist ipcc_shmem_test_module
+blocklist machine_dlkm
+blocklist spf_machine_dlkm
