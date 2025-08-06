@@ -347,10 +347,10 @@ void StreamInPrimaryOEM::shutdown() {
         kernel_frames = kernel_buffer_size / mFrameSizeBytes;
         signed_frames = read_frames + kernel_frames;
         if (hw_ts_enable) {
-            LOG(DEBUG) << "signed frames " << signed_frames << " read frames " << read_frames <<
+            LOG(VERBOSE) << "signed frames " << signed_frames << " read frames " << read_frames <<
             " kernel frames " << kernel_frames << " pal_stream_handle = " << mPalHandle << " timestamp = " << readAt.tv_nsec;
         } else {
-            LOG(DEBUG) << "signed frames " << signed_frames << " read frames " << read_frames <<
+            LOG(VERBOSE) << "signed frames " << signed_frames << " read frames " << read_frames <<
             " kernel frames " << kernel_frames << " pal_stream_handle = " << mPalHandle << " timestamp = " << readAt.tv_nsec;
         }
     }

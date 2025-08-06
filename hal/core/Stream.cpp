@@ -587,12 +587,20 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
             break;
         case Tag::standby:
             if (mState == StreamDescriptor::State::IDLE) {
+                if (mContext->getAsyncCallback()) {
+                    /* releasing lock in case of Asynchronous Stream. */
+                    asyncLock.unlock();
+                }
                 if (::android::status_t status = mDriver->standby(); status == ::android::OK) {
                     populateReply(&reply, mIsConnected);
                     mState = StreamDescriptor::State::STANDBY;
                 } else {
                     LOG(ERROR) << __func__ << ": standby failed: " << status;
                     mState = StreamDescriptor::State::ERROR;
+                }
+                if (mContext->getAsyncCallback()) {
+                     // Accquring the lock in case of Asynchronous Stream
+                     asyncLock.lock();
                 }
             } else {
                 populateReplyWrongState(&reply, command);
