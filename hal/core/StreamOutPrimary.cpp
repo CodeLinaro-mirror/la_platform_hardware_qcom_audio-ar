@@ -1081,7 +1081,7 @@ void StreamOutPrimary::configure() {
     if (mTag == Usecase::DEEP_BUFFER_PLAYBACK || mTag == Usecase::PRIMARY_PLAYBACK) {
         attr->type = PAL_STREAM_DEEP_BUFFER;
     } else if (mTag == Usecase::LOW_LATENCY_PLAYBACK) {
-        attr->type = PAL_STREAM_PLAYBACK_BUS;
+        attr->type = PAL_STREAM_LOW_LATENCY;
         auto countProxyDevices = std::count_if(mConnectedDevices.cbegin(), mConnectedDevices.cend(),
                                                 isIPDevice);
         if (countProxyDevices > 0) {
@@ -1481,7 +1481,8 @@ int64_t StreamOutPrimary::GetRenderLatency(std::string address) {
         case PAL_STREAM_PLAYBACK_BUS:
             if (((address.compare("BUS03_PHONE")) == 0) ||
                 ((address.compare("BUS01_SYS_NOTIFICATION")) == 0) ||
-                ((address.compare("BUS03_PHONE")) == 0)) {
+                ((address.compare("BUS02_NAV_GUIDANCE")) == 0) ||
+                ((address.compare("BUS05_ALERTS")) == 0)){
                 return LOW_LATENCY_PLATFORM_DELAY;
             } else {
                 return DEEP_BUFFER_PLATFORM_DELAY;
