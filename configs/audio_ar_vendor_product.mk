@@ -15,7 +15,7 @@ MM_AUDIO_AR := acdb_cal.acdb
 MM_AUDIO_AR += libautohal_pal
 
 # AGM service is not used for GY
-ifeq (,$(filter gen4_gvm_gy gen5_gvm_gy gen5_gvm, $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)))
+ifeq (,$(filter gen4_gvm_gy gen5_gvm_gy gen5_gvm, $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)$(TARGET_BOARD_DERIVATIVE_SUFFIX)))
 MM_AUDIO_AR += libagm
 MM_AUDIO_AR += libagm_compress_plugin
 MM_AUDIO_AR += libagm_mixer_plugin
