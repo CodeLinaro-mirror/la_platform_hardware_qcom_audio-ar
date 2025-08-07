@@ -1,5 +1,5 @@
 <!--
-Copyright (c) 2024-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 SPDX-License-Identifier: BSD-3-Clause-Clear
 -->
 <manifest version="1.0" type="device">
@@ -25,4 +25,9 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
     <version>2</version>
     <fqname>IModule/usb</fqname>
   </hal>
+  <hal format="aidl">
+    <name>android.hardware.audio.core</name>
+    <version>2</version>
+    <fqname>IModule/bluetooth</fqname>
+   </hal>
 </manifest>
