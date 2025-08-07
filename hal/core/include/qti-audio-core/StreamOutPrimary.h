@@ -77,7 +77,6 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
 
     ndk::ScopedAStatus getHwVolume(std::vector<float>* _aidl_return) override;
     ndk::ScopedAStatus setHwVolume(const std::vector<float>& in_channelVolumes) override;
-    ndk::ScopedAStatus setPALVolume(const std::vector<float>& in_channelVolumes);
 
     ndk::ScopedAStatus getPlaybackRateParameters(
             ::aidl::android::media::audio::common::AudioPlaybackRate* _aidl_return) override;
@@ -133,7 +132,8 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     const std::string mTagName;
     const size_t mFrameSizeBytes;
     bool mIsPaused{false};
-    std::vector<float> mVolumes{-3600,-3600};
+    //0.6 is equivalyent to -3600 which is default value for RNCDC
+    std::vector<float> mVolumes{0.6,0.6};
     bool mUseCachedVolume = false;
     bool mHwVolumeSupported = false;
     bool mVolumeGaincheck = false;

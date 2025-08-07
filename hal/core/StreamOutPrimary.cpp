@@ -20,6 +20,10 @@
 #include <qti-audio-core/Parameters.h>
 #define INITIAL_VOLUME_VALUE  -3600
 #define MEDIA_BUS "BUS00_MEDIA"
+#define MIN_VOLUME_VALUE_MB -9000
+#define MAX_VOLUME_VALUE_MB 0
+#define MIN_VOLUME_VALUE_DB 0
+#define MAX_VOLUME_VALUE_DB 1
 using aidl::android::hardware::audio::common::AudioOffloadMetadata;
 using aidl::android::hardware::audio::common::getFrameSizeInBytes;
 using aidl::android::hardware::audio::common::SinkMetadata;
@@ -252,7 +256,7 @@ ndk::ScopedAStatus StreamOutPrimary::configureMMapStream(int32_t* fd, int64_t* b
 
     LOG(INFO) << __func__ << mLogPrefix << ": stream is configured";
 
-    setPALVolume(mVolumes);
+    setHwVolume(mVolumes);
 
     return ndk::ScopedAStatus::ok();
 }
@@ -721,54 +725,6 @@ ndk::ScopedAStatus StreamOutPrimary::getHwVolume(std::vector<float>* _aidl_retur
 }
 
 ndk::ScopedAStatus StreamOutPrimary::setHwVolume(const std::vector<float>& in_channelVolumes) {
-    if (!mHwVolumeSupported) {
-        return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
-    }
-
-    if (mVolumes.size() != in_channelVolumes.size()) {
-        LOG(ERROR) << __func__ << mLogPrefix << " channel count mismatch with port, expected "
-                   << mVolumes.size() << " got " << in_channelVolumes.size();
-        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
-    }
-    //mVolumes is initialized to INTITIAL_VOLUME_VALUE(-3600) as a workaround in
-    //case of HAL crash, this causes VTS failure when volume is overwritten and
-    //restore attempted again, causing out of bound error, check added to
-    //allow INITIAL_VOLUME_VALUE.
-    auto isVolumeInRange = [](const std::vector<float>& volumes) {
-        return std::all_of(volumes.begin(), volumes.end(),[](float vol) {
-        return ((vol >= 0.0f && vol <= 1.0f) || ( vol == INITIAL_VOLUME_VALUE ));});
-    };
-
-    if (!isVolumeInRange(in_channelVolumes)) {
-        LOG(ERROR) << __func__ << mLogPrefix << " out of range volume "
-                   << ::android::internal::ToString(in_channelVolumes);
-        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
-    }
-
-    //to do create google bug
-    if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK || mTag == Usecase::PCM_OFFLOAD_PLAYBACK) {
-        return ndk::ScopedAStatus::ok();
-    }
-
-    if (!mPalHandle) {
-        mVolumes = in_channelVolumes;
-        mUseCachedVolume = true;
-        LOG(DEBUG) << __func__ << mLogPrefix << " cache volume "
-                   << ::android::internal::ToString(in_channelVolumes);
-        return ndk::ScopedAStatus::ok();
-    }
-
-    if (int32_t ret = mPlatform.setVolume(mPalHandle, in_channelVolumes); ret) {
-        LOG(ERROR) << __func__ << mLogPrefix << " failed to set volume";
-        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
-    }
-
-    mVolumes = in_channelVolumes;
-
-    LOG(DEBUG) << __func__ << mLogPrefix << ::android::internal::ToString(mVolumes);
-    return ndk::ScopedAStatus::ok();
-}
-ndk::ScopedAStatus StreamOutPrimary::setPALVolume(const std::vector<float>& in_channelVolumes) {
     auto sourceMetadata = std::get<SourceMetadata>(mMetadata);
     std::vector<float> updatedChannelVolumes = in_channelVolumes;
 
@@ -779,6 +735,16 @@ ndk::ScopedAStatus StreamOutPrimary::setPALVolume(const std::vector<float>& in_c
     if (mVolumes.size() != in_channelVolumes.size()) {
         LOG(ERROR) << __func__ << mLogPrefix << " channel count mismatch with port, expected "
                    << mVolumes.size() << " got " << in_channelVolumes.size();
+        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
+    }
+    auto isVolumeInRange = [](const std::vector<float>& volumes) {
+        return std::all_of(volumes.begin(), volumes.end(),[](float vol) {
+        return (vol >= 0.0f && vol <= 1.0f);});
+    };
+
+    if (!isVolumeInRange(in_channelVolumes)) {
+        LOG(ERROR) << __func__ << mLogPrefix << " out of range volume "
+                   << ::android::internal::ToString(in_channelVolumes);
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
     }
 #ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
@@ -809,8 +775,9 @@ ndk::ScopedAStatus StreamOutPrimary::setPALVolume(const std::vector<float>& in_c
             for (const auto& [sourceTypeKey, sourceGainValue] : sourceGainTable) {
                 if (sourceTypeKey == str) {
                     LOG(DEBUG) << "USAGE matched, gain added: " << sourceGainValue << " sourceTypeKey: " << sourceTypeKey;
+                    float sourceGainValue_dB=((sourceGainValue )/(MAX_VOLUME_VALUE_MB - MIN_VOLUME_VALUE_MB));
                     for (size_t i = 0; i < in_channelVolumes.size(); ++i) {
-                        updatedChannelVolumes[i] = in_channelVolumes[i] + sourceGainValue;
+                        updatedChannelVolumes[i] = in_channelVolumes[i] + sourceGainValue_dB;
                         LOG(DEBUG) << "updated volumes : " << updatedChannelVolumes[i];
                     }
                     break;
@@ -1193,7 +1160,7 @@ void StreamOutPrimary::configure() {
 #ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
     requestFocus();
 #endif
-    setPALVolume(mVolumes);
+    setHwVolume(mVolumes);
     if (mTag == Usecase::HAPTICS_PLAYBACK) {
 
         hapticChannelLayout = AudioChannelLayout::make<AudioChannelLayout::Tag::layoutMask>

@@ -60,10 +60,12 @@
 #define AUDIO_PARAMETER_KEY_FADER "Fader"
 #define AUDIO_PARAMETER_KEY_ISFADERAVAILABLE "isFaderAvailable"
 #ifdef ENABLE_QCOM_AMPERE_AUDIO
-#define MIN_VOLUME_VALUE_MB -9000
-#define MAX_VOLUME_VALUE_MB 0
 #define BALANCE_FADER_SCALE 5.0
 #endif
+#define MIN_VOLUME_VALUE_MB -9000
+#define MAX_VOLUME_VALUE_MB 0
+#define MIN_VOLUME_VALUE_DB 0
+#define MAX_VOLUME_VALUE_DB 1
 
 #include <android/binder_manager.h>
 #include <android/binder_process.h>
@@ -133,12 +135,12 @@ ndk::ScopedAStatus qti::audio::core::ModulePrimary::setAudioPortConfig(const ::a
     if (!status.isOk()) {
             return status;
         }
-    float volume;
+    float volume_MB,volume = 0.0;
     if (in_requested.gain.has_value()) {
         if (in_requested.gain->values.empty()) {
             return ndk::ScopedAStatus::ok();
         }
-    volume = (static_cast<float>(in_requested.gain->values[0]));
+    volume_MB = (static_cast<float>(in_requested.gain->values[0]));
 #ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
         LOG(DEBUG) << __func__ << ": requested " << in_requested.toString();
         if (in_requested.ext.getTag() == AudioPortExt::device) {
@@ -184,6 +186,15 @@ ndk::ScopedAStatus qti::audio::core::ModulePrimary::setAudioPortConfig(const ::a
     auto portsToHandle = route->sourcePortIds;
 
     // Iterate over the list
+    if (volume_MB >= MAX_VOLUME_VALUE_MB) {
+        volume = MAX_VOLUME_VALUE_DB;
+    } else {
+        if (volume_MB <= MIN_VOLUME_VALUE_MB) {
+            volume = MIN_VOLUME_VALUE_DB;
+        } else {
+            volume = (volume_MB - MIN_VOLUME_VALUE_MB)/(MAX_VOLUME_VALUE_MB - MIN_VOLUME_VALUE_MB);
+        }
+    }
     for (auto iter = list.begin(); iter != list.end() && !portsToHandle.empty(); ++iter) {
         // Try to lock the iterator
         auto outIter = iter->lock();
@@ -191,7 +202,6 @@ ndk::ScopedAStatus qti::audio::core::ModulePrimary::setAudioPortConfig(const ::a
             // Get the stream context and mix port config
             auto& mcontext = outIter->getStreamContext();
             auto& listAudioPortConfig = mcontext.getMixPortConfig();
-
             // Get the port ID and channel count
             int listId = listAudioPortConfig.portId;
             int numChannels = static_cast<int>(getChannelCount(listAudioPortConfig.channelMask.value()));
@@ -205,7 +215,7 @@ ndk::ScopedAStatus qti::audio::core::ModulePrimary::setAudioPortConfig(const ::a
                 LOG(DEBUG) << "Found the stream at ID: " << listId << " Gain is: " << volume << " Volume is: " << volumes[0];
                 // Set the hardware volume
                 auto streamObj = std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(outIter);
-                streamObj->setPALVolume(volumes);
+                streamObj->setHwVolume(volumes);
                 LOG(DEBUG) << "Volume set: " << volumes[0];
                 // Remove the port ID from the ports to handle
                 std::erase(portsToHandle, listId);
@@ -1179,11 +1189,20 @@ void ModulePrimary::onSetGenericParameters(const std::vector<VendorParameter>& p
 }
 
 
-void MuteConfig::set_mute_config_for_address(char* address, bool muted, float volume) {
+void MuteConfig::set_mute_config_for_address(char* address, bool muted, float volume_MB) {
     LOG(DEBUG) << __func__ << ": Enter, muted: " << muted << ", address: " << address;
     bool is_muted = false;
-
+    float volume;
     ModulePrimary::outListMutex.lock();
+    if (volume_MB >= MAX_VOLUME_VALUE_MB) {
+        volume = MAX_VOLUME_VALUE_DB;
+    } else {
+        if (volume_MB <= MIN_VOLUME_VALUE_MB) {
+            volume = MIN_VOLUME_VALUE_DB;
+        } else {
+            volume = (volume_MB - MIN_VOLUME_VALUE_MB)/(MAX_VOLUME_VALUE_MB - MIN_VOLUME_VALUE_MB);
+        }
+    }
 
     for (auto weakStream : ModulePrimary::getOutStreams()) {
         if (weakStream.expired()) {
@@ -1206,10 +1225,10 @@ void MuteConfig::set_mute_config_for_address(char* address, bool muted, float vo
                         vol.push_back(volume);
                     LOG(DEBUG)<<"gain is:"<<::android::internal::ToString(vol);
 
-                    (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(stream))->setPALVolume(vol);
+                    (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(stream))->setHwVolume(vol);
                     LOG(DEBUG)<<"volume set :"<<vol[0];
                } else {
-                    (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(stream))->setPALVolume(getVol);
+                    (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(stream))->setHwVolume(getVol);
                     is_muted  = false;
                 }
             }
