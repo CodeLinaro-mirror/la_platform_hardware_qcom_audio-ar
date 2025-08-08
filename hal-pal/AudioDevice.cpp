@@ -2130,8 +2130,7 @@ int AudioDevice::SetParameters(const char *kvpairs) {
             sizeof(pal_param_bta2dp_t));
     }
 
-    ret = str_parms_get_str(parms, "asrc_start", value, sizeof(value));
-    if (ret >= 0) {
+    if (str_parms_get_str(parms, "asrc_start", value, sizeof(value)) >= 0) {
         AHAL_DBG("Getting ASRC parameters starts! ");
         typedef struct {
             uint32_t effective;
@@ -2166,7 +2165,7 @@ int AudioDevice::SetParameters(const char *kvpairs) {
     str_parms_destroy(parms);
 
 exit:
-    AHAL_DBG("exit: %s", kvpairs);
+    AHAL_DBG("exit: %s ret: %d", kvpairs, ret);
     return ret;
 }
 
