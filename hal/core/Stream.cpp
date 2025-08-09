@@ -496,6 +496,9 @@ StreamOutWorkerLogic::Status StreamOutAsyncWorkerLogic::cycle() {
         case Tag::halReservedExit: {
             if (const int32_t cookie = command.get<Tag::halReservedExit>();
                 cookie == mContext->getInternalCommandCookie()) {
+                // callback are suppressed with STANDBY state
+                mState = StreamDescriptor::State::STANDBY;
+                asyncLock.unlock(); // unlock as stream is going to destroy.
                 mDriver->shutdown();
                 setClosed();
                 // This is an internal command, no need to reply.
