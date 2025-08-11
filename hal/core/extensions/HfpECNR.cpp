@@ -529,7 +529,7 @@ static int32_t hfp_set_volume(float value) {
         return -EIO;
     }
 
-    LOG(DEBUG) << __func__ << " Setting HFP volume to  " << value;
+    LOG(DEBUG) << __func__ << " Setting HFP volume to  " << hfpmod.hfp_volume;
 
     pal_volume = (struct pal_volume_data *)malloc(sizeof(struct pal_volume_data) +
                                                   sizeof(struct pal_channel_vol_kv));
@@ -538,7 +538,7 @@ static int32_t hfp_set_volume(float value) {
 
     pal_volume->no_of_volpair = 1;
     pal_volume->volume_pair[0].channel_mask = 0x03;
-    pal_volume->volume_pair[0].vol = value;
+    pal_volume->volume_pair[0].vol = hfpmod.hfp_volume;
     ret = pal_stream_set_volume(hfpmod.rx_stream_handle, pal_volume);
     if (ret) LOG(ERROR) << __func__ << " set volume failed:  " << ret;
 
