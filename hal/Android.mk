@@ -93,7 +93,7 @@ ifeq ($(strip $(AUDIO_FEATURE_ENABLED_PAL_HIDL)),true)
   LOCAL_CFLAGS += -DPAL_HIDL_ENABLED
 endif
 
-ifeq ($(strip $(AUDIO_FEATURE_ENABLED_AGM_HIDL)),true)
+ifneq ($(strip $(AUDIO_FEATURE_ENABLED_AGM_HIDL)),true)
   LOCAL_SHARED_LIBRARIES += \
     vendor.qti.hardware.AGMIPC@1.0-impl \
     vendor.qti.hardware.AGMIPC@1.0 \
