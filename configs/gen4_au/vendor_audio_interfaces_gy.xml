@@ -18,4 +18,6 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
             method="registerService" mandatory="true"/>
     <library name = "sthal" libraryName="libsoundtriggerhal.qti.so"
             method="createISoundTriggerFactory" mandatory="true" />
+    <library name="btaudio_sw" libraryName="android.hardware.bluetooth.audio_sw.so"
+            method="registerIModuleBluetoothSWQti" mandatory="false" />
 </libraries>
