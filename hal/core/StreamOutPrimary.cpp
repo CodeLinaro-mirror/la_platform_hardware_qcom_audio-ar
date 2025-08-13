@@ -436,12 +436,6 @@ void StreamOutPrimary::resume() {
         LOG(DEBUG) << __func__ << mLogPrefix << ": stream is not connected";
         return ::android::OK;
     }
-    if (hasOutputVoipRxFlag(mMixPortConfig.flags.value()) ||
-        hasOutputDeepBufferFlag(mMixPortConfig.flags.value())) {
-        if (auto telephony = mContext.getTelephony().lock()) {
-            telephony->onPlaybackStart(mConnectedDevices);
-        }
-    }
     return ::android::OK;
 }
 
@@ -1191,7 +1185,12 @@ void StreamOutPrimary::configure() {
             telephony->CallTranslationManager("",CALL_TRANSLATION_DIR_RX);
         }
     }
-
+    if (hasOutputVoipRxFlag(mMixPortConfig.flags.value()) ||
+        hasOutputDeepBufferFlag(mMixPortConfig.flags.value())) {
+        if (auto telephony = mContext.getTelephony().lock()) {
+            telephony->onPlaybackStart(mConnectedDevices);
+        }
+    }
     if (mTag == Usecase::HAPTICS_PLAYBACK && mHapticsPalHandle) {
         if (int32_t ret = ::pal_stream_start(this->mHapticsPalHandle); ret) {
             LOG(ERROR) << __func__ << mLogPrefix << " failed to start haptics stream. ret:" << ret;
