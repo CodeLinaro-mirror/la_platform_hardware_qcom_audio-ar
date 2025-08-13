@@ -19,6 +19,7 @@
 #include <qti-audio/PlatformConverter.h>
 #include <qti-audio-core/Parameters.h>
 #define INITIAL_VOLUME_VALUE  -3600
+#define MEDIA_BUS "BUS00_MEDIA"
 using aidl::android::hardware::audio::common::AudioOffloadMetadata;
 using aidl::android::hardware::audio::common::getFrameSizeInBytes;
 using aidl::android::hardware::audio::common::SinkMetadata;
@@ -1328,9 +1329,10 @@ void StreamOutPrimary::configure() {
     }
 
     LOG(INFO) << __func__ << mLogPrefix << ": stream is configured";
-    if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK || mTag == Usecase::PCM_OFFLOAD_PLAYBACK || mTag == Usecase::MEDIA_PLAYBACK)
+     if (getAddress() == MEDIA_BUS)
+     {
         mAudExt.mAutoOemExtension->audio_extn_autooem_set_streamType(attr->type);
-
+     }
     enableOffloadEffects(true);
     const auto endTime = std::chrono::steady_clock::now();
     using FloatMillis = std::chrono::duration<float, std::milli>;
@@ -1399,8 +1401,10 @@ ndk::ScopedAStatus StreamOutPrimary::setLatencyMode(
 
 void StreamOutPrimary::shutdown_I() {
     if (mPalHandle != nullptr) {
-        if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK || mTag == Usecase::PCM_OFFLOAD_PLAYBACK || mTag == Usecase::MEDIA_PLAYBACK)
+        if (getAddress() == MEDIA_BUS)
+        {
             mAudExt.mAutoOemExtension->audio_extn_autooem_set_streamType(PAL_STREAM_INVALID);
+        }
         enableOffloadEffects(false);
 #ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
         abandonFocus();
