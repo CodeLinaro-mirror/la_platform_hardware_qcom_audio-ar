@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2019-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022, 2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -26,6 +25,10 @@
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
 #define LOG_NDEBUG 0
@@ -60,6 +63,8 @@
 #define AFE_PROXY_RECORD_PERIOD_SIZE  768
 
 static bool karaoke = false;
+std::mutex StreamOutPrimary::sourceMetadata_mutex_;
+std::mutex StreamInPrimary::sinkMetadata_mutex_;
 
 static bool is_pcm_format(audio_format_t format)
 {
@@ -983,11 +988,14 @@ static void out_update_source_metadata_v7(
     }
 
     if (astream_out) {
+        astream_out->sourceMetadata_mutex_.lock();
+
         ssize_t track_count = source_metadata->track_count;
         struct playback_track_metadata_v7* track = source_metadata->tracks;
         astream_out->tracks.resize(track_count);
 
-        AHAL_VERBOSE("track count is %d",track_count);
+        AHAL_DBG("track count is %d for usecase(%d: %s)",track_count,
+            astream_out->GetUseCase(), use_case_table[astream_out->GetUseCase()]);
 
         astream_out->btSourceMetadata.track_count = track_count;
         astream_out->btSourceMetadata.tracks = astream_out->tracks.data();
@@ -1034,6 +1042,8 @@ static void out_update_source_metadata_v7(
         if (ret != 0) {
             AHAL_ERR("Set PAL_PARAM_ID_SET_SOURCE_METADATA for %d failed", ret);
         }
+
+        astream_out->sourceMetadata_mutex_.unlock();
     }
 }
 
@@ -1395,31 +1405,38 @@ static void in_update_sink_metadata_v7(
     if (adevice) {
         astream_in = adevice->InGetStream((audio_stream_t*)stream);
 
-    if (astream_in) {
-       ssize_t track_count = sink_metadata->track_count;
-       struct record_track_metadata_v7* track = sink_metadata->tracks;
-       AHAL_DBG("track count is %d with channel_mask %d",track_count, track->channel_mask);
-       audio_mode_t mode;
-       bool voice_active = false;
+        if (astream_in) {
+            ssize_t track_count = sink_metadata->track_count;
+            struct record_track_metadata_v7* track = sink_metadata->tracks;
+            audio_mode_t mode;
+            bool voice_active = false;
+            AHAL_DBG("track count is %d for usecase (%d: %s)", track_count,
+                astream_in->GetUseCase(), use_case_table[astream_in->GetUseCase()]);
 
-       /* When BLE gets connected, adev_input_stream opens from mixports capabilities. In this
-        * case channel mask is set to "0" by FWK whereas when actual usecase starts,
-        * audioflinger updates the channel mask in updateSinkMetadata as a part of capture
-        * track. Thus channel mask value is checked here to avoid sending unnecessary sink
-        * metadata BT HAL
-        */
-       if (track->channel_mask == 0) return;
+            /* When BLE gets connected, adev_input_stream opens from mixports capabilities. In this
+             * case channel mask is set to "0" by FWK whereas when actual usecase starts,
+             * audioflinger updates the channel mask in updateSinkMetadata as a part of capture
+             * track. Thus channel mask value is checked here to avoid sending unnecessary sink
+             * metadata BT HAL
+             */
+            if (track != NULL) {
+                AHAL_DBG("channel_mask %d", track->channel_mask);
+                if (track->channel_mask == 0) return;
+            }
 
-       astream_in->tracks.resize(track_count);
+            astream_in->sinkMetadata_mutex_.lock();
 
-       astream_in->btSinkMetadata.track_count = track_count;
-       astream_in->btSinkMetadata.tracks = astream_in->tracks.data();
+            astream_in->tracks.resize(track_count);
 
-       if (adevice && adevice->voice_) {
-           voice_active = adevice->voice_->get_voice_call_state(&mode);
-       } else {
-           AHAL_ERR("adevice voice is null");
-       }
+            astream_in->btSinkMetadata.track_count = track_count;
+            astream_in->btSinkMetadata.tracks = astream_in->tracks.data();
+
+            if (adevice && adevice->voice_) {
+                voice_active = adevice->voice_->get_voice_call_state(&mode);
+            }
+            else {
+                AHAL_ERR("adevice voice is null");
+            }
 
        // copy all tracks info from sink_metadata_v7 to sink_metadata per stream basis
        while (track_count && track) {
@@ -1438,6 +1455,8 @@ static void in_update_sink_metadata_v7(
        if (ret != 0) {
            AHAL_ERR("Set PAL_PARAM_ID_SET_SINK_METADATA for %d failed", ret);
        }
+
+       astream_in->sinkMetadata_mutex_.unlock();
     }
   }
 }
@@ -1908,17 +1927,14 @@ int StreamOutPrimary::GetMmapPosition(struct audio_mmap_position *position)
     struct pal_mmap_position pal_mmap_pos;
     int32_t ret = 0;
 
-    stream_mutex_.lock();
     if (pal_stream_handle_ == nullptr) {
         AHAL_ERR("error pal handle is null\n");
-        stream_mutex_.unlock();
         return -EINVAL;
     }
 
     ret = pal_stream_get_mmap_position(pal_stream_handle_, &pal_mmap_pos);
     if (ret) {
         AHAL_ERR("failed to get mmap position %d\n", ret);
-        stream_mutex_.unlock();
         return ret;
     }
     position->position_frames = pal_mmap_pos.position_frames;
@@ -1933,7 +1949,6 @@ int StreamOutPrimary::GetMmapPosition(struct audio_mmap_position *position)
     position->time_nanoseconds += mmap_time_offset_micros * (int64_t)1000;
 #endif
 
-    stream_mutex_.unlock();
     return 0;
 }
 
@@ -2237,13 +2252,14 @@ exit:
     return ret;
 }
 
-int StreamOutPrimary::RouteStream(const std::set<audio_devices_t>& new_devices, bool force_device_switch __unused) {
+int StreamOutPrimary::RouteStream(const std::set<audio_devices_t>& new_devices_tmp, bool force_device_switch __unused) {
     int ret = 0, noPalDevices = 0;
     pal_device_id_t * deviceId = nullptr;
     struct pal_device* deviceIdConfigs = nullptr;
     pal_param_device_capability_t *device_cap_query = nullptr;
     size_t payload_size = 0;
     dynamic_media_config_t dynamic_media_config;
+    std::set<audio_devices_t> new_devices;
     std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
 
     bool isHifiFilterEnabled = false;
@@ -2257,12 +2273,28 @@ int StreamOutPrimary::RouteStream(const std::set<audio_devices_t>& new_devices, 
         goto done;
     }
 
+    new_devices = new_devices_tmp;
     AHAL_INFO("enter: usecase(%d: %s) devices 0x%x, num devices %zu",
             this->GetUseCase(), use_case_table[this->GetUseCase()],
             AudioExtn::get_device_types(new_devices), new_devices.size());
     AHAL_DBG("mAndroidOutDevices %d, mNoOfOutDevices %zu",
              AudioExtn::get_device_types(mAndroidOutDevices),
              mAndroidOutDevices.size());
+
+    if (adevice->use_spk_whs_combo) {
+        AHAL_DBG ("Feature use_spkr_hs_combo_enabled ");
+        /* Check for combo device routing selection, if so update combo devices */
+        if (new_devices.count(AUDIO_DEVICE_OUT_SPEAKER) &&
+            (new_devices.count(AUDIO_DEVICE_OUT_WIRED_HEADSET) ||new_devices.count(AUDIO_DEVICE_OUT_WIRED_HEADPHONE))) {
+            new_devices.erase(AUDIO_DEVICE_OUT_WIRED_HEADSET);
+            new_devices.erase(AUDIO_DEVICE_OUT_WIRED_HEADPHONE);
+            mComboDevice = true;
+            AHAL_INFO("Found combo device: updating new_devices to be 0x%x, num devices %zu, mComboDevice = %d",
+                AudioExtn::get_device_types(new_devices), new_devices.size(), mComboDevice);
+            } else {
+            mComboDevice = false;
+        }
+    }
 
     if (!AudioExtn::audio_devices_empty(new_devices)) {
         // re-allocate mPalOutDevice and mPalOutDeviceIds
@@ -2341,6 +2373,13 @@ int StreamOutPrimary::RouteStream(const std::set<audio_devices_t>& new_devices, 
             strlcpy(mPalOutDevice[i].custom_config.custom_key, "",
                     sizeof(mPalOutDevice[i].custom_config.custom_key));
 
+            if (adevice->use_spk_whs_combo) {
+                if (mComboDevice && (mPalOutDeviceIds[i] == PAL_DEVICE_OUT_SPEAKER)) {
+                    strlcpy(mPalOutDevice[i].custom_config.custom_key, "speaker-and-headphones",
+                        sizeof(mPalOutDevice[i].custom_config.custom_key));
+                    AHAL_INFO("Setting custom key as %s", mPalOutDevice[i].custom_config.custom_key);
+                }
+            }
             if ((AudioExtn::audio_devices_cmp(mAndroidOutDevices, AUDIO_DEVICE_OUT_SPEAKER_SAFE)) &&
                                    (mPalOutDeviceIds[i] == PAL_DEVICE_OUT_SPEAKER)) {
                 strlcat(mPalOutDevice[i].custom_config.custom_key, "speaker-safe;",
@@ -3542,10 +3581,13 @@ int StreamOutPrimary::SetAggregateSourceMetadata(bool voice_active) {
             track_count_total += astream_out_list[i]->btSourceMetadata.track_count;
         }
 
+        if (track_count_total == 0) {
+            AHAL_ERR("total track count is 0, return without settng SourceMetadata");
+            return  -EINVAL;
+        }
         total_tracks.resize(track_count_total);
         btSourceMetadata.track_count = track_count_total;
         btSourceMetadata.tracks = total_tracks.data();
-
         //Get the metadata of all tracks on different stream o/ps
         for (int i = 0; i < astream_out_list.size(); i++) {
             struct playback_track_metadata* track = astream_out_list[i]->btSourceMetadata.tracks;
@@ -3560,7 +3602,7 @@ int StreamOutPrimary::SetAggregateSourceMetadata(bool voice_active) {
                 ++track;
                 ++btSourceMetadata.tracks;
             }
-        }
+       }
         btSourceMetadata.tracks = total_tracks.data();
 
         // pass the metadata to PAL
@@ -3583,7 +3625,8 @@ StreamOutPrimary::StreamOutPrimary(
                         visualizer_hal_stop_output visualizer_stop_output):
     StreamPrimary(handle, devices, config),
     mAndroidOutDevices(devices),
-    flags_(flags)
+    flags_(flags),
+    btSourceMetadata{0, nullptr}
 {
     stream_ = std::shared_ptr<audio_stream_out> (new audio_stream_out());
     std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
@@ -3611,6 +3654,20 @@ StreamOutPrimary::StreamOutPrimary(
     AHAL_DBG("enter: handle (%x) format(%#x) sample_rate(%d) channel_mask(%#x) devices(%zu) flags(%#x)\
           address(%s)", handle, config->format, config->sample_rate, config->channel_mask,
           mAndroidOutDevices.size(), flags, address);
+
+    if (adevice->use_spk_whs_combo) {
+        if (mAndroidOutDevices.count(AUDIO_DEVICE_OUT_SPEAKER) &&
+            (mAndroidOutDevices.count(AUDIO_DEVICE_OUT_WIRED_HEADSET) ||
+                mAndroidOutDevices.count(AUDIO_DEVICE_OUT_WIRED_HEADPHONE))) {
+            mAndroidOutDevices.erase(AUDIO_DEVICE_OUT_WIRED_HEADSET);
+            mAndroidOutDevices.erase(AUDIO_DEVICE_OUT_WIRED_HEADPHONE);
+            mComboDevice = true;
+            AHAL_INFO("Found combo device: updating new_devices to be 0x%x, num devices %zu, mComboDevice = %d",
+                AudioExtn::get_device_types(mAndroidOutDevices), mAndroidOutDevices.size(), mComboDevice);
+        } else {
+            mComboDevice = false;
+        }
+    }
 
     //TODO: check if USB device is connected or not
     if (AudioExtn::audio_devices_cmp(mAndroidOutDevices, audio_is_usb_out_device)){
@@ -3735,6 +3792,14 @@ StreamOutPrimary::StreamOutPrimary(
         }
         strlcpy(mPalOutDevice[i].custom_config.custom_key, "",
                 sizeof(mPalOutDevice[i].custom_config.custom_key));
+
+        if (adevice->use_spk_whs_combo) {
+            if (mComboDevice && (mPalOutDeviceIds[i] == PAL_DEVICE_OUT_SPEAKER)) {
+                strlcpy(mPalOutDevice[i].custom_config.custom_key, "speaker-and-headphones",
+                    sizeof(mPalOutDevice[i].custom_config.custom_key));
+                AHAL_INFO("Setting custom key as %s", mPalOutDevice[i].custom_config.custom_key);
+            }
+        }
 
         if ((AudioExtn::audio_devices_cmp(mAndroidOutDevices, AUDIO_DEVICE_OUT_SPEAKER_SAFE)) &&
                                    (mPalOutDeviceIds[i] == PAL_DEVICE_OUT_SPEAKER)) {
@@ -4187,15 +4252,19 @@ int StreamInPrimary::SetAggregateSinkMetadata(bool voice_active) {
             //total tracks on stream i/ps
             track_count_total += astream_in_list[i]->btSinkMetadata.track_count;
         }
+        if (track_count_total == 0) {
+             AHAL_DBG("total track count is 0, return without settng SinkMetadata");
+             return -EINVAL;
+        }
 
         total_tracks.resize(track_count_total);
         btSinkMetadata.track_count = track_count_total;
         btSinkMetadata.tracks = total_tracks.data();
-
         //Get the metadata of all tracks on different stream i/ps
         for (int i = 0; i < astream_in_list.size(); i++) {
             struct record_track_metadata* track = astream_in_list[i]->btSinkMetadata.tracks;
             ssize_t track_count = astream_in_list[i]->btSinkMetadata.track_count;
+            // check tracks size in this stream metadata not to exceed total count
             while (track_count && track) {
                 btSinkMetadata.tracks->source = track->source;
                 AHAL_DBG("Aggregated Sink metadata source:%d", btSinkMetadata.tracks->source);
@@ -4992,7 +5061,8 @@ StreamInPrimary::StreamInPrimary(audio_io_handle_t handle,
     audio_source_t source) :
     StreamPrimary(handle, devices, config),
     mAndroidInDevices(devices),
-    flags_(flags)
+    flags_(flags),
+    btSinkMetadata{0, nullptr}
 {
     stream_ = std::shared_ptr<audio_stream_in> (new audio_stream_in());
     std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
@@ -5205,7 +5275,7 @@ StreamInPrimary::StreamInPrimary(audio_io_handle_t handle,
             uint8_t channels =
                 audio_channel_count_from_in_mask(config_.channel_mask);
             if (channels == 2) {
-                strlcpy(mPalInDevice[i].custom_config.custom_key, "dual-mic-eans",
+                strlcat(mPalInDevice[i].custom_config.custom_key, "dual-mic-eans",
                         sizeof(mPalInDevice[i].custom_config.custom_key));
                 AHAL_INFO("Setting custom key as %s", mPalInDevice[i].custom_config.custom_key);
             }
