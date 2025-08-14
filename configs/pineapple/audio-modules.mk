@@ -121,8 +121,6 @@ AUDIO_MODULES += libaudiocollector
 AUDIO_MODULES += libhotword_intf
 AUDIO_MODULES += libcustomva_intf
 AUDIO_MODULES += libvui_intf
-AUDIO_MODULES += libVoiceSdk
-AUDIO_MODULES += libtensorflowlite_c
 
 AUDIO_MODULES += $(AUDIO_AGM)
 AUDIO_MODULES += $(AUDIO_PAL)
