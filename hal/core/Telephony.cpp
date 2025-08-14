@@ -127,6 +127,12 @@ ndk::ScopedAStatus Telephony::switchAudioMode(AudioMode newAudioMode) {
                 LOG(DEBUG) << __func__ << " start CRS call";
             }
         }
+    } else if (newAudioMode == AudioMode::CALL_SCREEN ||
+              (newAudioMode == AudioMode::IN_CALL && mAudioMode ==  AudioMode::CALL_SCREEN)) {
+        // if CALL_SCREEN mode set, then start call screen and update proxy device.
+        // if IN_CALL mode set, then update to voice device.
+        mAudioMode = newAudioMode;
+        updateDevices();
     }
 
     if (newAudioMode == AudioMode::IN_COMMUNICATION) {
@@ -594,7 +600,7 @@ void Telephony::reconfigure(const SetUpdates& newUpdates) {
          }
     }
     if (isAnyCallActive() ||
-       ((mAudioMode == AudioMode::IN_CALL) && mIsVoiceStarted)) {
+       ((mAudioMode == AudioMode::IN_CALL || mAudioMode == AudioMode::CALL_SCREEN) && mIsVoiceStarted)) {
        updateCalls();
     }
 
@@ -885,6 +891,11 @@ ndk::ScopedAStatus Telephony::startCall() {
         const auto ttyMode = mTtyMap.find(mTelecomConfig.ttyMode);
         attributes->info.voice_call_info.tty_mode =
                 ttyMode != mTtyMap.cend() ? ttyMode->second : PAL_TTY_OFF;
+    }
+    if (mAudioMode == AudioMode::CALL_SCREEN) {
+        LOG(DEBUG) << __func__ << " CALL SCREEN update device";
+        palDevices[0].id = PAL_DEVICE_OUT_PROXY;  //overwrite the device with proxy dev
+        palDevices[1].id = PAL_DEVICE_IN_PROXY;  //overwrite the device with proxy dev
     }
 
     const size_t numDevices = 2;
@@ -1258,11 +1269,18 @@ void Telephony::updateDevices() {
     LOG(INFO) << __func__ << ": Enter";
 
     if (!isAnyCallActive()) {
-        if (mAudioMode == AudioMode::IN_CALL && (mPalHandle == nullptr || mSetUpdates.mIsCrsCall)) {
+        if ((mAudioMode == AudioMode::IN_CALL || mAudioMode == AudioMode::CALL_SCREEN) &&
+            (mPalHandle == nullptr || mSetUpdates.mIsCrsCall)) {
             mIsVoiceStarted = true;
             updateCalls();
             return;
         }
+    }
+    /*device overwrites for usecases*/
+    if (mAudioMode == AudioMode::CALL_SCREEN) {
+        LOG(DEBUG) << __func__ << " CALL SCREEN device update";
+        palDevices[0].id = PAL_DEVICE_OUT_PROXY;  //overwrite the device with proxy dev
+        palDevices[1].id = PAL_DEVICE_IN_PROXY;  //overwrite the device with proxy dev
     }
 
     // TODO configure pal devices with custom key if any
