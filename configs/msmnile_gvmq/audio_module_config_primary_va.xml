@@ -148,7 +148,7 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <mixPort name="low_latency_out_32k_float" role="source" flags="FAST">
             <profile samplingRates="32000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="FLOAT_32_BIT" />
         </mixPort>
-        <mixPort name="compress_offload_out" role="source" recommendedMuteDurationMs="190" flags="DIRECT COMPRESS_OFFLOAD NON_BLOCKING GAPLESS_OFFLOAD">
+        <mixPort name="compress_offload_out" role="source" recommendedMuteDurationMs="190" flags="DIRECT COMPRESS_OFFLOAD NON_BLOCKING">
             <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO" formatType="NON_PCM" encoding="audio/mpeg" />
             <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000 64000 88200 96000 128000 176400 192000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO" formatType="NON_PCM" encoding="audio/flac" />
             <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000 64000 88200 96000 128000 176400 192000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_2POINT1 LAYOUT_TRI LAYOUT_TRI_BACK LAYOUT_3POINT1 LAYOUT_QUAD LAYOUT_PENTA LAYOUT_5POINT1 LAYOUT_6POINT1 LAYOUT_7POINT1" formatType="NON_PCM" encoding="audio/alac" />
