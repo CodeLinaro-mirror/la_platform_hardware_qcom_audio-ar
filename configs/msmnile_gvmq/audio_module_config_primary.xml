@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <!--
-Copyright (c) 2024-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 SPDX-License-Identifier: BSD-3-Clause-Clear
 -->
 <modules>
@@ -198,21 +198,10 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
             <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_32_BIT" />
             <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="FIXED_Q_8_24" />
         </mixPort>
-        <mixPort name="echo_ref" role="sink">
-            <profile samplingRates="16000 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
-        </mixPort>
+
         <!-- end of source mixports-->
 
         <!-- start of sink mixports-->
-        <mixPort name="primary_in" role="sink" maxOpenCount="3" maxActiveCount="3" flags="FAST">
-            <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_FRONT_BACK" formatType="PCM" pcmType="INT_16_BIT" />
-        </mixPort>
-        <mixPort name="front_seat_in" role="sink">
-            <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
-        </mixPort>
-        <mixPort name="rear_seat_in" role="sink">
-            <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
-        </mixPort>
         <mixPort name="fast_input" role="sink" maxOpenCount="2" maxActiveCount="2" flags="FAST">
             <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_FRONT_BACK" channelMasks="INDEX_MASK_3" formatType="PCM" pcmType="INT_16_BIT" />
             <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_FRONT_BACK" channelMasks="INDEX_MASK_3" formatType="PCM" pcmType="INT_24_BIT" />
@@ -220,9 +209,21 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
             <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_FRONT_BACK" channelMasks="INDEX_MASK_3" formatType="PCM" pcmType="FIXED_Q_8_24" />
             <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_FRONT_BACK" channelMasks="INDEX_MASK_3" formatType="PCM" pcmType="FLOAT_32_BIT" />
         </mixPort>
+        <mixPort name="primary_in" role="sink" maxOpenCount="3" maxActiveCount="3">
+            <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_FRONT_BACK" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="echo_ref" role="sink">
+            <profile samplingRates="16000 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
         <mixPort name="voip_record" role="sink" flags="VOIP_TX">
             <profile samplingRates="8000 16000 24000 32000 48000" channelLayouts="LAYOUT_MONO"
                 formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="front_seat_in" role="sink">
+            <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="rear_seat_in" role="sink">
+            <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
         <mixPort name="mixport_tuner0" role="sink" >
             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO"
