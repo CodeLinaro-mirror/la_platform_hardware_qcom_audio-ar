@@ -865,8 +865,12 @@ int32_t StreamOutPrimary::setAggregateSourceMetadata(bool voiceActive) {
             }
         }
     }
-    btSourceMetadata.tracks = total_tracks.data();
-    pal_set_param(PAL_PARAM_ID_SET_SOURCE_METADATA, (void*)&btSourceMetadata, 0);
+
+    if (btSourceMetadata.track_count > 0) {
+        btSourceMetadata.tracks = total_tracks.data();
+        pal_set_param(PAL_PARAM_ID_SET_SOURCE_METADATA, (void*)&btSourceMetadata, 0);
+    }
+
     ModulePrimary::outListMutex.unlock();
     return 0;
 }
