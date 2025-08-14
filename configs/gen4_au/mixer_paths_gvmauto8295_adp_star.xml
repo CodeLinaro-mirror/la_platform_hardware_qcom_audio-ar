@@ -2347,6 +2347,9 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
     <path name="bt-sco-mic">
     </path>
 
+    <path name="dummy-dev">
+    </path>
+
     <path name="bt-sco-headset-wb">
     </path>
 

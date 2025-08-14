@@ -15,8 +15,8 @@
  */
 
 /*
- * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
- * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -42,7 +42,7 @@
 #include <memory>
 
 #define MIN_VOLUME_GAIN_MB -6000
-#define MAX_VOLUME_GAIN_MB 0
+#define MAX_VOLUME_GAIN_MB 600
 #define MIN_VOLUME_GAIN 0.0f
 #define MAX_VOLUME_GAIN 1.0f
 using aidl::android::hardware::audio::common::SinkMetadata;
@@ -323,6 +323,14 @@ ndk::ScopedAStatus qti::audio::core::ModulePrimary::setAudioPortConfig(const ::a
     if (!status.isOk()) {
             return status;
         }
+
+    if (in_requested.gain.has_value() && !in_requested.gain->values.empty()) {
+        if (in_requested.gain->values[0] > MAX_VOLUME_GAIN_MB || in_requested.gain->values[0] < MIN_VOLUME_GAIN_MB) {
+            LOG(ERROR) << __func__ << ": Invalid Port Gain raising EX_ILLEGAL_ARGUMENT exception";
+            return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
+        }
+    }
+
     if (in_requested.gain.has_value()) {
         if (in_requested.gain->values.empty()) {
             return ndk::ScopedAStatus::ok();
@@ -365,22 +373,13 @@ ndk::ScopedAStatus qti::audio::core::ModulePrimary::setAudioPortConfig(const ::a
             if (list_id == (*route_portid)) {
                 std::vector<float> vol;
                 LOG(DEBUG) << "Found the stream at id" << list_id;
-                if (in_requested.gain->values[0] >= MAX_VOLUME_GAIN_MB) {
-                    volume = MAX_VOLUME_GAIN;
-                }
-                else {
-                    if (in_requested.gain->values[0] <= MIN_VOLUME_GAIN_MB) {
-                        volume = MIN_VOLUME_GAIN;
-                    } else {
-                        /* converting gain from range of -6000MB to 600MB to this range to 0.0f to 1.0f
-                        this formula converts gain value to pal_stream_volume linearly
-                        new_value = ( (old_range_value - old_range_min) / (old_range_max - old_range_min) ) * (new_range_max - new_range_min) + new_range_min */
-                        LOG(DEBUG) << "Gain in MB: " << in_requested.gain->values[0];
-                        volume = (((float)(in_requested.gain->values[0]) - MIN_VOLUME_GAIN_MB) /
-                                  (MAX_VOLUME_GAIN_MB - MIN_VOLUME_GAIN_MB)) *
-                                      (MAX_VOLUME_GAIN - MIN_VOLUME_GAIN) + MIN_VOLUME_GAIN;
-                    }
-                }
+                /* converting gain from range of -6000MB to 600MB to this range to 0.0f to 1.0f
+                this formula converts gain value to pal_stream_volume linearly
+                new_value = ( (old_range_value - old_range_min) / (old_range_max - old_range_min) ) * (new_range_max - new_range_min) + new_range_min */
+                LOG(DEBUG) << "Gain in MB: " << in_requested.gain->values[0];
+                volume = (((float)(in_requested.gain->values[0]) - MIN_VOLUME_GAIN_MB) /
+                             (MAX_VOLUME_GAIN_MB - MIN_VOLUME_GAIN_MB)) *
+                             (MAX_VOLUME_GAIN - MIN_VOLUME_GAIN) + MIN_VOLUME_GAIN;
                 int iter_channel;
                 for(iter_channel = 0; iter_channel<no_of_channels; iter_channel++) {
                     vol.push_back(volume);

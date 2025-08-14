@@ -30,13 +30,13 @@ constexpr inline int PRESET_CUSTOM = -1;
 constexpr inline int PRESET_INVALID = -2;
 
 static const std::vector<Equalizer::BandFrequency> kBandFrequencies = {{0, 30000, 120000},
-                                                                       {1, 120001, 460000},
-                                                                       {2, 460001, 1800000},
-                                                                       {3, 1800001, 7000000},
-                                                                       {4, 7000001, 20000000}};
+                                                                           {1, 120001, 460000},
+                                                                           {2, 460001, 1800000},
+                                                                           {3, 1800001, 7000000},
+                                                                           {4, 7000001, 20000000}};
 
 constexpr inline std::array<uint16_t, MAX_NUM_BANDS> kPresetsFrequencies = {60, 230, 910, 3600,
-                                                                            14000};
+                                                                                14000};
 
 constexpr inline std::array<std::array<int16_t, MAX_NUM_BANDS>, MAX_NUM_PRESETS> kBandPresetLevels =
         {{{3, 0, 0, 0, 3},    /* Normal Preset */
@@ -78,8 +78,8 @@ static const Descriptor kEqualizerDesc = {
                    .flags = {.type = Flags::Type::INSERT,
                              .volume = Flags::Volume::CTRL,
                              .hwAcceleratorMode = Flags::HardwareAccelerator::TUNNEL,
-                             .deviceIndication = true,
-                             .offloadIndication = true},
+                             .offloadIndication = true,
+                             .deviceIndication = true},
                    .name = kEqualizerEffectName,
                    .implementor = "Qualcomm Technologies Inc."},
         .capability = kEqualizerCapabilites};
@@ -101,8 +101,8 @@ static const Descriptor kBassBoostDesc = {
                    .flags = {.type = Flags::Type::INSERT,
                              .volume = Flags::Volume::CTRL,
                              .hwAcceleratorMode = Flags::HardwareAccelerator::TUNNEL,
-                             .deviceIndication = true,
-                             .offloadIndication = true},
+                             .offloadIndication = true,
+                             .deviceIndication = true},
                    .name = kBassBoostEffectName,
                    .implementor = "Qualcomm Technologies Inc."},
         .capability = kBassBoostCap};
@@ -122,8 +122,8 @@ static const Descriptor kVirtualizerDesc = {
                    .flags = {.type = Flags::Type::INSERT,
                              .volume = Flags::Volume::CTRL,
                              .hwAcceleratorMode = Flags::HardwareAccelerator::TUNNEL,
-                             .deviceIndication = true,
-                             .offloadIndication = true},
+                             .offloadIndication = true,
+                             .deviceIndication = true},
                    .name = kVirtualizerEffectName,
                    .implementor = "Qualcomm Technologies Inc."},
         .capability = kVirtualizerCap};

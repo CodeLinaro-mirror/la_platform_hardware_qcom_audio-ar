@@ -12,7 +12,12 @@ LOCAL_CFLAGS := \
     -Werror \
     -Wthread-safety
 
-LOCAL_VINTF_FRAGMENTS += manifest_audiocorehal_default.xml
+ifeq ($(PLATFORM_VERSION),16)
+    # Android 16 (Baklava) requires updated manifest with audio core HAL v3
+    LOCAL_VINTF_FRAGMENTS += manifest_audiocorehal_default_16.xml
+else
+    LOCAL_VINTF_FRAGMENTS += manifest_audiocorehal_default.xml
+endif
 
 LOCAL_SRC_FILES := \
     DefaultServices.cpp
