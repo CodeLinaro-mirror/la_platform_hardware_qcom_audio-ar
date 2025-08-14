@@ -56,9 +56,9 @@
     <modules>
         <!-- Primary Audio HAL is now hosted in audio_module_config_primary -->
         <!-- A2DP was causing the r_submix load error , and hence commenting-->
-        <!-- A2DP Input Audio HAL -->
+        <!-- A2DP Input Audio HAL
         <xi:include href="/vendor/etc/bluetooth_qti_audio_policy_configuration.xml"/>
-
+        -->
         <!-- Usb Audio HAL -->
         <xi:include href="/vendor/etc/usb_audio_policy_configuration.xml"/>
 
