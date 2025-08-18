@@ -36,6 +36,8 @@
 
 using ::aidl::android::hardware::automotive::vehicle::IVehicle;
 using ::android::automotive::car_binder_lib::LargeParcelableBase;
+using android::frameworks::automotive::vhal::IVhalClient;
+using android::frameworks::automotive::vhal::VhalClientResult;
 
 #define SNDCARD_PATH "/sys/kernel/snd_card/card_state"
 #define MAX_SLEEP_RETRY 100
@@ -45,7 +47,7 @@ using ::android::automotive::car_binder_lib::LargeParcelableBase;
 #define SPEAKER_GROUP_AVAILABILITY 0x09F5 + 0x20000000 + 0x01000000 + 0x00410000 // VehiclePropertyGroup:VENDOR, VehicleArea:GLOBAL, VehiclePropertyType:INT32_VEC
 #define VUC_SPEAKER_GROUP_AVAILABILITY 0x0A21 + 0x20000000 + 0x01000000 + 0x00410000 // VehiclePropertyGroup:VENDOR, VehicleArea:GLOBAL, VehiclePropertyType:INT
 #define VUC_SPEAKER_GROUP_AVAILABILITY_SIZE 4
-#define AUDIO_NOTI_DETECT_FAILURE_V2_SIZE 7
+#define AUDIO_NOTI_DETECT_FAILURE_V2_SIZE 8
 
 static int fd = -1, efd = -1;
 static int exit_thread = 0; //by default exit thread is made false
@@ -57,112 +59,50 @@ int getUUID() {
     return (++uuid) % INT_MAX;
 }
 
-ndk::ScopedAStatus getPropertyValues(int32_t propId,
-        std::shared_ptr<aidl::android::hardware::automotive::vehicle::IVehicleCallback> callback) {
-    ::aidl::android::hardware::automotive::vehicle::GetValueRequest
-             request =  ::aidl::android::hardware::automotive::vehicle::GetValueRequest{
-                                            .requestId = (long)(getUUID()),
-                                            .prop = aidl::android::hardware::automotive::vehicle::VehiclePropValue{
-                                                        .prop = propId,
-                                                    },
-                                        };
-    ::aidl::android::hardware::automotive::vehicle::GetValueRequests requests;
-    requests.payloads = {request};
-    auto result = LargeParcelableBase::parcelableToStableLargeParcelable(requests);
-    if (!result.ok()) {
-        LOG(INFO) << "conversion to parcelable failed!!";
-        return ndk::ScopedAStatus::ok();
+std::shared_ptr<IVhalClient> getVhalClient() {
+    static std::shared_ptr<IVhalClient> vhalClient;
+    if (vhalClient == nullptr) {
+        vhalClient = IVhalClient::create();
     }
-    if (result.value() != nullptr) {
-        requests.sharedMemoryFd = std::move(*result.value());
-        requests.payloads.clear();
-    }
-
-    //auto vehicleCallback = ndk::SharedRefBase::make<AudioDiagVehicleCallback>();
-    auto callbackClient =
-    ::aidl::android::hardware::automotive::vehicle::IVehicleCallback::fromBinder(callback->asBinder());
-    auto mVhal = AudioDiagnostics::getVhalService();
-    if (mVhal == nullptr) {
-        LOG(ERROR) << "Couldn't fetch VHAL service!!";
-        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
-    }
-    auto status = mVhal->getValues(callbackClient, requests);
-    if (!status.isOk() ) {
-       LOG(INFO) << "getValues failed: " << status.getMessage();
-    }
-    return ndk::ScopedAStatus::ok();
+    return vhalClient;
 }
 
 ndk::ScopedAStatus updateSpeakerGroupAvailability(std::vector<int32_t> speakerInfo) {
-    ::aidl::android::hardware::automotive::vehicle::SetValueRequest
-             request =  ::aidl::android::hardware::automotive::vehicle::SetValueRequest{
-                                            .requestId = (long)(getUUID()),
-                                            .value = aidl::android::hardware::automotive::vehicle::VehiclePropValue{
-                                                        .prop = SPEAKER_GROUP_AVAILABILITY,
-                                                        .value.int32Values = speakerInfo,
-                                                    },
-                                        };
-    ::aidl::android::hardware::automotive::vehicle::SetValueRequests requests;
-    requests.payloads = {request};
-    auto result = LargeParcelableBase::parcelableToStableLargeParcelable(requests);
-    if (!result.ok()) {
-        LOG(INFO) << "conversion to parcelable failed!!";
-        return ndk::ScopedAStatus::ok();
-    }
-    if (result.value() != nullptr) {
-        requests.sharedMemoryFd = std::move(*result.value());
-        requests.payloads.clear();
-    }
-
-    auto vehicleCallback = ndk::SharedRefBase::make<AudioDiagVehicleCallback>();
-    auto callbackClient =
-    ::aidl::android::hardware::automotive::vehicle::IVehicleCallback::fromBinder(vehicleCallback->asBinder());
-    auto mVhal = AudioDiagnostics::getVhalService();
-    if (mVhal == nullptr) {
-        LOG(ERROR) << "Couldn't fetch VHAL service!!";
-        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
-    }
-    auto status = mVhal->setValues(callbackClient, requests);
-    if (!status.isOk() ) {
-       LOG(INFO) << "setValues failed: " << status.getMessage();
-    }
+    auto vhalClient = getVhalClient();
+    auto requestPropValue = vhalClient->createHalPropValue(SPEAKER_GROUP_AVAILABILITY);
+    requestPropValue->setInt32Values(speakerInfo);
+    auto callback = [](VhalClientResult<void> result){
+        if (result.ok()) {
+            LOG(INFO) << "setValue successful for SPEAKER_GROUP_AVAILABILITY";
+        } else {
+            LOG(ERROR) << "setValue failed for SPEAKER_GROUP_AVAILABILITY";
+        }
+        return;
+    };
+    std::shared_ptr<IVhalClient::SetValueCallbackFunc>
+        setValueCallbackFunc = std::make_shared<IVhalClient::SetValueCallbackFunc>(callback);
+    vhalClient->setValue(*requestPropValue, setValueCallbackFunc);
     return ndk::ScopedAStatus::ok();
 }
 
 ndk::ScopedAStatus updateVHAL() {
     bool audio_status = card_status && speaker_status && audio_comp_status;
-    ::aidl::android::hardware::automotive::vehicle::SetValueRequest
-             request =  ::aidl::android::hardware::automotive::vehicle::SetValueRequest{
-                                            .requestId = (long)(getUUID()),
-                                            .value = aidl::android::hardware::automotive::vehicle::VehiclePropValue{
-                                                        .prop = AUDIO_AVAILABILITY_ON,
-                                                        .value.int32Values{(int)audio_status},
-                                                    },
-                                        };
-    ::aidl::android::hardware::automotive::vehicle::SetValueRequests requests;
-    requests.payloads = {request};
-    auto result = LargeParcelableBase::parcelableToStableLargeParcelable(requests);
-    if (!result.ok()) {
-        LOG(INFO) << "conversion to parcelable failed!!";
-        return ndk::ScopedAStatus::ok();
-    }
-    if (result.value() != nullptr) {
-        requests.sharedMemoryFd = std::move(*result.value());
-        requests.payloads.clear();
-    }
-
-    auto vehicleCallback = ndk::SharedRefBase::make<AudioDiagVehicleCallback>();
-    auto callbackClient =
-    ::aidl::android::hardware::automotive::vehicle::IVehicleCallback::fromBinder(vehicleCallback->asBinder());
-    auto mVhal = AudioDiagnostics::getVhalService();
-    if (mVhal == nullptr) {
-        LOG(ERROR) << "Couldn't fetch VHAL service!!";
-        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
-    }
-    auto status = mVhal->setValues(callbackClient, requests);
-    if (!status.isOk() ) {
-       LOG(INFO) << "setValues failed: " << status.getMessage();
-    }
+    auto vhalClient = getVhalClient();
+    auto requestPropValue = vhalClient->createHalPropValue(AUDIO_AVAILABILITY_ON);
+    requestPropValue->setInt32Values(std::vector<int32_t>{
+                                static_cast<int32_t>(audio_status)});
+    auto callback = [audio_status](VhalClientResult<void> result){
+        if (result.ok()) {
+            LOG(INFO) << "setValue with audio_status: " << audio_status <<
+                " successful for AUDIO_AVAILABILITY_ON";
+        } else {
+            LOG(ERROR) << "setValue failed for AUDIO_AVAILABILITY_ON";
+        }
+        return;
+    };
+    std::shared_ptr<IVhalClient::SetValueCallbackFunc>
+        setValueCallbackFunc = std::make_shared<IVhalClient::SetValueCallbackFunc>(callback);
+    vhalClient->setValue(*requestPropValue, setValueCallbackFunc);
     return ndk::ScopedAStatus::ok();
 }
 
@@ -277,53 +217,46 @@ std::shared_ptr<IVehicle> AudioDiagnostics::getVhalService() {
     return mVhal;
 }
 
-
 AudioDiagnostics::AudioDiagnostics() {
     mThread = std::thread(&AudioDiagnostics::monitorThreadLoop, this);
     LOG(INFO) << "AudioDiagnostics init done.";
 
     //init VHAL service
-    auto mVhal = AudioDiagnostics::getVhalService();
-    if (mVhal == nullptr) {
+    auto mVhalClient = getVhalClient();
+    if (mVhalClient == nullptr) {
         LOG(ERROR) << "VHAL client creation failed!!";
         return;
     }
-    std::shared_ptr<AudioFailureDetectCallback>
-        failureDetectCallback = ndk::SharedRefBase::make<AudioFailureDetectCallback>();
     std::vector<aidl::android::hardware::automotive::vehicle::SubscribeOptions> options;
+    auto audioFailureDetectClient = mVhalClient->getSubscriptionClient(
+                            std::make_shared<AudioFailureDetectCallback>());
     options = {
         {
             .propId = AUDIO_NOTI_DETECT_FAILURE_V2,
             .areaIds = {},
         }
     };
-    if (auto status = mVhal->subscribe(failureDetectCallback, options,
-                                       /*maxSharedMemoryFileCount=*/0); !status.isOk()) {
+    if (auto status = audioFailureDetectClient->subscribe(options); !status.ok()) {
         LOG(ERROR) << "Subscription to AUDIO_NOTI_DETECT_FAILURE_V2 property faied!!";
     } else {
         LOG(INFO) << "Subscribed to AUDIO_NOTI_DETECT_FAILURE_V2 property";
     }
 
-    std::shared_ptr<SpeakerGroupAvailCallback>
-        speakerGroupAvailCallback = ndk::SharedRefBase::make<SpeakerGroupAvailCallback>();
+    auto speakerGroupAvailClient = mVhalClient->getSubscriptionClient(
+                            std::make_shared<SpeakerGroupAvailCallback>());
     options = {
         {
             .propId = VUC_SPEAKER_GROUP_AVAILABILITY,
             .areaIds = {},
         }
     };
-    if (auto status = mVhal->subscribe(speakerGroupAvailCallback, options,
-                                       /*maxSharedMemoryFileCount=*/0); !status.isOk()) {
+    if (auto status = speakerGroupAvailClient->subscribe(options); !status.ok()) {
         LOG(ERROR) << "Subscription to VUC_SPEAKER_GROUP_AVAILABILITY property failed!!";
     } else {
         LOG(INFO) << "Subscribed to VUC_SPEAKER_GROUP_AVAILABILITY property";
     }
-    //get the initial values
-    getPropertyValues(AUDIO_NOTI_DETECT_FAILURE_V2, ndk::SharedRefBase::make<AudioFailureDetectCallback>());
-    getPropertyValues(VUC_SPEAKER_GROUP_AVAILABILITY, ndk::SharedRefBase::make<SpeakerGroupAvailCallback>());
     return;
 }
-
 
 AudioDiagnostics::~AudioDiagnostics() {
    uint64_t eval = 1;
@@ -338,213 +271,83 @@ void AudioDiagnosticsInit()  {
     AudioDiagnostics::InitDiagnosticSevice();
 }
 
-ndk::ScopedAStatus AudioDiagVehicleCallback::onGetValues(
-        const aidl::android::hardware::automotive::vehicle::GetValueResults& results) {
-    LOG(INFO) << "onGetValues called";
-    return ndk::ScopedAStatus::ok();
-}
+void AudioFailureDetectCallback::onPropertyEvent(
+    const std::vector<std::unique_ptr<
+            android::frameworks::automotive::vhal::IHalPropValue>>& values) {
+    LOG(DEBUG) << __func__ << ": Enter " ;
+    for(const auto& value : values) {
+        int32_t propId = value->getPropId();
+        int32_t areadId = value->getAreaId();
+        LOG(DEBUG) << __func__ << ": PropId : " << propId << ": areaId : " << areadId;
 
-
-ndk::ScopedAStatus AudioDiagVehicleCallback::onSetValues(
-        const aidl::android::hardware::automotive::vehicle::SetValueResults& results) {
-    LOG(INFO) << "onSetValues called";
-    {
-        for (auto entry: results.payloads) {
-            LOG(INFO) << "RequestId: " << (long)entry.requestId
-                << " result: " << (int)entry.status;
+        if (propId != AUDIO_NOTI_DETECT_FAILURE_V2) {
+            LOG(ERROR) << __func__ << "PropId not matching with AUDIO_NOTI_DETECT_FAILURE_V2";
+        } else {
+            std::vector<int32_t> audioCompInfo = value->getInt32Values();
+            for (auto it: audioCompInfo) {
+                LOG(INFO) << __func__ << it;
+            }
+            if (audioCompInfo.size() != AUDIO_NOTI_DETECT_FAILURE_V2_SIZE) {
+                LOG(ERROR) << "Invalid AUDIO_NOTI_DETECT_FAILURE_V2_SIZE getInt32Values size: "
+                    << audioCompInfo.size();
+            } else {
+                if (audioCompInfo[AudioCompIndex::AMP1] != AudioCompStatus::OK &&
+                    audioCompInfo[AudioCompIndex::AMP2] != AudioCompStatus::OK &&
+                    audioCompInfo[AudioCompIndex::A2B_LINK1] != AudioCompStatus::OK &&
+                    audioCompInfo[AudioCompIndex::A2B_LINK2] != AudioCompStatus::OK &&
+                    audioCompInfo[AudioCompIndex::EXT_AMP1] != AudioCompStatus::OK &&
+                    audioCompInfo[AudioCompIndex::EXT_AMP2] != AudioCompStatus::OK) {
+                    LOG(ERROR) << "AUDIO UNAVAILABLE, reporting to VHAL";
+                    speaker_status = false;
+                } else {
+                    LOG(INFO) << "Audio Components are in connected state";
+                    speaker_status = true;
+                }
+                updateVHAL();
+            }
         }
     }
-    return ndk::ScopedAStatus::ok();
-}
-
-ndk::ScopedAStatus AudioDiagVehicleCallback::onPropertyEvent(
-        const aidl::android::hardware::automotive::vehicle::VehiclePropValues&,
-        int32_t) {
-
-    LOG(INFO) << "onPropertyEvent called";
-    return ndk::ScopedAStatus::ok();
-}
-
-ndk::ScopedAStatus AudioDiagVehicleCallback::onPropertySetError(
-        const aidl::android::hardware::automotive::vehicle::VehiclePropErrors&) {
-    LOG(INFO) << "onPropertySetError called";
-    return ndk::ScopedAStatus::ok();
+    return;
 }
 
 /*------------------------------------------------------------------------------------------------------------*/
 
-
-
-ndk::ScopedAStatus AudioFailureDetectCallback::onGetValues(
-        const aidl::android::hardware::automotive::vehicle::GetValueResults& results) {
-    LOG(INFO) << __func__ << "onGetValues called";
-    {
-        for (auto entry: results.payloads) {
-            LOG(INFO) << "RequestId: " << (long)entry.requestId
-                << " result: " << (int)entry.status;
-            if (entry.status ==  aidl::android::hardware::automotive::vehicle::StatusCode::OK) {
-                if (entry.prop.has_value()) {
-                    processVehiclePropValue(entry.prop.value());
-                } else {
-                    LOG(ERROR) << "Payload is null";
-                    return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
-                }
-            } else {
-                LOG(ERROR) << "getValues failed !!, status : " << (int)entry.status;
-                return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
-            }
-        }
-    }
-    return ndk::ScopedAStatus::ok();
-}
-
-
-ndk::ScopedAStatus AudioFailureDetectCallback::onSetValues(
-        const aidl::android::hardware::automotive::vehicle::SetValueResults& results) {
-    LOG(INFO) << "onSetValues called";
-    return ndk::ScopedAStatus::ok();
-}
-
-ndk::ScopedAStatus AudioFailureDetectCallback::onPropertySetError(
-        const aidl::android::hardware::automotive::vehicle::VehiclePropErrors&) {
-    LOG(INFO) << "onPropertySetError called";
-    return ndk::ScopedAStatus::ok();
-}
-
-void AudioFailureDetectCallback::processVehiclePropValue(const
-        aidl::android::hardware::automotive::vehicle::VehiclePropValue vehiclePropValue) {
-    int32_t propId = -1, areadId = -1;
-    propId = vehiclePropValue.prop;
-    areadId = vehiclePropValue.areaId;
-    LOG(DEBUG) << __func__ << ": PropId : " << propId << ": areaId : " << areadId;
-
-    if (propId != AUDIO_NOTI_DETECT_FAILURE_V2) {
-        LOG(ERROR) << __func__ << "Callback PropId not matching with AUDIO_NOTI_DETECT_FAILURE_V2";
-    } else {
-        std::vector<int32_t> audioCompInfo = vehiclePropValue.value.int32Values;
-        for (auto it: audioCompInfo) {
-            LOG(INFO) << __func__ << it;
-        }
-        if (audioCompInfo.size() != AUDIO_NOTI_DETECT_FAILURE_V2_SIZE) {
-            LOG(ERROR) << "Invalid AUDIO_NOTI_DETECT_FAILURE_V2_SIZE getInt32Values size: "
-                << audioCompInfo.size();
-            goto exit;
-        } else {
-            if (audioCompInfo[AudioCompIndex::AMP1] != AudioCompStatus::OK &&
-                audioCompInfo[AudioCompIndex::AMP2] != AudioCompStatus::OK &&
-                audioCompInfo[AudioCompIndex::A2B_LINK1] != AudioCompStatus::OK &&
-                audioCompInfo[AudioCompIndex::A2B_LINK2] != AudioCompStatus::OK &&
-                audioCompInfo[AudioCompIndex::EXT_AMP1] != AudioCompStatus::OK &&
-                audioCompInfo[AudioCompIndex::EXT_AMP2] != AudioCompStatus::OK) {
-                LOG(ERROR) << "AUDIO UNAVAILABLE, reporting to VHAL";
-                speaker_status = false;
-            } else {
-                LOG(INFO) << "Audio Components are in connected state";
-                speaker_status = true;
-            }
-            updateVHAL();
-        }
-    }
-exit:
-    LOG(DEBUG) << __func__ << ": Exit ";
-    return;
-}
-ndk::ScopedAStatus AudioFailureDetectCallback::onPropertyEvent(
-        const aidl::android::hardware::automotive::vehicle::VehiclePropValues& vehiclePropValues,
-        int32_t) {
+void SpeakerGroupAvailCallback::onPropertyEvent(
+    const std::vector<std::unique_ptr<
+            android::frameworks::automotive::vhal::IHalPropValue>>& values) {
     LOG(DEBUG) << __func__ << ": Enter " ;
-    for (auto entry: vehiclePropValues.payloads) {
-        processVehiclePropValue(entry);
-    }
-    return ndk::ScopedAStatus::ok();
-}
-
-/*------------------------------------------------------------------------------------------------------------*/
-
-
-
-ndk::ScopedAStatus SpeakerGroupAvailCallback::onGetValues(
-        const aidl::android::hardware::automotive::vehicle::GetValueResults& results) {
-    LOG(INFO) << __func__ << "onGetValues called";
-    {
-        for (auto entry: results.payloads) {
-            LOG(INFO) << "RequestId: " << (long)entry.requestId
-                << " result: " << (int)entry.status;
-            if (entry.status ==  aidl::android::hardware::automotive::vehicle::StatusCode::OK) {
-                if (entry.prop.has_value()) {
-                    processVehiclePropValue(entry.prop.value());
-                } else {
-                    LOG(ERROR) << "Payload is null";
-                    return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
-                }
-            } else {
-                LOG(ERROR) << "getValues failed !!, status : " << (int)entry.status;
-                return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
-            }
-        }
-    }
-    return ndk::ScopedAStatus::ok();
-}
-
-
-ndk::ScopedAStatus SpeakerGroupAvailCallback::onSetValues(
-        const aidl::android::hardware::automotive::vehicle::SetValueResults& results) {
-    LOG(INFO) << "onSetValues called";
-    return ndk::ScopedAStatus::ok();
-}
-
-ndk::ScopedAStatus SpeakerGroupAvailCallback::onPropertySetError(
-        const aidl::android::hardware::automotive::vehicle::VehiclePropErrors&) {
-    LOG(INFO) << "onPropertySetError called";
-    return ndk::ScopedAStatus::ok();
-}
-
-void SpeakerGroupAvailCallback::processVehiclePropValue(const
-        aidl::android::hardware::automotive::vehicle::VehiclePropValue vehiclePropValue) {
-    int32_t propId = -1, areadId = -1;
-    propId = vehiclePropValue.prop;
-    areadId = vehiclePropValue.areaId;
-    LOG(DEBUG) << __func__ << ": PropId : " << propId << ": areaId : " << areadId;
-
-    if (propId != VUC_SPEAKER_GROUP_AVAILABILITY) {
-        LOG(ERROR) << __func__ << "Callback PropId not matching with VUC_SPEAKER_GROUP_AVAILABILITY";
-    } else {
-        std::vector<int32_t> speakerInfo = vehiclePropValue.value.int32Values;
-        for (auto it: speakerInfo) {
-            LOG(INFO) << __func__ << it;
-        }
-        {
-            LOG(INFO) << "Updating SPEAKER_GROUP_AVAILABILITY";
-            updateSpeakerGroupAvailability(speakerInfo);
-        }
-        if (speakerInfo.size() != VUC_SPEAKER_GROUP_AVAILABILITY_SIZE) {
-            LOG(ERROR) << "Invalid VUC_SPEAKER_GROUP_AVAILABILITY_SIZE getInt32Values size: "
-                << speakerInfo.size();
+    for(const auto& value : values) {
+        int32_t propId = value->getPropId();
+        int32_t areadId = value->getAreaId();
+        LOG(DEBUG) << __func__ << ": PropId : " << propId << ": areaId : " << areadId;
+        if (propId != VUC_SPEAKER_GROUP_AVAILABILITY) {
+            LOG(ERROR) << __func__ << "PropId not matching with VUC_SPEAKER_GROUP_AVAILABILITY";
         } else {
-            if (speakerInfo[SpeakerIndex::FRONT_LEFT] != SpeakerState::OK &&
-                speakerInfo[SpeakerIndex::FRONT_RIGHT] != SpeakerState::OK &&
-                speakerInfo[SpeakerIndex::REAR_LEFT] != SpeakerState::OK &&
-                speakerInfo[SpeakerIndex::REAR_RIGHT] != SpeakerState::OK) {
-                LOG(ERROR) << "AUDIO UNAVAILABLE, reporting to VHAL";
-                audio_comp_status = false;
-            } else {
-                LOG(INFO) << "SPEAKERs are in connected state";
-                audio_comp_status = true;
+            std::vector<int32_t> speakerInfo = value->getInt32Values();
+            for (auto it: speakerInfo) {
+                LOG(INFO) << __func__ << it;
             }
-            updateVHAL();
+            {
+                LOG(INFO) << "Updating SPEAKER_GROUP_AVAILABILITY";
+                updateSpeakerGroupAvailability(speakerInfo);
+            }
+            if (speakerInfo.size() != VUC_SPEAKER_GROUP_AVAILABILITY_SIZE) {
+                LOG(ERROR) << "Invalid VUC_SPEAKER_GROUP_AVAILABILITY_SIZE getInt32Values size: "
+                    << speakerInfo.size();
+            } else {
+                if (speakerInfo[SpeakerIndex::FRONT_LEFT] != SpeakerState::OK &&
+                    speakerInfo[SpeakerIndex::FRONT_RIGHT] != SpeakerState::OK &&
+                    speakerInfo[SpeakerIndex::REAR_LEFT] != SpeakerState::OK &&
+                    speakerInfo[SpeakerIndex::REAR_RIGHT] != SpeakerState::OK) {
+                    LOG(ERROR) << "AUDIO UNAVAILABLE, reporting to VHAL";
+                    audio_comp_status = false;
+                } else {
+                    LOG(INFO) << "SPEAKERs are in connected state";
+                    audio_comp_status = true;
+                }
+                updateVHAL();
+            }
         }
     }
-exit:
-    LOG(DEBUG) << __func__ << ": Exit ";
     return;
-}
-
-ndk::ScopedAStatus SpeakerGroupAvailCallback::onPropertyEvent(
-        const aidl::android::hardware::automotive::vehicle::VehiclePropValues& vehiclePropValues,
-        int32_t) {
-    LOG(DEBUG) << __func__ << ": Enter " ;
-    for (auto entry: vehiclePropValues.payloads) {
-        processVehiclePropValue(entry);
-    }
-    return ndk::ScopedAStatus::ok();
 }

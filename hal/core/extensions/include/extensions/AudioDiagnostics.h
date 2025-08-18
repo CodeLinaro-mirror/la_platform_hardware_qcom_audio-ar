@@ -87,49 +87,27 @@ class AudioDiagnostics {
         ~AudioDiagnostics();
 };
 
-
-class AudioDiagVehicleCallback final :
-    public aidl::android::hardware::automotive::vehicle::BnVehicleCallback {
-public:
-    ndk::ScopedAStatus onGetValues(
-            const aidl::android::hardware::automotive::vehicle::GetValueResults& results) override;
-    ndk::ScopedAStatus onSetValues(
-            const aidl::android::hardware::automotive::vehicle::SetValueResults& results) override;
-    ndk::ScopedAStatus onPropertyEvent(
-            const aidl::android::hardware::automotive::vehicle::VehiclePropValues&,
-            int32_t) override;
-    ndk::ScopedAStatus onPropertySetError(
-            const aidl::android::hardware::automotive::vehicle::VehiclePropErrors&) override;
-};
-
 class SpeakerGroupAvailCallback final :
-    public aidl::android::hardware::automotive::vehicle::BnVehicleCallback {
-    void processVehiclePropValue(const
-            aidl::android::hardware::automotive::vehicle::VehiclePropValue vehiclePropValue);
+      public android::frameworks::automotive::vhal::ISubscriptionCallback {
 public:
-    ndk::ScopedAStatus onGetValues(
-            const aidl::android::hardware::automotive::vehicle::GetValueResults& results) override;
-    ndk::ScopedAStatus onSetValues(
-            const aidl::android::hardware::automotive::vehicle::SetValueResults& results) override;
-    ndk::ScopedAStatus onPropertyEvent(
-            const aidl::android::hardware::automotive::vehicle::VehiclePropValues&,
-            int32_t) override;
-    ndk::ScopedAStatus onPropertySetError(
-            const aidl::android::hardware::automotive::vehicle::VehiclePropErrors&) override;
+    void onPropertyEvent(const std::vector<std::unique_ptr<android::frameworks::automotive::vhal::IHalPropValue>>& values) override;
+    void onPropertySetError(
+            [[maybe_unused]] const std::vector<android::frameworks::automotive::vhal::HalPropError>&
+                    errors) override {
+        LOG(ERROR) << "onPropertySetError: failed to set VHAL property";
+        return;
+    }
 };
+
 
 class AudioFailureDetectCallback final :
-    public aidl::android::hardware::automotive::vehicle::BnVehicleCallback {
-    void processVehiclePropValue(const
-            aidl::android::hardware::automotive::vehicle::VehiclePropValue vehiclePropValue);
+      public android::frameworks::automotive::vhal::ISubscriptionCallback {
 public:
-    ndk::ScopedAStatus onGetValues(
-            const aidl::android::hardware::automotive::vehicle::GetValueResults& results) override;
-    ndk::ScopedAStatus onSetValues(
-            const aidl::android::hardware::automotive::vehicle::SetValueResults& results) override;
-    ndk::ScopedAStatus onPropertyEvent(
-            const aidl::android::hardware::automotive::vehicle::VehiclePropValues&,
-            int32_t) override;
-    ndk::ScopedAStatus onPropertySetError(
-            const aidl::android::hardware::automotive::vehicle::VehiclePropErrors&) override;
+    void onPropertyEvent(const std::vector<std::unique_ptr<android::frameworks::automotive::vhal::IHalPropValue>>& values) override;
+    void onPropertySetError(
+            [[maybe_unused]] const std::vector<android::frameworks::automotive::vhal::HalPropError>&
+                    errors) override {
+        LOG(ERROR) << "onPropertySetError: failed to set VHAL property";
+        return;
+    }
 };
