@@ -79,12 +79,14 @@ namespace qti::audio::core {
                     {"BUS01_SYS_NOTIFICATION", "BUS01_SYS_NOTIFICATION"},
                     {"BUS02_NAV_GUIDANCE", "BUS02_NAV_GUIDANCE"},
                     {"BUS03_PHONE", "BUS03_PHONE"},
-                    {"BUS0F_NAV_GUIDANCE2","BUS0F_NAV_GUIDANCE2"},
-                    {"THERMAL_MITIGATION","THERMAL_MITIGATION"},
-                    {"RADIO_AAM_MUTE_ORDER","RADIO_AAM_MUTE_ORDER"},
-                    {"NIGHT_MODE","NIGHT_MODE"},
-                    {"DEVICE_TEMPERATURE_STATUS","DEVICE_TEMPERATURE_STATUS"},
-                    {"CP_DUCK","CP_DUCK"}
+                    {"BUS0F_NAV_GUIDANCE2", "BUS0F_NAV_GUIDANCE2"},
+                    {"THERMAL_MITIGATION", "THERMAL_MITIGATION"},
+                    {"RADIO_AAM_MUTE_ORDER", "RADIO_AAM_MUTE_ORDER"},
+                    {"NIGHT_MODE", "NIGHT_MODE"},
+                    {"DEVICE_TEMPERATURE_STATUS", "DEVICE_TEMPERATURE_STATUS"},
+                    {"CP_DUCK", "CP_DUCK"},
+                    {"ASSISTANCE_NAVIGATION_GUIDANCE", "ASSISTANCE_NAVIGATION_GUIDANCE"},
+                    {"MEDIA", "MEDIA"}
                 }
             }, {
                 "UseCase", {
@@ -241,8 +243,8 @@ namespace qti::audio::core {
         for (auto entry: registeredFocusCallbacks) {
             auto focusId = entry.first;
             auto focusInfo = entry.second;
-            if (std::holds_alternative<AudioUsage>(focusInfo.usage) &&
-                        get<AudioUsage>(focusInfo.usage) == AudioUsage::MEDIA) {
+            if (std::holds_alternative<std::string>(focusInfo.usage) &&
+                        get<std::string>(focusInfo.usage) == "MEDIA") {
                 if (focusInfo.mPalHandle != nullptr) {
                     mPalHandle = focusInfo.mPalHandle;
                 }

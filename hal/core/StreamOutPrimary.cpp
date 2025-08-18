@@ -19,6 +19,7 @@
 #include <qti-audio/PlatformConverter.h>
 #include <qti-audio-core/Parameters.h>
 #define INITIAL_VOLUME_VALUE  -3600
+#define MEDIA_BUS "BUS00_MEDIA"
 using aidl::android::hardware::audio::common::AudioOffloadMetadata;
 using aidl::android::hardware::audio::common::getFrameSizeInBytes;
 using aidl::android::hardware::audio::common::SinkMetadata;
@@ -1328,9 +1329,10 @@ void StreamOutPrimary::configure() {
     }
 
     LOG(INFO) << __func__ << mLogPrefix << ": stream is configured";
-    if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK || mTag == Usecase::PCM_OFFLOAD_PLAYBACK || mTag == Usecase::MEDIA_PLAYBACK)
+     if (getAddress() == MEDIA_BUS)
+     {
         mAudExt.mAutoOemExtension->audio_extn_autooem_set_streamType(attr->type);
-
+     }
     enableOffloadEffects(true);
     const auto endTime = std::chrono::steady_clock::now();
     using FloatMillis = std::chrono::duration<float, std::milli>;
@@ -1399,8 +1401,10 @@ ndk::ScopedAStatus StreamOutPrimary::setLatencyMode(
 
 void StreamOutPrimary::shutdown_I() {
     if (mPalHandle != nullptr) {
-        if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK || mTag == Usecase::PCM_OFFLOAD_PLAYBACK || mTag == Usecase::MEDIA_PLAYBACK)
+        if (getAddress() == MEDIA_BUS)
+        {
             mAudExt.mAutoOemExtension->audio_extn_autooem_set_streamType(PAL_STREAM_INVALID);
+        }
         enableOffloadEffects(false);
 #ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
         abandonFocus();
@@ -1441,11 +1445,17 @@ void StreamOutPrimary::requestFocus() {
             LOG(ERROR) << __LINE__ << __func__ << " No tracks in metadata";
             return;
         }
-        auto curStreamUsage =
-                static_cast<::aidl::android::media::audio::common::AudioUsage>(tracks[0].usage);
+        auto playbackTrackMetadata = tracks[0];
+        std::string usageLiteral = ::aidl::android::media::audio::common::toString(
+                                            playbackTrackMetadata.usage);
+        std::vector<std::string> tags = playbackTrackMetadata.tags;
+        std::string streamType = usageLiteral;
+        for (auto tag: tags) {
+            streamType += "_" + tag;
+        }
         FocusInfo focusInfo;
         focusInfo.device = mConnectedDevices[0];
-        focusInfo.usage = curStreamUsage;
+        focusInfo.usage = streamType;
         focusInfo.gain = mVolumes[0];
         focusInfo.mPalHandle = &(this->mPalHandle);
         if (focusSessionInfo.FocusId  == -1) {
