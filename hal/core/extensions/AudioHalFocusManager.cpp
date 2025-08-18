@@ -735,12 +735,17 @@ namespace qti::audio::core {
                 if (checkIfExists(focusInfo.usage, activeFocusInfo.usage)) {
                     registeredStreams[activeFocusId].insert(focusId);
                     LOG(INFO) << "1 calling populateReasonsnGains on " << activeFocusId;
+                } else if (checkIfExists(activeFocusInfo.usage, focusInfo.usage)) {
+                    duckFocusIds.insert(activeFocusId);
                 }
                 if (registeredStreams[activeFocusId].size()) {
                     populateReasonsnGains(activeFocusId);
                 }
             }
             registeredStreams[focusId] = duckFocusIds;
+            if (registeredStreams[focusId].size()) {
+                populateReasonsnGains(focusId);
+            }
             globalActiveFocusSessions.insert(focusId);
             reportGainChanges();
 
