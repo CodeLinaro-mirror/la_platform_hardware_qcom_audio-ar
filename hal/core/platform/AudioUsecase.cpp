@@ -192,6 +192,19 @@ Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConf
     return tag;
 }
 
+bool isDeviceAddressAvailable(std::vector<AudioDevice> audioDevices)
+{
+    if (audioDevices[0].type.connection == "") {
+        LOG(VERBOSE) << __func__ << " connection is NULL, so fetch the device bus address" ;
+        return true;
+    } else if ((audioDevices[0].type.connection.compare("bt-sco")) ||
+               (audioDevices[0].type.connection.compare("bt-a2dp"))) {
+        LOG(INFO) << __func__ << " connection might be bt-sco or bt-a2dp" ;
+        return false;
+    }
+    return false;
+}
+
 
 //overloaded method
 Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig,
@@ -278,8 +291,10 @@ Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConf
     LOG (VERBOSE) << __func__ <<" audioDevices.size = " << audioDevices.size();
     std::string deviceAddress = "";
     if (audioDevices.size() == 1) {
-        deviceAddress = audioDevices[0].address.get<AudioDeviceAddress::Tag::id>();
-        LOG (INFO) << __func__ << " AudioDeviceAddress: " << deviceAddress;
+        if (isDeviceAddressAvailable(audioDevices) ==  true) {
+            deviceAddress = audioDevices[0].address.get<AudioDeviceAddress::Tag::id>();
+            LOG (INFO) << __func__ << " AudioDeviceAddress: " << deviceAddress;
+        }
     }
     if (flagsTag == AudioIoFlags::Tag::output) {
         auto& outFlags = mixPortConfig.flags.value().get<AudioIoFlags::Tag::output>();
