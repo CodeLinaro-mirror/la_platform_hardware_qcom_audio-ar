@@ -650,7 +650,8 @@ namespace qti::audio::core {
         //exception PROJECTION DUCKING,
         //needed to be report irrespecitive of MEDIA playback
         if (reasonsMap.find(usage) != reasonsMap.end() &&
-                (reasonsMap[usage][muteOrderType] == Reasons::ADAS_DUCKING)) {
+                (reasonsMap[usage][muteOrderType] == Reasons::ADAS_DUCKING ||
+                reasonsMap[usage][muteOrderType] == Reasons::NAV_DUCKING)) {
             return true;
         }
         return false;
