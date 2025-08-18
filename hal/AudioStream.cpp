@@ -2252,13 +2252,14 @@ exit:
     return ret;
 }
 
-int StreamOutPrimary::RouteStream(const std::set<audio_devices_t>& new_devices, bool force_device_switch __unused) {
+int StreamOutPrimary::RouteStream(const std::set<audio_devices_t>& new_devices_tmp, bool force_device_switch __unused) {
     int ret = 0, noPalDevices = 0;
     pal_device_id_t * deviceId = nullptr;
     struct pal_device* deviceIdConfigs = nullptr;
     pal_param_device_capability_t *device_cap_query = nullptr;
     size_t payload_size = 0;
     dynamic_media_config_t dynamic_media_config;
+    std::set<audio_devices_t> new_devices;
     std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
 
     bool isHifiFilterEnabled = false;
@@ -2272,12 +2273,28 @@ int StreamOutPrimary::RouteStream(const std::set<audio_devices_t>& new_devices, 
         goto done;
     }
 
+    new_devices = new_devices_tmp;
     AHAL_INFO("enter: usecase(%d: %s) devices 0x%x, num devices %zu",
             this->GetUseCase(), use_case_table[this->GetUseCase()],
             AudioExtn::get_device_types(new_devices), new_devices.size());
     AHAL_DBG("mAndroidOutDevices %d, mNoOfOutDevices %zu",
              AudioExtn::get_device_types(mAndroidOutDevices),
              mAndroidOutDevices.size());
+
+    if (adevice->use_spk_whs_combo) {
+        AHAL_DBG ("Feature use_spkr_hs_combo_enabled ");
+        /* Check for combo device routing selection, if so update combo devices */
+        if (new_devices.count(AUDIO_DEVICE_OUT_SPEAKER) &&
+            (new_devices.count(AUDIO_DEVICE_OUT_WIRED_HEADSET) ||new_devices.count(AUDIO_DEVICE_OUT_WIRED_HEADPHONE))) {
+            new_devices.erase(AUDIO_DEVICE_OUT_WIRED_HEADSET);
+            new_devices.erase(AUDIO_DEVICE_OUT_WIRED_HEADPHONE);
+            mComboDevice = true;
+            AHAL_INFO("Found combo device: updating new_devices to be 0x%x, num devices %zu, mComboDevice = %d",
+                AudioExtn::get_device_types(new_devices), new_devices.size(), mComboDevice);
+            } else {
+            mComboDevice = false;
+        }
+    }
 
     if (!AudioExtn::audio_devices_empty(new_devices)) {
         // re-allocate mPalOutDevice and mPalOutDeviceIds
@@ -2356,6 +2373,13 @@ int StreamOutPrimary::RouteStream(const std::set<audio_devices_t>& new_devices, 
             strlcpy(mPalOutDevice[i].custom_config.custom_key, "",
                     sizeof(mPalOutDevice[i].custom_config.custom_key));
 
+            if (adevice->use_spk_whs_combo) {
+                if (mComboDevice && (mPalOutDeviceIds[i] == PAL_DEVICE_OUT_SPEAKER)) {
+                    strlcpy(mPalOutDevice[i].custom_config.custom_key, "speaker-and-headphones",
+                        sizeof(mPalOutDevice[i].custom_config.custom_key));
+                    AHAL_INFO("Setting custom key as %s", mPalOutDevice[i].custom_config.custom_key);
+                }
+            }
             if ((AudioExtn::audio_devices_cmp(mAndroidOutDevices, AUDIO_DEVICE_OUT_SPEAKER_SAFE)) &&
                                    (mPalOutDeviceIds[i] == PAL_DEVICE_OUT_SPEAKER)) {
                 strlcat(mPalOutDevice[i].custom_config.custom_key, "speaker-safe;",
@@ -3557,10 +3581,13 @@ int StreamOutPrimary::SetAggregateSourceMetadata(bool voice_active) {
             track_count_total += astream_out_list[i]->btSourceMetadata.track_count;
         }
 
+        if (track_count_total == 0) {
+            AHAL_ERR("total track count is 0, return without settng SourceMetadata");
+            return  -EINVAL;
+        }
         total_tracks.resize(track_count_total);
         btSourceMetadata.track_count = track_count_total;
         btSourceMetadata.tracks = total_tracks.data();
-
         //Get the metadata of all tracks on different stream o/ps
         for (int i = 0; i < astream_out_list.size(); i++) {
             struct playback_track_metadata* track = astream_out_list[i]->btSourceMetadata.tracks;
@@ -3575,7 +3602,7 @@ int StreamOutPrimary::SetAggregateSourceMetadata(bool voice_active) {
                 ++track;
                 ++btSourceMetadata.tracks;
             }
-        }
+       }
         btSourceMetadata.tracks = total_tracks.data();
 
         // pass the metadata to PAL
@@ -3598,7 +3625,8 @@ StreamOutPrimary::StreamOutPrimary(
                         visualizer_hal_stop_output visualizer_stop_output):
     StreamPrimary(handle, devices, config),
     mAndroidOutDevices(devices),
-    flags_(flags)
+    flags_(flags),
+    btSourceMetadata{0, nullptr}
 {
     stream_ = std::shared_ptr<audio_stream_out> (new audio_stream_out());
     std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
@@ -3626,6 +3654,20 @@ StreamOutPrimary::StreamOutPrimary(
     AHAL_DBG("enter: handle (%x) format(%#x) sample_rate(%d) channel_mask(%#x) devices(%zu) flags(%#x)\
           address(%s)", handle, config->format, config->sample_rate, config->channel_mask,
           mAndroidOutDevices.size(), flags, address);
+
+    if (adevice->use_spk_whs_combo) {
+        if (mAndroidOutDevices.count(AUDIO_DEVICE_OUT_SPEAKER) &&
+            (mAndroidOutDevices.count(AUDIO_DEVICE_OUT_WIRED_HEADSET) ||
+                mAndroidOutDevices.count(AUDIO_DEVICE_OUT_WIRED_HEADPHONE))) {
+            mAndroidOutDevices.erase(AUDIO_DEVICE_OUT_WIRED_HEADSET);
+            mAndroidOutDevices.erase(AUDIO_DEVICE_OUT_WIRED_HEADPHONE);
+            mComboDevice = true;
+            AHAL_INFO("Found combo device: updating new_devices to be 0x%x, num devices %zu, mComboDevice = %d",
+                AudioExtn::get_device_types(mAndroidOutDevices), mAndroidOutDevices.size(), mComboDevice);
+        } else {
+            mComboDevice = false;
+        }
+    }
 
     //TODO: check if USB device is connected or not
     if (AudioExtn::audio_devices_cmp(mAndroidOutDevices, audio_is_usb_out_device)){
@@ -3750,6 +3792,14 @@ StreamOutPrimary::StreamOutPrimary(
         }
         strlcpy(mPalOutDevice[i].custom_config.custom_key, "",
                 sizeof(mPalOutDevice[i].custom_config.custom_key));
+
+        if (adevice->use_spk_whs_combo) {
+            if (mComboDevice && (mPalOutDeviceIds[i] == PAL_DEVICE_OUT_SPEAKER)) {
+                strlcpy(mPalOutDevice[i].custom_config.custom_key, "speaker-and-headphones",
+                    sizeof(mPalOutDevice[i].custom_config.custom_key));
+                AHAL_INFO("Setting custom key as %s", mPalOutDevice[i].custom_config.custom_key);
+            }
+        }
 
         if ((AudioExtn::audio_devices_cmp(mAndroidOutDevices, AUDIO_DEVICE_OUT_SPEAKER_SAFE)) &&
                                    (mPalOutDeviceIds[i] == PAL_DEVICE_OUT_SPEAKER)) {
@@ -4202,15 +4252,19 @@ int StreamInPrimary::SetAggregateSinkMetadata(bool voice_active) {
             //total tracks on stream i/ps
             track_count_total += astream_in_list[i]->btSinkMetadata.track_count;
         }
+        if (track_count_total == 0) {
+             AHAL_DBG("total track count is 0, return without settng SinkMetadata");
+             return -EINVAL;
+        }
 
         total_tracks.resize(track_count_total);
         btSinkMetadata.track_count = track_count_total;
         btSinkMetadata.tracks = total_tracks.data();
-
         //Get the metadata of all tracks on different stream i/ps
         for (int i = 0; i < astream_in_list.size(); i++) {
             struct record_track_metadata* track = astream_in_list[i]->btSinkMetadata.tracks;
             ssize_t track_count = astream_in_list[i]->btSinkMetadata.track_count;
+            // check tracks size in this stream metadata not to exceed total count
             while (track_count && track) {
                 btSinkMetadata.tracks->source = track->source;
                 AHAL_DBG("Aggregated Sink metadata source:%d", btSinkMetadata.tracks->source);
@@ -5007,7 +5061,8 @@ StreamInPrimary::StreamInPrimary(audio_io_handle_t handle,
     audio_source_t source) :
     StreamPrimary(handle, devices, config),
     mAndroidInDevices(devices),
-    flags_(flags)
+    flags_(flags),
+    btSinkMetadata{0, nullptr}
 {
     stream_ = std::shared_ptr<audio_stream_in> (new audio_stream_in());
     std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
@@ -5221,7 +5276,7 @@ StreamInPrimary::StreamInPrimary(audio_io_handle_t handle,
             uint8_t channels =
                 audio_channel_count_from_in_mask(config_.channel_mask);
             if (channels == 2) {
-                strlcpy(mPalInDevice[i].custom_config.custom_key, "dual-mic-eans",
+                strlcat(mPalInDevice[i].custom_config.custom_key, "dual-mic-eans",
                         sizeof(mPalInDevice[i].custom_config.custom_key));
                 AHAL_INFO("Setting custom key as %s", mPalInDevice[i].custom_config.custom_key);
             }

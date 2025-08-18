@@ -25,7 +25,6 @@
 <!-- OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN -->
 <!-- IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                          -->
 
-<!-- Changes from Qualcomm Innovation Center are provided under the following license:    -->
 <!--                                                                                      -->
 <!-- Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.                   -->
 <!-- SPDX-License-Identifier: BSD-3-Clause-Clear                                          -->
@@ -2759,16 +2758,20 @@
 
     <path name="speaker-and-headphones">
         <ctl name="RX_MACRO RX0 MUX" value="AIF1_PB" />
-        <ctl name="RX_MACRO RX1 MUX" value="AIF1_PB" />
+       <ctl name="RX_MACRO RX1 MUX" value="AIF1_PB" />
         <ctl name="RX_CDC_DMA_RX_0 Channels" value="Two" />
         <ctl name="RX INT0_1 MIX1 INP0" value="RX0" />
         <ctl name="RX INT1_1 MIX1 INP0" value="RX1" />
         <ctl name="RX INT0 DEM MUX" value="CLSH_DSM_OUT" />
         <ctl name="RX INT1 DEM MUX" value="CLSH_DSM_OUT" />
-        <ctl name="HPHL_RDAC Switch" value="1" />
-        <ctl name="HPHR_RDAC Switch" value="1" />
         <ctl name="LO_RDAC Switch" value="1" />
         <ctl name="SpkrMono WSA_RDAC" value="Switch" />
+        <ctl name="RX_COMP1 Switch" value="1" />
+        <ctl name="RX_COMP2 Switch" value="1" />
+        <ctl name="HPHL_COMP Switch" value="1" />
+        <ctl name="HPHR_COMP Switch" value="1" />
+        <ctl name="HPHL_RDAC Switch" value="1" />
+        <ctl name="HPHR_RDAC Switch" value="1" />
     </path>
 
     <path name="speaker-and-headphones-hifi-filter">
@@ -3694,6 +3697,11 @@
         <ctl name="VA DMIC MUX1" value="DMIC2" />
     </path>
 
+    <path name="va-mic-dmic-lpi">
+        <ctl name="LPI Enable" value="1" />
+        <path name="va-mic-dmic" />
+    </path>
+
     <path name="va-mic-mono-lpi">
         <ctl name="LPI Enable" value="1" />
         <path name="va-mic-mono" />
@@ -3714,7 +3722,7 @@
         <ctl name="LPI Enable" value="1" />
         <ctl name="VA_AIF1_CAP Mixer DEC0" value="1" />
         <ctl name="VA DEC0 MUX" value="SWR_MIC" />
-        <ctl name="VA SMIC MUX0" value="SWR_MIC1" />
+        <ctl name="VA SMIC MUX0" value="SWR_MIC5" />
         <ctl name="ADC2 ChMap" value="SWRM_TX2_CH2" />
         <ctl name="ADC2_MIXER Switch" value="1" />
         <ctl name="ADC2 MUX" value="INP2" />
