@@ -2241,8 +2241,6 @@ int StreamOutPrimary::CreateMmapBuffer(int32_t min_size_frames,
 
 exit:
     stream_mutex_.unlock();
-    if (mmap_start_thread_.joinable())
-        mmap_start_thread_.join();
 
     if (!stream_started_) {
         mmap_start_thread_ = std::thread([this]() {
@@ -2462,6 +2460,10 @@ int StreamOutPrimary::Standby() {
                 GetFrames(&mCachedPosition);
             }
         }
+
+        if (usecase_ == USECASE_AUDIO_PLAYBACK_MMAP && mmap_start_thread_.joinable())
+            mmap_start_thread_.join();
+
         ret = pal_stream_stop(pal_stream_handle_);
         if (ret) {
             AHAL_ERR("failed to stop stream.");
@@ -2642,7 +2644,7 @@ int StreamOutPrimary::RouteStream(const std::set<audio_devices_t>& new_devices, 
             if (((AudioExtn::audio_devices_cmp(mAndroidOutDevices, AUDIO_DEVICE_OUT_SPEAKER)) &&
                                    (mPalOutDeviceIds[i] == PAL_DEVICE_OUT_SPEAKER)) &&
                                     property_get_bool("vendor.audio.mspp.enable", false)) {
-                strlcpy(mPalOutDevice[i].custom_config.custom_key, "mspp",
+                strlcat(mPalOutDevice[i].custom_config.custom_key, "mspp;",
                         sizeof(mPalOutDevice[i].custom_config.custom_key));
                 AHAL_INFO("Setting custom key as %s", mPalOutDevice[i].custom_config.custom_key);
             }
@@ -4433,7 +4435,7 @@ StreamOutPrimary::StreamOutPrimary(
         if (((AudioExtn::audio_devices_cmp(mAndroidOutDevices, AUDIO_DEVICE_OUT_SPEAKER)) &&
                                (mPalOutDeviceIds[i] == PAL_DEVICE_OUT_SPEAKER)) &&
                                 property_get_bool("vendor.audio.mspp.enable", false)) {
-            strlcpy(mPalOutDevice[i].custom_config.custom_key, "mspp",
+            strlcat(mPalOutDevice[i].custom_config.custom_key, "mspp;",
                     sizeof(mPalOutDevice[i].custom_config.custom_key));
             AHAL_INFO("Setting custom key as %s", mPalOutDevice[i].custom_config.custom_key);
         }
@@ -4542,6 +4544,14 @@ StreamOutPrimary::~StreamOutPrimary() {
         if (CheckOffloadEffectsType(streamAttributes_.type)) {
             StopOffloadEffects(handle_, pal_stream_handle_);
             StopOffloadVisualizer(handle_, pal_stream_handle_);
+        }
+
+        if (usecase_ == USECASE_AUDIO_PLAYBACK_MMAP) {
+            if (mmap_start_thread_.joinable())
+                mmap_start_thread_.join();
+
+            if(stream_started_)
+                pal_stream_stop(pal_stream_handle_);
         }
 
         pal_stream_close(pal_stream_handle_);
@@ -5861,7 +5871,7 @@ StreamInPrimary::StreamInPrimary(audio_io_handle_t handle,
             uint8_t channels =
                 audio_channel_count_from_in_mask(config_.channel_mask);
             if (channels == 2) {
-                strlcat(mPalInDevice[i].custom_config.custom_key, "dual-mic-true-stereo",
+                strlcat(mPalInDevice[i].custom_config.custom_key, "dual-mic-true-stereo;",
                         sizeof(mPalInDevice[i].custom_config.custom_key));
                 AHAL_INFO("Setting custom key as %s", mPalInDevice[i].custom_config.custom_key);
             }
