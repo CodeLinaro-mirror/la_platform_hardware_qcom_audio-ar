@@ -381,11 +381,10 @@ void Telephony::onExternalDeviceConnectionChanged(const AudioDevice& extDevice,
         if (isOutputDevice(extDevice)) {
             CRSPluginDevices.push_back(extDevice);
             if (mIsCRSStarted) {
-               updateDevices();
+                updateDevices();
             }
         } else {
             if (mTxDevice.type.type != extDevice.type.type) {
-                mTxDevice = getMatchingTxDevice(mRxDevice);
                 if (mIsCRSStarted) {
                     updateDevices();
                 }
