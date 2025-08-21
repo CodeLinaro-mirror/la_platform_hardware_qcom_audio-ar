@@ -164,11 +164,10 @@ Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConf
                     tag = Usecase::VOICE_CALL_RECORD;
                 }
             }
-        } else if (inFlags == fastRecordFlags || inFlags == ullRecordFlags) {
+        } else if (inFlags == fastRecordFlags) {
             tag = Usecase::FAST_RECORD;
-            if (streamSampleRate == UltraFastRecord::kSampleRate) {
+        } else if (inFlags == ullRecordFlags) {
                 tag = Usecase::ULTRA_FAST_RECORD;
-            }
         } else if (inFlags == compressCaptureFlags) {
             tag = Usecase::COMPRESS_CAPTURE;
         } else if (inFlags == recordVoipFlags && mixUsecaseTag == AudioPortMixExtUseCase::source &&
@@ -332,11 +331,10 @@ Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConf
                     tag = Usecase::VOICE_CALL_RECORD;
                 }
             }
-        } else if (inFlags == fastRecordFlags || inFlags == ullRecordFlags) {
+        } else if (inFlags == fastRecordFlags) {
             tag = Usecase::FAST_RECORD;
-            if (streamSampleRate == UltraFastRecord::kSampleRate) {
+        } else if (inFlags == ullRecordFlags) {
                 tag = Usecase::ULTRA_FAST_RECORD;
-            }
         } else if (inFlags == compressCaptureFlags) {
             tag = Usecase::COMPRESS_CAPTURE;
         } else if (inFlags == recordVoipFlags && mixUsecaseTag == AudioPortMixExtUseCase::source &&
@@ -430,34 +428,15 @@ auto getIntValueFromVString = [](
 };
 
 // [LowLatencyPlayback Start]
-static size_t get_kperiod_size(uint32_t sample_rate) {
-    size_t size=0;
-    switch(sample_rate) {
-        case 48000:
-            size = 512;
-            break;
-        case 32000:
-            size = 256;
-            break;
-        case 24000:
-            size = 256;
-            break;
-        case 16000:
-            size = 128;
-            break;
-        case 8000:
-            size = 64;
-            break;
-        default:
-            size = 256;
-            break;
-    }
-    return size;
-}
 
-
+/*kPeriodSize represents the number of sample to be stored in buffer
+* kPeriodSize = <dur> * Sample Rate
+* 
+* This will lead to bufferSize = kPeriodSize(FrameCount) * FrameSizeinBytes
+*
+*/
 size_t LowLatencyPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
-    ssize_t kPeriodSize = get_kperiod_size(mixPortConfig.sampleRate.value().value);
+    ssize_t kPeriodSize = LowLatencyPlayback::kPeriodDurationMs * (mixPortConfig.sampleRate.value().value) /1000;
     LOG(DEBUG) << "Period Size" << kPeriodSize;
     return kPeriodSize;
 }

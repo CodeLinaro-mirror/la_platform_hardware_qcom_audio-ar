@@ -460,8 +460,8 @@ class CompressPlayback : public UsecaseConfig<CompressPlayback, false /*IsPcm*/>
     int32_t mBitWidth;
     int64_t mTotalDSPFrames{0};
     int64_t mPrevFrames{0};
-    const ::aidl::android::media::audio::common::AudioPortConfig& mMixPortConfig;
     PlatformStreamCallback * const mPlatformStreamCallback;
+    const ::aidl::android::media::audio::common::AudioPortConfig& mMixPortConfig;
     std::atomic<bool> mIsGaplessConfigured = false;
 };
 

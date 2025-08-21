@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -37,7 +37,7 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     ::android::status_t init() override;
     ::android::status_t drain(
             ::aidl::android::hardware::audio::core::StreamDescriptor::DrainMode) override;
-    ::android::status_t flush() override;
+    ::android::status_t flush() override; /* seek = pause + resume */
     ::android::status_t pause() override;
     ::android::status_t standby() override;
     ::android::status_t start() override;
@@ -184,6 +184,7 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     int64_t GetSourceLatency();
   private:
     int32_t outFlags;
+    std::mutex mPalHandleMutex;   /* mutex for palhandle */
     std::string mLogPrefix = "";
     bool isHwVolumeSupported();
     bool isHwFlushSupported();

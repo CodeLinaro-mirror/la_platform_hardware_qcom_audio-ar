@@ -199,9 +199,10 @@ ndk::ScopedAStatus StreamInPrimary::configureMMapStream(int32_t* fd, int64_t* bu
         LOG(ERROR) << __func__ << mLogPrefix << " no pal attributes";
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
     }
+
     attr->type = PAL_STREAM_ULTRA_LOW_LATENCY;
-    auto palDevices =
-            mPlatform.configureAndFetchPalDevices(mMixPortConfig, mTag, mConnectedDevices);
+    auto palDevices = mPlatform.configureAndFetchPalDevices(mMixPortConfig, mTag, mConnectedDevices,
+                                                            true /*dummyDevice*/);
     if (!palDevices.size()) {
         LOG(ERROR) << __func__ << mLogPrefix << " no connected devices on stream";
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
@@ -950,10 +951,11 @@ void StreamInPrimary::applyEffects() {
 
 void StreamInPrimary::shutdown_I() {
     LOG(DEBUG) << __func__ << mLogPrefix;
-
     if (mTag == Usecase::MMAP_RECORD) {
         std::get<MMapRecord>(mExt).setPalHandle(nullptr);
     }
+    mPalHandleMutex.lock();
+    LOG(DEBUG) << " stream handle: " << mPalHandle;
     mEffectsApplied = true;
     if (mPalHandle != nullptr) {
         if (mTag == Usecase::HOTWORD_RECORD) {
@@ -964,6 +966,7 @@ void StreamInPrimary::shutdown_I() {
         }
     }
     mPalHandle = nullptr;
+    mPalHandleMutex.unlock();
 }
 
 ::android::status_t StreamInPrimary::burstZero() {

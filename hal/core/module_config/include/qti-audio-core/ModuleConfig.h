@@ -35,7 +35,8 @@
 
 namespace qti::audio::core {
 
-static const std::string kPrimaryModuleConfigFileName{"audio_module_config_primary.xml"};
+static const std::string kPrimaryModulePureConfigFileName{"audio_module_config_primary.xml"};
+static const std::string kPrimaryModuleVaConfigFileName{"audio_module_config_primary_va.xml"};
 
 class ModuleConfig {
   public:

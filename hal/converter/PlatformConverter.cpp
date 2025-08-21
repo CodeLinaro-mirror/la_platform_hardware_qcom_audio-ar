@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -242,7 +242,7 @@ FormatPairs getFormatPairs() {
              make_AudioFormatDescription(::android::MEDIA_MIMETYPE_AUDIO_AAC_ADIF)},
             {PAL_AUDIO_FMT_AAC,
              make_AudioFormatDescription(::android::MEDIA_MIMETYPE_AUDIO_AAC_LC)},
-            {PAL_AUDIO_FMT_AAC,
+            {PAL_AUDIO_FMT_AAC_ADTS,
              make_AudioFormatDescription(::android::MEDIA_MIMETYPE_AUDIO_AAC_ADTS_LC)},
             {PAL_AUDIO_FMT_AAC,
              make_AudioFormatDescription(::android::MEDIA_MIMETYPE_AUDIO_AAC_ADTS_HE_V1)},
