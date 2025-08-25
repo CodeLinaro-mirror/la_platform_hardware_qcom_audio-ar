@@ -25,9 +25,9 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
     <version>2</version>
     <fqname>IModule/usb</fqname>
   </hal>
-  <!--hal format="aidl">
+  <hal format="aidl">
     <name>android.hardware.audio.core</name>
     <version>2</version>
     <fqname>IModule/bluetooth</fqname>
-   </hal-->
+   </hal>
 </manifest>
