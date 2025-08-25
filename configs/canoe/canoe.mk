@@ -138,7 +138,7 @@ PRODUCT_COPY_FILES += \
 # Audio configuration xml's related to Molokai
 QCV_FAMILY_SKUS := alor
 DEVICE_SKU := alor
-UV_WRAPPER2 := true
+UV_WRAPPER2 := false
 
 CONFIG_PAL_SRC_DIR := vendor/qcom/opensource/pal/configs/qcom/$(BA_NAME)/canoe
 CONFIG_HAL_SRC_DIR := vendor/qcom/opensource/audio-hal/primary-hal/configs/canoe
