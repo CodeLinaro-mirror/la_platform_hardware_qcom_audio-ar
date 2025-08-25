@@ -1138,7 +1138,7 @@ size_t VoipRecord::getFrameCount(const AudioPortConfig& mixPortConfig) {
 
 // [VoiceCallRecord Start]
 size_t VoiceCallRecord::getFrameCount(const AudioPortConfig& mixPortConfig) {
-    return (kCaptureDurationMs * mixPortConfig.sampleRate.value().value) / 1000;
+    return kCaptureDurationMs * (mixPortConfig.sampleRate.value().value / 1000);
 }
 
 pal_incall_record_direction VoiceCallRecord::getRecordDirection(
