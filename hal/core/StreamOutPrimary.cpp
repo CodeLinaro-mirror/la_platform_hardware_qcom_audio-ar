@@ -1434,7 +1434,6 @@ void StreamOutPrimary::shutdown_I() {
         mHapticsBufSize = 0;
     }
 
-    mUseCachedVolume = false;
     mIsPaused = false;
     mPalHandle = nullptr;
     mPalHandleMutex.unlock();
