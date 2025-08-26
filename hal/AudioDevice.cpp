@@ -2,8 +2,9 @@
  * Copyright (c) 2013-2021, The Linux Foundation. All rights reserved.
  * Not a Contribution.
  *
- * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
- * Not a Contribution.
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
  *
  * Copyright (C) 2013 The Android Open Source Project
  *
@@ -745,7 +746,6 @@ void adev_close_input_stream(struct audio_hw_device *dev,
     AHAL_DBG("Enter:stream_handle(%p)", astream_in.get());
 
     adevice->CloseStreamIn(astream_in);
-    adevice->mute_ = false;
 
     AHAL_DBG("Exit");
 }
