@@ -55,6 +55,7 @@ AUDIO_PAL += libstream_nontunnel
 AUDIO_PAL += libstream_soundtrigger
 AUDIO_PAL += libstream_dummy
 AUDIO_PAL += libstream_asr
+AUDIO_PAL += libstream_calltranslation
 #PAL Sessions Modules
 AUDIO_PAL += libsession_agm
 AUDIO_PAL += libsession_pcm
@@ -103,13 +104,15 @@ AUDIO_C2 += c2audio.vendor.ext-arm64.policy
 
 AUDIO_TEST := mcs_test
 AUDIO_TEST += ar_util_in_test_example
-
-
 AUDIO_MODULES := ftm_test_config
 AUDIO_MODULES += ftm_test_config_canoe-mtp-qmp-snd-card
 AUDIO_MODULES += ftm_test_config_canoe-mtp-wsa884x-snd-card
 AUDIO_MODULES += ftm_test_config_canoe-qrd-snd-card
 AUDIO_MODULES += ftm_test_config_canoe-qrd-wsa884x-snd-card
+AUDIO_MODULES += ftm_test_config_alor-mtp-wcd9378-snd-card
+AUDIO_MODULES += ftm_test_config_alor-mtp-wcd939x-snd-card
+AUDIO_MODULES += ftm_test_config_alor-qrd-wsa884x-snd-card
+
 AUDIO_MODULES += audioadsprpcd
 AUDIO_MODULES += MTP_acdb_cal.acdb
 AUDIO_MODULES += MTP_workspaceFileXml.qwsp
@@ -121,6 +124,8 @@ AUDIO_MODULES += CDP_acdb_cal.acdb
 AUDIO_MODULES += CDP_workspaceFileXml.qwsp
 AUDIO_MODULES += CDP_wsa884x_acdb_cal.acdb
 AUDIO_MODULES += CDP_wsa884x_workspaceFileXml.qwsp
+AUDIO_MODULES += CDP_wsa885xi2s_acdb_cal.acdb
+AUDIO_MODULES += CDP_wsa885xi2s_workspaceFileXml.qwsp
 AUDIO_MODULES += QRD_acdb_cal.acdb
 AUDIO_MODULES += QRD_workspaceFileXml.qwsp
 AUDIO_MODULES += IDP_UPD_acdb_cal.acdb
@@ -129,17 +134,19 @@ AUDIO_MODULES += QRD_canoe_wsa884x_acdb_cal.acdb
 AUDIO_MODULES += QRD_canoe_wsa884x_workspaceFileXml.qwsp
 AUDIO_MODULES += ATP_acdb_cal.acdb
 AUDIO_MODULES += ATP_workspaceFileXml.qwsp
-AUDIO_MODULES += fai__2.3.0_0.1__3.0.0_0.0__eai_1.10.pmd
-AUDIO_MODULES += fai__2.3.0_0.1__3.0.0_0.0__eai_1.36_enpu2_comp.pmd
-AUDIO_MODULES += fai__2.0.0_0.1__3.0.0_0.0__eai_1.36_enpu2.pmd
-AUDIO_MODULES += fai__2.7.2_0.0__3.0.0_0.0__eai_1.36_enpu2.pmd
-AUDIO_MODULES += fai__2.7.20_0.0__3.0.0_0.0__eai_1.36_enpu2.pmd
-AUDIO_MODULES += fai__3.0.0_0.0__eai_1.36_enpu2.pmd
+AUDIO_MODULES += MTP_alor_wcd9378_acdb_cal.acdb
+AUDIO_MODULES += MTP_alor_wcd9378_workspaceFileXml.qwsp
+AUDIO_MODULES += MTP_alor_wcd939x_acdb_cal.acdb
+AUDIO_MODULES += MTP_alor_wcd939x_workspaceFileXml.qwsp
+AUDIO_MODULES += CDP_alor_acdb_cal.acdb
+AUDIO_MODULES += CDP_alor_workspaceFileXml.qwsp
+AUDIO_MODULES += QRD_alor_acdb_cal.acdb
+AUDIO_MODULES += QRD_alor_workspaceFileXml.qwsp
 AUDIO_MODULES += ffv__6.1.3_0.1__eai_5.6.0_enpu_v6.pmd
 AUDIO_MODULES += ffv__7.0.1_0.1__eai_5.6_enpu_v6.pmd
 AUDIO_MODULES += ffv__7.0.1_0.2__eai_5.6_enpu_v6.pmd
 AUDIO_MODULES += ffv__7.1.1_0.2__eai_5.6_enpu_v6.pmd
-AUDIO_MODULES += hk01b_relu_eAI_5.3_eNPU_V6_adsp_i.pmd
+AUDIO_MODULES += hk01b_relu_eAI_5.6_eNPU_V6_adsp_i.pmd
 AUDIO_MODULES += click.pcm
 AUDIO_MODULES += double_click.pcm
 AUDIO_MODULES += heavy_click.pcm
@@ -167,7 +174,7 @@ AUDIO_MODULES += music.eai
 AUDIO_MODULES += speech.eai
 AUDIO_MODULES += environment.eai
 AUDIO_MODULES += conv_detection.eai
-AUDIO_MODULES += combined_output.eai
+AUDIO_MODULES += sdz_model.bin
 AUDIO_MODULES += vad_enpu_off.bin
 AUDIO_MODULES += vad_enpu_on.bin
 AUDIO_MODULES += nvd_enpu_off.bin
@@ -184,6 +191,7 @@ AUDIO_MODULES += customva_plugin
 AUDIO_MODULES += sva_plugin
 AUDIO_MODULES += libvui_utils
 AUDIO_MODULES += libqasr
+AUDIO_MODULES += qasr_vintf.xml
 
 AUDIO_MODULES += $(AUDIO_AGM)
 AUDIO_MODULES += $(AUDIO_PAL)
@@ -197,7 +205,8 @@ AUDIO_MODULES += libsoundtriggerhal.qti
 AUDIO_MODULES += \
     liblistensoundmodelaidl \
     liblistensoundmodel2vendor \
-    vendor.qti.hardware.ListenSoundModelAidl-V1-ndk.vendor
+    vendor.qti.hardware.ListenSoundModelAidl-V1-ndk.vendor \
+    Manifest_IListenSoundModel.xml
 
 # AIDL Audio modules
 

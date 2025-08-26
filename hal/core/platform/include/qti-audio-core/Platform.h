@@ -190,7 +190,7 @@ class Platform {
                     bluetoothDevices);
     std::unique_ptr<pal_stream_attributes> getDefaultTelephonyAttributes() const;
     std::unique_ptr<pal_stream_attributes> getDefaultCRSTelephonyAttributes() const;
-    std::unique_ptr<pal_stream_attributes> getDefaultCallTranslationAttributes() const;
+    std::unique_ptr<pal_stream_attributes> getDefaultCallTranslationAttributes(pal_call_translation_direction callTranslationDirection) const;
     void configurePalDevicesCustomKey(std::vector<pal_device>& palDevices,
                                       const std::string& customKey) const;
 
@@ -307,9 +307,10 @@ class Platform {
     }
 
     bool isOffload(const Usecase& tag) { return tag == Usecase::COMPRESS_OFFLOAD_PLAYBACK; }
-    int setLatencyMode(uint32_t mode);
+    int setLatencyMode(uint32_t mode, pal_device_id_t dev_id);
     int getRecommendedLatencyModes(
-          std::vector<::aidl::android::media::audio::common::AudioLatencyMode>* _aidl_return);
+          std::vector<::aidl::android::media::audio::common::AudioLatencyMode>* _aidl_return,
+          pal_device_id_t dev_id);
 
     void configurePalDevices(
             const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig,

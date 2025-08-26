@@ -178,12 +178,17 @@ std::unique_ptr<pal_stream_attributes> Platform::getDefaultTelephonyAttributes()
     return std::move(attributes);
 }
 
-std::unique_ptr<pal_stream_attributes> Platform::getDefaultCallTranslationAttributes() const {
+std::unique_ptr<pal_stream_attributes> Platform::getDefaultCallTranslationAttributes(pal_call_translation_direction callTranslationDirection) const {
     auto attributes = std::make_unique<pal_stream_attributes>();
     auto inChannelInfo = PlatformConverter::getPalChannelInfoForChannelCount(1);
     auto outChannelInfo = PlatformConverter::getPalChannelInfoForChannelCount(2);
     attributes->type = PAL_STREAM_CALL_TRANSLATION;
-    attributes->direction = PAL_AUDIO_INPUT;
+
+    if (callTranslationDirection == CALL_TRANSLATION_DIR_TX) {
+        attributes->direction = PAL_AUDIO_INPUT;
+    } else if (callTranslationDirection == CALL_TRANSLATION_DIR_RX) {
+        attributes->direction = PAL_AUDIO_OUTPUT;
+    }
     attributes->in_media_config.sample_rate = kDefaultOutputSampleRate;
     attributes->in_media_config.ch_info = *inChannelInfo;
     attributes->in_media_config.bit_width = kDefaultPCMBidWidth;
@@ -1298,7 +1303,8 @@ PlaybackRateStatus Platform::setPlaybackRate(
 }
 
 int Platform::getRecommendedLatencyModes(
-          std::vector<::aidl::android::media::audio::common::AudioLatencyMode>* _aidl_return) {
+          std::vector<::aidl::android::media::audio::common::AudioLatencyMode>* _aidl_return,
+          pal_device_id_t dev_id) {
 
      size_t size;
      int ret = 0;
@@ -1308,7 +1314,7 @@ int Platform::getRecommendedLatencyModes(
          return -ENOMEM;
      }
 
-     palLatencyModeInfo->dev_id = PAL_DEVICE_OUT_BLUETOOTH_A2DP;
+     palLatencyModeInfo->dev_id = dev_id;
      palLatencyModeInfo->num_modes = PAL_MAX_LATENCY_MODES;
      void *palLatencyModeInfoPtr = palLatencyModeInfo.get();
 
@@ -1465,7 +1471,7 @@ void Platform::updateHotwordPortConfig(
     }
 }
 
-int Platform::setLatencyMode(uint32_t mode) {
+int Platform::setLatencyMode(uint32_t mode, pal_device_id_t dev_id) {
 
      int ret = 0;
      auto palLatencyModeInfo = std::make_unique<pal_param_latency_mode_t>();
@@ -1474,7 +1480,7 @@ int Platform::setLatencyMode(uint32_t mode) {
          return -ENOMEM;
      }
 
-     palLatencyModeInfo->dev_id = PAL_DEVICE_OUT_BLUETOOTH_A2DP;
+     palLatencyModeInfo->dev_id = dev_id;
      palLatencyModeInfo->num_modes = 1;
      palLatencyModeInfo->modes[0] = (uint32_t)mode;
 
