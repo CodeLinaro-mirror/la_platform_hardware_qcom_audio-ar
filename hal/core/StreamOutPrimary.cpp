@@ -559,11 +559,15 @@ void StreamOutPrimary::resume() {
 
 ::android::status_t StreamOutPrimary::refinePosition(StreamDescriptor::Reply* reply) {
 
+    int64_t cachedFrames = 0;
+
     if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK) {
         reply->observable.frames = std::get<CompressPlayback>(mExt).getPositionInFrames(mPalHandle);
+        cachedFrames = std::get<CompressPlayback>(mExt).getCachedFrames();
     } else if (mTag == Usecase::PCM_OFFLOAD_PLAYBACK) {
         reply->observable.frames =
                 std::get<PcmOffloadPlayback>(mExt).getPositionInFrames(mPalHandle);
+        cachedFrames = std::get<PcmOffloadPlayback>(mExt).getCachedFrames();
     } else if (mTag == Usecase::MMAP_PLAYBACK) {
         int32_t ret = std::get<MMapPlayback>(mExt).getMMapPosition(&(reply->hardware.frames),
                                                                        &(reply->hardware.timeNs));
@@ -597,8 +601,12 @@ void StreamOutPrimary::resume() {
         const auto& sampleRate = mMixPortConfig.sampleRate.value().value;
         const auto btExtraFrames = latencyMs * sampleRate / 1000;
         // Todo, Check do we want to consider this for MMAP usecase
-        reply->observable.frames = (reply->observable.frames > btExtraFrames) ?
-                                   (reply->observable.frames - btExtraFrames) : 0;
+
+        //we cache position during flush, so use that value to consider encoder latency during
+        //post flush scenarios, because AIDL has non-retrograded frames which will always be
+        //greater than latency calculated frames
+        reply->observable.frames = (reply->observable.frames > (cachedFrames + btExtraFrames)) ?
+                                   (reply->observable.frames - btExtraFrames) : cachedFrames;
         reply->latencyMs += latencyMs;
     }
     reply->observable.timeNs = ::android::uptimeNanos();
@@ -1215,12 +1223,21 @@ ndk::ScopedAStatus StreamOutPrimary::getRecommendedLatencyModes(
         std::vector<::aidl::android::media::audio::common::AudioLatencyMode>* _aidl_return) {
 
      int ret = 0;
+     bool hasBtLEDevice = hasBluetoothLEDevice(mConnectedDevices);
+     pal_device_id_t dev_id;
 
-     if (!hasBluetoothA2dpDevice(mConnectedDevices)) {
+     if (!hasBluetoothA2dpDevice(mConnectedDevices) && !hasBtLEDevice) {
          return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
      }
 
-     ret = mPlatform.getRecommendedLatencyModes(_aidl_return);
+     if(hasBtLEDevice){
+        dev_id = PAL_DEVICE_OUT_BLUETOOTH_BLE;
+     } else {
+        dev_id = PAL_DEVICE_OUT_BLUETOOTH_A2DP;
+     }
+
+     ret = mPlatform.getRecommendedLatencyModes(_aidl_return, dev_id);
+
      if (ret) ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
      return ndk::ScopedAStatus::ok();
 }
@@ -1230,12 +1247,21 @@ ndk::ScopedAStatus StreamOutPrimary::setLatencyMode(
 
     LOG(DEBUG) << __func__ << mLogPrefix << ": latency mode " << toString(in_mode);
     int ret = 0;
+    bool hasBtLEDevice = hasBluetoothLEDevice(mConnectedDevices);
+    pal_device_id_t dev_id;
 
-    if (!hasBluetoothA2dpDevice(mConnectedDevices)) {
+    if (!hasBluetoothA2dpDevice(mConnectedDevices) && !hasBtLEDevice) {
         return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
     }
 
-    ret = mPlatform.setLatencyMode((uint32_t)in_mode);
+    if(hasBtLEDevice){
+        dev_id = PAL_DEVICE_OUT_BLUETOOTH_BLE;
+    } else {
+        dev_id = PAL_DEVICE_OUT_BLUETOOTH_A2DP;
+    }
+
+    ret = mPlatform.setLatencyMode((uint32_t)in_mode, dev_id);
+
     if (ret) ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
 
     return ndk::ScopedAStatus::ok();
