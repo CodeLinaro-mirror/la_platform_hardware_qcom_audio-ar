@@ -1415,7 +1415,7 @@ void StreamOutPrimary::shutdown_I() {
     }
 
     if (karaoke) mAudExt.mKarokeExtension->karaoke_stop();
-
+    mPalHandleMutex.lock();
     if (mPalHandle != nullptr) {
         if (getAddress() == MEDIA_BUS)
         {
@@ -1437,9 +1437,9 @@ void StreamOutPrimary::shutdown_I() {
         mHapticsBufSize = 0;
     }
 
-    mUseCachedVolume = false;
     mIsPaused = false;
     mPalHandle = nullptr;
+    mPalHandleMutex.unlock();
     mHapticsPalHandle = nullptr;
     LOG(VERBOSE) << __func__ << mLogPrefix;
 }

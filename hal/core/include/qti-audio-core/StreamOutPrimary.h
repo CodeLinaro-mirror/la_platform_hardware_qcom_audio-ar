@@ -181,6 +181,7 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     bool isHwPauseSupported();
     struct BufferConfig getBufferConfig();
     std::string busAddr = "";
+    std::mutex mPalHandleMutex;   /* mutex for palhandle */
 
     // optional buffer format converter, if stream input and output formats are different
     std::optional<std::unique_ptr<BufferFormatConverter>> mBufferFormatConverter;

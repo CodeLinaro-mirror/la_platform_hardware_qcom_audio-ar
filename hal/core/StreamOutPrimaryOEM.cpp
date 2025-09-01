@@ -108,6 +108,10 @@ void StreamOutPrimaryOEM::shutdown() {
 ::android::status_t StreamOutPrimaryOEM::transfer(void* buffer, size_t frameCount,
                                                size_t* actualFrameCount, int32_t* latencyMs) {
 
+    if (AudioExtension::getInstance().out_power_policy == POWER_POLICY_STATUS_OFFLINE) {
+        LOG(ERROR) << "POWER POLICY OFFLINE please try again\n";
+        return -EINVAL;
+    }
     uint64_t signed_frames = 0;
     uint64_t written_frames = 0;
     uint64_t kernel_frames = 0;
