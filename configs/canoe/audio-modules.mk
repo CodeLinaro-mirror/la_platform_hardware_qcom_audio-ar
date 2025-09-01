@@ -185,7 +185,6 @@ AUDIO_MODULES += mm-audio-ftm
 AUDIO_MODULES += libmcs
 AUDIO_MODULES += libquasar
 AUDIO_MODULES += sensors.dynamic_sensor_hal
-AUDIO_MODULES += libaudiofeaturestats
 AUDIO_MODULES += hotword_plugin
 AUDIO_MODULES += customva_plugin
 AUDIO_MODULES += sva_plugin
