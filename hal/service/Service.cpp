@@ -35,8 +35,13 @@
 
 enum class StubMode {
     STUB_DISABLED = 0,
-    STUB_ENABLED = 1 << 0,
-    AUTO_RECOVERY_ENABLED = 1 << 2,
+    /**< device can block at boot animation if sound card is not registered */
+
+    STUB_ENFORCED = 1 << 0,
+    /**< boot with stub mode by default with/without sound card registered */
+
+    STUB_AUTOMATED = 1 << 2,
+    /**< auto boot into stub mode after 30S if sound card is not registered */
 };
 
 static void dumpAudioStatus()
@@ -60,9 +65,9 @@ static void dumpAudioStatus()
     }
 }
 
-static bool isStubMode(StubMode stubMode)
+static bool isStubEnforced(StubMode stubMode)
 {
-    return stubMode == StubMode::STUB_ENABLED;
+    return stubMode == StubMode::STUB_ENFORCED;
 }
 
 static bool registerServiceImplementation(const Interface& interface) {
@@ -133,11 +138,11 @@ void registerDefaultInterfaces() {
              .mandatory = true},
             {.name = "audioeffecthal",
              .libraryName = "libaudioeffecthal.qti.so",
-             .method = "registerService",
+             .method = "registerStubService",
              .mandatory = true},
             {.name = "soundtriggerhal",
              .libraryName = "libsoundtriggerhal.qti.so",
-             .method = "createISoundTriggerFactory",
+             .method = "createStubISoundTriggerFactory",
              .mandatory = true},
             {.name = "bthal",
              .libraryName = "android.hardware.bluetooth.audio_sw.so",
@@ -150,7 +155,7 @@ void registerDefaultInterfaces() {
 
 void registerAvailableInterfaces() {
     StubMode stubmode = (StubMode)::android::base::GetIntProperty("vendor.audio.hal.stubmode", 0);
-    if (isStubMode(stubmode) || !registerFromConfigs()) {
+    if (isStubEnforced(stubmode) || !registerFromConfigs()) {
         ALOGI("registerDefaultInterfaces stub mode %d", stubmode);
         registerDefaultInterfaces();
     }
@@ -176,9 +181,9 @@ void halMonitorThread() {
             dumpAudioStatus();
             StubMode stubmode = (StubMode)
                 ::android::base::GetIntProperty("vendor.audio.hal.stubmode", 0);
-            if (stubmode == StubMode::AUTO_RECOVERY_ENABLED) {
+            if (stubmode == StubMode::STUB_AUTOMATED) {
                 android::base::SetProperty("vendor.audio.hal.stubmode",
-                    std::to_string((int)StubMode::STUB_ENABLED));
+                    std::to_string((int)StubMode::STUB_ENFORCED));
                 LOG(ERROR) << __func__ << ": Enable Stub Audio";
             }
             LOG_ALWAYS_FATAL("AHAL init took more than %d S, rebooting...", AHAL_INIT_TIMEOUT);

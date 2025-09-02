@@ -189,8 +189,6 @@ AUDIO_MODULES += hotword_plugin
 AUDIO_MODULES += customva_plugin
 AUDIO_MODULES += sva_plugin
 AUDIO_MODULES += libvui_utils
-AUDIO_MODULES += libVoiceSdk
-AUDIO_MODULES += libtensorflowlite_c
 AUDIO_MODULES += libqasr
 AUDIO_MODULES += qasr_vintf.xml
 
