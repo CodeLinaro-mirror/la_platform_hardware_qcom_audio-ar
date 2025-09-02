@@ -27,8 +27,8 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+/* Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -68,6 +68,7 @@ using android::OK;
 #define HFP_AG_LIB_PATH LIBS"libhfp_ag_pal.so"
 #define FM_LIB_PATH LIBS"libfmpal.so"
 #define ICC_LIB_PATH LIBS"libicc_pal.so"
+#define AWE_LIB_PATH LIBS"libawe_pal.so"
 
 #define BT_IPC_SOURCE_LIB_NAME LIBS"btaudio_offload_if.so"
 #define POWER_POLICY_LIB_PATH LIBS"libarpowerpolicy.so"
@@ -320,6 +321,7 @@ void AudioExtn::audio_extn_get_parameters(std::shared_ptr<AudioDevice> adev,
 
     audio_extn_icc_get_parameters(adev, query, reply);
     audio_extn_fm_get_parameters(adev, query, reply);
+    audio_extn_awe_get_parameters(adev, query, reply);
     GetProxyParameters(adev, query, reply);
     kv_pairs = str_parms_to_str(reply);
     if (kv_pairs != NULL) {
@@ -339,6 +341,10 @@ int AudioExtn::audio_extn_set_parameters(std::shared_ptr<AudioDevice> adev,
 
     if (ret == 0) {
         ret = audio_extn_icc_set_parameters(adev, params);
+    }
+
+    if (ret == 0) {
+        ret = audio_extn_awe_set_parameters(adev, params);
     }
 
     audio_extn_hfp_ag_set_parameters(adev, params);
@@ -361,6 +367,13 @@ int AudioExtn::get_controller_stream_from_params(struct str_parms *parms,
     }
     return 0;
 }
+
+int AudioExtn::audio_extn_set_volume(int stream_type, const char *address, float left , float right) {
+    // Only the AWE will handle volumes at this time.
+    audio_extn_awe_set_volume(stream_type, address, left, right);
+    return 0;
+}
+
 
 // START: BATTERY_LISTENER ==================================================
 
@@ -1088,3 +1101,165 @@ feature_disabled:
     return -ENOSYS;
 }
 // END: Power Policy Client ======================================================================
+
+// START: AWE Audioweaver ======================================================================
+// Provide access to AWE within DSP, primarily for get and set params
+static void *awe_lib_handle = NULL;
+static set_parameters_t awe_set_parameters;
+static get_parameters_t awe_get_params;
+static hfp_set_mic_mute_t awe_set_mic_mute;
+
+typedef void (*set_volume_t) (int stream_type, const char *address, float left, float right);
+typedef void (*void_void_t) ();
+typedef int(*awe_set_mic_mute_t)(bool state);
+
+static set_volume_t awe_set_volume;
+static void_void_t awe_reset_recording;
+static void_void_t awe_lib_init;
+
+
+int AudioExtn::awe_feature_init(bool is_feature_enabled)
+{
+    AHAL_DBG("Called with AWE feature %s",
+        is_feature_enabled ? "Enabled" : "NOT Enabled");
+
+    if (is_feature_enabled) {
+        // dlopen lib
+        awe_lib_handle = dlopen(AWE_LIB_PATH, RTLD_NOW);
+
+        if (!awe_lib_handle) {
+            ALOGE("%s: dlopen failed with: %s", __func__, dlerror());
+            goto feature_disabled;
+        }
+
+        // Clear any existing error
+        // Clear anyreset_recordingng eror
+        dlerror();
+
+        if (!(awe_set_parameters =
+            (set_parameters_t)dlsym(
+                awe_lib_handle, "awe_set_parameters"))) {
+            ALOGE("%s: dlsym failed awe_set_parameters %s", __func__, dlerror());
+            goto feature_disabled;
+        }
+
+        if (!(awe_get_params =
+            (get_parameters_t)dlsym(
+                awe_lib_handle, "awe_get_params"))) {
+            ALOGE("%s: dlsym failed awe_get_params %s", __func__, dlerror());
+            goto feature_disabled;
+        }
+
+        if (!(awe_set_volume =
+            (set_volume_t)dlsym(
+                awe_lib_handle, "awe_set_volume"))) {
+            ALOGE("%s: dlsym failed awe_set_volume %s", __func__, dlerror());
+            goto feature_disabled;
+        }
+
+        if (!(awe_set_mic_mute =
+            (awe_set_mic_mute_t)dlsym(
+                awe_lib_handle, "awe_set_mic_mute"))) {
+            ALOGE("%s: dlsym failed awe_set_mic_mute %s", __func__, dlerror());
+            goto feature_disabled;
+        }
+
+        if (!(awe_reset_recording =
+            (void_void_t)dlsym(
+                awe_lib_handle, "awe_reset_recording"))) {
+            ALOGE("%s: dlsym failed awe_reset_recording %s", __func__, dlerror());
+            goto feature_disabled;
+        }
+        if (!(awe_lib_init =
+            (void_void_t)dlsym(
+                awe_lib_handle, "awe_lib_init"))) {
+            ALOGE("%s: dlsym failed awe_lib_init %s", __func__, dlerror());
+            goto feature_disabled;
+        }
+
+        AHAL_DBG("---- Feature AWE is Enabled ----");
+        awe_lib_init();
+        AHAL_DBG("---- Feature AWE is Initialized ----");
+
+        return 0;
+    }
+
+feature_disabled:
+    if (awe_lib_handle) {
+        dlclose(awe_lib_handle);
+        awe_lib_handle = NULL;
+    }
+
+    awe_set_parameters = NULL;
+    awe_get_params = NULL;
+    awe_set_volume = NULL;
+    awe_reset_recording = NULL;
+    awe_lib_init = NULL;
+
+    AHAL_DBG("---- Feature AWE is disabled ----");
+
+    return -ENOSYS;
+}
+
+void AudioExtn::awe_feature_deinit()
+{
+    if (awe_lib_handle) {
+        dlclose(awe_lib_handle);
+        awe_lib_handle = NULL;
+    }
+
+    if (awe_set_parameters) {
+        awe_set_parameters = NULL;
+    }
+
+    if (awe_get_params) {
+        awe_get_params = NULL;
+    }
+}
+
+int AudioExtn::audio_extn_awe_set_parameters(std::shared_ptr<AudioDevice> adev,
+    struct str_parms *parms)
+{
+    int ret = 0;
+
+    AHAL_DBG("---- audio_extn_awe_set_parameters ----");
+
+    if (awe_set_parameters)
+        ret = awe_set_parameters(adev, parms);
+
+    return ret;
+}
+
+int AudioExtn::audio_extn_awe_set_volume(int stream_type, const char *address, float left , float right) {
+    int ret = 0;
+
+    AHAL_DBG("---- audio_extn_awe_set_volume ----");
+    if (awe_set_volume)
+        awe_set_volume(stream_type, address, left, right);
+
+    return ret;
+}
+
+void AudioExtn::audio_extn_awe_reset_recording() {
+    AHAL_DBG("---- audio_extn_awe_reset_recording ----");
+    if (awe_reset_recording)
+        awe_reset_recording();
+}
+
+void AudioExtn::audio_extn_awe_get_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *query, struct str_parms *reply){
+   if(awe_get_params)
+        awe_get_params(adev, query, reply);
+}
+
+int AudioExtn::audio_extn_awe_set_mic_mute(bool state)
+{
+   int ret = 0;
+
+   AHAL_DBG("---- audio_extn_awe_set_mic_mute ----");
+   if (awe_set_mic_mute)
+      ret=  awe_set_mic_mute(state);
+
+   return ret;
+}
+
+// END: AWE ========================================================================
