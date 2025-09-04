@@ -132,6 +132,7 @@ RetCode BMTContext::setOutputDevice(
 
 RetCode BMTContext::setBMTBandLevels(
         const std::vector<Equalizer::BandLevel>& bandLevels) {
+    LOG(VERBOSE) << "Enter " << __func__ << " ioHandle " << getIoHandle();
     std::lock_guard lg(mMutex);
     RETURN_VALUE_IF(bandLevels.size() > MAX_NUM_BANDS, RetCode::ERROR_ILLEGAL_PARAMETER,
                     "Exceeds Max Size");
@@ -157,7 +158,7 @@ RetCode BMTContext::setBMTBandLevels(
         updatePalParameters(bandLevel.index, &mBMTParams) ;
     }
 
-    LOG(DEBUG) << " Exit " <<  __func__;
+    LOG(VERBOSE) << " Exit " <<  __func__;
 
     return RetCode::SUCCESS;
 }

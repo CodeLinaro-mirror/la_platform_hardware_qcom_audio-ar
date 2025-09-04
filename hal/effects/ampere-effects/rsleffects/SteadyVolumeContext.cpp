@@ -114,7 +114,7 @@ RetCode SteadyVolumeContext::disable() {
 
 RetCode SteadyVolumeContext::setSteadyVolume(int value) {
 
-    LOG(DEBUG) << "Enter " << __func__ << " ioHandle " << getIoHandle();
+    LOG(VERBOSE) << "Enter " << __func__ << " ioHandle " << getIoHandle();
 
     mSteadyVolumeParams.value = value;
 
@@ -122,7 +122,7 @@ RetCode SteadyVolumeContext::setSteadyVolume(int value) {
         return RetCode::SUCCESS;
     }
 
-    LOG(DEBUG) << "Exit " << __func__;
+    LOG(VERBOSE) << "Exit " << __func__;
 
     return RetCode::ERROR_NULL_POINTER;
 }

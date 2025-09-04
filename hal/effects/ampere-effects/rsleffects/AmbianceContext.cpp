@@ -120,7 +120,7 @@ RetCode AmbianceContext::disable() {
 
 RetCode AmbianceContext::setAmbianceProfile(int profile) {
 
-    LOG(DEBUG) << "Enter " << __func__ << " ioHandle " << getIoHandle();
+    LOG(VERBOSE) << "Enter " << __func__ << " ioHandle " << getIoHandle();
 
     if ( profile < MIN_PROFILE_VALUE || profile > MAX_PROFILE_VALUE ) {
         LOG(DEBUG) << __func__ << " Error in setting value, not in range 0 to 3 ";
@@ -132,6 +132,7 @@ RetCode AmbianceContext::setAmbianceProfile(int profile) {
 
     if (updatePalParameters(&mAmbianceParams) == 0) {
         mAsyncTransationStatus = 0;
+        LOG(VERBOSE) << "Exit " << __func__;
         return RetCode::SUCCESS;
     }
 
