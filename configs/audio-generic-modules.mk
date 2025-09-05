@@ -40,7 +40,6 @@ ifneq ($(TARGET_IS_HEADLESS),true)
 #MM_AUDIO product packages
 MM_AUDIO := libcapiv2uvvendor
 MM_AUDIO += libsoundtriggerhal.qti
-MM_AUDIO += libadm
 MM_AUDIO += libAlacSwDec
 MM_AUDIO += libApeSwDec
 MM_AUDIO += libcapiv2svacnnvendor
