@@ -202,12 +202,7 @@ ndk::ScopedAStatus ModulePrimary::setMicMute(bool in_mute) {
 
     for (const auto& inputMixPortConfigId :
          getActiveInputMixPortConfigIds(getConfig().portConfigs)) {
-        if(!mPlatform.getTranslationRecordState()){
-            mStreams.setStreamMicMute(inputMixPortConfigId, in_mute);
-        } else {
-            // Need to keep the Audio FFECNS Record stream unmuted when Translate Record Usecase Enabled
-            LOG(DEBUG) << __func__ << ": SetStreamMicMute skipped for Voice Translate Record";
-        }
+             mStreams.setStreamMicMute(inputMixPortConfigId, in_mute);
     }
     return ndk::ScopedAStatus::ok();
 }
@@ -595,8 +590,21 @@ void ModulePrimary::onSetTelephonyParameters(const std::vector<VendorParameter>&
         } else if (Parameters::kVoiceTranslationRxMute == p.id) {
             const auto isOn = getBoolFromString(paramValue);
             mPlatform.setTranslationRxMuteState(isOn);
-            LOG(DEBUG) << __func__ << " : translation Rx mute set as true" ;
-            mTelephony->updateVoiceVolume();
+            LOG(DEBUG) << __func__ << " : translation Rx mute set as" << isOn;
+            if(mTelephony->isVoipActive()) {
+                setVoipRxMute(isOn);
+            } else {
+                mTelephony->updateVoiceVolume();
+            }
+        } else if (Parameters::kVoiceTranslationTxMute == p.id) {
+            const auto isOn = getBoolFromString(paramValue);
+            mPlatform.setTranslationTxMuteState(isOn);
+            LOG(DEBUG) << __func__ << " : translation Tx mute set as" << isOn;
+            if(mTelephony->isVoipActive()) {
+                setVoipTxMute(isOn);
+            } else {
+                mTelephony->setMicMute(isOn);
+            }
         } else if (Parameters::kTranslationConfig == p.id) {
             mTelephony->CallTranslationManager(paramValue);
         }
@@ -695,6 +703,45 @@ void ModulePrimary::onSetHapticsParameters(const std::vector<VendorParameter>& p
     return;
 }
 
+void ModulePrimary::setVoipTxMute(bool mute_state) {
+    LOG(DEBUG) << __func__ << ": mute :" << mute_state;
+    constexpr auto recordVoipFlags = static_cast<int32_t>(1 << static_cast<int32_t>(::aidl::android::media::audio::common::AudioInputFlags::VOIP_TX));
+    for (const auto& inputMixPortConfigId : getActiveInputMixPortConfigIds(getConfig().portConfigs)) {
+        // Find the corresponding port config
+        auto portConfigIt = std::find_if(getConfig().portConfigs.begin(), getConfig().portConfigs.end(),
+            [&inputMixPortConfigId](const auto& config) {
+                return config.id == inputMixPortConfigId;
+            });
+        if (portConfigIt != getConfig().portConfigs.end()) {
+            const auto& portConfig = *portConfigIt;
+
+            // check VoIP TX streams
+            if (portConfig.ext.getTag() == ::aidl::android::media::audio::common::AudioPortExt::Tag::mix &&
+                portConfig.flags &&
+                portConfig.flags.value().getTag() == ::aidl::android::media::audio::common::AudioIoFlags::Tag::input &&
+                portConfig.flags.value().get<::aidl::android::media::audio::common::AudioIoFlags::Tag::input>() == recordVoipFlags &&
+                portConfig.ext.get<::aidl::android::media::audio::common::AudioPortExt::Tag::mix>().usecase.getTag() ==
+                    ::aidl::android::media::audio::common::AudioPortMixExtUseCase::Tag::source &&
+                portConfig.ext.get<::aidl::android::media::audio::common::AudioPortExt::Tag::mix>().usecase.get<
+                    ::aidl::android::media::audio::common::AudioPortMixExtUseCase::Tag::source>() ==
+                    ::aidl::android::media::audio::common::AudioSource::VOICE_COMMUNICATION) {
+                LOG(INFO) << __func__ << ": Found VoIP TX stream with ID " << inputMixPortConfigId;
+                mStreams.setStreamMicMute(inputMixPortConfigId, mute_state);
+            }
+        }
+    }
+}
+void ModulePrimary::setVoipRxMute (bool state) {
+    pal_stream_handle_t* voipRxHandle = mPlatform.getVoipRxStreamHandle();
+    if (voipRxHandle != nullptr) {
+        LOG(INFO) << __func__ << ":found voiprx pal handle";
+        if (int32_t ret = ::pal_stream_set_mute(voipRxHandle, state); ret) {
+            LOG(ERROR) << __func__ << " pal_stream_set_mute failed!!! ret:" << ret;
+            return;
+        }
+    }
+}
+
 // static
 ModulePrimary::SetParameterToFeatureMap ModulePrimary::fillSetParameterToFeatureMap() {
     SetParameterToFeatureMap map{{Parameters::kHdrRecord, Feature::HDR},
@@ -716,6 +763,7 @@ ModulePrimary::SetParameterToFeatureMap ModulePrimary::fillSetParameterToFeature
                                  {Parameters::kVoiceDeviceMute, Feature::TELEPHONY},
                                  {Parameters::kVoiceDirection, Feature::TELEPHONY},
                                  {Parameters::kVoiceTranslationRxMute, Feature::TELEPHONY},
+                                 {Parameters::kVoiceTranslationTxMute, Feature::TELEPHONY},
                                  {Parameters::kTranslationConfig, Feature::TELEPHONY},
                                  {Parameters::kInCallMusic, Feature::GENERIC},
                                  {Parameters::kTranslateRecord, Feature::GENERIC},

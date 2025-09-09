@@ -140,6 +140,7 @@ ndk::ScopedAStatus Telephony::switchAudioMode(AudioMode newAudioMode) {
     }
     if (newAudioMode != AudioMode::IN_COMMUNICATION && mIsVoipStarted == true) {
         mIsVoipStarted = false;
+        mPlatform.setVoipRxStreamHandle(nullptr);
     }
 
     mAudioMode = newAudioMode;
@@ -843,10 +844,10 @@ void Telephony::setCRSVolumeFromIndex(const int index) {
 }
 
 void Telephony::updateVoiceVolume() {
+    float volumeFloat = 0.0f;
     if (mPalHandle == nullptr) {
         return;
     }
-    float volumeFloat = 0.0f;
     if (mSetUpdates.mIsCrsCall) {
         volumeFloat = mCRSVolume;
     } else if (mPlatform.getTranslationRxMuteState()) {
