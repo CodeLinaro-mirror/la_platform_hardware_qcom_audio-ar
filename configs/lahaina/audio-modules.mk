@@ -102,7 +102,8 @@ AUDIO_TEST += ar_util_in_test_example
 
 
 AUDIO_MODULES += ftm_test_config
-
+AUDIO_MODULES += ftm_test_config_lahaina-yupikidp-snd-card
+AUDIO_MODULES += ftm_test_config_lahaina-yupikqrd-snd-card
 AUDIO_MODULES += MTP_acdb_cal.acdb
 AUDIO_MODULES += MTP_workspaceFileXml.qwsp
 AUDIO_MODULES += CDP_acdb_cal.acdb
