@@ -40,8 +40,11 @@ LOCAL_CPPFLAGS += -fexceptions
 
 #Enable Hardware timestamp for Android U onwards
 #sdk version for Android U is 34
+#HARDWARE_TIMESTAMP is applicable for HQX env only
+ifneq (,$(filter $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_gvmq gen4_gvm))
 ifeq ($(call math_gt_or_eq, $(PRODUCT_SHIPPING_API_LEVEL), 34), true)
 LOCAL_CPPFLAGS += -DHARDWARE_TIMESTAMP
+endif
 endif
 
 LOCAL_C_INCLUDES += \
