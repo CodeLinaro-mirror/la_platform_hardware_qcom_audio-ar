@@ -1024,5 +1024,7 @@
         <ctl name="VA DMIC MUX2" value="DMIC2"/>
         <ctl name="VA DMIC MUX3" value="DMIC1"/>
     </path>
+    <path name="echo-ref-record">
+    </path>
 
 </mixer>

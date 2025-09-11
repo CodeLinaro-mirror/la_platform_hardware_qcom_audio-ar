@@ -359,16 +359,16 @@ vendor.audio.hal.boot.timeout.ms=20000
 #persist.vendor.bt.a2dp_offload_cap=sbc-aptx-aptxtws-aptxhd-aac-ldac
 
 # A2DP offload support
-#PRODUCT_PROPERTY_OVERRIDES += \
-#ro.bluetooth.a2dp_offload.supported=true
+PRODUCT_PROPERTY_OVERRIDES += \
+ro.bluetooth.a2dp_offload.supported=true
 
 # Disable A2DP offload
-#PRODUCT_PROPERTY_OVERRIDES += \
-#persist.bluetooth.a2dp_offload.disabled=false
+PRODUCT_PROPERTY_OVERRIDES += \
+persist.bluetooth.a2dp_offload.disabled=false
 
 # A2DP offload DSP supported encoder list
-#PRODUCT_PROPERTY_OVERRIDES += \
-#persist.bluetooth.a2dp_offload.cap=sbc-aac-aptx-aptxhd-ldac
+PRODUCT_PROPERTY_OVERRIDES += \
+persist.bluetooth.a2dp_offload.cap=sbc-aac-aptx-aptxhd-ldac
 
 #enable software decoders for ALAC and APE
 PRODUCT_PROPERTY_OVERRIDES += \
@@ -458,20 +458,20 @@ PRODUCT_PROPERTY_OVERRIDES += \
 persist.vendor.audio.voicecall.speaker.stereo=true
 
 #enable AAC frame ctl for A2DP sinks
-#PRODUCT_PROPERTY_OVERRIDES += \
-#persist.vendor.bt.aac_frm_ctl.enabled=true
+PRODUCT_PROPERTY_OVERRIDES += \
+persist.vendor.bt.aac_frm_ctl.enabled=true
 
 #enable VBR frame ctl
-#PRODUCT_PROPERTY_OVERRIDES += \
-#persist.vendor.bt.aac_vbr_frm_ctl.enabled=true
+PRODUCT_PROPERTY_OVERRIDES += \
+persist.vendor.bt.aac_vbr_frm_ctl.enabled=true
 
 #enable dedicated proxy for hearing aid
 PRODUCT_PROPERTY_OVERRIDES += \
 persist.vendor.audio.ha_proxy.enabled=true
 
 #add dynamic feature flags here
-#vendor.audio.feature.a2dp_offload.enable=true
 PRODUCT_PROPERTY_OVERRIDES += \
+vendor.audio.feature.a2dp_offload.enable=true\
 vendor.audio.feature.afe_proxy.enable=true \
 vendor.audio.feature.anc_headset.enable=false \
 vendor.audio.feature.battery_listener.enable=true \
@@ -550,3 +550,5 @@ PRODUCT_PACKAGES_DEBUG += \
 endif
 
 AUDIO_FEATURE_ENABLED_GKI := true
+
+include vendor/qcom/opensource/audio-hal/primary-hal/configs/lahaina/audio-properties.mk

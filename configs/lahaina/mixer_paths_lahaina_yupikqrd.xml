@@ -891,4 +891,6 @@
     <path name="voice-tty-vco-handset-mic">
         <path name="amic3"/>
     </path>
+    <path name="echo-ref-record">
+    </path>
 </mixer>

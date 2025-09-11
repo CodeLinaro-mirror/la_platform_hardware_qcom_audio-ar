@@ -15,8 +15,7 @@
  */
 
 /*
- * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -252,6 +251,8 @@ class StreamWorkerCommonLogic : public StreamLogic {
     }
     void setIsConnected(bool connected) { mIsConnected = connected; }
 
+    ~StreamWorkerCommonLogic() override = default;
+
     /**
      * IStreamCallback equivalents for StreamWorker
      **/
@@ -289,9 +290,6 @@ class StreamWorkerCommonLogic : public StreamLogic {
                           is_always_lock_free);
     std::atomic<::aidl::android::hardware::audio::core::StreamDescriptor::State> mState =
             ::aidl::android::hardware::audio::core::StreamDescriptor::State::STANDBY;
-    std::atomic<::aidl::android::hardware::audio::core::StreamDescriptor::DrainMode>
-        mRecentDrainMode =
-        ::aidl::android::hardware::audio::core::StreamDescriptor::DrainMode::DRAIN_UNSPECIFIED;
     // All fields below are used on the worker thread only.
     const std::chrono::duration<int, std::milli> mTransientStateDelayMs;
     std::chrono::time_point<std::chrono::steady_clock> mTransientStateStart;
@@ -299,20 +297,6 @@ class StreamWorkerCommonLogic : public StreamLogic {
     // detect memory allocation issues.
     std::unique_ptr<DataBufferElement[]> mDataBuffer;
     size_t mDataBufferSize;
-    /**
-     * only used in Asynchrous Stream(In|Out) context, to synchronize the
-     * callbacks from the hardware.
-     * Hardware sends callback any time irrespective of the Stream State.
-     * Hence the synchronization.
-     **/
-    std::mutex mAsyncMutex;
-    enum StreamCallbackType {
-        TR = 1,  // TransferReady
-        DR = 2,  // DrainReady
-        ER = 3,  // Error
-    };
-    std::optional<StreamCallbackType> mPendingCallBack = std::nullopt;
-    std::condition_variable mPendingCV;
 };
 
 // This interface is used to decouple stream implementations from a concrete
@@ -359,6 +343,7 @@ class StreamInWorkerLogic : public StreamWorkerCommonLogic {
     static const std::string kThreadName;
     StreamInWorkerLogic(StreamContext* context, DriverInterface* driver)
         : StreamWorkerCommonLogic(context, driver) {}
+    ~StreamInWorkerLogic() override = default;
 
   protected:
     Status cycle() override;
@@ -375,20 +360,84 @@ class StreamOutWorkerLogic : public StreamWorkerCommonLogic {
     StreamOutWorkerLogic(StreamContext* context, DriverInterface* driver)
         : StreamWorkerCommonLogic(context, driver),
           mEventCallback(context->getOutEventCallback()) {}
-    void publishTransferReady() override;
-    void publishDrainReady() override;
-    void publishError() override;
+    ~StreamOutWorkerLogic() override = default;
 
   protected:
     Status cycle() override;
 
-  private:
     bool write(size_t clientSize,
                ::aidl::android::hardware::audio::core::StreamDescriptor::Reply* reply);
 
     std::shared_ptr<::aidl::android::hardware::audio::core::IStreamOutEventCallback> mEventCallback;
 };
 using StreamOutWorker = StreamWorkerImpl<StreamOutWorkerLogic>;
+
+class StreamOutAsyncWorkerLogic : public StreamOutWorkerLogic {
+  public:
+    StreamOutAsyncWorkerLogic(StreamContext* context, DriverInterface* driver)
+        : StreamOutWorkerLogic(context, driver) {}
+    ~StreamOutAsyncWorkerLogic() override = default;
+
+  protected:
+    bool handleTransferReady();
+    bool handleDrainReady();
+    bool handleError();
+    void publishTransferReady() override;
+    void publishDrainReady() override;
+    void publishError() override;
+    Status cycle() override;
+    /**
+     * only used in Asynchrous Stream(In|Out) context, to synchronize the
+     * callbacks from the hardware.
+     * Hardware sends callback any time irrespective of the Stream State.
+     * Hence the synchronization.
+     **/
+    std::mutex mAsyncMutex;
+    enum StreamCallbackType {
+        TR = 1,  // TransferReady
+        DR = 2,  // DrainReady
+        ER = 3,  // Error
+    };
+    enum class DrainInternalState : uint8_t {
+        /* substates for EARLY NOTIFY ENTERING */
+        DRAINING_en = 1,
+        DRAIN_PAUSED_en,
+
+        /* substates for EARLY NOTIFY NOTIFICATION sent */
+        DRAINING_en_sent,
+        DRAIN_PAUSED_en_sent,
+    };
+    std::string toString(const DrainInternalState state) {
+        switch (state) {
+            case DrainInternalState::DRAINING_en:
+                return "DRAINING_en";
+            case DrainInternalState::DRAIN_PAUSED_en:
+                return "DRAIN_PAUSED_en";
+            case DrainInternalState::DRAINING_en_sent:
+                return "DRAINING_en_sent";
+            case DrainInternalState::DRAIN_PAUSED_en_sent:
+                return "DRAIN_PAUSED_en_sent";
+            default:
+                return "UNKNOWN";
+        }
+    }
+    /**
+     * To store any callback events happened during conflicting
+     * state transitions.
+     */
+    std::optional<StreamCallbackType> mPendingCallBack = std::nullopt;
+    /**
+     * This drain's internal state upon concatenating with StreamDescriptor::State
+     * will result in certainity for current state in state machine.
+     */
+    std::optional<DrainInternalState> mDrainInternalState = std::nullopt;
+    /**
+     * This indicates whether there is transitioning clip data bursts in
+     * "DRAINING_en_sent" and "DRAIN_PAUSED_en_sent" states.
+     */
+    bool mIsClipTransitionDataBurstsAvailable = false;
+};
+using StreamOutAsyncWorker = StreamWorkerImpl<StreamOutAsyncWorkerLogic>;
 
 // This interface provides operations of the stream which are executed on a Binder pool thread.
 // These methods originate both from the AIDL interface and its implementation.
@@ -521,8 +570,17 @@ class StreamCommonImpl : virtual public StreamCommonInterface, virtual public Dr
                      const StreamWorkerInterface::CreateInstance& createWorker)
         : mContextRef(*context), mMetadata(metadata), mWorker(createWorker(context, this)) {}
     StreamCommonImpl(StreamContext* context, const Metadata& metadata)
-        : StreamCommonImpl(context, metadata, isInput(metadata) ? getDefaultInWorkerCreator()
-                                                                : getDefaultOutWorkerCreator()) {}
+        : StreamCommonImpl(context, metadata,
+                           isInput(metadata)
+                                   ? getDefaultInWorkerCreator()
+                                   : ((isAnyBitPositionFlagSet(
+                                              context->getFlags()
+                                                      .get<::aidl::android::media::audio::common::
+                                                                   AudioIoFlags::output>(),
+                                              {::aidl::android::media::audio::common::
+                                                       AudioOutputFlags::NON_BLOCKING}))
+                                              ? getStreamOutAsyncWorkerCreator()
+                                              : getDefaultOutWorkerCreator())) {}
     virtual ~StreamCommonImpl() override;
     ndk::ScopedAStatus close() override;
     ndk::ScopedAStatus prepareToClose() override;
@@ -579,6 +637,12 @@ class StreamCommonImpl : virtual public StreamCommonInterface, virtual public Dr
             return new StreamOutWorker(ctx, driver);
         };
     }
+    static StreamWorkerInterface::CreateInstance getStreamOutAsyncWorkerCreator() {
+        return [](StreamContext* ctx, DriverInterface* driver) -> StreamWorkerInterface* {
+            return new StreamOutAsyncWorker(ctx, driver);
+        };
+    }
+
     virtual void onClose() = 0;
     // Any stream class implementing 'DriverInterface::shutdown' must call 'cleanupWorker' in
     // the destructor in order to stop and join the worker thread in the case when the client

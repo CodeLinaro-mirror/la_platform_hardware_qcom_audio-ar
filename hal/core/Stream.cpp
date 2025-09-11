@@ -15,8 +15,7 @@
  */
 
 /*
- * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -384,16 +383,30 @@ bool StreamInWorkerLogic::read(size_t clientSize, StreamDescriptor::Reply* reply
 
 const std::string StreamOutWorkerLogic::kThreadName = "writer";
 
-void StreamOutWorkerLogic::publishTransferReady() {
-    if (!mContext->getAsyncCallback()) {
-        return;
-    }
-    std::unique_lock lock{mAsyncMutex};
-    mPendingCallBack = std::nullopt;
+bool StreamOutAsyncWorkerLogic::handleTransferReady() {
     if (mState == StreamDescriptor::State::TRANSFERRING) {
         mState = StreamDescriptor::State::ACTIVE;
         mContext->getAsyncCallback()->onTransferReady();
         LOG(VERBOSE) << __func__ << ": sent transfer ready to client";
+        return true;
+    } else if (mState == StreamDescriptor::State::DRAINING && mDrainInternalState &&
+               mDrainInternalState.value() == DrainInternalState::DRAINING_en_sent) {
+        mContext->getAsyncCallback()->onTransferReady();
+        LOG(VERBOSE) << __func__ << ": sent transfer ready to client with drain internal state:"
+                     << toString(mDrainInternalState.value());
+        return true;
+    }
+    return false;
+}
+
+void StreamOutAsyncWorkerLogic::publishTransferReady() {
+    if (!mContext->getAsyncCallback()) {
+        return;
+    }
+    std::unique_lock lock{mAsyncMutex};
+    mPendingCallBack = {};
+    if (handleTransferReady()) {
+        return;
     } else if (mState == StreamDescriptor::State::TRANSFER_PAUSED) {
         mPendingCallBack = StreamCallbackType::TR;
         LOG(VERBOSE) << __func__ << ": pending transfer ready";
@@ -402,17 +415,44 @@ void StreamOutWorkerLogic::publishTransferReady() {
     }
 }
 
-void StreamOutWorkerLogic::publishDrainReady() {
+bool StreamOutAsyncWorkerLogic::handleDrainReady() {
+    if (mState == StreamDescriptor::State::DRAINING) {
+        if (mDrainInternalState) {
+            if (mDrainInternalState.value() == DrainInternalState::DRAINING_en) {
+                mDrainInternalState = DrainInternalState::DRAINING_en_sent;
+            } else if (mDrainInternalState.value() == DrainInternalState::DRAINING_en_sent) {
+                mDrainInternalState = {};
+                if (mIsClipTransitionDataBurstsAvailable) {
+                    mState = StreamDescriptor::State::TRANSFERRING;
+                    mPendingCallBack = StreamCallbackType::TR;
+                } else {
+                    mState = StreamDescriptor::State::IDLE;
+                }
+                mIsClipTransitionDataBurstsAvailable = false;
+            } else {
+                LOG(WARNING) << __func__
+                             << ": shouldn't happen !! state:"  //<< toString(mState.load())
+                             << ", drain internal state:" << toString(mDrainInternalState.value());
+                return false;
+            }
+        } else {
+            mState = StreamDescriptor::State::IDLE;
+        }
+        mContext->getAsyncCallback()->onDrainReady();
+        LOG(VERBOSE) << __func__ << ": sent drain ready to client";
+        return true;
+    }
+    return false;
+}
+
+void StreamOutAsyncWorkerLogic::publishDrainReady() {
     if (!mContext->getAsyncCallback()) {
         return;
     }
     std::unique_lock lock{mAsyncMutex};
     mPendingCallBack = std::nullopt;
-    if (mState == StreamDescriptor::State::DRAINING) {
-        mContext->getAsyncCallback()->onDrainReady();
-        if (mRecentDrainMode == StreamDescriptor::DrainMode::DRAIN_ALL)
-            mState = StreamDescriptor::State::IDLE;
-        LOG(VERBOSE) << __func__ << ": sent drain ready to client";
+    if (handleDrainReady()) {
+        return;
     } else if (mState == StreamDescriptor::State::DRAIN_PAUSED) {
         mPendingCallBack = StreamCallbackType::DR;
         LOG(VERBOSE) << __func__ << ": pending drain ready";
@@ -421,12 +461,354 @@ void StreamOutWorkerLogic::publishDrainReady() {
     }
 }
 
-void StreamOutWorkerLogic::publishError() {
+bool StreamOutAsyncWorkerLogic::handleError() {
     if (!mContext->getAsyncCallback()) {
-        return;
+        return false;
     }
     mContext->getAsyncCallback()->onError();
-    LOG(WARNING) << __func__ << ": sent Error to the client";
+    mState = StreamDescriptor::State::ERROR;
+    LOG(ERROR) << __func__ << ": sent Error to the client";
+    return true;
+}
+
+void StreamOutAsyncWorkerLogic::publishError() {
+    handleError();
+}
+
+StreamOutWorkerLogic::Status StreamOutAsyncWorkerLogic::cycle() {
+    StreamDescriptor::Command command{};
+    if (!mContext->getCommandMQ()->readBlocking(&command, 1)) {
+        LOG(ERROR) << __func__ << ": reading of command from MQ failed";
+        mState = StreamDescriptor::State::ERROR;
+        return Status::ABORT;
+    }
+
+    LOG(VERBOSE) << __func__ << ": received command " << command.toString() << " in "
+                 << kThreadName;
+
+    StreamDescriptor::Reply reply{};
+    reply.status = STATUS_BAD_VALUE;
+
+    std::unique_lock asyncLock{mAsyncMutex};
+
+    using Tag = StreamDescriptor::Command::Tag;
+    switch (command.getTag()) {
+        case Tag::halReservedExit: {
+            if (const int32_t cookie = command.get<Tag::halReservedExit>();
+                cookie == mContext->getInternalCommandCookie()) {
+                // callback are suppressed with STANDBY state
+                mState = StreamDescriptor::State::STANDBY;
+                asyncLock.unlock(); // unlock as stream is going to destroy.
+                mDriver->shutdown();
+                setClosed();
+                // This is an internal command, no need to reply.
+                return Status::EXIT;
+            } else {
+                LOG(WARNING) << __func__ << ": EXIT command has a bad cookie: " << cookie;
+            }
+        } break;
+        case Tag::getStatus: {
+            populateReply(&reply, mIsConnected);
+        } break;
+        case Tag::start: {
+            std::optional<StreamDescriptor::State> nextState;
+            std::optional<DrainInternalState> nextDrainInternalState;
+            switch (mState) {
+                case StreamDescriptor::State::STANDBY:
+                    nextState = StreamDescriptor::State::IDLE;
+                    break;
+                case StreamDescriptor::State::PAUSED:
+                    nextState = StreamDescriptor::State::ACTIVE;
+                    break;
+                case StreamDescriptor::State::DRAIN_PAUSED:
+                    nextState = StreamDescriptor::State::DRAINING;
+                    if (mDrainInternalState) {
+                        if (mDrainInternalState.value() == DrainInternalState::DRAIN_PAUSED_en) {
+                            nextDrainInternalState = DrainInternalState::DRAINING_en;
+                        } else if (mDrainInternalState.value() ==
+                                   DrainInternalState::DRAIN_PAUSED_en_sent) {
+                            nextDrainInternalState = DrainInternalState::DRAINING_en_sent;
+                        } else {
+                            nextState = {};
+                            LOG(ERROR) << __func__ << ": bad drain internal state: "
+                                       << toString(mDrainInternalState.value());
+                        }
+                    }
+                    break;
+                case StreamDescriptor::State::TRANSFER_PAUSED:
+                    nextState = StreamDescriptor::State::TRANSFERRING;
+                    break;
+                default:
+                    break;
+            }
+            if (nextState.has_value()) {
+                if (::android::status_t status = mDriver->start(); status == ::android::OK) {
+                    populateReply(&reply, mIsConnected);
+                    if (*nextState == StreamDescriptor::State::IDLE ||
+                        *nextState == StreamDescriptor::State::ACTIVE) {
+                        mState = *nextState;
+                    } else {
+                        switchToTransientState(*nextState);
+                    }
+                    if (nextDrainInternalState) {
+                        mDrainInternalState = nextDrainInternalState.value();
+                    }
+                } else {
+                    LOG(ERROR) << __func__ << ": start failed: " << status;
+                    // uncomment below, to treat the failure as HARD error, stream not recoverable
+                    // mState = StreamDescriptor::State::ERROR;
+                }
+            } else {
+                populateReplyWrongState(&reply, command);
+                break;
+            }
+        } break;
+        case Tag::burst: {
+            if (const int32_t fmqByteCount = command.get<Tag::burst>(); fmqByteCount >= 0) {
+                LOG(VERBOSE) << __func__ << ": burst with bytes:" << fmqByteCount;
+                if (mState != StreamDescriptor::State::ERROR &&
+                    mState != StreamDescriptor::State::TRANSFERRING &&
+                    mState != StreamDescriptor::State::TRANSFER_PAUSED) {
+                    if (!write(fmqByteCount, &reply)) {
+                        LOG(ERROR) << __func__ << ": write failed";
+                        break;
+                    }
+                    if (mState == StreamDescriptor::State::STANDBY ||
+                        mState == StreamDescriptor::State::PAUSED) {
+                        mState = StreamDescriptor::State::PAUSED;
+                    } else if (mState == StreamDescriptor::State::DRAIN_PAUSED) {
+                        if (mDrainInternalState &&
+                            mDrainInternalState.value() ==
+                                    DrainInternalState::DRAIN_PAUSED_en_sent) {
+                            mDrainInternalState = DrainInternalState::DRAIN_PAUSED_en_sent;
+                            mState = StreamDescriptor::State::DRAIN_PAUSED;
+                            mIsClipTransitionDataBurstsAvailable = true;
+                        } else if (mDrainInternalState &&
+                                   mDrainInternalState.value() ==
+                                           DrainInternalState::DRAIN_PAUSED_en) {
+                            mDrainInternalState = {};
+                            mState = StreamDescriptor::State::TRANSFER_PAUSED;
+                        } else if (!mDrainInternalState) {
+                            mState = StreamDescriptor::State::TRANSFER_PAUSED;
+                        } else {
+                            LOG(ERROR) << __func__ << ": bad drain internal state: "
+                                       << toString(mDrainInternalState.value());
+                            populateReplyWrongState(&reply, command);
+                            break;
+                        }
+                    } else if (mState == StreamDescriptor::State::IDLE ||
+                               mState == StreamDescriptor::State::ACTIVE) {
+                        if (reply.fmqByteCount == fmqByteCount) {
+                            mState = StreamDescriptor::State::ACTIVE;
+                        } else {
+                            // If write status is not ok, then dont put state in transferring
+                            if (reply.status == STATUS_OK) {
+                                switchToTransientState(StreamDescriptor::State::TRANSFERRING);
+                            } else {
+                                LOG(ERROR) << __func__
+                                           << ": write failed, but dont put in error state ";
+                                populateReplyWrongState(&reply, command);
+                                break;
+                            }
+                        }
+                    } else if (mState == StreamDescriptor::State::DRAINING) {
+                        if (mDrainInternalState &&
+                            mDrainInternalState.value() == DrainInternalState::DRAINING_en_sent) {
+                            mDrainInternalState = DrainInternalState::DRAINING_en_sent;
+                            mIsClipTransitionDataBurstsAvailable = true;
+                            mState = StreamDescriptor::State::DRAINING;
+                        } else {
+                            if (reply.fmqByteCount == fmqByteCount) {
+                                mState = StreamDescriptor::State::ACTIVE;
+                                mDrainInternalState = {};
+                            } else {
+                                // If write status is not ok, then dont put state in transferring
+                                if (reply.status == STATUS_OK) {
+                                    switchToTransientState(StreamDescriptor::State::TRANSFERRING);
+                                    mDrainInternalState = {};
+                                } else {
+                                    LOG(ERROR) << __func__
+                                               << ": write failed, but dont put in error state ";
+                                    populateReplyWrongState(&reply, command);
+                                    break;
+                                }
+                            }
+                        }
+                    } else {
+                        populateReplyWrongState(&reply, command);
+                        break;
+                    }
+                } else {
+                    populateReplyWrongState(&reply, command);
+                    break;
+                }
+            } else {
+                LOG(WARNING) << __func__ << ": invalid burst bytes: " << fmqByteCount;
+                populateReplyWrongState(&reply, command);
+                break;
+            }
+        } break;
+        case Tag::drain: {
+            auto issueDrain = [&](auto drainMode) -> ::android::status_t {
+                if (::android::status_t status = mDriver->drain(drainMode);
+                    status == ::android::OK) {
+                    populateReply(&reply, mIsConnected);
+                    return status;
+                } else {
+                    LOG(ERROR) << "issueDrain" << ": drain failed: " << status;
+                    return status;
+                }
+            };
+            if (auto currentMode = command.get<Tag::drain>();
+                currentMode != StreamDescriptor::DrainMode::DRAIN_UNSPECIFIED) {
+                if (currentMode == StreamDescriptor::DrainMode::DRAIN_EARLY_NOTIFY) {
+                    if (mState == StreamDescriptor::State::ACTIVE ||
+                        mState == StreamDescriptor::State::TRANSFERRING) {
+                        if (auto status = issueDrain(currentMode); status != ::android::OK) {
+                            break;
+                        }
+                        switchToTransientState(StreamDescriptor::State::DRAINING);
+                        mDrainInternalState = DrainInternalState::DRAINING_en;
+                    } else {
+                        populateReplyWrongState(&reply, command);
+                        break;
+                    }
+                } else {  // StreamDescriptor::DrainMode::DRAIN_ALL
+                    if (mState == StreamDescriptor::State::ACTIVE ||
+                        mState == StreamDescriptor::State::TRANSFERRING) {
+                        if (auto status = issueDrain(currentMode); status != ::android::OK) {
+                            break;
+                        }
+                        switchToTransientState(StreamDescriptor::State::DRAINING);
+                        mDrainInternalState = {};
+                    } else if (mState == StreamDescriptor::State::TRANSFER_PAUSED) {
+                        if (auto status = issueDrain(currentMode); status != ::android::OK) {
+                            break;
+                        }
+                        mState = StreamDescriptor::State::DRAIN_PAUSED;
+                        mDrainInternalState = {};
+                    } else {
+                        populateReplyWrongState(&reply, command);
+                        break;
+                    }
+                }
+            } else {
+                break;
+            }
+        } break;
+        case Tag::standby: {
+            if (mState == StreamDescriptor::State::IDLE) {
+                asyncLock.unlock();
+                if (auto status = mDriver->standby(); status == ::android::OK) {
+                    mState = StreamDescriptor::State::STANDBY;
+                    populateReply(&reply, mIsConnected);
+                } else {
+                    LOG(ERROR) << __func__ << ": standby failed: " << status;
+                    // uncomment below, to treat the failure as HARD error, stream not recoverable
+                    // mState = StreamDescriptor::State::ERROR;
+                }
+                asyncLock.lock();
+            } else {
+                populateReplyWrongState(&reply, command);
+            }
+        } break;
+        case Tag::pause: {
+            std::optional<StreamDescriptor::State> nextState;
+            std::optional<DrainInternalState> nextInternalState;
+            switch (mState) {
+                case StreamDescriptor::State::ACTIVE:
+                    nextState = StreamDescriptor::State::PAUSED;
+                    break;
+                case StreamDescriptor::State::DRAINING:
+                    nextState = StreamDescriptor::State::DRAIN_PAUSED;
+                    break;
+                case StreamDescriptor::State::TRANSFERRING:
+                    nextState = StreamDescriptor::State::TRANSFER_PAUSED;
+                    break;
+                default:
+                    populateReplyWrongState(&reply, command);
+                    break;
+            }
+            if (nextState && nextState.value() == StreamDescriptor::State::DRAIN_PAUSED) {
+                if (mDrainInternalState) {
+                    if (mDrainInternalState.value() == DrainInternalState::DRAINING_en) {
+                        nextInternalState = DrainInternalState::DRAIN_PAUSED_en;
+                    } else if (mDrainInternalState.value() ==
+                               DrainInternalState::DRAINING_en_sent) {
+                        nextInternalState = DrainInternalState::DRAIN_PAUSED_en_sent;
+                    } else {
+                        LOG(ERROR) << __func__ << ": bad drain internal state: "
+                                   << toString(mDrainInternalState.value());
+                        populateReplyWrongState(&reply, command);
+                        break;
+                    }
+                }
+            }
+            if (nextState.has_value()) {
+                if (::android::status_t status = mDriver->pause(); status == ::android::OK) {
+                    mState = nextState.value();
+                    mDrainInternalState = nextInternalState;
+                    populateReply(&reply, mIsConnected);
+                } else {
+                    LOG(ERROR) << __func__ << ": pause failed: " << status;
+                    // uncomment below, to treat the failure as HARD error, stream not recoverable
+                    // mState = StreamDescriptor::State::ERROR;
+                }
+            }
+        } break;
+        case Tag::flush: {
+            std::optional<StreamDescriptor::State> nextState;
+            if (mState == StreamDescriptor::State::PAUSED ||
+                mState == StreamDescriptor::State::DRAIN_PAUSED ||
+                mState == StreamDescriptor::State::TRANSFER_PAUSED) {
+                if (auto status = mDriver->flush(); status == ::android::OK) {
+                    mState = StreamDescriptor::State::IDLE;
+                    mIsClipTransitionDataBurstsAvailable = false;
+                    mDrainInternalState = {};
+                    populateReply(&reply, mIsConnected);
+                } else {
+                    LOG(ERROR) << __func__ << ": flush failed: " << status;
+                    // uncomment below, to treat the failure as HARD error, stream not recoverable
+                    // mState = StreamDescriptor::State::ERROR;
+                }
+            } else {
+                populateReplyWrongState(&reply, command);
+                break;
+            }
+        } break;
+    }
+    reply.state = mState;
+
+    using LogSeverity = ::android::base::LogSeverity;
+    const LogSeverity severity =
+            (reply.status != STATUS_OK) ? LogSeverity::ERROR : LogSeverity::VERBOSE;
+    LOG(severity) << __func__ << ": writing reply " << reply.toString()
+                  << (mDrainInternalState
+                              ? (": drain internal state:" + toString(mDrainInternalState.value()))
+                              : "");
+
+    if (!mContext->getReplyMQ()->writeBlocking(&reply, 1)) {
+        LOG(ERROR) << __func__ << ": writing of reply " << reply.toString() << " to MQ failed ";
+        mState = StreamDescriptor::State::ERROR;
+        return Status::ABORT;
+    }
+
+    if (mPendingCallBack) {
+        if (mPendingCallBack == StreamCallbackType::TR && handleTransferReady()) {
+            mPendingCallBack = {};
+        } else if (mPendingCallBack == StreamCallbackType::DR && handleDrainReady()) {
+            mPendingCallBack = {};
+        } else if (mPendingCallBack == StreamCallbackType::ER && handleError()) {
+            mPendingCallBack = {};
+        } else {
+            if (command.getTag() != Tag::getStatus) {
+                LOG(ERROR) << __func__
+                           << ": pending callback not handled, callback:" << *mPendingCallBack;
+            }
+        }
+    }
+
+    return Status::CONTINUE;
 }
 
 StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
@@ -437,30 +819,23 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
         return Status::ABORT;
     }
 
-    std::unique_lock asyncLock{mAsyncMutex, std::defer_lock};
-    if (mContext->getAsyncCallback()) {
-        // Accquring the lock in case of Asynchronous Stream
-        asyncLock.lock();
-    } else {
-        // Synchronous case
-        if (mState == StreamDescriptor::State::DRAINING) {
-            if (auto stateDurationMs = std::chrono::duration_cast<std::chrono::milliseconds>(
-                        std::chrono::steady_clock::now() - mTransientStateStart);
-                stateDurationMs >= mTransientStateDelayMs) {
-                // In blocking mode, after some duration, expecting, hardware is drained.
-                mState = StreamDescriptor::State::IDLE;
-            }
+    if (mState == StreamDescriptor::State::DRAINING) {
+        if (auto stateDurationMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::steady_clock::now() - mTransientStateStart);
+            stateDurationMs >= mTransientStateDelayMs) {
+            // In blocking mode, after some duration, expecting, hardware is drained.
+            mState = StreamDescriptor::State::IDLE;
         }
     }
 
     LOG(VERBOSE) << __func__ << ": received command " << command.toString() << " in "
-                   << kThreadName;
+                 << kThreadName;
 
     StreamDescriptor::Reply reply{};
     reply.status = STATUS_BAD_VALUE;
     using Tag = StreamDescriptor::Command::Tag;
     switch (command.getTag()) {
-        case Tag::halReservedExit:
+        case Tag::halReservedExit: {
             if (const int32_t cookie = command.get<Tag::halReservedExit>();
                 cookie == mContext->getInternalCommandCookie()) {
                 mDriver->shutdown();
@@ -470,10 +845,10 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
             } else {
                 LOG(WARNING) << __func__ << ": EXIT command has a bad cookie: " << cookie;
             }
-            break;
-        case Tag::getStatus:
+        } break;
+        case Tag::getStatus: {
             populateReply(&reply, mIsConnected);
-            break;
+        } break;
         case Tag::start: {
             std::optional<StreamDescriptor::State> nextState;
             switch (mState) {
@@ -485,9 +860,6 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
                     break;
                 case StreamDescriptor::State::DRAIN_PAUSED:
                     nextState = StreamDescriptor::State::DRAINING;
-                    break;
-                case StreamDescriptor::State::TRANSFER_PAUSED:
-                    nextState = StreamDescriptor::State::TRANSFERRING;
                     break;
                 default:
                     populateReplyWrongState(&reply, command);
@@ -508,39 +880,35 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
                 }
             }
         } break;
-        case Tag::burst:
+        case Tag::burst: {
             if (const int32_t fmqByteCount = command.get<Tag::burst>(); fmqByteCount >= 0) {
-#ifdef VERY_VERBOSE_LOGGING
                 LOG(VERBOSE) << __func__ << ": '" << toString(command.getTag()) << "' command for "
                              << fmqByteCount << " bytes";
-#endif
-                if (mState != StreamDescriptor::State::ERROR &&
-                    mState != StreamDescriptor::State::TRANSFERRING &&
-                    mState != StreamDescriptor::State::TRANSFER_PAUSED) {
-                    if (!write(fmqByteCount, &reply)) {
-                        LOG(ERROR) << __func__ << ": write failed, but dont put in error state ";
-                    }
-                    std::shared_ptr<IStreamCallback> asyncCallback = mContext->getAsyncCallback();
+                if (mState != StreamDescriptor::State::ERROR) {
+                    std::optional<StreamDescriptor::State> nextState;
                     if (mState == StreamDescriptor::State::STANDBY ||
                         mState == StreamDescriptor::State::DRAIN_PAUSED ||
                         mState == StreamDescriptor::State::PAUSED) {
-                        if (asyncCallback == nullptr ||
-                            mState != StreamDescriptor::State::DRAIN_PAUSED) {
-                            mState = StreamDescriptor::State::PAUSED;
-                        } else {
-                            mState = StreamDescriptor::State::TRANSFER_PAUSED;
-                        }
+                        nextState = StreamDescriptor::State::PAUSED;
                     } else if (mState == StreamDescriptor::State::IDLE ||
                                mState == StreamDescriptor::State::DRAINING ||
                                mState == StreamDescriptor::State::ACTIVE) {
-                        if (asyncCallback == nullptr || reply.fmqByteCount == fmqByteCount) {
-                            mState = StreamDescriptor::State::ACTIVE;
-                        } else {
-                            //If write status is not ok, then dont put state in transferring
-                            if (reply.status == STATUS_OK) {
-                                switchToTransientState(StreamDescriptor::State::TRANSFERRING);
-                            }
-                        }
+                        nextState = StreamDescriptor::State::ACTIVE;
+                    } else {
+                        populateReplyWrongState(&reply, command);
+                        break;
+                    }
+
+                    if (!write(fmqByteCount, &reply)) {
+                        LOG(ERROR) << __func__ << ": write failed, but dont put in error state ";
+                    }
+
+                    if (nextState && reply.fmqByteCount == fmqByteCount) {
+                        mState = nextState.value();
+                    } else {
+                        LOG(ERROR)
+                                << __func__ << ": couldn't write all data bytes: " << fmqByteCount
+                                << " != " << reply.fmqByteCount;
                     }
                 } else {
                     populateReplyWrongState(&reply, command);
@@ -548,43 +916,33 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
             } else {
                 LOG(WARNING) << __func__ << ": invalid burst byte count: " << fmqByteCount;
             }
-            break;
-        case Tag::drain:
-            if (mRecentDrainMode = command.get<Tag::drain>();
-                mRecentDrainMode == StreamDescriptor::DrainMode::DRAIN_ALL ||
-                mRecentDrainMode == StreamDescriptor::DrainMode::DRAIN_EARLY_NOTIFY) {
-                if (mState == StreamDescriptor::State::ACTIVE ||
-                    mState == StreamDescriptor::State::TRANSFERRING) {
-                    if (::android::status_t status = mDriver->drain(mRecentDrainMode);
+        } break;
+        case Tag::drain: {
+            if (auto currentMode = command.get<Tag::drain>();
+                currentMode == StreamDescriptor::DrainMode::DRAIN_ALL) {
+                if (mState == StreamDescriptor::State::ACTIVE) {
+                    if (::android::status_t status = mDriver->drain(currentMode);
                         status == ::android::OK) {
                         populateReply(&reply, mIsConnected);
-                        if (mState == StreamDescriptor::State::ACTIVE &&
-                            mContext->getForceSynchronousDrain()) {
+                        if (mContext->getForceSynchronousDrain()) {
                             mState = StreamDescriptor::State::IDLE;
                         } else {
                             switchToTransientState(StreamDescriptor::State::DRAINING);
                         }
                     } else {
                         LOG(ERROR) << __func__ << ": drain failed: " << status;
-                        // uncomment below, to treat the failure as HARD error, stream not recoverable
-                        // mState = StreamDescriptor::State::ERROR;
+                        // uncomment below, to treat the failure as HARD error, stream not
+                        // recoverable mState = StreamDescriptor::State::ERROR;
                     }
-                } else if (mState == StreamDescriptor::State::TRANSFER_PAUSED) {
-                    mState = StreamDescriptor::State::DRAIN_PAUSED;
-                    populateReply(&reply, mIsConnected);
                 } else {
                     populateReplyWrongState(&reply, command);
                 }
             } else {
-                LOG(WARNING) << __func__ << ": invalid drain mode: " << toString(mRecentDrainMode);
+                LOG(WARNING) << __func__ << ": invalid drain mode: " << toString(currentMode);
             }
-            break;
-        case Tag::standby:
+        } break;
+        case Tag::standby: {
             if (mState == StreamDescriptor::State::IDLE) {
-                if (mContext->getAsyncCallback()) {
-                   // do explicit unlock, so that callback can acquire
-                    asyncLock.unlock();
-                }
                 if (::android::status_t status = mDriver->standby(); status == ::android::OK) {
                     populateReply(&reply, mIsConnected);
                     mState = StreamDescriptor::State::STANDBY;
@@ -593,14 +951,10 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
                     // uncomment below, to treat the failure as HARD error, stream not recoverable
                     // mState = StreamDescriptor::State::ERROR;
                 }
-                if (mContext->getAsyncCallback()) {
-                    // do explicit lock
-                    asyncLock.lock();
-                }
             } else {
                 populateReplyWrongState(&reply, command);
             }
-            break;
+        } break;
         case Tag::pause: {
             std::optional<StreamDescriptor::State> nextState;
             switch (mState) {
@@ -609,9 +963,6 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
                     break;
                 case StreamDescriptor::State::DRAINING:
                     nextState = StreamDescriptor::State::DRAIN_PAUSED;
-                    break;
-                case StreamDescriptor::State::TRANSFERRING:
-                    nextState = StreamDescriptor::State::TRANSFER_PAUSED;
                     break;
                 default:
                     populateReplyWrongState(&reply, command);
@@ -627,10 +978,9 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
                 }
             }
         } break;
-        case Tag::flush:
+        case Tag::flush: {
             if (mState == StreamDescriptor::State::PAUSED ||
-                mState == StreamDescriptor::State::DRAIN_PAUSED ||
-                mState == StreamDescriptor::State::TRANSFER_PAUSED) {
+                mState == StreamDescriptor::State::DRAIN_PAUSED) {
                 if (::android::status_t status = mDriver->flush(); status == ::android::OK) {
                     populateReply(&reply, mIsConnected);
                     mState = StreamDescriptor::State::IDLE;
@@ -642,7 +992,7 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
             } else {
                 populateReplyWrongState(&reply, command);
             }
-            break;
+        } break;
     }
     reply.state = mState;
 
@@ -655,35 +1005,6 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
         LOG(ERROR) << __func__ << ": writing of reply " << reply.toString() << " to MQ failed";
         mState = StreamDescriptor::State::ERROR;
         return Status::ABORT;
-    }
-
-    if (mContext->getAsyncCallback() && mPendingCallBack && command.getTag() != Tag::getStatus) {
-        /**
-         * After the writing the reply, handle the pending callback, if any
-         * and issue to the client based on the stream state.
-         **/
-        if (command.getTag() == Tag::start && mState == StreamDescriptor::State::TRANSFERRING &&
-            mPendingCallBack == StreamCallbackType::TR) {
-            mContext->getAsyncCallback()->onTransferReady();
-            mState = StreamDescriptor::State::ACTIVE;
-            mPendingCallBack = {};
-            LOG(VERBOSE) << __func__ << ": sent pending transfer ready !!!";
-        } else if (command.getTag() == Tag::start && mState == StreamDescriptor::State::DRAINING &&
-                   mPendingCallBack == StreamCallbackType::DR) {
-            mContext->getAsyncCallback()->onDrainReady();
-            if (mRecentDrainMode == StreamDescriptor::DrainMode::DRAIN_ALL)
-                mState = StreamDescriptor::State::IDLE;
-            mPendingCallBack = {};
-            LOG(VERBOSE) << __func__ << ": sent pending drain ready !!!";
-        } else if (command.getTag() == Tag::flush || command.getTag() == Tag::drain) {
-            // clear the pending callbacks
-            mPendingCallBack = {};
-            LOG(VERBOSE) << __func__ << ": cleared the pending callback !!!";
-        } else {
-            // clear the pending callbacks
-            // mPendingCallBack = {};
-            LOG(WARNING) << __func__ << ": shouldn't happen !!!";
-        }
     }
 
     return Status::CONTINUE;
