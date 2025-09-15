@@ -489,8 +489,13 @@ void StreamOutPrimary::resume() {
          * gain.
          */
         auto& compressPlayback = std::get<CompressPlayback>(mExt);
-        if (!(compressPlayback.isGaplessConfigured())) {
-            compressPlayback.configureGapless(mPalHandle);
+        // configure gapless based on property gaplessoffload
+        const std::string gaplessOffloadProp = "audio.offload.gapless.enabled";
+        if (property_get_bool(gaplessOffloadProp.c_str(), false)) {
+            LOG(INFO) << " Supports gapless offload configuring gaplessMetadata";
+            if (!(compressPlayback.isGaplessConfigured())) {
+                compressPlayback.configureGapless(mPalHandle);
+            }
         }
     }
     if (frameCount == 0) {
@@ -1429,7 +1434,6 @@ void StreamOutPrimary::shutdown_I() {
         mHapticsBufSize = 0;
     }
 
-    mUseCachedVolume = false;
     mIsPaused = false;
     mPalHandle = nullptr;
     mPalHandleMutex.unlock();

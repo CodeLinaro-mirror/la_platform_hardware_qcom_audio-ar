@@ -34,9 +34,12 @@ using aidl::android::hardware::audio::effect::State;
 using aidl::android::media::audio::common::PcmType;
 using ::android::hardware::EventFlag;
 using ::aidl::android::hardware::audio::effect::kEventFlagNotEmpty;
+#ifdef ENABLE_FOR_VERSION3
 using ::aidl::android::hardware::audio::effect::kDestroyAnyStateSupportedVersion;
+#endif
 
 extern "C" binder_exception_t destroyEffect(const std::shared_ptr<IEffect>& instanceSp) {
+#ifdef ENABLE_FOR_VERSION3
     if (!instanceSp) {
         LOG(ERROR) << __func__ << " nullptr";
         return EX_ILLEGAL_ARGUMENT;
@@ -77,6 +80,17 @@ extern "C" binder_exception_t destroyEffect(const std::shared_ptr<IEffect>& inst
     LOG(VERBOSE) << __func__ << " " << desc.common.name << " instance " << instanceSp.get()
                << " destroyed";
     return EX_NONE;
+#else
+    State state;
+    ndk::ScopedAStatus status = instanceSp->getState(&state);
+    if (!status.isOk() || State::INIT != state) {
+       LOG(ERROR) << __func__ << " instance " << instanceSp.get()
+            << " in state: " << toString(state) << ", status: " << status.getDescription();
+            return EX_ILLEGAL_STATE;
+    }
+    LOG(VERBOSE) << __func__ << " instance " << instanceSp.get() << " destroyed";
+    return EX_NONE;
+#endif
 }
 
 namespace aidl::qti::effects {
