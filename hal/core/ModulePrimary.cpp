@@ -36,6 +36,7 @@
 #include <qti-audio-core/Parameters.h>
 #include <qti-audio-core/PlatformUtils.h>
 #include <qti-audio-core/StreamInPrimary.h>
+#include <qti-audio-core/StreamMmapBase.h>
 #include <qti-audio-core/StreamOutPrimary.h>
 #include <qti-audio-core/StreamStub.h>
 #include <qti-audio-core/Telephony.h>
@@ -269,6 +270,11 @@ ndk::ScopedAStatus ModulePrimary::createInputStream(StreamContext&& context,
                                                     const SinkMetadata& sinkMetadata,
                                                     const std::vector<MicrophoneInfo>& microphones,
                                                     std::shared_ptr<StreamIn>* result) {
+    if (context.isMmap()) {
+        return createStreamInstance<StreamInMmap>(result, std::move(context), sinkMetadata,
+                                                  microphones);
+    }
+
     createStreamInstance<StreamInPrimary>(result, std::move(context), sinkMetadata, microphones);
     ModulePrimary::inListMutex.lock();
     ModulePrimary::updateStreamInList(*result);
@@ -288,7 +294,14 @@ ndk::ScopedAStatus ModulePrimary::createOutputStream(
         LOG(ERROR) << __func__ << ": avoid direct or compress streams as sound card is down";
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
     }
-    createStreamInstance<StreamOutPrimary>(result, std::move(context), sourceMetadata, offloadInfo);
+
+    if (context.isMmap()) {
+        return createStreamInstance<StreamOutMmap>(result, std::move(context), sourceMetadata,
+                                                   offloadInfo);
+    }
+
+    createStreamInstance<StreamOutPrimary>(result, std::move(context), sourceMetadata,
+                                               offloadInfo);
     ModulePrimary::outListMutex.lock();
     ModulePrimary::updateStreamOutList(*result);
     // save primary out stream weak ptr, as some other modules need it.

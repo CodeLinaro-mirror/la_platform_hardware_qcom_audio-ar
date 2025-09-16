@@ -412,6 +412,13 @@ std::vector<pal_device> Platform::configureAndFetchPalDevices(
     return palDevices;
 }
 
+int32_t Platform::setDevice(pal_stream_handle_t* handle, const AudioPortConfig& mixPortConfig,
+                            const Usecase& tag, const std::vector<AudioDevice>& devices,
+                            const bool dummyDevice) const {
+    auto palDevice = configureAndFetchPalDevices(mixPortConfig, tag, devices, dummyDevice);
+    return ::pal_stream_set_device(handle, palDevice.size(), palDevice.data());
+}
+
 void Platform::getPositionInFrames(pal_stream_handle_t* palHandle, int32_t const& sampleRate,
                                          int64_t* const dspFrames) const {
     pal_session_time tstamp;
