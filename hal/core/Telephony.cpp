@@ -15,8 +15,8 @@
  */
 
 /*
- * ​​​​​Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -188,6 +188,10 @@ void Telephony::setMicMute(const bool muted) {
 
 bool Telephony::isCrsCallSupported() {
     std::scoped_lock lock{mLock};
+    if (property_get_bool("vendor.audio.crs_call_disabled", false)) {
+        LOG(INFO) << __func__ << " CRS calls disabled";
+        return false;
+    }
     return true;
 }
 
