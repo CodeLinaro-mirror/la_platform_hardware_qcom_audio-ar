@@ -793,7 +793,8 @@ ndk::ScopedAStatus StreamOutPrimary::setHwVolume(const std::vector<float>& in_ch
         } else {
             LOG(ERROR) << __func__ << " Invalid volume!!";
         }
-        mAudExt.mAutoAudioHalPriorityExtension->updateVolume(focusId, volume, false /*internal volume change*/);
+        float volumeMdB = (volume * (MAX_VOLUME_VALUE_MB - MIN_VOLUME_VALUE_MB)) + MIN_VOLUME_VALUE_MB;
+        mAudExt.mAutoAudioHalPriorityExtension->updateVolume(focusId, volumeMdB, false /*internal volume change*/);
     }
 #endif
     if (!mPalHandle) {

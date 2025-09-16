@@ -141,6 +141,15 @@ ndk::ScopedAStatus qti::audio::core::ModulePrimary::setAudioPortConfig(const ::a
             return ndk::ScopedAStatus::ok();
         }
     volume_MB = (static_cast<float>(in_requested.gain->values[0]));
+    if (volume_MB >= MAX_VOLUME_VALUE_MB) {
+        volume = MAX_VOLUME_VALUE_DB;
+    } else {
+        if (volume_MB <= MIN_VOLUME_VALUE_MB) {
+            volume = MIN_VOLUME_VALUE_DB;
+        } else {
+            volume = (volume_MB - MIN_VOLUME_VALUE_MB)/(MAX_VOLUME_VALUE_MB - MIN_VOLUME_VALUE_MB);
+        }
+    }
 #ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
         LOG(DEBUG) << __func__ << ": requested " << in_requested.toString();
         if (in_requested.ext.getTag() == AudioPortExt::device) {
@@ -156,7 +165,7 @@ ndk::ScopedAStatus qti::audio::core::ModulePrimary::setAudioPortConfig(const ::a
                     }
                     setUpPriorityFocus();
                     if (mActiveFocusDevices.find(address) != mActiveFocusDevices.end()) {
-                        mAudExt.mAutoAudioHalPriorityExtension->updateVolume(mActiveFocusDevices[address].FocusId, volume, false /*internal volume change*/);
+                        mAudExt.mAutoAudioHalPriorityExtension->updateVolume(mActiveFocusDevices[address].FocusId, volume_MB, false /*internal volume change*/);
                     } else {
                         LOG(ERROR) << "Volume update failed for BUS: " << address;
                     }
@@ -186,15 +195,6 @@ ndk::ScopedAStatus qti::audio::core::ModulePrimary::setAudioPortConfig(const ::a
     auto portsToHandle = route->sourcePortIds;
 
     // Iterate over the list
-    if (volume_MB >= MAX_VOLUME_VALUE_MB) {
-        volume = MAX_VOLUME_VALUE_DB;
-    } else {
-        if (volume_MB <= MIN_VOLUME_VALUE_MB) {
-            volume = MIN_VOLUME_VALUE_DB;
-        } else {
-            volume = (volume_MB - MIN_VOLUME_VALUE_MB)/(MAX_VOLUME_VALUE_MB - MIN_VOLUME_VALUE_MB);
-        }
-    }
     for (auto iter = list.begin(); iter != list.end() && !portsToHandle.empty(); ++iter) {
         // Try to lock the iterator
         auto outIter = iter->lock();
