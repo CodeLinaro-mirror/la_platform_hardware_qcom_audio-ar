@@ -1263,7 +1263,7 @@ uint32_t Platform::getBluetoothLatencyMs(const std::vector<AudioDevice>& bluetoo
             }
         }
     }
-    LOG(DEBUG) << __func__ << " bt latency: " << param_bt_a2dp_ptr->latency;
+    LOG(VERBOSE) << __func__ << " bt latency: " << param_bt_a2dp_ptr->latency;
     return param_bt_a2dp_ptr->latency;
 }
 
