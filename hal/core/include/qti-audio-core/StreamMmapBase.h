@@ -7,7 +7,6 @@
 
 #include <aidl/android/hardware/audio/core/MmapBufferDescriptor.h>
 #include <qti-audio-core/AudioUsecase.h>
-#include <qti-audio-core/MmapBufferImpl.h>
 #include <qti-audio-core/Stream.h>
 
 namespace qti::audio::core {

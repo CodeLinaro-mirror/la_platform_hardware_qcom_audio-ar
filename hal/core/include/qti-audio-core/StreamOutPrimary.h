@@ -5,10 +5,8 @@
 
 #pragma once
 
-#include <aidl/android/hardware/audio/core/MmapBufferDescriptor.h>
 #include <qti-audio-core/AudioUsecase.h>
 #include <qti-audio-core/HalOffloadEffects.h>
-#include <qti-audio-core/MmapBufferImpl.h>
 #include <qti-audio-core/PlatformStreamCallback.h>
 #include <qti-audio-core/Stream.h>
 
@@ -16,8 +14,7 @@ namespace qti::audio::core {
 
 class StreamOutPrimary : public StreamOut,
                          public StreamCommonImpl,
-                         public PlatformStreamCallback,
-                         public MmapBufferImpl {
+                         public PlatformStreamCallback {
   public:
     friend class ndk::SharedRefBase;
     StreamOutPrimary(StreamContext&& context,
@@ -81,13 +78,6 @@ class StreamOutPrimary : public StreamOut,
             override;
     ndk::ScopedAStatus reconfigureConnectedDevices() override;
 
-    ndk::ScopedAStatus configureMMapStream(
-            ::aidl::android::hardware::audio::core::MmapBufferDescriptor* desc,
-            int32_t* bufferSizeFrames) override;
-
-    ndk::ScopedAStatus createMmapBuffer(
-            ::aidl::android::hardware::audio::core::MmapBufferDescriptor* desc) override;
-
     void onClose() override { defaultOnClose(); }
 
     ndk::ScopedAStatus setLatencyMode(
@@ -110,10 +100,7 @@ class StreamOutPrimary : public StreamOut,
     void configure();
     void resume();
     void shutdown_I();
-    /* burst zero indicates that burst command with zero bytes issued from framework */
-    ::android::status_t burstZero();
-    ::android::status_t startMMAP();
-    ::android::status_t stopMMAP();
+
     size_t getPlatformDelay() const noexcept;
     ::android::status_t onWriteError(const size_t sleepFrameCount,
                                      size_t* const consumedFrameCount);
@@ -153,7 +140,7 @@ class StreamOutPrimary : public StreamOut,
     ::android::status_t hapticsWrite(const void *buffer, size_t frameCount);
 
     std::variant<std::monostate, PrimaryPlayback, DeepBufferPlayback, CompressPlayback,
-                 DirectPcmPlayback, VoipPlayback, SpatialPlayback, MMapPlayback, UllPlayback,
+                 DirectPcmPlayback, VoipPlayback, SpatialPlayback, UllPlayback,
                  InCallMusic, HapticsPlayback, BitPerfectPlayback>
             mExt;
     // references
