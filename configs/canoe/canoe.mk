@@ -54,7 +54,7 @@ PRODUCT_PACKAGES += wind_filter__1.0__48k__2ch__16b__eai_5.8.eai
 # Audio configuration xml's related to Kaanapali
 QCV_FAMILY_SKUS := canoe
 DEVICE_SKU := canoe
-UV_WRAPPER2 := true
+UV_WRAPPER2 := false
 
 CONFIG_PAL_SRC_DIR := vendor/qcom/opensource/pal/configs/qcom/$(BA_NAME)/canoe
 CONFIG_HAL_SRC_DIR := vendor/qcom/opensource/audio-hal/primary-hal/configs/canoe
@@ -144,7 +144,7 @@ PRODUCT_COPY_FILES += \
 # Audio configuration xml's related to Molokai
 QCV_FAMILY_SKUS := alor
 DEVICE_SKU := alor
-UV_WRAPPER2 := true
+UV_WRAPPER2 := false
 
 CONFIG_PAL_SRC_DIR := vendor/qcom/opensource/pal/configs/qcom/$(BA_NAME)/canoe
 CONFIG_HAL_SRC_DIR := vendor/qcom/opensource/audio-hal/primary-hal/configs/canoe
