@@ -41,6 +41,7 @@ enum class Usecase : uint16_t {
     DEEP_BUFFER_PLAYBACK,
     ULL_PLAYBACK,
     MMAP_PLAYBACK,
+    MMAP_OFFLOAD_PLAYBACK,
     COMPRESS_OFFLOAD_PLAYBACK,
     DIRECT_PCM_PLAYBACK,
     VOIP_PLAYBACK,
@@ -186,6 +187,22 @@ class MMapPlayback : public UsecaseConfig<MMapPlayback> {
     constexpr static size_t kPeriodDurationMs = 1;
     constexpr static size_t kPlatformDelayMs = 3;
     constexpr static uint32_t kPeriodCount = 512;
+
+    static size_t getFrameCount(
+            const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig);
+
+    static int32_t getLatency() { return kPeriodDurationMs + kPlatformDelayMs; }
+};
+
+/*
+* MmapOffload is a mechanism where mmap is used with big buffer sizes
+*/
+class MMapOffloadPlayback : public UsecaseConfig<MMapOffloadPlayback> {
+  public:
+
+    constexpr static size_t kPeriodDurationMs = 4000;
+    constexpr static size_t kPlatformDelayMs = 3;  // TODO when enable e2e
+    constexpr static uint32_t kPeriodCount = 2;
 
     static size_t getFrameCount(
             const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig);

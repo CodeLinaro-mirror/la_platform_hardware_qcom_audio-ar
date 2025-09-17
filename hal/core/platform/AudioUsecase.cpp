@@ -86,6 +86,12 @@ Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConf
     constexpr auto mmapPlaybackFlags =
             static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DIRECT) |
                                  1 << flagCastToint(AudioOutputFlags::MMAP_NOIRQ));
+
+    constexpr auto mmapOffloadPlaybackFlags =
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DIRECT) |
+                                 1 << flagCastToint(AudioOutputFlags::MMAP_NOIRQ)) |
+                                 1 << flagCastToint(AudioOutputFlags::COMPRESS_OFFLOAD);
+
     constexpr auto mmapRecordFlags =
             static_cast<int32_t>(1 << flagCastToint(AudioInputFlags::MMAP_NOIRQ));
     constexpr auto inCallMusicFlags =
@@ -109,6 +115,8 @@ Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConf
             tag = Usecase::COMPRESS_OFFLOAD_PLAYBACK;
         } else if (outFlags == directPcmPlaybackFlags) {
             tag = Usecase::DIRECT_PCM_PLAYBACK;
+        } else if (outFlags == mmapOffloadPlaybackFlags) {
+            tag = Usecase::MMAP_OFFLOAD_PLAYBACK;
         } else if (outFlags == voipPlaybackFlags) {
             tag = Usecase::VOIP_PLAYBACK;
         } else if (outFlags == spatialPlaybackFlags) {
@@ -167,6 +175,8 @@ std::string getName(const Usecase tag) {
             return "LOW_LATENCY_PLAYBACK";
         case Usecase::PCM_RECORD:
             return "PCM_RECORD";
+        case Usecase::MMAP_OFFLOAD_PLAYBACK:
+            return "MMAP_OFFLOAD_PLAYBACK";
         case Usecase::COMPRESS_OFFLOAD_PLAYBACK:
             return "COMPRESS_OFFLOAD_PLAYBACK";
         case Usecase::COMPRESS_CAPTURE:
@@ -257,6 +267,21 @@ size_t MMapPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
 }
 
 // [MMapPlayback End]
+
+// [MMapOffloadPlayback Start]
+size_t MMapOffloadPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
+    const std::string kMmapBufferDuration{"vendor.audio.mmap.offload.buffer_duration.msec"};
+    size_t duration = kPeriodDurationMs;
+    auto bufferDuration =
+            ::android::base::GetUintProperty<size_t>(kMmapBufferDuration, 4000);
+
+    if (bufferDuration > 0) {
+        duration = bufferDuration;
+    }
+    return duration * getSampleRate(mixPortConfig).value() / 1000;
+}
+
+// [MMapOffloadPlayback End]
 
 // [CompressPlayback Start]
 size_t CompressPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {

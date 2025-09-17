@@ -1576,6 +1576,7 @@ void Platform::initUsecaseOpMap() {
     mUsecaseOpMap[Usecase::SPATIAL_PLAYBACK] = makeUsecaseOps<SpatialPlayback>();
     mUsecaseOpMap[Usecase::IN_CALL_MUSIC] = makeUsecaseOps<InCallMusic>();
     mUsecaseOpMap[Usecase::BIT_PERFECT_PLAYBACK] = makeUsecaseOps<BitPerfectPlayback>();
+    mUsecaseOpMap[Usecase::MMAP_OFFLOAD_PLAYBACK] = makeUsecaseOps<MMapOffloadPlayback>();
 
     // Record usecases
     mUsecaseOpMap[Usecase::PCM_RECORD] = makeUsecaseOps<PcmRecord>();
