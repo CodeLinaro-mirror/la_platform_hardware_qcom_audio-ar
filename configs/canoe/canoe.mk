@@ -281,5 +281,8 @@ vendor.audio.feature.dmabuf.cma.memory.enable=false
 AUDIO_FEATURE_ENABLED_GKI := true
 BUILD_AUDIO_TECHPACK_SOURCE := true
 
+#enable Audioreach-engine feature
+AUDIO_FEATURE_ARE_ON_APPS := true
+
 include vendor/qcom/opensource/audio-hal/primary-hal/configs/canoe/audio-properties.mk
 
