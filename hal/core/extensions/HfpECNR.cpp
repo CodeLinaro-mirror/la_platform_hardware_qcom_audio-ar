@@ -32,8 +32,8 @@ extern "C" {
 #define AUDIO_PARAMETER_HFP_PCM_DEV_ID "hfp_pcm_dev_id"
 #define MIN_VOLUME_GAIN_MB -9000
 #define MAX_VOLUME_GAIN_MB 0
-#define MAX_VOLUME_RANGE 9000
-
+#define MIN_VOLUME_VALUE_DB 0
+#define MAX_VOLUME_VALUE_DB 1
 #define AUDIO_PARAMETER_KEY_HFP_MIC_VOLUME "hfp_mic_volume"
 
 #ifdef ECNR_HAL_DUMP_ENABLE
@@ -524,6 +524,19 @@ static int32_t hfp_set_volume(float value) {
     hfpmod.hfp_volume = ::qti::audio::oem::volume::AudioVolume::getInstance().getNearestAttenuation(value,UNMUTABLE_VOL_CURVE);
 
     LOG(DEBUG) << __func__ << " VALUE" << hfpmod.hfp_volume;
+
+    if (hfpmod.hfp_volume >= MAX_VOLUME_GAIN_MB) {
+        hfpmod.hfp_volume = MAX_VOLUME_VALUE_DB;
+    } else {
+        if (hfpmod.hfp_volume <= MIN_VOLUME_GAIN_MB) {
+            hfpmod.hfp_volume = MIN_VOLUME_VALUE_DB;
+        } else {
+            hfpmod.hfp_volume = (hfpmod.hfp_volume - MIN_VOLUME_GAIN_MB)/(MAX_VOLUME_GAIN_MB - MIN_VOLUME_GAIN_MB);
+        }
+    }
+
+    LOG(DEBUG) << __func__ << " HFP volume after conversion: " << hfpmod.hfp_volume;
+
     if (!hfpmod.is_hfp_running) {
         LOG(VERBOSE) << __func__ << " HFP not active, ignoring set_hfp_volume call";
         return -EIO;
