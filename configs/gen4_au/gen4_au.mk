@@ -112,8 +112,9 @@ AUDIO_FEATURE_ENABLED_AUDIO_CONTROL_HAL := true
 AUDIO_FEATURE_ENABLED_AUDIO_PARSERS := true
 
 #enable qcom parsers for WMA/APE/FLAC/ALAC
+# disable 3GP qcom parser
 PRODUCT_PROPERTY_OVERRIDES += \
-vendor.mm.target.enable.qcom_parser=655632
+vendor.mm.target.enable.qcom_parser=655376
 
 
 ifneq ($(ENABLE_HYP),true)
@@ -186,6 +187,12 @@ PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_module_config_primary_va.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_module_config_primary_va.xml
 PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_module_config_primary.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_module_config_primary.xml
+
+
+ifneq (,$(filter gen5_gvm gen5_gvm_gy, $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)))
+PRODUCT_PROPERTY_OVERRIDES += \
+    ro.vendor.qti.va_aosp.support=0
+endif
 
 # common configuration files
 PRODUCT_COPY_FILES += \

@@ -364,7 +364,7 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         </pcm_plugin>
         <props>
             <playback>1</playback>
-            <capture>0</capture>
+            <capture>1</capture>
             <session_mode>3</session_mode>
         </props>
     </pcm-device>
