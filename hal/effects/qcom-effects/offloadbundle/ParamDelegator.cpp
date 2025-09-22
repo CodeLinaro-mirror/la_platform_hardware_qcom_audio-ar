@@ -1,6 +1,5 @@
 /*
- * Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -111,6 +110,10 @@ int ParamDelegator::setCustomPayload(pal_stream_handle_t *handle, uint32_t tag,
 
 int ParamDelegator::setCustomPayloadGeneric(pal_stream_handle_t *handle, uint32_t tag,
                                             uint32_t paramId, uint32_t data) {
+    if (!paramId) {
+        return 0; // ignore invalid param ids.
+    }
+
     // All reverb custom params are of same length, so reuse the same size for all params
     uint32_t customDataSize = GENERIC_CUSTOM_PARAM_LEN * sizeof(uint32_t);
     uint32_t payloadAllocSize = sizeof(pal_effect_custom_payload_t) + customDataSize;
@@ -278,7 +281,7 @@ int ParamDelegator::updatePalParameters(pal_stream_handle_t *handle, struct Reve
     if (flags & REVERB_MODE) {
         paramId = PARAM_ID_REVERB_MODE;
         data = reverb->mode;
-    } else if (flags & REVERB_PRESET) {
+    } else if ((flags & REVERB_PRESET) && reverb->preset) {
         paramId = PARAM_ID_REVERB_PRESET;
         data = kReverbOpenSlToOffloadMap[reverb->preset - 1];
     } else if (flags & REVERB_WET_MIX) {
