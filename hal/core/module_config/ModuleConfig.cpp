@@ -695,9 +695,18 @@ std::unique_ptr<ModuleConfig> ModuleConfig::getPrimaryConfiguration() {
     auto xsdConfig =
             xsd::read(getReadAbleConfigurationFile(kPrimaryModuleConfigFileName.c_str()).c_str());
     if (!xsdConfig.has_value()) {
-        LOG(WARNING) << __func__ << ": primary config retrieval failed, setting defaults";
-        return nullptr;
+        LOG(WARNING) << __func__ << ": Failed to retrieve Value-Added Configuration Xml, falling back to select Pure Configuration Xml";
+
+        kPrimaryModuleConfigFileName = kPrimaryModulePureConfigFileName;
+        auto fallbackConfig = xsd::read(getReadAbleConfigurationFile(kPrimaryModuleConfigFileName.c_str()).c_str());
+        if (!fallbackConfig.has_value()) {
+            LOG(WARNING) << __func__ << ": primary config retrieval failed for Pure Configuration Xml as well, setting defaults";
+            return nullptr;
+        }
+        xsdConfig.reset();
+        xsdConfig.emplace(std::move(fallbackConfig.value()));
     }
+
     auto modules = xsdConfig.value();
     if (!modules.has_module()) {
         LOG(WARNING) << __func__ << ": config has no modules at all, setting defaults";
