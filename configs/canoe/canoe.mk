@@ -29,6 +29,13 @@ BUILD_AUDIO_TECHPACK_SOURCE := true
 AUDIO_FEATURE_ENABLED_MCS := true
 TARGET_AUDIO_DYNAMIC_PD_ENABLED := true
 
+ifeq ($(call is-board-platform-in-list, canoe), true)
+QNN_BACKEND_INC_PATH := backend_inc/v2.34
+endif
+ifeq ($(call is-board-platform-in-list, alor), true)
+QNN_BACKEND_INC_PATH := backend_inc/v2.37
+endif
+
 ifneq ($(strip $(TARGET_USES_RRO)), true)
 #Audio Specific device overlays
 DEVICE_PACKAGE_OVERLAYS += vendor/qcom/opensource/audio-hal/primary-hal/configs/common/overlay
