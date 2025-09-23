@@ -741,7 +741,7 @@ class VoipPlaybackECNR : public UsecaseConfig<VoipPlaybackECNR> {
     public:
     inline static size_t kPeriodSize = UsecaseConfig::getDLECNRPeriodSize(DEFAULT_SAMPLE_RATE);
     inline static size_t kPeriodDurationMs = 8;
-    constexpr static size_t kPeriodCount = 4;
+    constexpr static size_t kPeriodCount = 8;
     constexpr static size_t kPlatformDelayMs = 13;
     static int kSampleRate;
     static size_t getFrameCount(
