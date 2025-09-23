@@ -124,7 +124,7 @@ feature_disabled:
 
 void AudioExtension::in_set_power_policy(uint8_t enable)
 {
-    LOG(DEBUG) << __func__ << " Enter:  " << enable;
+    LOG(DEBUG) << __func__ << " Enter - state: " << (enable ? "ONLINE" : "OFFLINE");
     in_power_policy = enable ? POWER_POLICY_STATUS_ONLINE : POWER_POLICY_STATUS_OFFLINE;
     PowerPolicyManager &mPPolicy = PowerPolicyManager::getInstance();
     std::vector<std::weak_ptr<StreamInPrimary>> &stream_in_list = mPPolicy.getStreamInPrimaryList();
@@ -143,12 +143,11 @@ void AudioExtension::in_set_power_policy(uint8_t enable)
             }
         }
     }
-    LOG(DEBUG) << __func__ << " Exit: " << enable;
 }
 
 void AudioExtension::out_set_power_policy(uint8_t enable)
 {
-    LOG(DEBUG) << __func__ << " Enter: " << enable;
+    LOG(DEBUG) << __func__ << " Enter - state: " << (enable ? "ONLINE" : "OFFLINE");
     out_power_policy = enable ? POWER_POLICY_STATUS_ONLINE : POWER_POLICY_STATUS_OFFLINE;
     PowerPolicyManager &mPPolicy = PowerPolicyManager::getInstance();
     std::vector<std::weak_ptr<StreamOutPrimary>> &stream_out_list = mPPolicy.getStreamOutPrimaryList();
@@ -167,19 +166,16 @@ void AudioExtension::out_set_power_policy(uint8_t enable)
             }
         }
     }
-    LOG(DEBUG) << __func__ << " Exit:  " << enable;
 }
 
 void extn_out_set_power_policy(uint8_t enable)
 {
-    LOG(DEBUG) << __func__ << " status: " << enable;
     AudioExtension & AudioExtns =  AudioExtension::getInstance();
     return AudioExtns.out_set_power_policy(enable);
 }
 
 void extn_in_set_power_policy(uint8_t enable)
 {
-    LOG(DEBUG) << __func__ << " status: " << enable;
     AudioExtension & AudioExtns =  AudioExtension::getInstance();
     return AudioExtns.in_set_power_policy(enable);
 }
