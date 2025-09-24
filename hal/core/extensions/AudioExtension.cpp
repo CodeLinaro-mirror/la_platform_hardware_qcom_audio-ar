@@ -331,6 +331,8 @@ void HfpExtension::audio_extn_hfp_set_device(const std::vector<AudioDevice>& dev
         if (hfp_set_device) {
             auto palDevices = mPlatform.convertToPalDevices({rxDevice, txDevice});
             hfp_set_device(reinterpret_cast<pal_device*>(palDevices.data()));
+        } else {
+            LOG(WARNING) << __func__ << ": no hfp pointers set ";
         }
     }
 }
@@ -340,8 +342,8 @@ void HfpExtension::audio_extn_hfp_set_parameters(struct str_parms *params) {
 }
 
 int HfpExtension::audio_extn_hfp_set_mic_mute(bool state) {
+    micMute = state;
     if (audio_extn_hfp_is_active()) {
-        micMute = state;
         return ((hfp_set_mic_mute) ? hfp_set_mic_mute(state) : -1);
     }
     return -1;
@@ -351,7 +353,10 @@ bool HfpExtension::audio_extn_hfp_is_active() {
     return ((hfp_is_active) ? hfp_is_active() : false);
 }
 
-HfpExtension::~HfpExtension() {}
+HfpExtension::~HfpExtension() {
+    LOG(DEBUG) << __func__ << "---- Feature HFP Disabled ----";
+}
+
 HfpExtension::HfpExtension() : AudioExtensionBase(kHfpLibrary, isExtensionEnabled(kHfpProperty)) {
     LOG(VERBOSE) << __func__ << " Enter";
     if (mHandle != nullptr) {
