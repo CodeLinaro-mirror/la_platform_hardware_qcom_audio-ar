@@ -316,6 +316,7 @@ class Platform {
 
     void updateScreenRotation(const ::aidl::android::hardware::audio::core::IModule::ScreenRotation
                                       in_rotation) noexcept;
+    void setRotation() const noexcept;
     ::aidl::android::hardware::audio::core::IModule::ScreenRotation getCurrentScreenRotation() const
             noexcept;
 
