@@ -176,7 +176,9 @@ ndk::ScopedAStatus StreamOutPrimary::configureConnectedDevices_I() {
             telephony->onPlaybackStreamDevices(mConnectedDevices);
         }
     }
-
+    if (mTag == Usecase::VOIP_PLAYBACK && mPalHandle) {
+            mPlatform.setVoipRxStreamHandle(mPalHandle);
+    }
     if (!mPalHandle) {
         LOG(WARNING) << __func__ << mLogPrefix << ": stream is not configured";
         return ndk::ScopedAStatus::ok();

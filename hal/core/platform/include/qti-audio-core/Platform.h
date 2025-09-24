@@ -257,9 +257,16 @@ class Platform {
     void setTranslationRecordState(const bool state) noexcept { mIsTranslationRecordEnabled = state; }
     bool getTranslationRecordState() noexcept { return mIsTranslationRecordEnabled; }
 
-    // Set and Get Value Functions for Voice Call Volume mute during Translation Record Usecase.
+    // Set and Get Value Functions for Voice/VoIP Call RX Volume mute during Translation Record Usecase.
     void setTranslationRxMuteState(const bool state) noexcept { mIsTranslationRxMuteEnabled = state; }
     bool getTranslationRxMuteState() noexcept { return mIsTranslationRxMuteEnabled; }
+
+    // Set and Get Value Functions for Voice/VoIP Call TX mute during Translation Record Usecase.
+    void setTranslationTxMuteState(const bool state) noexcept { mIsTranslationTxMuteEnabled = state; }
+    bool getTranslationTxMuteState() noexcept { return mIsTranslationTxMuteEnabled; }
+
+    void setVoipRxStreamHandle(pal_stream_handle_t* palHandle);
+    pal_stream_handle_t* getVoipRxStreamHandle() const;
 
     // Set and Get Value Functions for ASR and TTS call Translation.
     void setCallTranslationState(const bool state) noexcept { mIsCallTranslationEnabled = state; }
@@ -379,9 +386,11 @@ class Platform {
 
     std::map<std::string, std::string> mParameters;
     card_status_t mSndCardStatus{CARD_STATUS_OFFLINE};
+    pal_stream_handle_t* mVoipRxPalHandle{nullptr};
     bool mInCallMusicEnabled{false};
     bool mIsTranslationRecordEnabled{false};
     bool mIsTranslationRxMuteEnabled{false};
+    bool mIsTranslationTxMuteEnabled{false};
     bool mIsCallTranslationEnabled{false};
     bool mIsScreenTurnedOn{false};
     uint32_t mWFDProxyChannels{0};
