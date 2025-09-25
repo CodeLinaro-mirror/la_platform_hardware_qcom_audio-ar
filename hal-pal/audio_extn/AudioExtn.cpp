@@ -374,6 +374,12 @@ int AudioExtn::audio_extn_set_volume(int stream_type, const char *address, float
     return 0;
 }
 
+int AudioExtn::audio_extn_set_stream_active(int stream_type, const char *address, int value) {
+
+    audio_extn_awe_stream_active(stream_type, address, value);
+    return 0;
+}
+
 
 // START: BATTERY_LISTENER ==================================================
 
@@ -1112,10 +1118,12 @@ static hfp_set_mic_mute_t awe_set_mic_mute;
 typedef void (*set_volume_t) (int stream_type, const char *address, float left, float right);
 typedef void (*void_void_t) ();
 typedef int(*awe_set_mic_mute_t)(bool state);
+typedef int(*awe_set_stream_active_t)(int stream_type, const char *address,int value);
 
 static set_volume_t awe_set_volume;
 static void_void_t awe_reset_recording;
 static void_void_t awe_lib_init;
+static awe_set_stream_active_t awe_set_stream_active;
 
 
 int AudioExtn::awe_feature_init(bool is_feature_enabled)
@@ -1163,6 +1171,13 @@ int AudioExtn::awe_feature_init(bool is_feature_enabled)
             ALOGE("%s: dlsym failed awe_set_mic_mute %s", __func__, dlerror());
             goto feature_disabled;
         }
+        if (!(awe_set_stream_active =
+            (awe_set_stream_active_t)dlsym(
+                awe_lib_handle, "awe_set_stream_active"))) {
+            ALOGE("%s: dlsym failed audio_extn_awe_stream_active %s", __func__, dlerror());
+            goto feature_disabled;
+        }
+
 
         if (!(awe_reset_recording =
             (void_void_t)dlsym(
@@ -1260,6 +1275,16 @@ int AudioExtn::audio_extn_awe_set_mic_mute(bool state)
       ret=  awe_set_mic_mute(state);
 
    return ret;
+}
+
+int AudioExtn::audio_extn_awe_stream_active(int stream_type, const char *address, int value) {
+    int ret = 0;
+
+    AHAL_DBG("---- audio_extn_awe_stream_active ----");
+    if (awe_set_stream_active)
+        awe_set_stream_active(stream_type, address, value);
+
+    return ret;
 }
 
 // END: AWE ========================================================================

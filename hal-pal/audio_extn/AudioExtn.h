@@ -95,6 +95,7 @@ public:
     static int audio_extn_set_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *params);
     static int get_controller_stream_from_params(struct str_parms *parms, int *controller, int *stream);
     static int audio_extn_set_volume(int stream_type, const char *address, float left , float right);
+    static int audio_extn_set_stream_active(int stream_type, const char *address,int value);
 
     static void battery_listener_feature_init(bool is_feature_enabled);
     static void battery_properties_listener_init(battery_status_change_fn_t fn);
@@ -144,6 +145,7 @@ public:
     static int audio_extn_awe_set_volume(int stream_type, const char *address, float left , float right);
     static void audio_extn_awe_reset_recording();
     static int audio_extn_awe_set_mic_mute(bool state);
+    static int audio_extn_awe_stream_active(int stream_type, const char *address,int value);
     static int awe_feature_init(bool is_feature_enabled);
     static void awe_feature_deinit();
 
