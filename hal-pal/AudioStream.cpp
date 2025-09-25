@@ -27,8 +27,8 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+/* Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -2198,6 +2198,9 @@ int StreamOutPrimary::SetVolume(float left , float right) {
         }
     }
 
+    /* Also pass volume to audio extensions */
+    AudioExtn::audio_extn_set_volume(streamAttributes_.type, address_, left, right);
+
 done:
     stream_mutex_.unlock();
     AHAL_DBG("Exit ret: %d", ret);
@@ -3593,6 +3596,7 @@ int StreamInPrimary::RouteStream(const std::set<audio_devices_t>& new_devices) {
     std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
     static pal_device_id_t agULCachedPalId = PAL_DEVICE_IN_MIN;
     static int agULCachedIdx = 0;
+    bool is_no_device, is_deep_buffer;
 
     AHAL_DBG("enter ");
 
@@ -3618,6 +3622,14 @@ int StreamInPrimary::RouteStream(const std::set<audio_devices_t>& new_devices) {
     is_empty = AudioExtn::audio_devices_empty(new_devices);
     is_input = AudioExtn::audio_devices_cmp(new_devices, audio_is_input_device);
     is_ag_sco = AudioExtn::audio_extn_hfp_ag_is_active(adevice);
+
+    // Handling for AWE Zonal Recording and multiturn.  When MIC input device is routed to device NONE (closed),
+    // we reset the recording zone back to default.
+    is_no_device = (AudioExtn::get_device_types(new_devices)==AUDIO_DEVICE_NONE);
+    is_deep_buffer = (streamAttributes_.type == PAL_STREAM_DEEP_BUFFER);
+    if (is_no_device && is_deep_buffer) {
+        AudioExtn::audio_extn_awe_reset_recording();
+    }
 
     if (agULCachedPalId != PAL_DEVICE_IN_MIN &&
         StreamInPrimary::GetPalStreamType(flags_, config_.sample_rate, address_) == PAL_STREAM_VOIP_TX) {

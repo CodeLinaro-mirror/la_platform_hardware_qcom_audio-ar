@@ -28,9 +28,9 @@
  */
 
 /*
- * ​​​​​Changes from Qualcomm Innovation Center are provided under the following license:
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
  *
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  *
  */
@@ -94,6 +94,7 @@ public:
     static void audio_extn_get_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *query, struct str_parms *reply);
     static int audio_extn_set_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *params);
     static int get_controller_stream_from_params(struct str_parms *parms, int *controller, int *stream);
+    static int audio_extn_set_volume(int stream_type, const char *address, float left , float right);
 
     static void battery_listener_feature_init(bool is_feature_enabled);
     static void battery_properties_listener_init(battery_status_change_fn_t fn);
@@ -137,6 +138,14 @@ public:
     static void audio_extn_icc_get_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *query, struct str_parms *reply);
     static int icc_feature_init(bool is_feature_enabled);
     static void icc_feature_deinit();
+    // AWE
+    static int audio_extn_awe_set_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *parms);
+    static void audio_extn_awe_get_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *query, struct str_parms *reply);
+    static int audio_extn_awe_set_volume(int stream_type, const char *address, float left , float right);
+    static void audio_extn_awe_reset_recording();
+    static int audio_extn_awe_set_mic_mute(bool state);
+    static int awe_feature_init(bool is_feature_enabled);
+    static void awe_feature_deinit();
 
     /* start kpi optimize perf apis */
     static void audio_extn_kpi_optimize_feature_init(bool is_feature_enabled);

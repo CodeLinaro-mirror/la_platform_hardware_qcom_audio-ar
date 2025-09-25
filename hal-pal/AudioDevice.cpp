@@ -35,8 +35,8 @@
  * limitations under the License.
  */
 
-/* Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+/* Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -339,6 +339,7 @@ AudioDevice::~AudioDevice() {
     audio_extn_gef_deinit(adev_);
     audio_extn_sound_trigger_deinit(adev_);
     AudioExtn::icc_feature_deinit();
+    AudioExtn::awe_feature_deinit();
 
     for(int i = 0; i < payloadpersv.size(); i++) {
         if (payloadpersv[i].pal_payload) {
@@ -1148,6 +1149,7 @@ int AudioDevice::Init(hw_device_t **device, const hw_module_t *module) {
     AudioExtn::audio_extn_kpi_optimize_feature_init(
             property_get_bool("vendor.audio.feature.kpi_optimize.enable", false));
     AudioExtn::icc_feature_init(property_get_bool("vendor.audio.feature.icc.enable", false));
+    AudioExtn::awe_feature_init(property_get_bool("vendor.audio.feature.awe.enable", false));
     AudioExtn::power_policy_feature_init(
             property_get_bool("vendor.audio.feature.arpowerpolicy.enable", false));
     adev_->is_arpowerpolicy_enabled = property_get_bool("vendor.audio.feature.arpowerpolicy.enable", false);
@@ -1280,6 +1282,7 @@ int AudioDevice::SetMicMute(bool state) {
         ret = AudioExtn::audio_extn_hfp_set_mic_mute(state);
     if (AudioExtn::audio_extn_hfp_ag_is_active(adev_))
         ret = AudioExtn::audio_extn_hfp_ag_set_mic_mute(state);
+    ret = AudioExtn::audio_extn_awe_set_mic_mute(state);
     if (voice_)
         ret = voice_->SetMicMute(state);
     in_list_mutex.lock();

@@ -571,6 +571,15 @@ vendor.audio.feature.arpowerpolicy.enable=true
 endif # ends TARGET_USES_GY
 endif
 else
+
+ifeq ($(AUDIO_USES_AR_AWE), true)
+PRODUCT_ODM_PROPERTIES += \
+vendor.audio.feature.awe.enable=true
+else
+PRODUCT_ODM_PROPERTIES += \
+vendor.audio.feature.awe.enable=false
+endif
+
 # Non-Generic ODM varient related
 PRODUCT_ODM_PROPERTIES += \
 vendor.audio.feature.afe_proxy.enable=true \
