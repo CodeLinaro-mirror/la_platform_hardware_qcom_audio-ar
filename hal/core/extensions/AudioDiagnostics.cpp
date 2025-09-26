@@ -138,7 +138,9 @@ void AudioDiagnostics::monitorThreadLoop()
 
     while(isDiagnosticMonitorEnabled) {
         memset(buf , 0 ,sizeof(buf));
-        read(fd, buf, 10);
+        read(fd, buf, 1);
+        sscanf(buf , "%d", &card_status);
+        ::card_status = (card_status == 1);
         lseek(fd,0L,SEEK_SET);
 
         poll_fds[0].fd = fd;
