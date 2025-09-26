@@ -726,6 +726,14 @@ ndk::ScopedAStatus StreamOutPrimary::setHwVolume(const std::vector<float>& in_ch
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
     }
 
+    if(mPlatform.getTranslationRxMuteState() && mTag == Usecase::VOIP_PLAYBACK) {
+        LOG(DEBUG) << __func__ << mLogPrefix << "Mute VoIP Rx stream when device switch performed on translation with Rx mute enabled";
+        if (int32_t ret = ::pal_stream_set_mute(mPalHandle, mPlatform.getTranslationRxMuteState()); ret) {
+            LOG(ERROR) << __func__ << " pal_stream_set_mute failed!!! ret:" << ret;
+            return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
+        }
+    }
+
     mVolumes = in_channelVolumes;
 
     LOG(DEBUG) << __func__ << mLogPrefix << ::android::internal::ToString(mVolumes);
