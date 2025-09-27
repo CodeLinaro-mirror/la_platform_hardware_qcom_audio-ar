@@ -5,13 +5,11 @@
 
 #pragma once
 
-#include <aidl/android/hardware/audio/core/MmapBufferDescriptor.h>
 #include <qti-audio-core/AudioUsecase.h>
-#include <qti-audio-core/MmapBufferImpl.h>
 #include <qti-audio-core/Stream.h>
 namespace qti::audio::core {
 
-class StreamInPrimary : public StreamIn, public StreamCommonImpl, public MmapBufferImpl {
+class StreamInPrimary : public StreamIn, public StreamCommonImpl {
   public:
     friend class ndk::SharedRefBase;
     StreamInPrimary(
@@ -67,13 +65,6 @@ class StreamInPrimary : public StreamIn, public StreamCommonImpl, public MmapBuf
     ndk::ScopedAStatus reconfigureConnectedDevices() override;
     void setStreamMicMute(const bool muted) override;
 
-    ndk::ScopedAStatus configureMMapStream(
-            ::aidl::android::hardware::audio::core::MmapBufferDescriptor* desc,
-            int32_t* bufferSizeFrames) override;
-
-    ndk::ScopedAStatus createMmapBuffer(
-            ::aidl::android::hardware::audio::core::MmapBufferDescriptor* desc) override;
-
     void onClose() override { defaultOnClose(); }
     static std::mutex sinkMetadata_mutex_;
     void checkHearingAidRoutingForVoice(const Metadata& metadata, bool voiceActive);
@@ -86,10 +77,7 @@ class StreamInPrimary : public StreamIn, public StreamCommonImpl, public MmapBuf
     void configure();
     void resume();
     void shutdown_I();
-    /* burst zero indicates that burst command with zero bytes issued from framework */
-    ::android::status_t burstZero();
-    ::android::status_t startMMAP();
-    ::android::status_t stopMMAP();
+
     size_t getPlatformDelay() const noexcept;
 
     // API which are *_I are internal 
@@ -102,7 +90,7 @@ class StreamInPrimary : public StreamIn, public StreamCommonImpl, public MmapBuf
     // All the public must check the validity of this resource, if using
     pal_stream_handle_t* mPalHandle{nullptr};
 
-    std::variant<std::monostate, PcmRecord, CompressCapture, VoipRecord, MMapRecord,
+    std::variant<std::monostate, PcmRecord, CompressCapture, VoipRecord,
                  VoiceCallRecord, FastRecord, UltraFastRecord, HotwordRecord>  mExt;
 
     // references

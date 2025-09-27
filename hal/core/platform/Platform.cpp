@@ -412,6 +412,13 @@ std::vector<pal_device> Platform::configureAndFetchPalDevices(
     return palDevices;
 }
 
+int32_t Platform::setDevice(pal_stream_handle_t* handle, const AudioPortConfig& mixPortConfig,
+                            const Usecase& tag, const std::vector<AudioDevice>& devices,
+                            const bool dummyDevice) const {
+    auto palDevice = configureAndFetchPalDevices(mixPortConfig, tag, devices, dummyDevice);
+    return ::pal_stream_set_device(handle, palDevice.size(), palDevice.data());
+}
+
 void Platform::getPositionInFrames(pal_stream_handle_t* palHandle, int32_t const& sampleRate,
                                          int64_t* const dspFrames) const {
     pal_session_time tstamp;
@@ -855,6 +862,20 @@ void Platform::updateScreenRotation(const IModule::ScreenRotation in_rotation) n
     mCurrentScreenRotation = in_rotation;
 }
 
+void Platform::setRotation() const noexcept {
+    pal_param_device_rotation_t paramDeviceRotation{};
+    paramDeviceRotation.rotation_type =
+        (mCurrentScreenRotation == IModule::ScreenRotation::DEG_270) ?
+        PAL_SPEAKER_ROTATION_RL : PAL_SPEAKER_ROTATION_LR;
+
+    if (int32_t ret = ::pal_set_param(PAL_PARAM_ID_DEVICE_ROTATION,
+                                      &paramDeviceRotation,
+                                      sizeof(pal_param_device_rotation_t)); ret) {
+        LOG(ERROR) << __func__ << ": PAL_PARAM_ID_DEVICE_ROTATION failed： " << ret;
+        return;
+    }
+}
+
 IModule::ScreenRotation Platform::getCurrentScreenRotation() const noexcept {
     return mCurrentScreenRotation;
 }
@@ -1249,7 +1270,7 @@ uint32_t Platform::getBluetoothLatencyMs(const std::vector<AudioDevice>& bluetoo
             }
         }
     }
-    LOG(DEBUG) << __func__ << " bt latency: " << param_bt_a2dp_ptr->latency;
+    LOG(VERBOSE) << __func__ << " bt latency: " << param_bt_a2dp_ptr->latency;
     return param_bt_a2dp_ptr->latency;
 }
 
@@ -1569,6 +1590,7 @@ void Platform::initUsecaseOpMap() {
     mUsecaseOpMap[Usecase::SPATIAL_PLAYBACK] = makeUsecaseOps<SpatialPlayback>();
     mUsecaseOpMap[Usecase::IN_CALL_MUSIC] = makeUsecaseOps<InCallMusic>();
     mUsecaseOpMap[Usecase::BIT_PERFECT_PLAYBACK] = makeUsecaseOps<BitPerfectPlayback>();
+    mUsecaseOpMap[Usecase::MMAP_OFFLOAD_PLAYBACK] = makeUsecaseOps<MMapOffloadPlayback>();
 
     // Record usecases
     mUsecaseOpMap[Usecase::PCM_RECORD] = makeUsecaseOps<PcmRecord>();

@@ -127,10 +127,8 @@ ndk::ScopedAStatus Telephony::switchAudioMode(AudioMode newAudioMode) {
                 LOG(DEBUG) << __func__ << " start CRS call";
             }
         }
-    } else if (newAudioMode == AudioMode::CALL_SCREEN ||
-              (newAudioMode == AudioMode::IN_CALL && mAudioMode ==  AudioMode::CALL_SCREEN)) {
+    } else if (newAudioMode == AudioMode::CALL_SCREEN) {
         // if CALL_SCREEN mode set, then start call screen and update proxy device.
-        // if IN_CALL mode set, then update to voice device.
         mAudioMode = newAudioMode;
         updateDevices();
     }
@@ -381,11 +379,10 @@ void Telephony::onExternalDeviceConnectionChanged(const AudioDevice& extDevice,
         if (isOutputDevice(extDevice)) {
             CRSPluginDevices.push_back(extDevice);
             if (mIsCRSStarted) {
-               updateDevices();
+                updateDevices();
             }
         } else {
             if (mTxDevice.type.type != extDevice.type.type) {
-                mTxDevice = getMatchingTxDevice(mRxDevice);
                 if (mIsCRSStarted) {
                     updateDevices();
                 }

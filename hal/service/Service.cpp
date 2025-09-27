@@ -27,6 +27,7 @@
 #include <binder/ProcessState.h>
 #include <log/log.h>
 #include "ConfigManager.h"
+#include "FdTracker.h"
 
 #define REGISTER_RETRY_COUNT 10
 #define SLEEP_TIME_SECONDS 1
@@ -212,7 +213,10 @@ int main() {
     auto endTime = std::chrono::steady_clock::now();
     float timeTaken =
             std::chrono::duration_cast<std::chrono::duration<float>>(endTime - startTime).count();
+
     ALOGI("registration took %.2f seconds ", timeTaken);
+
+    FdTracker::getInstance();
     ABinderProcess_joinThreadPool();
     return EXIT_FAILURE;
 }
