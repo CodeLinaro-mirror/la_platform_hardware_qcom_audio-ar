@@ -51,6 +51,7 @@
         <library name="audio_sumx" path="libqtiautobundle.so"/>
         <library name="audio_fnb" path="libqtiautobundle.so"/>
         <library name="audio_avc" path="libqtiautobundle.so"/>
+        <library name="awebundle" path="libqtiaweautobundle.so"/>
     </libraries>
 
     <!-- list of effects to load.
@@ -96,6 +97,9 @@
         <effect name="audio_sumx" library="audio_sumx" uuid="32e9fe7f-de63-4d1b-a5d2-281e8492f3ce"/>
         <effect name="audio_fnb" library="audio_fnb" uuid="6bc88c84-a544-11e8-98d0-529269fb1459"/>
         <effect name="audio_avc" library="audio_avc" uuid="2130c69e-6a3a-4e35-9890-71687f0b78bf"/>
+        <effect name="awebmt" library="awebundle" uuid="09357380-93b2-4291-9ada-38bdace1eb3c" />
+        <effect name="awefnb" library="awebundle" uuid="5b715816-447b-4bae-8cac-82fcb7ebe18d"/>
+        <effect name="awegeneral" library="awebundle" uuid="190aa298-a122-4c4f-b78d-14ea89bf5158"/>
     </effects>
 
     <preprocess>

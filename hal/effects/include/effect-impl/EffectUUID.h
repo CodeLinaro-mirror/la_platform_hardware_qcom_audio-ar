@@ -455,6 +455,27 @@ static const AudioUuid kFnbEffectQtiUUID = {static_cast<int32_t>(0x6bc88c84),
                                   0x98d0,
                                   {0x52, 0x92, 0x69, 0xfb, 0x14, 0x59}};
 
+/* AWE BMT Effect UUID: 09357380-93b2-4291-9ada-38bdace1eb3c */
+static const AudioUuid kAweBmtEffectQtiUUID = {static_cast<int32_t>(0x09357380),
+                                  0x93b2,
+                                  0x4291,
+                                  0x9ada,
+                                  {0x38,0xbd,0xac,0xe1,0xeb,0x3c}};
+
+/* AWE FNB Effect UUID: 5b715816-447b-4bae-8cac-82fcb7ebe18d */
+static const AudioUuid kAweFnbEffectQtiUUID = {static_cast<int32_t>(0x5b715816),
+                                  0x447b,
+                                  0x4bae,
+                                  0x8cac,
+                                  {0x82,0xfc,0xb7,0xeb,0xe1,0x8d}};
+
+/* AWE General Effect UUID: 190aa298-a122-4c4f-b78d-14ea89bf5158 */
+static const AudioUuid kAweGeneralEffectQtiUUID = {static_cast<int32_t>(0x190aa298),
+                                  0xa122,
+                                  0x4c4f,
+                                  0xb78d,
+                                  {0x14,0xea,0x89,0xbf,0x51,0x58}};
+
 
 /**
  * @brief A map between effect name and effect type UUID.
@@ -491,6 +512,9 @@ static const std::map<const std::string /* effect type */, const AudioUuid&> kUu
         {"audio_sumx", kSumxEffectQtiUUID},
         {"audio_fnb", kFnbEffectQtiUUID},
         {"audio_avc", kAvcEffectQtiUUID},
+        {"awebmt", kAweBmtEffectQtiUUID},
+        {"awefnb", kAweFnbEffectQtiUUID},
+        {"awegeneral", kAweGeneralEffectQtiUUID},
 };
 
 } // namespace aidl::qti::effects
