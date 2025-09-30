@@ -194,6 +194,12 @@ ndk::ScopedAStatus StreamOutPrimary::configureConnectedDevices_I() {
 
     LOG(DEBUG) << __func__ << mLogPrefix << " connected to " << mConnectedDevices;
 
+    for (auto connectedPalDevice : connectedPalDevices) {
+        if (connectedPalDevice.id == PAL_DEVICE_OUT_SPEAKER) {
+            mPlatform.setRotation();
+            break;
+        }
+    }
     return ndk::ScopedAStatus::ok();
 }
 
