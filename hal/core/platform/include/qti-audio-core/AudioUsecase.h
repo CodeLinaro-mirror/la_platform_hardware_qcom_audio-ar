@@ -195,19 +195,20 @@ class MMapPlayback : public UsecaseConfig<MMapPlayback> {
 };
 
 /*
-* MmapOffload is a mechanism where mmap is used with big buffer sizes
-*/
+ * MmapOffload is a mechanism where mmap is used with big buffer sizes
+ */
 class MMapOffloadPlayback : public UsecaseConfig<MMapOffloadPlayback> {
   public:
-
-    constexpr static size_t kPeriodDurationMs = 4000;
+    constexpr static size_t kPeriodDurationMs = 10;
     constexpr static size_t kPlatformDelayMs = 3;  // TODO when enable e2e
-    constexpr static uint32_t kPeriodCount = 2;
+    constexpr static uint32_t kDefaultPeriodCount = 4096;
+    static uint32_t kPeriodCount;
 
     static size_t getFrameCount(
             const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig);
 
     static int32_t getLatency() { return kPeriodDurationMs + kPlatformDelayMs; }
+    static uint32_t getPeriodCount();
 };
 
 class CompressPlayback : public UsecaseConfig<CompressPlayback> {
