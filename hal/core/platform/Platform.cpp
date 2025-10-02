@@ -235,6 +235,15 @@ bool Platform::setStreamMicMute(pal_stream_handle_t* streamHandlePtr, const bool
     return true;
 }
 
+void Platform::setVoipRxStreamHandle(pal_stream_handle_t* palHandle) {
+    LOG(DEBUG) << __func__ << ": Setting VOIP RX stream handle to " << palHandle;
+    mVoipRxPalHandle = palHandle;
+}
+
+pal_stream_handle_t* Platform::getVoipRxStreamHandle() const {
+    return mVoipRxPalHandle;
+}
+
 bool Platform::updateScreenState(const bool isTurnedOn) noexcept {
     mIsScreenTurnedOn = isTurnedOn;
     pal_param_screen_state_t screenState{.screen_state = mIsScreenTurnedOn};
