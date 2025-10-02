@@ -78,10 +78,13 @@ struct hfp_module {
     float mic_volume;
     bool mic_mute;
     uint32_t sample_rate;
-    pal_stream_handle_t *rx_stream_handle;
-    pal_stream_handle_t *tx_stream_handle;
-    pal_device_id_t preferred_dev_id[2] = {PAL_DEVICE_OUT_MIN, PAL_DEVICE_IN_MIN};
+    pal_stream_handle_t *rx_stream_handle = nullptr;
+    pal_stream_handle_t *tx_stream_handle = nullptr;
+    pal_device rxDevice = {.id = PAL_DEVICE_OUT_MIN};
+    pal_device txDevice = {.id = PAL_DEVICE_IN_MIN};
 };
+
+static bool sIsHFPenabled = false;
 
 #define PLAYBACK_VOLUME_MAX 0x2000
 #define CAPTURE_VOLUME_DEFAULT (15.0)
@@ -125,7 +128,7 @@ bool is_valid_in_device(pal_device_id_t id) {
 
 static int32_t hfp_set_volume(float value) {
     int32_t vol, ret = 0;
-    struct pal_volume_data *pal_volume = NULL;
+    struct pal_volume_data *pal_volume = nullptr;
 
     LOG(VERBOSE) << __func__ << " entry";
 
@@ -161,7 +164,7 @@ static int32_t hfp_set_volume(float value) {
 */
 static int hfp_set_mic_volume(float value) {
     int volume, ret = 0;
-    struct pal_volume_data *pal_volume = NULL;
+    struct pal_volume_data *pal_volume = nullptr;
 
     LOG(DEBUG) << __func__ << " enter value= " << value;
 
@@ -194,12 +197,12 @@ static int hfp_set_mic_volume(float value) {
     if (pal_stream_set_volume(hfpmod.tx_stream_handle, pal_volume) < 0) {
         LOG(ERROR) << __func__ << " Couldn't set HFP Volume " << volume;
         free(pal_volume);
-        pal_volume = NULL;
+        pal_volume = nullptr;
         return -EINVAL;
     }
 
     free(pal_volume);
-    pal_volume = NULL;
+    pal_volume = nullptr;
 
     return ret;
 }
@@ -208,7 +211,7 @@ static float hfp_get_mic_volume(void) {
     return hfpmod.mic_volume;
 }
 
-static int32_t start_hfp(struct str_parms *parms __unused) {
+static int32_t start_hfp() {
     int32_t ret = 0;
     uint32_t no_of_devices = 2;
     struct pal_stream_attributes stream_attr = {};
@@ -283,21 +286,21 @@ static int32_t start_hfp(struct str_parms *parms __unused) {
     devices[0].config.ch_info = ch_info;
     devices[0].config.aud_fmt_id = PAL_AUDIO_FMT_PCM_S16_LE;
 
-    if (is_valid_out_device(hfpmod.preferred_dev_id[RX])) {
-        devices[1].id = hfpmod.preferred_dev_id[RX];
+    if (is_valid_out_device(hfpmod.rxDevice.id)) {
+        devices[1] = hfpmod.rxDevice;
     } else {
         devices[1].id = PAL_DEVICE_OUT_SPEAKER;
     }
 
-    ret = pal_stream_open(&stream_attr, no_of_devices, devices, 0, NULL, NULL, 0,
+    ret = pal_stream_open(&stream_attr, no_of_devices, devices, 0, nullptr, nullptr, 0,
                           &hfpmod.rx_stream_handle);
     if (ret != 0) {
-        LOG(ERROR) << __func__ << " HFP rx stream (BT SCO->Spkr) open failed, rc " << ret;
+        LOG(ERROR) << __func__ << " HFP rx stream open failed, rc " << ret;
         return ret;
     }
     ret = pal_stream_start(hfpmod.rx_stream_handle);
     if (ret != 0) {
-        LOG(ERROR) << __func__ << " HFP rx stream (BT SCO->Spkr) open failed, rc " << ret;
+        LOG(ERROR) << __func__ << " HFP rx stream open failed, rc " << ret;
         pal_stream_close(hfpmod.rx_stream_handle);
         return ret;
     }
@@ -322,29 +325,29 @@ static int32_t start_hfp(struct str_parms *parms __unused) {
     devices[0].config.ch_info = ch_info;
     devices[0].config.aud_fmt_id = PAL_AUDIO_FMT_PCM_S16_LE;
 
-    if (is_valid_in_device(hfpmod.preferred_dev_id[TX])) {
-        devices[1].id = hfpmod.preferred_dev_id[TX];
+    if (is_valid_out_device(hfpmod.txDevice.id)) {
+        devices[1] = hfpmod.txDevice;
     } else {
         devices[1].id = PAL_DEVICE_IN_SPEAKER_MIC;
     }
 
-    ret = pal_stream_open(&stream_tx_attr, no_of_devices, devices, 0, NULL, NULL, 0,
+    ret = pal_stream_open(&stream_tx_attr, no_of_devices, devices, 0, nullptr, nullptr, 0,
                           &hfpmod.tx_stream_handle);
     if (ret != 0) {
-        LOG(ERROR) << __func__ << " HFP tx stream (Mic->BT SCO) open failed, rc " << ret;
+        LOG(ERROR) << __func__ << " HFP tx stream open failed, rc " << ret;
         pal_stream_stop(hfpmod.rx_stream_handle);
         pal_stream_close(hfpmod.rx_stream_handle);
-        hfpmod.rx_stream_handle = NULL;
+        hfpmod.rx_stream_handle = nullptr;
         return ret;
     }
     ret = pal_stream_start(hfpmod.tx_stream_handle);
     if (ret != 0) {
-        LOG(ERROR) << __func__ << " HFP tx stream (Mic->BT SCO) open failed, rc " << ret;
+        LOG(ERROR) << __func__ << " HFP tx stream open failed, rc " << ret;
         pal_stream_close(hfpmod.tx_stream_handle);
         pal_stream_stop(hfpmod.rx_stream_handle);
         pal_stream_close(hfpmod.rx_stream_handle);
-        hfpmod.rx_stream_handle = NULL;
-        hfpmod.tx_stream_handle = NULL;
+        hfpmod.rx_stream_handle = nullptr;
+        hfpmod.tx_stream_handle = nullptr;
         return ret;
     }
     hfpmod.mic_mute = false;
@@ -363,12 +366,12 @@ static int32_t stop_hfp() {
     if (hfpmod.rx_stream_handle) {
         pal_stream_stop(hfpmod.rx_stream_handle);
         pal_stream_close(hfpmod.rx_stream_handle);
-        hfpmod.rx_stream_handle = NULL;
+        hfpmod.rx_stream_handle = nullptr;
     }
     if (hfpmod.tx_stream_handle) {
         pal_stream_stop(hfpmod.tx_stream_handle);
         pal_stream_close(hfpmod.tx_stream_handle);
-        hfpmod.tx_stream_handle = NULL;
+        hfpmod.tx_stream_handle = nullptr;
     }
 
     pal_param_btsco_t param_btsco;
@@ -399,8 +402,8 @@ static int32_t stop_hfp() {
         LOG(ERROR) << __func__ << " Set PAL_PARAM_ID_DEVICE_DISCONNECTION for  "
                    << param_device_connection.id << " failed";
     }
-    hfpmod.preferred_dev_id[RX] = PAL_DEVICE_OUT_MIN;
-    hfpmod.preferred_dev_id[TX] = PAL_DEVICE_IN_MIN;
+    hfpmod.rxDevice.id = PAL_DEVICE_OUT_MIN;
+    hfpmod.txDevice.id = PAL_DEVICE_IN_MIN;
     LOG(DEBUG) << __func__ << "HFP stop end";
     return ret;
 }
@@ -414,25 +417,41 @@ bool hfp_is_active() {
 }
 
 bool has_valid_stream_handle() {
-    return (hfpmod.rx_stream_handle && hfpmod.tx_stream_handle);
+    return (hfpmod.rx_stream_handle != nullptr && hfpmod.tx_stream_handle != nullptr);
 }
 
 void hfp_set_device(struct pal_device *devices) {
+
+    hfpmod.rxDevice = devices[RX];
+    hfpmod.txDevice = devices[TX];
+
+    if(!sIsHFPenabled) {
+        return;
+    }
+
+    LOG(DEBUG) << __func__ << ": new devices";
+
+    if(!has_valid_stream_handle()) {
+        /*retry*/
+        LOG(DEBUG) << __func__ << ": retrying";
+        stop_hfp();
+        start_hfp();
+    }
+
     int rc = 0;
-
     if (hfpmod.is_hfp_running && has_valid_stream_handle() &&
-        is_valid_out_device(devices[RX].id) && is_valid_in_device(devices[TX].id)) {
-        rc = pal_stream_set_device(hfpmod.rx_stream_handle, 1, &devices[RX]);
+        is_valid_out_device(hfpmod.rxDevice.id) && is_valid_in_device(hfpmod.txDevice.id)) {
+        rc = pal_stream_set_device(hfpmod.rx_stream_handle, 1, &hfpmod.rxDevice);
         if (!rc) {
-            rc = pal_stream_set_device(hfpmod.tx_stream_handle, 1, &devices[TX]);
+            rc = pal_stream_set_device(hfpmod.tx_stream_handle, 1, &hfpmod.txDevice);
         }
+        if(rc) {
+            LOG(DEBUG) << __func__ << ": failed to set devices";
+        }
+    } else {
+        LOG(WARNING) << __func__ << ": incorrect device handling";
     }
-    hfpmod.preferred_dev_id[RX] = devices[RX].id;
-    hfpmod.preferred_dev_id[TX] = devices[TX].id;
 
-    if (rc) {
-        LOG(ERROR) << __func__ << ": failed to set devices for hfp";
-    }
     return;
 }
 
@@ -441,6 +460,7 @@ void hfp_set_device(struct pal_device *devices) {
  * * This interface is used for mic mute state control
  * */
 int hfp_set_mic_mute(bool state) {
+    LOG(DEBUG) << __func__ << " requested " << state ? "mute" : "unmute";
     int rc = 0;
 
     if (state == hfpmod.mic_mute) {
@@ -465,12 +485,13 @@ void hfp_set_parameters(bool adev_mute, struct str_parms *parms) {
     int val;
     int rate;
 
-    LOG(VERBOSE) << __func__ << " enter";
+    LOG(DEBUG) << __func__ << " enter";
 
     status = str_parms_get_str(parms, AUDIO_PARAMETER_HFP_ENABLE, value, sizeof(value));
     if (status >= 0) {
         if (!strncmp(value, "true", sizeof(value)) && !hfpmod.is_hfp_running) {
-            status = start_hfp(parms);
+            sIsHFPenabled = true;
+            status = start_hfp();
             /*
              * Sync to adev mic mute state if hfpmod.mic_mute state is lost due
              * to HFP session tear down during device switch on companion device.
@@ -480,6 +501,7 @@ void hfp_set_parameters(bool adev_mute, struct str_parms *parms) {
                 hfp_set_mic_mute(adev_mute);
             }
         } else if (!strncmp(value, "false", sizeof(value)) && hfpmod.is_hfp_running) {
+            sIsHFPenabled = false;
             stop_hfp();
         } else {
             LOG(ERROR) << __func__ << " hfp_enable " << value << " is unsupported";
