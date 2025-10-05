@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -68,7 +68,7 @@ RetCode ReverbContext::start(pal_stream_handle_t* palHandle) {
     LOG(DEBUG) << __func__ << " ioHandle " << getIoHandle();
 
     mPalHandle = palHandle;
-    if (isEffectActive() && isPreset()) {
+    if (isEffectActive() && isPreset() && mNextPreset != PresetReverb::Presets::NONE) {
         setOffloadParameters(&mReverbParams, REVERB_ENABLE_FLAG | REVERB_PRESET);
     } else {
         LOG(DEBUG) << __func__ << mType << " inactive or non preset";
@@ -97,10 +97,13 @@ RetCode ReverbContext::setPresetReverbPreset(const PresetReverb::Presets& preset
     LOG(DEBUG) << __func__ << " ioHandle " << getIoHandle() << " preset " << toString(preset);
     mNextPreset = preset;
     mReverbParams.preset = static_cast<int32_t>(preset);
-    if (preset != PresetReverb::Presets::NONE) {
-        mReverbParams.enable = 1;
-        setOffloadParameters(REVERB_ENABLE_FLAG | REVERB_PRESET);
-    }
+   /* REVERB_PRESET_NONE is equivalent to disabled state,
+    * But support for this state is not provided in DSP.
+    * Hence, do not set enable flag, if in peset mode with preset "NONE".
+    * Effect would be enabled when valid preset is set.
+    */
+    mReverbParams.enable = (preset != PresetReverb::Presets::NONE);
+    setOffloadParameters(REVERB_ENABLE_FLAG | REVERB_PRESET);
     return RetCode::SUCCESS;
 }
 

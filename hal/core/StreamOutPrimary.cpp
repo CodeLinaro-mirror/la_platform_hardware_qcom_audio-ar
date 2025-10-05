@@ -160,7 +160,9 @@ ndk::ScopedAStatus StreamOutPrimary::configureConnectedDevices_I() {
             telephony->onPlaybackStreamDevices(mConnectedDevices);
         }
     }
-
+    if (mTag == Usecase::VOIP_PLAYBACK && mPalHandle) {
+            mPlatform.setVoipRxStreamHandle(mPalHandle);
+    }
     if (!mPalHandle) {
         LOG(WARNING) << __func__ << mLogPrefix << ": stream is not configured";
         return ndk::ScopedAStatus::ok();
@@ -589,6 +591,14 @@ ndk::ScopedAStatus StreamOutPrimary::setHwVolume(const std::vector<float>& in_ch
     if (int32_t ret = mPlatform.setVolume(mPalHandle, in_channelVolumes); ret) {
         LOG(ERROR) << __func__ << mLogPrefix << " failed to set volume";
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
+    }
+
+    if(mPlatform.getTranslationRxMuteState() && mTag == Usecase::VOIP_PLAYBACK) {
+        LOG(DEBUG) << __func__ << mLogPrefix << "Mute VoIP Rx stream when device switch performed on translation with Rx mute enabled";
+        if (int32_t ret = ::pal_stream_set_mute(mPalHandle, mPlatform.getTranslationRxMuteState()); ret) {
+            LOG(ERROR) << __func__ << " pal_stream_set_mute failed!!! ret:" << ret;
+            return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
+        }
     }
 
     mVolumes = in_channelVolumes;
