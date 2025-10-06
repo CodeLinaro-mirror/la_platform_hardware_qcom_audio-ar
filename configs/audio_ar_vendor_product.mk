@@ -62,7 +62,7 @@ MM_AUDIO_AR += capi_gpio
 MM_AUDIO_AR += capi_irq_comm
 MM_AUDIO_AR += capi_synth
 MM_AUDIO_AR += capi_loud
-ifneq ( ,$(filter T Tiramisu 13, $(PLATFORM_VERSION)))
+ifneq ( ,$(filter T Tiramisu 13 U 14, $(PLATFORM_VERSION)))
 MM_AUDIO_AR += libarpowerpolicy
 endif #ends Tiramisu
 endif #ends TARGET_GVMGH_SPECIFIC
@@ -99,6 +99,11 @@ endif #ends ENABLE_HYP
 ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), gen4_au)
 AUDIO_FRAMEWORK_AUDIOREACH := true
 endif #ends gen4_au
+
+#To enable audio_effects in gen3 msmnile_au
+ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_au)
+AUDIO_FRAMEWORK_AUDIOREACH := true
+endif #ends msmnile_au
 
 # Audio configuration file
 ifeq ($(AUDIO_USE_STUB_HAL), true)
