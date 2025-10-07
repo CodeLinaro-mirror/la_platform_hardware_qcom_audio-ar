@@ -231,7 +231,7 @@ int awe_set_parameters(std::shared_ptr<AudioDevice> adev , struct str_parms *par
     // the android setparam in the future.
     if (str_parms_get_str(params, AUDIO_PARAMETER_HFP_ENABLE, value,sizeof(value)) >= 0) {
         hfp_enable = 0;
-        if (!strncmp(value, "true", sizeof(value)))
+        if (!strncmp(value, "true", strlen("true")))
             hfp_enable = 1;
         customVal = (float)hfp_enable;
         ret = awe_set_custom_param(AUDIO_EXTN_AWE_CONTROL_INDEX_CALL_MODE, (void *)&customVal);
@@ -362,7 +362,7 @@ int awe_set_custom_param(int index, void *value)
     size_t  size = 0;
     struct apm_module_param_data_t* header;
 
-    if (index > AWE_CUSTOMER_NUM_COMMAND_INDEXES) {
+    if (index >= AWE_CUSTOMER_NUM_COMMAND_INDEXES) {
         AHAL_ERR("%s: Cannot set custom param index=%d.", __func__, index);
         return -EINVAL;
     }
@@ -418,7 +418,7 @@ int awe_get_custom_param(int index, void *value)
     size_t  size = 0;
     struct apm_module_param_data_t* header;
 
-    if (index > AWE_CUSTOMER_NUM_COMMAND_INDEXES) {
+    if (index >= AWE_CUSTOMER_NUM_COMMAND_INDEXES) {
         AHAL_ERR("%s: Cannot get custom param index=%d.", __func__, index);
         return -EINVAL;
     }
