@@ -1125,7 +1125,17 @@ bool Platform::setBluetoothParameters(const char* kvpairs) {
                             sizeof(pal_param_btsco_t));
     }
 
-    for (auto& key : lc3_reserved_params) {
+    /**
+     * Payload For ID: PAL_PARAM_ID_BT_SCO*
+     * Description   : BT SCO related device parameters
+     **/
+    const static std::string lc3_reserved_params[] = {
+            "StreamMap",      "Codec",   "FrameDuration", "rxconfig_index",
+            "txconfig_index", "version", "Blocks_forSDU", "vendor",
+    };
+
+    for (auto& keyString : lc3_reserved_params) {
+        const char* key = keyString.c_str();
         ret = str_parms_get_str(parms, key, value, sizeof(value));
         if (ret < 0) continue;
 
