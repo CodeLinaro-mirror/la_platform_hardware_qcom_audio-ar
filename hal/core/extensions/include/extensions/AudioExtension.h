@@ -235,5 +235,6 @@ class AudioExtension {
     std::unique_ptr<KarokeExtension> mKarokeExtension = std::make_unique<KarokeExtension>();
     std::unique_ptr<GefExtension> mGefExtension = std::make_unique<GefExtension>();
     static std::mutex reconfig_wait_mutex_;
+    static int32_t callMode;
 };
 } // namespace qti::audio::core
