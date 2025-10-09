@@ -1287,8 +1287,13 @@ void StreamOutPrimary::configure() {
 #else
                         streamOutPrimary->getHwVolume(&Volumes);
 #endif
-                        for(iter_channel = 0; iter_channel < no_of_channels; iter_channel++) {
-                            mVolumes[iter_channel] = Volumes[0];
+                        if (Volumes.size() > 0) {
+                            for(iter_channel = 0; iter_channel < no_of_channels; iter_channel++) {
+                                mVolumes[iter_channel] = Volumes[0];
+                            }
+                        }
+                        else {
+                            LOG(ERROR) << "failed to fetch media playback volume";
                         }
                         LOG(INFO) << __func__ << " Overriding Offload Volume";
                         break;
