@@ -200,6 +200,16 @@ void Telephony::setMicMute(const bool muted) {
     }
 }
 
+void Telephony::setTranslationTxMute(const bool muted) {
+    if (mPalCallTranslationTxHandle != nullptr) {
+        LOG(INFO) << __func__ << ":Mute Translation TX stream with stream handle : 0x" << mPalCallTranslationTxHandle;
+        if (int32_t ret = ::pal_stream_set_mute(mPalCallTranslationTxHandle, muted); ret) {
+            LOG(ERROR) << __func__ << " pal_stream_set_mute failed!!! ret:" << ret;
+            return;
+        }
+    }
+}
+
 bool Telephony::isCrsCallSupported() {
     std::scoped_lock lock{mLock};
     return true;
