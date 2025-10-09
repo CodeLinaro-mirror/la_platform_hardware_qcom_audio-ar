@@ -1278,9 +1278,18 @@ void StreamOutPrimary::configure() {
                     int iter_channel;
                     int no_of_channels = mVolumes.size();
                     if (streamOutPrimary->isStreamOutPrimary()) {
+#ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
+                        streamOutPrimary->getStreamVolume(&Volumes);
+#else
                         streamOutPrimary->getHwVolume(&Volumes);
-                        for(iter_channel = 0; iter_channel < no_of_channels; iter_channel++) {
-                            mVolumes[iter_channel] = Volumes[0];
+#endif
+                        if (Volumes.size() > 0) {
+                            for(iter_channel = 0; iter_channel < no_of_channels; iter_channel++) {
+                                mVolumes[iter_channel] = Volumes[0];
+                            }
+                        }
+                        else {
+                            LOG(ERROR) << "failed to fetch media playback volume";
                         }
                         LOG(INFO) << __func__ << " Overriding Offload Volume";
                         break;
