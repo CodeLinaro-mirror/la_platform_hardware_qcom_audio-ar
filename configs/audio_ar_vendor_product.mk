@@ -70,3 +70,18 @@ $(call add_soong_config_var_value,vendor_audio_hwasan_config,use_hwasan,true)
 else
 $(call add_soong_config_var_value,vendor_audio_hwasan_config,use_hwasan,false)
 endif
+
+
+#------------soong-config flags (APEX) begin----------------
+
+ifneq (,$(call is-board-platform,kalama))
+$(call soong_config_set, qti, is-board-platform-in-list, kalama)
+endif
+ifneq (,$(call is-board-platform,pineapple))
+$(call soong_config_set, qti, is-board-platform-in-list, pineapple)
+endif
+ifneq (,$(call is-board-platform,sun))
+$(call soong_config_set, qti, is-board-platform-in-list, sun)
+endif
+
+#------------soong-config flags (APEX) end----------------
