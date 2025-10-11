@@ -88,12 +88,11 @@ ifeq ($(TARGET_USES_GY), true)
 # AWE PAL and dependency packages
 MM_AUDIO_AWE += libawe-pal
 MM_AUDIO_AWE += libstream_pcm
-MM_AUDIO_AWE += libvui_intf
-MM_AUDIO_AWE += libcustomva_intf
-MM_AUDIO_AWE += libhotword_intf
+MM_AUDIO_AWE += libstream_soundtrigger
 MM_AUDIO_AWE += libarmemlog
 MM_AUDIO_AWE += libtinyalsav2
 MM_AUDIO_AWE += libdev_dummy
+MM_AUDIO_AWE += libvui_utils
 # AWE HAL packages
 MM_AUDIO_AWE += libhfp_pal_awe
 MM_AUDIO_AWE += libhfp_ag_pal_awe
