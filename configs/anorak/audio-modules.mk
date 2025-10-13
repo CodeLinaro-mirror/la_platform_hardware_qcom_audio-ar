@@ -39,6 +39,7 @@ AUDIO_PAL += catf
 AUDIO_PAL += PalTest
 AUDIO_PAL += libaudiochargerlistener
 AUDIO_PAL += libhfp_pal
+AUDIO_PAL += palcshm_test
 
 # C2 Audio
 AUDIO_C2 := libqc2audio_base
