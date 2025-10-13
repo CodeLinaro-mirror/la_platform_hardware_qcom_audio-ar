@@ -71,7 +71,7 @@ Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConf
 *  this AudioDevices vector will have bus address for automotive specific usecases
 *  based on the busaddress proper usecase can be assigned to the stream object */
 Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig,
-        std::vector<AudioDevice> audioDevice);
+        std::vector<AudioDevice> audioDevices);
 
 std::string getName(const Usecase tag);
 

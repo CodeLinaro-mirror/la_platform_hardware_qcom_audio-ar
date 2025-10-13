@@ -1,4 +1,8 @@
 #Audio product definitions
+# Override cdc specific xml files, if CDC HW is enabled
+ifeq ($(TARGET_USES_CDC_HW),true)
+include vendor/qcom/proprietary/audio_cust/hal/config/cdc_overlay_audio_configs.mk
+endif
 include vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/audio-generic-modules.mk
 PRODUCT_PACKAGES += $(AUDIO_GENERIC_MODULES)
 
@@ -22,6 +26,9 @@ else
 $(warning TARGET_BOARD_PLATFORM is $(TARGET_BOARD_PLATFORM))
 ifneq ( ,$(filter $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), gen4_gvm))
 include vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/gen4_au.mk
+ifeq ($(TARGET_USES_CDC_HW),true)
+include vendor/qcom/proprietary/audio_cust/hal/config/cdc_audio.mk
+endif
 endif
 ifneq ( ,$(filter $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), gen5_gvm gen5_gvm_cmu gen5_gvm_gy auto_gen_prime))
 include vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen5_au/gen5_au.mk

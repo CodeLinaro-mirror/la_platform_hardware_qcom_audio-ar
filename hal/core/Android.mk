@@ -13,6 +13,9 @@ LOCAL_MODULE_RELATIVE_PATH := hw
 LOCAL_C_INCLUDES    :=  $(LOCAL_PATH)/include\
                         $(LOCAL_PATH)/extensions/include
 
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/include \
+                           $(LOCAL_PATH)/extensions/include
+
 LOCAL_CFLAGS := \
     -DBACKEND_NDK \
     -Wall \
