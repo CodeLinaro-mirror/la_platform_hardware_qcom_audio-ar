@@ -269,16 +269,16 @@ size_t MMapPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
 // [MMapPlayback End]
 
 // [MMapOffloadPlayback Start]
-size_t MMapOffloadPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
-    const std::string kMmapBufferDuration{"vendor.audio.mmap.offload.buffer_duration.msec"};
-    size_t duration = kPeriodDurationMs;
-    auto bufferDuration =
-            ::android::base::GetUintProperty<size_t>(kMmapBufferDuration, 4000);
+uint32_t MMapOffloadPlayback::kPeriodCount = MMapOffloadPlayback::getPeriodCount();
 
-    if (bufferDuration > 0) {
-        duration = bufferDuration;
-    }
-    return duration * getSampleRate(mixPortConfig).value() / 1000;
+uint32_t MMapOffloadPlayback::getPeriodCount() {
+    const std::string kPeriodCountProp{"vendor.audio.mmap.offload.period_count"};
+    auto count = ::android::base::GetUintProperty<size_t>(kPeriodCountProp, kDefaultPeriodCount);
+    return count > 0 ? count : kDefaultPeriodCount;
+}
+
+size_t MMapOffloadPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
+    return kPeriodDurationMs * getSampleRate(mixPortConfig).value() / 1000;
 }
 
 // [MMapOffloadPlayback End]
