@@ -16,10 +16,9 @@
      See the License for the specific language governing permissions and
      limitations under the License.
 -->
-<!-- Changes from Qualcomm Innovation Center are provided under the following license:
-
-     Copyright (c) 2024-2025 Qualcomm Innovation Center, Inc. All rights reserved.
-     SPDX-License-Identifier: BSD-3-Clause-Clear
+<!-- Changes from Qualcomm Technologies, Inc. are provided under the following license:
+    Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+    SPDX-License-Identifier: BSD-3-Clause-Clear
 -->
 <audioPolicyConfiguration version="7.0" xmlns:xi="http://www.w3.org/2001/XInclude">
     <!-- version section contains a “version” tag in the form “major.minor” e.g version=”1.0” -->
@@ -57,9 +56,9 @@
     <modules>
         <!-- Primary Audio HAL is now hosted in audio_module_config_primary -->
         <!-- A2DP was causing the r_submix load error , and hence commenting-->
-        <!-- A2DP Input Audio HAL
-        <xi:include href="a2dp_audio_policy_configuration.xml"/>
-        -->
+        <!-- A2DP Input Audio HAL -->
+        <xi:include href="/vendor/etc/bluetooth_qti_audio_policy_configuration.xml"/>
+
         <!-- Usb Audio HAL -->
         <xi:include href="/vendor/etc/usb_audio_policy_configuration.xml"/>
 

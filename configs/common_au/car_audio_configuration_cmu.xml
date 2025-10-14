@@ -19,6 +19,11 @@
      See the License for the specific language governing permissions and
      limitations under the License.
 -->
+<!-- Changes from Qualcomm Innovation Center are provided under the following license:
+
+     Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+     SPDX-License-Identifier: BSD-3-Clause-Clear
+-->
 
 <!--
   Defines the audio configuration in a car, including
@@ -42,10 +47,6 @@
                         <context context="alarm"/>
                         <context context="notification"/>
                         <context context="system_sound"/>
-                        <context context="emergency"/>
-                        <context context="safety"/>
-                        <context context="vehicle_status"/>
-                        <context context="announcement"/>
                     </device>
                 </group>
                 <group>
@@ -60,10 +61,21 @@
                         <context context="call_ring"/>
                     </device>
                 </group>
+                <group>
+                    <device address="BUS05_ALERTS">
+                        <context context="emergency"/>
+                        <context context="safety"/>
+                        <context context="vehicle_status"/>
+                        <context context="announcement"/>
+                    </device>
+                </group>
             </volumeGroups>
-            <displays>
+            <inputDevices>
+                <inputDevice address="BUS04_INPUT"/>
+            </inputDevices>
+            <!--displays>
                 <display port="0"/>
-            </displays>
+            </displays-->
             <!-- to specify displays associated with this audio zone, use the following tags
                 <displays>
                     <display port="1"/>
@@ -72,7 +84,7 @@
                 where port is the physical port of the display (See DisplayAddress.Phyisical)
             -->
         </zone>
-        <zone name="front passenger zone" audioZoneId="1">
+        <zone name="front passenger zone" audioZoneId="1" occupantZoneId="1">
             <volumeGroups>
                 <group>
                     <device address="BUS08_FRONT_PASSENGER">
@@ -91,11 +103,14 @@
                     </device>
                 </group>
             </volumeGroups>
-            <displays>
+            <inputDevices>
+                <inputDevice address="BUS09_INPUT_FRONT_PASSENGER"/>
+            </inputDevices>
+            <!--displays>
                 <display port="1"/>
-            </displays>
+            </displays-->
         </zone>
-        <zone name="rear seat zone" audioZoneId="2">
+        <zone name="rear seat zone" audioZoneId="2" occupantZoneId="2">
             <volumeGroups>
                 <group>
                     <device address="BUS16_REAR_SEAT">
@@ -114,9 +129,12 @@
                     </device>
                 </group>
             </volumeGroups>
-            <displays>
+            <inputDevices>
+                <inputDevice address="BUS17_INPUT_REAR_SEAT"/>
+            </inputDevices>
+            <!--displays>
                 <display port="2"/>
-            </displays>
+            </displays-->
         </zone>
     </zones>
 </carAudioConfiguration>

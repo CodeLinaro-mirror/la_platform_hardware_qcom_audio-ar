@@ -16,7 +16,7 @@
 
 /*
  * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -34,17 +34,63 @@ using aidl::android::hardware::audio::effect::State;
 using aidl::android::media::audio::common::PcmType;
 using ::android::hardware::EventFlag;
 using ::aidl::android::hardware::audio::effect::kEventFlagNotEmpty;
+#ifdef ENABLE_FOR_VERSION3
+using ::aidl::android::hardware::audio::effect::kDestroyAnyStateSupportedVersion;
+#endif
 
 extern "C" binder_exception_t destroyEffect(const std::shared_ptr<IEffect>& instanceSp) {
-    State state;
-    ndk::ScopedAStatus status = instanceSp->getState(&state);
-    if (!status.isOk() || State::INIT != state) {
+#ifdef ENABLE_FOR_VERSION3
+    if (!instanceSp) {
+        LOG(ERROR) << __func__ << " nullptr";
+        return EX_ILLEGAL_ARGUMENT;
+    }
+
+    Descriptor desc;
+    ndk::ScopedAStatus status = instanceSp->getDescriptor(&desc);
+    if (!status.isOk()) {
         LOG(ERROR) << __func__ << " instance " << instanceSp.get()
+                   << " failed to get descriptor, status: " << status.getDescription();
+        return EX_ILLEGAL_STATE;
+    }
+
+    State state;
+    status = instanceSp->getState(&state);
+    if (!status.isOk()) {
+        LOG(ERROR) << __func__ << " " << desc.common.name << " instance " << instanceSp.get()
                    << " in state: " << toString(state) << ", status: " << status.getDescription();
         return EX_ILLEGAL_STATE;
     }
+
+    int effectVersion = 0;
+    if (!instanceSp->getInterfaceVersion(&effectVersion).isOk()) {
+        LOG(WARNING) << __func__ << " " << desc.common.name << " failed to get interface version";
+    }
+
+    if (effectVersion < kDestroyAnyStateSupportedVersion) {
+        if (State::INIT != state) {
+            LOG(ERROR) << __func__ << " " << desc.common.name << " can not destroy instance "
+                       << instanceSp.get() << " in state: " << toString(state);
+            return EX_ILLEGAL_STATE;
+        }
+    } else {
+        instanceSp->command(CommandId::RESET);
+        instanceSp->close();
+    }
+
+    LOG(VERBOSE) << __func__ << " " << desc.common.name << " instance " << instanceSp.get()
+               << " destroyed";
+    return EX_NONE;
+#else
+    State state;
+    ndk::ScopedAStatus status = instanceSp->getState(&state);
+    if (!status.isOk() || State::INIT != state) {
+       LOG(ERROR) << __func__ << " instance " << instanceSp.get()
+            << " in state: " << toString(state) << ", status: " << status.getDescription();
+            return EX_ILLEGAL_STATE;
+    }
     LOG(VERBOSE) << __func__ << " instance " << instanceSp.get() << " destroyed";
     return EX_NONE;
+#endif
 }
 
 namespace aidl::qti::effects {

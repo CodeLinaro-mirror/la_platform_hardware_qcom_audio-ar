@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -108,6 +108,9 @@ StreamOutPrimary::StreamOutPrimary(StreamContext&& context, const SourceMetadata
         LOG (VERBOSE) << __func__ << " AudioDeviceAddress: " << busAddr;
     }
     mHwVolumeSupported = isHwVolumeSupported();
+    mHwPauseSupported = isHwPauseSupported();
+    mHwFlushSupported = isHwFlushSupported();
+    LOG(VERBOSE) << __func__ << " Hwpause: " << mHwPauseSupported << " HwFlush: " << mHwFlushSupported;
     mVolumes.resize(getChannelCount(mMixPortConfig.channelMask.value()));
     ioHandle_l = mMixPortConfig.ext.get<AudioPortExt::Tag::mix>().handle;
     std::ostringstream os;
@@ -139,6 +142,31 @@ bool StreamOutPrimary::isHwVolumeSupported() {
     }
     return false;
 }
+
+
+bool StreamOutPrimary::isHwPauseSupported() {
+    switch (mTag) {
+        case Usecase::COMPRESS_OFFLOAD_PLAYBACK:
+        case Usecase::PCM_OFFLOAD_PLAYBACK:
+            return true;
+        default:
+            break;
+    }
+    return false;
+}
+
+
+bool StreamOutPrimary::isHwFlushSupported() {
+    switch (mTag) {
+        case Usecase::COMPRESS_OFFLOAD_PLAYBACK:
+        case Usecase::PCM_OFFLOAD_PLAYBACK:
+            return true;
+        default:
+            break;
+    }
+    return false;
+}
+
 
 struct BufferConfig StreamOutPrimary::getBufferConfig() {
     return mPlatform.getBufferConfig(mMixPortConfig, mTag);
@@ -207,9 +235,9 @@ ndk::ScopedAStatus StreamOutPrimary::configureMMapStream(int32_t* fd, int64_t* b
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
     }
     attr->type = PAL_STREAM_ULTRA_LOW_LATENCY;
-    auto palDevices =
-            mPlatform.configureAndFetchPalDevices(mMixPortConfig, mTag, mConnectedDevices);
-    if (!palDevices.size()) {
+       auto palDevices = mPlatform.configureAndFetchPalDevices(mMixPortConfig, mTag, mConnectedDevices,
+                                                            true /*dummyDevice*/);
+	   if (!palDevices.size()) {
         LOG(ERROR) << __func__ << mLogPrefix << " no connected devices on stream";
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
     }
@@ -306,7 +334,7 @@ ndk::ScopedAStatus StreamOutPrimary::configureMMapStream(int32_t* fd, int64_t* b
     }
 
     if (!mHwFlushSupported) {
-        LOG(VERBOSE) << __func__ << mLogPrefix << " unsupported operation!!, Hence ignored";
+        LOG(DEBUG) << __func__ << mLogPrefix << " unsupported operation!!, Hence ignored";
         return ::android::OK;
     }
 
@@ -318,12 +346,16 @@ ndk::ScopedAStatus StreamOutPrimary::configureMMapStream(int32_t* fd, int64_t* b
     } else if (mTag == Usecase::PCM_OFFLOAD_PLAYBACK) {
         std::get<PcmOffloadPlayback>(mExt).getPositionInFrames(mPalHandle);
     }
-
-    if (int32_t ret = ::pal_stream_flush(mPalHandle); ret) {
+    int32_t ret = 0;
+    /* during a seek operation when the seekbar is moved to a new
+    time stamp the existing buffer must be flushed and new or latest audio frame must
+    be sent into the buffer to, remove the older seekbar position data remove the current data
+    using pal_stream_flush */
+    if (ret = ::pal_stream_flush(mPalHandle); ret) {
         LOG(ERROR) << __func__ << mLogPrefix << " failed to flush the stream, ret:" << ret;
         return ret;
     }
-
+    LOG(VERBOSE) << " pal_stream_flush: status: " << ret;
     // after flush operation
     if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK) {
         std::get<CompressPlayback>(mExt).onFlush();
@@ -346,8 +378,10 @@ ndk::ScopedAStatus StreamOutPrimary::configureMMapStream(int32_t* fd, int64_t* b
     }
 
     if (!mHwPauseSupported) {
-        LOG(VERBOSE) << __func__ << mLogPrefix << " unsupported operation!!, Hence ignored";
+        LOG(DEBUG) << __func__ << mLogPrefix << " unsupported operation!!, Hence ignored";
         return ::android::OK;
+    }  else {
+        LOG(DEBUG) << " Hw pause support: " << mHwPauseSupported;
     }
     // AAUdio/mmap triggres stop for pause, so we can ignore here
     if (mTag == Usecase::LOW_LATENCY_PLAYBACK || mTag == Usecase::ULL_PLAYBACK ||
@@ -355,14 +389,14 @@ ndk::ScopedAStatus StreamOutPrimary::configureMMapStream(int32_t* fd, int64_t* b
         LOG(VERBOSE) << __func__ << mLogPrefix << " unsupported operation!!, Hence ignored";
         return ::android::OK;
     }
-
-    if (int32_t ret = pal_stream_pause(mPalHandle); ret) {
+    int32_t ret = 0;
+    if (ret = pal_stream_pause(mPalHandle); ret) {
         LOG(ERROR) << __func__ << mLogPrefix
                    << " failed to pause the stream, ret:" << std::to_string(ret);
         return ret;
     }
     mIsPaused = true;
-    LOG(DEBUG) << __func__ << mLogPrefix;
+    LOG(DEBUG) << __func__ << mLogPrefix << " pal_stream_pause: status: " << ret;
     return ::android::OK;
 }
 
@@ -455,8 +489,13 @@ void StreamOutPrimary::resume() {
          * gain.
          */
         auto& compressPlayback = std::get<CompressPlayback>(mExt);
-        if (!(compressPlayback.isGaplessConfigured())) {
-            compressPlayback.configureGapless(mPalHandle);
+        // configure gapless based on property gaplessoffload
+        const std::string gaplessOffloadProp = "audio.offload.gapless.enabled";
+        if (property_get_bool(gaplessOffloadProp.c_str(), false)) {
+            LOG(INFO) << " Supports gapless offload configuring gaplessMetadata";
+            if (!(compressPlayback.isGaplessConfigured())) {
+                compressPlayback.configureGapless(mPalHandle);
+            }
         }
     }
     if (frameCount == 0) {
@@ -1047,7 +1086,7 @@ void StreamOutPrimary::configure() {
     if (mTag == Usecase::DEEP_BUFFER_PLAYBACK || mTag == Usecase::PRIMARY_PLAYBACK) {
         attr->type = PAL_STREAM_DEEP_BUFFER;
     } else if (mTag == Usecase::LOW_LATENCY_PLAYBACK) {
-        attr->type = PAL_STREAM_PLAYBACK_BUS;
+        attr->type = PAL_STREAM_LOW_LATENCY;
         auto countProxyDevices = std::count_if(mConnectedDevices.cbegin(), mConnectedDevices.cend(),
                                                 isIPDevice);
         if (countProxyDevices > 0) {
@@ -1380,7 +1419,7 @@ void StreamOutPrimary::shutdown_I() {
     }
 
     if (karaoke) mAudExt.mKarokeExtension->karaoke_stop();
-
+    mPalHandleMutex.lock();
     if (mPalHandle != nullptr) {
         enableOffloadEffects(false);
         ::pal_stream_stop(mPalHandle);
@@ -1395,9 +1434,9 @@ void StreamOutPrimary::shutdown_I() {
         mHapticsBufSize = 0;
     }
 
-    mUseCachedVolume = false;
     mIsPaused = false;
     mPalHandle = nullptr;
+    mPalHandleMutex.unlock();
     mHapticsPalHandle = nullptr;
     LOG(VERBOSE) << __func__ << mLogPrefix;
 }
@@ -1446,7 +1485,8 @@ int64_t StreamOutPrimary::GetRenderLatency(std::string address) {
         case PAL_STREAM_PLAYBACK_BUS:
             if (((address.compare("BUS03_PHONE")) == 0) ||
                 ((address.compare("BUS01_SYS_NOTIFICATION")) == 0) ||
-                ((address.compare("BUS03_PHONE")) == 0)) {
+                ((address.compare("BUS02_NAV_GUIDANCE")) == 0) ||
+                ((address.compare("BUS05_ALERTS")) == 0)){
                 return LOW_LATENCY_PLATFORM_DELAY;
             } else {
                 return DEEP_BUFFER_PLATFORM_DELAY;

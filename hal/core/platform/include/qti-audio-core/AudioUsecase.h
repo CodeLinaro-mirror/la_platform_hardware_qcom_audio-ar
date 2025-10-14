@@ -218,8 +218,8 @@ class NavGuidancePlayback : public UsecaseConfig<NavGuidancePlayback> {
 class PhonePlayback : public UsecaseConfig<PhonePlayback> {
   public:
     constexpr static size_t kPeriodCount = 2;
-    constexpr static size_t kPlatformDelayMs = 13;
-    constexpr static size_t kPeriodDurationMs = 4;
+    constexpr static size_t kPlatformDelayMs = 29;
+    constexpr static size_t kPeriodDurationMs = 40;
     constexpr static size_t kPeriodSize = kPeriodDurationMs * DEFAULT_SAMPLE_RATE /1000;
     static std::unordered_set<size_t> kSupportedFrameSizes;
 
@@ -232,8 +232,8 @@ class PhonePlayback : public UsecaseConfig<PhonePlayback> {
 class AlertPlayback : public UsecaseConfig<AlertPlayback> {
   public:
     constexpr static size_t kPeriodCount = 2;
-    constexpr static size_t kPlatformDelayMs = 13;
-    constexpr static size_t kPeriodDurationMs = 4;
+    constexpr static size_t kPlatformDelayMs = 29;
+    constexpr static size_t kPeriodDurationMs = 40;
     constexpr static size_t kPeriodSize = kPeriodDurationMs * DEFAULT_SAMPLE_RATE /1000;
     static std::unordered_set<size_t> kSupportedFrameSizes;
 
@@ -247,8 +247,8 @@ class AlertPlayback : public UsecaseConfig<AlertPlayback> {
 class FrontPassengerPlayback : public UsecaseConfig<FrontPassengerPlayback> {
   public:
     constexpr static size_t kPeriodCount = 2;
-    constexpr static size_t kPlatformDelayMs = 13;
-    constexpr static size_t kPeriodDurationMs = 4;
+    constexpr static size_t kPlatformDelayMs = 29;
+    constexpr static size_t kPeriodDurationMs = 40;
     constexpr static size_t kPeriodSize = kPeriodDurationMs * DEFAULT_SAMPLE_RATE /1000;
     static std::unordered_set<size_t> kSupportedFrameSizes;
 
@@ -261,8 +261,8 @@ class FrontPassengerPlayback : public UsecaseConfig<FrontPassengerPlayback> {
 class RearSeatPlayback : public UsecaseConfig<RearSeatPlayback> {
   public:
     constexpr static size_t kPeriodCount = 2;
-    constexpr static size_t kPlatformDelayMs = 13;
-    constexpr static size_t kPeriodDurationMs = 4;
+    constexpr static size_t kPlatformDelayMs = 29;
+    constexpr static size_t kPeriodDurationMs = 40;
     constexpr static size_t kPeriodSize = kPeriodDurationMs * DEFAULT_SAMPLE_RATE /1000;
     static std::unordered_set<size_t> kSupportedFrameSizes;
 
@@ -460,8 +460,8 @@ class CompressPlayback : public UsecaseConfig<CompressPlayback, false /*IsPcm*/>
     int32_t mBitWidth;
     int64_t mTotalDSPFrames{0};
     int64_t mPrevFrames{0};
-    const ::aidl::android::media::audio::common::AudioPortConfig& mMixPortConfig;
     PlatformStreamCallback * const mPlatformStreamCallback;
+    const ::aidl::android::media::audio::common::AudioPortConfig& mMixPortConfig;
     std::atomic<bool> mIsGaplessConfigured = false;
 };
 

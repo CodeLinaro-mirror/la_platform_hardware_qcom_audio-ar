@@ -26,6 +26,10 @@ LOCAL_SRC_FILES:= \
 LOCAL_SHARED_LIBRARIES:= \
     $(EFFECTS_DEFAULTS_SHARED_LIBRARIES)
 
+ifeq ($(PLATFORM_VERSION),16)
+     LOCAL_CPPFLAGS += -DENABLE_FOR_VERSION3
+endif
+
 LOCAL_HEADER_LIBRARIES:= $(EFFECTS_DEFAULTS_HEADERS_LIBRARIES)
 
 include $(BUILD_STATIC_LIBRARY)
@@ -46,7 +50,13 @@ LOCAL_SRC_FILES:= \
         EffectMain.cpp
 
 LOCAL_STATIC_LIBRARIES := libaudioeffecthal_base_impl_static
-LOCAL_VINTF_FRAGMENTS := audioeffectservice_qti.xml
+
+ifeq ($(PLATFORM_VERSION),16)
+    # Android 16 (Baklava) requires updated manifest with audio effects HAL v3
+    LOCAL_VINTF_FRAGMENTS := audioeffectservice_qti_16.xml
+else
+    LOCAL_VINTF_FRAGMENTS := audioeffectservice_qti.xml
+endif
 
 LOCAL_SHARED_LIBRARIES:= \
     $(EFFECTS_DEFAULTS_SHARED_LIBRARIES) \

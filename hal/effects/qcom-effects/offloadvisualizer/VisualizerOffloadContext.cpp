@@ -421,9 +421,9 @@ int VisualizerOffloadContext::process(int16_t* inBuffer) {
             rmsSqAcc += inBuffer[inIdx] * inBuffer[inIdx];
         }
         mPastMeasurements[mMeasurementBufferIdx] = {
+                .mIsValid = true,
                 .mPeakU16 = (uint16_t)maxSample,
-                .mRmsSquared = rmsSqAcc / (AUDIO_CAPTURE_PERIOD_SIZE * mChannelCount),
-                .mIsValid = true};
+                .mRmsSquared = rmsSqAcc / (AUDIO_CAPTURE_PERIOD_SIZE * mChannelCount)};
         if (++mMeasurementBufferIdx >= mMeasurementWindowSizeInBuffers) {
             mMeasurementBufferIdx = 0;
         }

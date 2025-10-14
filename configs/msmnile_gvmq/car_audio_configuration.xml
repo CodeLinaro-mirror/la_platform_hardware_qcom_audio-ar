@@ -110,7 +110,7 @@
                 <display port="1"/>
             </displays>
         </zone>
-        <zone name="rear seat zone" audioZoneId="2" >
+        <zone name="rear seat zone" audioZoneId="2">
             <volumeGroups>
                 <group>
                     <device address="BUS16_REAR_SEAT">

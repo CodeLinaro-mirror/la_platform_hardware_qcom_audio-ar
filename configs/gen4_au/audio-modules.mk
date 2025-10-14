@@ -35,6 +35,7 @@ AUDIO_PAL += PalTest
 AUDIO_PAL += libaudiochargerlistener
 AUDIO_PAL += libhfp_pal
 AUDIO_PAL += lib_default_plugin_controls
+AUDIO_PAL += lib_default_set_param_plugin_controls
 AUDIO_PAL += libautohal_pal
 #PAL Service
 AUDIO_PAL += libpalclient
@@ -93,6 +94,9 @@ AUDIO_MODULES := $(AUDIO_AGM)
 endif
 AUDIO_MODULES += $(AUDIO_PAL)
 AUDIO_MODULES += $(AUDIO_ACDB)
+
+# Qti GEF AR
+AUDIO_MODULES += libqtigefar
 
 # AWE PAL PLUGIN and dependency packages
 ifneq (,$(filter gen4_gvm_gy gen5_gvm gen5_gvm_gy, $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)))
