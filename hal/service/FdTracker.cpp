@@ -37,7 +37,7 @@ FdTracker::~FdTracker() {
 
 FdTracker::FdTracker() {
     int isDebugBuild = android::base::GetIntProperty(kIsDebugBuild, 0);
-    int enableTracker = android::base::GetIntProperty(kFdTrackerEnabled, 1);
+    int enableTracker = android::base::GetIntProperty(kFdTrackerEnabled, 0);
     if (isDebugBuild && enableTracker) {
         mEnableThreshold = android::base::GetIntProperty(kFdLeakmEnableThresholdProperty, 128);
         mAbortThreshold = android::base::GetIntProperty(kFdLeakmAbortThresholdProperty, 1024);
