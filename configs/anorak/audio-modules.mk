@@ -29,6 +29,7 @@ AUDIO_AGM += libagmservice
 #PAL Service
 AUDIO_PAL += libpalclient
 AUDIO_PAL += vendor.qti.hardware.pal@1.0-impl
+AUDIO_PAL += vendor.qti.hardware.paleventnotifier@1.0-impl
 
 #PAL Module
 AUDIO_PAL := libar-pal
