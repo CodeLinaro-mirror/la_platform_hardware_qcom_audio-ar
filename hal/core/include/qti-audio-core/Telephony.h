@@ -212,6 +212,8 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
     bool mIsBTSCOEnabled{false};
     std::string mMuteDirection{""};
 
+    std::vector<::aidl::android::media::audio::common::AudioDevice> mExternalDevices;
+
     using TtyMap = std::map<TelecomConfig::TtyMode, pal_tty_t>;
     const TtyMap mTtyMap{
             {TelecomConfig::TtyMode::OFF, PAL_TTY_OFF},
