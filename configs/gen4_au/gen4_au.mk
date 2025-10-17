@@ -139,6 +139,11 @@ endif
 endif
 endif
 
+# feature flag for ASRC a.k.a asynchronous re-sampler feature
+AUDIO_FEATURE_ENABLED_ASRC_EXT = true
+PRODUCT_ODM_PROPERTIES += \
+vendor.audio.feature.asrc.enable=true
+
 ifneq (,$(filter U UpsideDownCake 14 V VanillaIceCream 15 W Baklava 16, $(PLATFORM_VERSION)))
 AUDIO_FEATURE_ENABLED_HAL_V7 := true
 PRODUCT_PACKAGES += libarpowerpolicy

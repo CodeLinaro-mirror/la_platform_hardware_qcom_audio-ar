@@ -309,4 +309,46 @@ LOCAL_SHARED_LIBRARIES := \
 LOCAL_STATIC_LIBRARIES := libhealthhalutils
 
 include $(BUILD_SHARED_LIBRARY)
+
+#-------------------------------------------
+#            Build ASRC_LIB
+#-------------------------------------------
+
+ifeq (true, $(AUDIO_FEATURE_ENABLED_ASRC_EXT))
+include $(CLEAR_VARS)
+
+LOCAL_MODULE := lib_asrc
+LOCAL_VENDOR_MODULE := true
+
+LOCAL_SRC_FILES := Asrc.cpp
+
+LOCAL_C_INCLUDES := $(LOCAL_PATH)/include
+
+LOCAL_CFLAGS += \
+    -Wall \
+    -Werror \
+    -Wno-unused-function \
+    -Wno-unused-variable
+
+LOCAL_SHARED_LIBRARIES := \
+    libaudioroute \
+    libbase \
+    liblog \
+    libaudioutils \
+    libcutils \
+    libdl \
+    libexpat \
+    liblog \
+    libar-pal
+
+LOCAL_C_INCLUDES := \
+    $(TOP)/vendor/qcom/opensource/pal \
+    $(TOP)/vendor/qcom/opensource/audio-hal/primary-hal/hal
+
+LOCAL_HEADER_LIBRARIES += libhardware_headers
+LOCAL_HEADER_LIBRARIES += libsystem_headers
+
+include $(BUILD_SHARED_LIBRARY)
+endif # AUDIO_FEATURE_ENABLED_ASRC_EXT
+
 endif
