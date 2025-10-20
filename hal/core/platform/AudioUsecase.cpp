@@ -14,7 +14,7 @@
 #include <qti-audio-core/PlatformUtils.h>
 #include <qti-audio-core/PlatformStreamCallback.h>
 #include <qti-audio-core/Utils.h>
-
+using aidl::android::media::audio::common::AudioDeviceAddress;
 using ::aidl::android::media::audio::common::AudioIoFlags;
 using ::aidl::android::media::audio::common::AudioInputFlags;
 using ::aidl::android::media::audio::common::AudioOutputFlags;
@@ -30,7 +30,7 @@ using ::aidl::android::media::audio::common::AudioPortMixExtUseCase;
 using ::aidl::android::hardware::audio::core::VendorParameter;
 using ::aidl::android::media::audio::common::AudioChannelLayout;
 using ::aidl::android::hardware::audio::common::AudioOffloadMetadata;
-
+using aidl::android::media::audio::common::AudioDevice;
 namespace qti::audio::core {
 
 Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig) {
@@ -185,6 +185,171 @@ Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConf
         }
     }
     LOG(VERBOSE) << __func__ << " choosen " << getName(tag) << " for mix port config "
+                 << mixPortConfig.toString();
+    return tag;
+}
+
+
+//overloaded method
+Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig,
+    std::vector<AudioDevice> audioDevices) {
+    Usecase tag = Usecase::INVALID;
+    if (!mixPortConfig.flags || mixPortConfig.ext.getTag() != AudioPortExt::Tag::mix) {
+        LOG(ERROR) << __func__ << " cannot determine usecase, no flags set for mix port "
+                                  "config or it isn't mix port, "
+                   << mixPortConfig.toString();
+        return tag;
+    }
+
+    if (!(mixPortConfig.sampleRate) || (mixPortConfig.sampleRate.value().value == 0)) {
+        LOG(ERROR) << __func__ << ": mix port config missing sample rate!!!";
+        return tag;
+    }
+    const auto& streamSampleRate = mixPortConfig.sampleRate.value().value;
+    const auto& mixUsecase = mixPortConfig.ext.get<AudioPortExt::Tag::mix>().usecase;
+    const auto mixUsecaseTag = mixUsecase.getTag();
+
+    const auto& flagsTag = mixPortConfig.flags.value().getTag();
+    constexpr auto flagCastToint = [](auto flag) { return static_cast<int32_t>(flag); };
+
+    const auto& channelLayout = mixPortConfig.channelMask.value();
+
+    constexpr int32_t noneFlags = 0;
+    constexpr auto primaryPlaybackFlags =
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::PRIMARY));
+//Auto specific
+    constexpr auto mediaPlaybackFlags =
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::PRIMARY));
+    constexpr auto navGuidancePlaybackFlag =
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DEEP_BUFFER));
+    constexpr auto sysNotificationPlaybackFlag =
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DEEP_BUFFER));
+    constexpr auto alertPlaybackFlag =
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DEEP_BUFFER));
+    constexpr auto phonePlaybackFlags =
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DEEP_BUFFER));
+    constexpr auto navGuidance_2PlaybackFlag =
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DEEP_BUFFER));
+//end
+    constexpr auto deepBufferPlaybackFlags =
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DEEP_BUFFER));
+    constexpr auto compressOffloadPlaybackFlags =
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DIRECT) |
+                                 1 << flagCastToint(AudioOutputFlags::COMPRESS_OFFLOAD) |
+                                 1 << flagCastToint(AudioOutputFlags::NON_BLOCKING) |
+                                 1 << flagCastToint(AudioOutputFlags::GAPLESS_OFFLOAD));
+    constexpr auto fastRecordFlags =
+            static_cast<int32_t>(1 << flagCastToint(AudioInputFlags::FAST));
+    constexpr auto ullRecordFlags = static_cast<int32_t>(
+        1 << flagCastToint(AudioInputFlags::FAST)| 1 << flagCastToint(AudioInputFlags::RAW));
+    constexpr auto compressCaptureFlags =
+            static_cast<int32_t>(1 << flagCastToint(AudioInputFlags::DIRECT));
+    constexpr auto lowLatencyPlaybackFlags =
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::FAST));
+    constexpr auto pcmOffloadPlaybackFlags =
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DIRECT));
+    constexpr auto voipPlaybackFlags =
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::VOIP_RX));
+    constexpr auto voipFastPlaybackFlags =
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::VOIP_RX) | 1 << flagCastToint(AudioOutputFlags::FAST));
+    constexpr auto spatialPlaybackFlags =
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::SPATIALIZER));
+    constexpr auto recordVoipFlags =
+            static_cast<int32_t>(1 << flagCastToint(AudioInputFlags::VOIP_TX));
+    constexpr auto ullPlaybackFlags = static_cast<int32_t>(
+            1 << flagCastToint(AudioOutputFlags::FAST) | 1 << flagCastToint(AudioOutputFlags::RAW));
+    constexpr auto mmapPlaybackFlags =
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DIRECT) |
+                                 1 << flagCastToint(AudioOutputFlags::MMAP_NOIRQ));
+    constexpr auto mmapRecordFlags =
+            static_cast<int32_t>(1 << flagCastToint(AudioInputFlags::MMAP_NOIRQ));
+    constexpr auto inCallMusicFlags =
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::INCALL_MUSIC));
+    constexpr auto hotWordRecordFlags =
+            static_cast<int32_t>(1 << flagCastToint(AudioInputFlags::HW_HOTWORD));
+    LOG (VERBOSE) << __func__ <<" audioDevices.size = " << audioDevices.size();
+    std::string deviceAddress = "";
+    if (audioDevices.size() == 1) {
+        deviceAddress = audioDevices[0].address.get<AudioDeviceAddress::Tag::id>();
+        LOG (INFO) << __func__ << " AudioDeviceAddress: " << deviceAddress;
+    }
+    if (flagsTag == AudioIoFlags::Tag::output) {
+        auto& outFlags = mixPortConfig.flags.value().get<AudioIoFlags::Tag::output>();
+        if (channelLayout.getTag() == AudioChannelLayout::Tag::layoutMask &&
+                   channelLayout.get<AudioChannelLayout::Tag::layoutMask>() ==
+                           AudioChannelLayout::LAYOUT_STEREO_HAPTIC_A) {
+            tag = Usecase::HAPTICS_PLAYBACK;
+//Auto specific usecases assigned based on bus addresss
+        } else if (outFlags == mediaPlaybackFlags &&
+                   (deviceAddress.compare("BUS00_MEDIA") == 0)) {
+            tag = Usecase::MEDIA_PLAYBACK;
+        } else if (outFlags == navGuidancePlaybackFlag &&
+                (deviceAddress.compare("BUS02_NAV_GUIDANCE") == 0)) {
+            tag = Usecase::NAV_GUIDANCE_PLAYBACK;
+        } else if (outFlags == sysNotificationPlaybackFlag &&
+                   (deviceAddress.compare("BUS01_SYS_NOTIFICATION") == 0)) {
+            tag = Usecase::SYS_NOTIFICATION_PLAYBACK;
+        } else if (outFlags == alertPlaybackFlag &&
+                   (deviceAddress.compare("BUS05_ALERTS") == 0) ) {
+            tag = Usecase::ALERTS_PLAYBACK;
+        }else if (outFlags == navGuidance_2PlaybackFlag &&
+                   (deviceAddress.compare("BUS0F_NAV_GUIDANCE2") == 0) ) {
+            tag = Usecase::NAV_GUIDANCE_2_PLAYBACK;
+        } else if (outFlags == phonePlaybackFlags &&
+                   (deviceAddress.compare("BUS03_PHONE") == 0)) {
+            tag = Usecase::PHONE_PLAYBACK;
+        } else if (outFlags == primaryPlaybackFlags) {
+            tag = Usecase::PRIMARY_PLAYBACK;
+
+        } else if (outFlags == deepBufferPlaybackFlags || (outFlags == noneFlags)) {
+            tag = Usecase::DEEP_BUFFER_PLAYBACK;
+        } else if (outFlags == lowLatencyPlaybackFlags) {
+            tag = Usecase::LOW_LATENCY_PLAYBACK;
+        } else if (outFlags == compressOffloadPlaybackFlags) {
+            tag = Usecase::COMPRESS_OFFLOAD_PLAYBACK;
+        } else if (outFlags == pcmOffloadPlaybackFlags) {
+            tag = Usecase::PCM_OFFLOAD_PLAYBACK;
+        } else if (outFlags == voipPlaybackFlags || outFlags == voipFastPlaybackFlags) {
+            tag = Usecase::VOIP_PLAYBACK;
+        } else if (outFlags == spatialPlaybackFlags) {
+            tag = Usecase::SPATIAL_PLAYBACK;
+        } else if (outFlags == ullPlaybackFlags) {
+            tag = Usecase::ULL_PLAYBACK;
+        } else if (outFlags == mmapPlaybackFlags) {
+            tag = Usecase::MMAP_PLAYBACK;
+        } else if (outFlags == inCallMusicFlags) {
+            tag = Usecase::IN_CALL_MUSIC;
+        }
+    } else if (flagsTag == AudioIoFlags::Tag::input) {
+        auto& inFlags = mixPortConfig.flags.value().get<AudioIoFlags::Tag::input>();
+        tag = Usecase::PCM_RECORD;
+        if (inFlags == noneFlags) {
+            tag = Usecase::PCM_RECORD;
+            if (mixUsecaseTag == AudioPortMixExtUseCase::source) {
+                auto& source = mixUsecase.get<AudioPortMixExtUseCase::source>();
+                if (source == AudioSource::VOICE_UPLINK || source == AudioSource::VOICE_DOWNLINK ||
+                    source == AudioSource::VOICE_CALL) {
+                    tag = Usecase::VOICE_CALL_RECORD;
+                }
+            }
+        } else if (inFlags == fastRecordFlags || inFlags == ullRecordFlags) {
+            tag = Usecase::FAST_RECORD;
+            if (streamSampleRate == UltraFastRecord::kSampleRate) {
+                tag = Usecase::ULTRA_FAST_RECORD;
+            }
+        } else if (inFlags == compressCaptureFlags) {
+            tag = Usecase::COMPRESS_CAPTURE;
+        } else if (inFlags == recordVoipFlags && mixUsecaseTag == AudioPortMixExtUseCase::source &&
+                   mixUsecase.get<AudioPortMixExtUseCase::source>() ==
+                           AudioSource::VOICE_COMMUNICATION) {
+            tag = Usecase::VOIP_RECORD;
+        } else if (inFlags == mmapRecordFlags) {
+            tag = Usecase::MMAP_RECORD;
+        } else if (inFlags == hotWordRecordFlags) {
+            tag = Usecase::HOTWORD_RECORD;
+        }
+    }
+    LOG(INFO) << __func__ << " choosen " << getName(tag) << " for mix port config: "
                  << mixPortConfig.toString();
     return tag;
 }

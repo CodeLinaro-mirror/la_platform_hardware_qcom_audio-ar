@@ -15,6 +15,8 @@
 #include "extensions/hal_ringbuffer.h"
 #endif
 
+using ::aidl::android::media::audio::common::AudioDevice;
+
 namespace qti::audio::core {
 
 #define INVALID -1
@@ -25,7 +27,7 @@ class StreamOutPrimaryOEM : public StreamOutPrimary {
     StreamOutPrimaryOEM(StreamContext&& context,
                      const ::aidl::android::hardware::audio::common::SourceMetadata& sourceMetadata,
                      const std::optional<::aidl::android::media::audio::common::AudioOffloadInfo>&
-                             offloadInfo);
+                             offloadInfo,std::vector<AudioDevice> AudioDevices);
 
     virtual ~StreamOutPrimaryOEM() override;
     ::android::status_t standby() override;
