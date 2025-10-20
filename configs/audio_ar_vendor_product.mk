@@ -35,9 +35,11 @@ PRODUCT_HWASAN_INCLUDE_PATHS += \
     vendor/qcom/opensource/agm
 endif
 
+ifneq ($(TARGET_USES_CDC_HW), true)
 # Pro Audio feature
 PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.audio.pro.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.pro.xml
+endif
 
 $(call soong_config_set, qtiaudio, var00, false)
 $(call soong_config_set, qtiaudio, var11, false)
