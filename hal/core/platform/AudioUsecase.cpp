@@ -302,7 +302,7 @@ Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConf
             tag = Usecase::PRIMARY_PLAYBACK;
 
         } else if (outFlags == deepBufferPlaybackFlags || (outFlags == noneFlags)) {
-            tag = Usecase::DEEP_BUFFER_PLAYBACK;
+            tag = Usecase::MEDIA_PLAYBACK;
         } else if (outFlags == lowLatencyPlaybackFlags) {
             tag = Usecase::LOW_LATENCY_PLAYBACK;
         } else if (outFlags == compressOffloadPlaybackFlags) {
