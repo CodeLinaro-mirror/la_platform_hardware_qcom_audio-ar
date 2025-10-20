@@ -751,8 +751,8 @@ ndk::ScopedAStatus StreamOutPrimary::updateOffloadMetadata(
 
     return ndk::ScopedAStatus::ok();
 }
-
-ndk::ScopedAStatus StreamOutPrimary::getHwVolume(std::vector<float>* _aidl_return) {
+#ifdef ENABLE_QCOM_AMPERE_AUDIO
+ndk::ScopedAStatus StreamOutPrimary::getStreamVolume(std::vector<float>* _aidl_return) {
     if (!mHwVolumeSupported) {
         return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
     }
@@ -760,8 +760,21 @@ ndk::ScopedAStatus StreamOutPrimary::getHwVolume(std::vector<float>* _aidl_retur
     LOG(VERBOSE) << __func__ << mLogPrefix << ::android::internal::ToString(mVolumes);
     return ndk::ScopedAStatus::ok();
 }
-
-ndk::ScopedAStatus StreamOutPrimary::setHwVolume(const std::vector<float>& in_channelVolumes) {
+#endif
+ndk::ScopedAStatus StreamOutPrimary::getHwVolume(std::vector<float>* _aidl_return) {
+#ifdef ENABLE_QCOM_AMPERE_AUDIO
+     return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
+#else
+    if (!mHwVolumeSupported) {
+        return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
+    }
+    *_aidl_return = mVolumes;
+    LOG(VERBOSE) << __func__ << mLogPrefix << ::android::internal::ToString(mVolumes);
+    return ndk::ScopedAStatus::ok();
+#endif
+}
+#ifdef ENABLE_QCOM_AMPERE_AUDIO
+ndk::ScopedAStatus StreamOutPrimary::setStreamVolume(const std::vector<float>& in_channelVolumes) {
     auto sourceMetadata = std::get<SourceMetadata>(mMetadata);
     std::vector<float> updatedChannelVolumes = in_channelVolumes;
 
@@ -835,6 +848,87 @@ ndk::ScopedAStatus StreamOutPrimary::setHwVolume(const std::vector<float>& in_ch
 
     LOG(DEBUG) << __func__ << mLogPrefix  << "mVolumes" << ::android::internal::ToString(mVolumes);
     return ndk::ScopedAStatus::ok();
+}
+#endif
+ndk::ScopedAStatus StreamOutPrimary::setHwVolume(const std::vector<float>& in_channelVolumes) {
+#ifdef ENABLE_QCOM_AMPERE_AUDIO
+    return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
+#else
+
+    auto sourceMetadata = std::get<SourceMetadata>(mMetadata);
+    std::vector<float> updatedChannelVolumes = in_channelVolumes;
+
+    if (!mHwVolumeSupported) {
+        return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
+    }
+
+    if (mVolumes.size() != in_channelVolumes.size()) {
+        LOG(ERROR) << __func__ << mLogPrefix << " channel count mismatch with port, expected "
+                   << mVolumes.size() << " got " << in_channelVolumes.size();
+        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
+    }
+    auto isVolumeInRange = [](const std::vector<float>& volumes) {
+        return std::all_of(volumes.begin(), volumes.end(),[](float vol) {
+        return (vol >= 0.0f && vol <= 1.0f);});
+    };
+
+    if (!isVolumeInRange(in_channelVolumes)) {
+        LOG(ERROR) << __func__ << mLogPrefix << " out of range volume "
+                   << ::android::internal::ToString(in_channelVolumes);
+        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
+    }
+#ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
+    //update focus service volume too if an entry exists
+    auto focusId = this->focusSessionInfo.FocusId;
+    if (focusId != -1) {
+        float volume = 0.0;
+        if (in_channelVolumes.size()) {
+            volume = in_channelVolumes[0];
+        } else {
+            LOG(ERROR) << __func__ << " Invalid volume!!";
+        }
+        float volumeMdB = (volume * (MAX_VOLUME_VALUE_MB - MIN_VOLUME_VALUE_MB)) + MIN_VOLUME_VALUE_MB;
+        mAudExt.mAutoAudioHalPriorityExtension->updateVolume(focusId, volumeMdB, false /*internal volume change*/);
+    }
+#endif
+    if (!mPalHandle) {
+        mVolumes = in_channelVolumes;
+        mUseCachedVolume = true;
+        LOG(DEBUG) << __func__ << mLogPrefix << " cache volume "
+                   << ::android::internal::ToString(in_channelVolumes);
+        return ndk::ScopedAStatus::ok();
+    }
+
+    if (!sourceMetadata.tracks.empty()) {
+        auto usage = sourceMetadata.tracks[0].usage;
+        if (usage == ::aidl::android::media::audio::common::AudioUsage::MEDIA) {
+            std::string str = ModulePrimary::globalAudioSource;
+            for (const auto& [sourceTypeKey, sourceGainValue] : sourceGainTable) {
+                if (sourceTypeKey == str) {
+                    LOG(DEBUG) << "USAGE matched, gain added: " << sourceGainValue << " sourceTypeKey: " << sourceTypeKey;
+                    float sourceGainValue_dB=((sourceGainValue )/(MAX_VOLUME_VALUE_MB - MIN_VOLUME_VALUE_MB));
+                    for (size_t i = 0; i < in_channelVolumes.size(); ++i) {
+                        updatedChannelVolumes[i] = in_channelVolumes[i] + sourceGainValue_dB;
+                        LOG(DEBUG) << "updated volumes : " << updatedChannelVolumes[i];
+                    }
+                    break;
+                } else {
+                    LOG(DEBUG) << "USAGE did not match.";
+                }
+            }
+
+        }
+    }
+
+    if (int32_t ret = mPlatform.setVolume(mPalHandle, updatedChannelVolumes); ret) {
+        LOG(ERROR) << __func__ << mLogPrefix << " failed to set volume";
+        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
+    }
+    mVolumes = in_channelVolumes;
+
+    LOG(DEBUG) << __func__ << mLogPrefix  << "mVolumes" << ::android::internal::ToString(mVolumes);
+    return ndk::ScopedAStatus::ok();
+#endif
 }
 
 ndk::ScopedAStatus StreamOutPrimary::getPlaybackRateParameters(AudioPlaybackRate* _aidl_return) {

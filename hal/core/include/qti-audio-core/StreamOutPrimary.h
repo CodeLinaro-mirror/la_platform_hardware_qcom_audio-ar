@@ -80,7 +80,10 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
 
     ndk::ScopedAStatus getHwVolume(std::vector<float>* _aidl_return) override;
     ndk::ScopedAStatus setHwVolume(const std::vector<float>& in_channelVolumes) override;
-
+#ifdef ENABLE_QCOM_AMPERE_AUDIO
+    ndk::ScopedAStatus setStreamVolume(const std::vector<float>& in_channelVolumes);
+    ndk::ScopedAStatus getStreamVolume(std::vector<float>* _aidl_return);
+#endif
     ndk::ScopedAStatus getPlaybackRateParameters(
             ::aidl::android::media::audio::common::AudioPlaybackRate* _aidl_return) override;
     ndk::ScopedAStatus setPlaybackRateParameters(

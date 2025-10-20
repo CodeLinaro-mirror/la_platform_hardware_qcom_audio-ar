@@ -215,7 +215,11 @@ ndk::ScopedAStatus qti::audio::core::ModulePrimary::setAudioPortConfig(const ::a
                 LOG(DEBUG) << "Found the stream at ID: " << listId << " Gain is: " << volume << " Volume is: " << volumes[0];
                 // Set the hardware volume
                 auto streamObj = std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(outIter);
+#ifdef ENABLE_QCOM_AMPERE_AUDIO
+                streamObj->setStreamVolume(volumes);
+#else
                 streamObj->setHwVolume(volumes);
+#endif
                 LOG(DEBUG) << "Volume set: " << volumes[0];
                 // Remove the port ID from the ports to handle
                 std::erase(portsToHandle, listId);
@@ -1217,7 +1221,11 @@ void MuteConfig::set_mute_config_for_address(char* address, bool muted, float vo
                 LOG(DEBUG) << "Mute applied to stream with address: " << address;
                 if (muted) {
                    if(!is_muted) {
+#ifdef ENABLE_QCOM_AMPERE_AUDIO
+                        (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(stream))->getStreamVolume(&getVol);
+#else
                         (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(stream))->getHwVolume(&getVol);
+#endif
                         is_muted  = true;
                     }
                     std::vector<float> vol;
@@ -1226,11 +1234,18 @@ void MuteConfig::set_mute_config_for_address(char* address, bool muted, float vo
                     for (i=0;i<channel;i++)
                         vol.push_back(volume);
                     LOG(DEBUG)<<"gain is:"<<::android::internal::ToString(vol);
-
+#ifdef ENABLE_QCOM_AMPERE_AUDIO
+                    (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(stream))->setStreamVolume(vol);
+#else
                     (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(stream))->setHwVolume(vol);
+#endif
                     LOG(DEBUG)<<"volume set :"<<vol[0];
                } else {
+#ifdef ENABLE_QCOM_AMPERE_AUDIO
+                    (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(stream))->setStreamVolume(getVol);
+#else
                     (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(stream))->setHwVolume(getVol);
+#endif
                     is_muted  = false;
                 }
             }
