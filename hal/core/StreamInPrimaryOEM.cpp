@@ -88,6 +88,10 @@ void StreamInPrimaryOEM::shutdown() {
 }
 ::android::status_t StreamInPrimaryOEM::transfer(void* buffer, size_t frameCount,
                                               size_t* actualFrameCount, int32_t* latencyMs) {
+    if (AudioExtension::getInstance().out_power_policy == POWER_POLICY_STATUS_OFFLINE) {
+        LOG(ERROR) << "POWER POLICY OFFLINE please try again\n";
+        return -EINVAL;
+    }
     if (!mPalHandle) {
         configure();
         if (!mPalHandle) {
