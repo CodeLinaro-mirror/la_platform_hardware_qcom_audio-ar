@@ -304,6 +304,10 @@ int set_vehicle_speed(int32_t val)
     struct param_type2_t speed_data;
     memset(&speed_data, 0, sizeof(struct param_type2_t));
     speed_data.value = val;
+    if( gs_VehicleSpeed == val) {
+        LOG(VERBOSE) << __func__ << "vechile speed is same as previous so we can  ignore" ;
+        return EXIT_SUCCESS;
+    }
     // cache the vehicle Speed.
     gs_VehicleSpeed = val ;
 
