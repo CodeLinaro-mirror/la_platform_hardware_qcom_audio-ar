@@ -99,11 +99,12 @@ RetCode SDVCContext::disable() {
 
 RetCode SDVCContext::setSdvcCurrentProfile(int profile) {
 
-    LOG(DEBUG) << "Enter " << __func__ << " ioHandle " << getIoHandle() << " New Profile " << profile;
+    LOG(VERBOSE) << "Enter " << __func__ << " ioHandle " << getIoHandle() << " New Profile " << profile;
 
     mSdvcParams.value = profile;
 
     if (updatePalParameters(&mSdvcParams) == 0) {
+        LOG(VERBOSE) << "Exit " << __func__;
         return RetCode::SUCCESS;
     }
 

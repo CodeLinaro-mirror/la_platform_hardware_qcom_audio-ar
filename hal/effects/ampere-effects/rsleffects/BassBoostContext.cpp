@@ -100,7 +100,7 @@ int BassBoostContext::setOffloadParameters() {
 
 RetCode BassBoostContext::setBassBoost(int bass) {
 
-    LOG(DEBUG) << "Enter " << __func__ << " ioHandle " << getIoHandle();
+    LOG(VERBOSE) << "Enter " << __func__ << " ioHandle " << getIoHandle();
 
     mBassBoostSyncParams.value = bass ;
 
@@ -108,7 +108,7 @@ RetCode BassBoostContext::setBassBoost(int bass) {
         LOG(DEBUG) << "updatePalParameters Bass Boost Successful ";
     }
 
-    LOG(DEBUG) << "Exit " << __func__;
+    LOG(VERBOSE) << "Exit " << __func__;
 
     return RetCode::SUCCESS;
 }
