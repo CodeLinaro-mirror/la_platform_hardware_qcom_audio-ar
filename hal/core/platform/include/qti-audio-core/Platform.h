@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -76,7 +77,6 @@ class Platform {
     int mCallState;
     int mCallMode;
     static Platform& getInstance();
-
     size_t getFrameCount(
             const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig,
             Usecase const& inTag = Usecase::INVALID);
@@ -288,6 +288,7 @@ class Platform {
                                      bool const isDynamicCalibration) const noexcept;
     std::optional<std::string> getFTMResult() const noexcept;
     std::optional<std::string> getSpeakerCalibrationResult() const noexcept;
+    std::optional<std::string> getMicocclusionparameter() const noexcept;
 
     void updateScreenRotation(const ::aidl::android::hardware::audio::core::IModule::ScreenRotation
                                       in_rotation) noexcept;
