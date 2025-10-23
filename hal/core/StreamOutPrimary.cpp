@@ -285,7 +285,11 @@ ndk::ScopedAStatus StreamOutPrimary::configureMMapStream(int32_t* fd, int64_t* b
 
     LOG(INFO) << __func__ << mLogPrefix << ": stream is configured";
 
+#ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
+    setStreamVolume(mVolumes);
+#else
     setHwVolume(mVolumes);
+#endif
 
     return ndk::ScopedAStatus::ok();
 }
@@ -1277,7 +1281,7 @@ void StreamOutPrimary::configure() {
                     std::vector<float> Volumes;
                     int iter_channel;
                     int no_of_channels = mVolumes.size();
-                    if (streamOutPrimary->isStreamOutPrimary()) {
+                    if (streamOutPrimary->isStreamOutPrimary() || streamOutPrimary->isStreamOutMedia()) {
 #ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
                         streamOutPrimary->getStreamVolume(&Volumes);
 #else
@@ -1305,7 +1309,11 @@ void StreamOutPrimary::configure() {
 #ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
     requestFocus();
 #endif
+#ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
+    setStreamVolume(mVolumes);
+#else
     setHwVolume(mVolumes);
+#endif
     if (mTag == Usecase::HAPTICS_PLAYBACK) {
 
         hapticChannelLayout = AudioChannelLayout::make<AudioChannelLayout::Tag::layoutMask>
