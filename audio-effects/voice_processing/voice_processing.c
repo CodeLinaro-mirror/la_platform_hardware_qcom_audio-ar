@@ -15,12 +15,18 @@
  */
 /*
  * Changes from Qualcomm Innovation Center are provided under the following license:
- *
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 #define LOG_TAG "voice_processing"
 /*#define LOG_NDEBUG 0*/
+#ifdef AUDIOHAL_FORTIFY_SOURCE
+#if !defined(_FORTIFY_SOURCE) || (_FORTIFY_SOURCE < AUDIOHAL_FORTIFY_SOURCE)
+#undef _FORTIFY_SOURCE
+#define _FORTIFY_SOURCE AUDIOHAL_FORTIFY_SOURCE
+#endif /* _FORTIFY_SOURCE */
+#endif /* AUTO_FORTIFY_SOURCE */
+
 #include <stdlib.h>
 #include <dlfcn.h>
 #include <stdlib.h>
