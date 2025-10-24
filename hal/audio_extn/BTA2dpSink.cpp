@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2022, 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -32,6 +33,25 @@ extern "C" {
 #define AUDIO_PARAMETER_BTSINK_ENABLE "btsink_enable"
 #define AUDIO_PARAMETER_BTSINK_VOLUME "btsink_volume"
 
+const float volume_lookup[16] = {
+    0.0L,
+    17.0L  / 8192.0L,
+    38.0L  / 8192.0L,
+    81.0L  / 8192.0L,
+    121.0L / 8192.0L,
+    193.0L / 8192.0L,
+    307.0L / 8192.0L,
+    458.0L / 8192.0L,
+    728.0L / 8192.0L,
+    1157.0L / 8192.0L,
+    1551.0L / 8192.0L,
+    2185.0L / 8192.0L,
+    3078.0L / 8192.0L,
+    4129.0L / 8192.0L,
+    5816.0L / 8192.0L,
+    8192.0L / 8192.0L
+};
+
 struct btsink_module {
     bool running;
     float volume;
@@ -56,7 +76,7 @@ int32_t btsink_set_volume(float value)
         AHAL_DBG("(%f) Under 0.0, assuming 0.0\n", value);
         value = 0.0;
     } else {
-        value = ((value > 15.000000) ? 1.0 : (value / 15));
+        value = value> 15.0 ? 1.0 : volume_lookup[static_cast<int>(value)] ;
         AHAL_DBG("Volume brought with in range (%f)\n", value);
     }
     vol  = lrint((value * 0x2000) + 0.5);
