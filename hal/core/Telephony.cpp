@@ -96,6 +96,7 @@ ndk::ScopedAStatus Telephony::switchAudioMode(AudioMode newAudioMode) {
         LOG(ERROR) << __func__ << ": illegal mode " << toString(newAudioMode);
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
     }
+    AudioExtension::callMode = (int)newAudioMode;
 
     mPlatform.updateCallMode((int)newAudioMode);
 

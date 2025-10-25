@@ -28,6 +28,7 @@ namespace qti::audio::core {
 
 std::mutex AudioExtension::reconfig_wait_mutex_;
 bool BatteryListenerExtension::isCharging;
+int32_t AudioExtension::callMode;
 
 AudioExtensionBase::AudioExtensionBase(std::string library, bool enabled)
     : mLibraryName(library), mEnabled(enabled) {
@@ -167,6 +168,8 @@ static int reconfig_cb(tSESSION_TYPE session_type, int state) {
             std::unique_lock<std::mutex> guard(AudioExtension::reconfig_wait_mutex_);
             param_bt_a2dp.a2dp_suspended = true;
             param_bt_a2dp.is_suspend_setparam = false;
+            param_bt_a2dp.reconfig = true;
+            param_bt_a2dp.is_in_call = (AudioExtension::callMode != AUDIO_MODE_NORMAL);
             param_bt_a2dp.dev_id = PAL_DEVICE_OUT_BLUETOOTH_BLE;
 
             ret = pal_set_param(PAL_PARAM_ID_BT_A2DP_SUSPENDED, (void *)&param_bt_a2dp,
