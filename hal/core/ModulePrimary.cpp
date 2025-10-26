@@ -38,7 +38,6 @@
 #include <qti-audio-core/StreamInPrimary.h>
 #include <qti-audio-core/StreamMmapBase.h>
 #include <qti-audio-core/StreamOutPrimary.h>
-#include <qti-audio-core/StreamStub.h>
 #include <qti-audio-core/Telephony.h>
 #include <qti-audio-core/Utils.h>
 
