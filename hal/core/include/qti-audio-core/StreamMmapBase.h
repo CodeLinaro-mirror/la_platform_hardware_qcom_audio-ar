@@ -95,8 +95,11 @@ class StreamMmapBase : public StreamCommonImpl {
     bool mIsStarted = false;
     bool mClosed = true;  // assocaited with pal_stream_close, start moves to closed -> false,
     int64_t mFramesInSession = 0;
-    /* cache the frames on stop*/
-    int64_t mTotalFrames = 0;
+    // Total frames processed before the current session started. Rounded up to the
+    // nearest buffer boundary since standby -> restart, creates a new shared memory buffer and
+    // the DSP position resets to zero.
+    int64_t mFramesAtSessionStart = 0;
+    int32_t mBufferSizeInFrames = 0;
     ::aidl::android::hardware::audio::core::MmapBufferDescriptor mMmapBufferDesc;
 
     // All the public must check the validity of this resource, if using
