@@ -49,8 +49,8 @@ LOCAL_HEADER_LIBRARIES :=  \
     libmedia_helper_headers \
     libarpal_headers
 
-#Enable Hardware timestamp for Android V and U
-ifneq (,$(filter U UpsideDownCake 14 V VanillaIceCream 15, $(PLATFORM_VERSION)))
+#Enable Hardware timestamp for Android W, V and U
+ifneq (,$(filter U UpsideDownCake 14 V VanillaIceCream 15 W Baklava 16, $(PLATFORM_VERSION)))
 LOCAL_CPPFLAGS += -DHARDWARE_TIMESTAMP
 endif
 
