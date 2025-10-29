@@ -18,6 +18,12 @@
 -->
 <!-- Bluetooth and LE Audio HAL Audio Policy Configuration file -->
 <module name="bluetooth" hal_version="2.0">
+    <attachedDevices>
+        <item>DUAL A2DP Headphones</item>
+        <item>DUAL A2DP Headphones1</item>
+        <item>DUAL A2DP Headphones2</item>
+        <item>DUAL A2DP Headphones3</item>
+    </attachedDevices>
     <mixPorts>
         <!-- A2DP Audio Ports -->
         <mixPort name="a2dp output" role="source"/>
@@ -40,6 +46,23 @@
             <profile name="" format="AUDIO_FORMAT_PCM_32_BIT"
                      samplingRates="8000 16000 24000 32000 44100 48000"
                      channelMasks="AUDIO_CHANNEL_IN_MONO AUDIO_CHANNEL_IN_STEREO"/>
+        </mixPort>
+        <!-- Bus Audio mix ports (outputs) -->
+        <mixPort name="bt_headset_1" role="source">
+            <profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
+                samplingRates="48000 44100" channelMasks="AUDIO_CHANNEL_OUT_STEREO"/>
+        </mixPort>
+        <mixPort name="bt_headset_2" role="source">
+            <profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
+                samplingRates="48000 44100" channelMasks="AUDIO_CHANNEL_OUT_STEREO"/>
+        </mixPort>
+        <mixPort name="bt_headset_3" role="source">
+            <profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
+                samplingRates="48000 44100" channelMasks="AUDIO_CHANNEL_OUT_STEREO"/>
+        </mixPort>
+        <mixPort name="bt_headset_4" role="source">
+            <profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
+                samplingRates="48000 44100" channelMasks="AUDIO_CHANNEL_OUT_STEREO"/>
         </mixPort>
     </mixPorts>
     <devicePorts>
@@ -66,6 +89,47 @@
         <devicePort tagName="BLE Speaker Out" type="AUDIO_DEVICE_OUT_BLE_SPEAKER" role="sink"/>
         <devicePort tagName="BLE Headset In" type="AUDIO_DEVICE_IN_BLE_HEADSET" role="source"/>
         <devicePort tagName="BLE Broadcast Out" type="AUDIO_DEVICE_OUT_BLE_BROADCAST" role="sink"/>
+        <!-- BUS Device Ports -->
+        <devicePort tagName="DUAL A2DP Headphones" type="AUDIO_DEVICE_OUT_BUS" role="sink"
+            encodedFormats="AUDIO_FORMAT_SBC AUDIO_FORMAT_AAC AUDIO_FORMAT_APTX_HD AUDIO_FORMAT_APTX AUDIO_FORMAT_LDAC" address="BUS18_BT_HEADPHONE_1">
+            <profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
+                samplingRates="48000,44100"
+                channelMasks="AUDIO_CHANNEL_OUT_STEREO"/>
+            <gains>
+                <gain name="" mode="AUDIO_GAIN_MODE_JOINT"
+                    minValueMB="-6000" maxValueMB="600" defaultValueMB="0" stepValueMB="100"/>
+            </gains>
+        </devicePort>
+        <devicePort tagName="DUAL A2DP Headphones1" type="AUDIO_DEVICE_OUT_BUS" role="sink"
+            encodedFormats="AUDIO_FORMAT_SBC AUDIO_FORMAT_AAC AUDIO_FORMAT_APTX_HD AUDIO_FORMAT_APTX AUDIO_FORMAT_LDAC" address="BUS20_BT_HEADPHONE_1">
+            <profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
+                samplingRates="48000,44100"
+                channelMasks="AUDIO_CHANNEL_OUT_STEREO"/>
+            <gains>
+                <gain name="" mode="AUDIO_GAIN_MODE_JOINT"
+                    minValueMB="-6000" maxValueMB="600" defaultValueMB="0" stepValueMB="100"/>
+            </gains>
+        </devicePort>
+        <devicePort tagName="DUAL A2DP Headphones2" type="AUDIO_DEVICE_OUT_BUS" role="sink"
+            encodedFormats="AUDIO_FORMAT_SBC AUDIO_FORMAT_AAC AUDIO_FORMAT_APTX_HD AUDIO_FORMAT_APTX AUDIO_FORMAT_LDAC" address="BUS22_BT_HEADPHONE_1">
+            <profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
+                samplingRates="48000,44100"
+                channelMasks="AUDIO_CHANNEL_OUT_STEREO"/>
+            <gains>
+                <gain name="" mode="AUDIO_GAIN_MODE_JOINT"
+                    minValueMB="-6000" maxValueMB="600" defaultValueMB="0" stepValueMB="100"/>
+            </gains>
+        </devicePort>
+        <devicePort tagName="DUAL A2DP Headphones3" type="AUDIO_DEVICE_OUT_BUS" role="sink"
+            encodedFormats="AUDIO_FORMAT_SBC AUDIO_FORMAT_AAC AUDIO_FORMAT_APTX_HD AUDIO_FORMAT_APTX AUDIO_FORMAT_LDAC" address="BUS24_BT_HEADPHONE_1">
+            <profile name="" format="AUDIO_FORMAT_PCM_16_BIT"
+                samplingRates="48000,44100"
+                channelMasks="AUDIO_CHANNEL_OUT_STEREO"/>
+            <gains>
+                <gain name="" mode="AUDIO_GAIN_MODE_JOINT"
+                    minValueMB="-6000" maxValueMB="600" defaultValueMB="0" stepValueMB="100"/>
+            </gains>
+        </devicePort>
     </devicePorts>
     <routes>
         <route type="mix" sink="BT A2DP Out"
@@ -84,5 +148,13 @@
                sources="le audio output"/>
         <route type="mix" sink="BLE Broadcast Out"
                sources="le audio broadcast output"/>
+        <route type="mix" sink="DUAL A2DP Headphones"
+            sources="bt_headset_1"/>
+        <route type="mix" sink="DUAL A2DP Headphones1"
+            sources="bt_headset_2"/>
+        <route type="mix" sink="DUAL A2DP Headphones2"
+            sources="bt_headset_3"/>
+        <route type="mix" sink="DUAL A2DP Headphones3"
+            sources="bt_headset_4"/>
     </routes>
 </module>
