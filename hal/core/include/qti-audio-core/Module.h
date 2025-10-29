@@ -239,7 +239,7 @@ class Module : public ::aidl::android::hardware::audio::core::BnModule {
             std::shared_ptr<::aidl::android::hardware::audio::core::IStreamCallback> asyncCallback,
             std::shared_ptr<::aidl::android::hardware::audio::core::IStreamOutEventCallback>
                     outEventCallback,
-            const std::string& streamName, StreamContext* out_context);
+            std::string& streamName, StreamContext* out_context);
     std::vector<::aidl::android::media::audio::common::AudioDevice> findConnectedDevices(
             int32_t portConfigId);
     std::set<int32_t> findConnectedPortConfigIds(int32_t portConfigId);

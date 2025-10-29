@@ -55,6 +55,15 @@ inline std::string errorToString(const ScopedAStatus& s) {
 
 namespace qti::audio::core {
 
+// classes using this macros must provide getPrefixLog
+#define STREAM_LOG(severity) LOG(severity) << getPrefixLog() << ": " << __func__ << ": "
+
+#define HAL_LOGV STREAM_LOG(VERBOSE)
+#define HAL_LOGD STREAM_LOG(DEBUG)
+#define HAL_LOGI STREAM_LOG(INFO)
+#define HAL_LOGW STREAM_LOG(WARNING)
+#define HAL_LOGE STREAM_LOG(ERROR)
+#define HAL_LOGF STREAM_LOG(FATAL)
 /*
 * Helper class used by streams when the target audio format differs
 * from input audio format. This can happen if underlying layers don't support certain formats.

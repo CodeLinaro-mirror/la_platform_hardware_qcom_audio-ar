@@ -13,6 +13,7 @@
 #include <qti-audio-core/Module.h>
 #include <qti-audio-core/ModulePrimary.h>
 #include <qti-audio-core/Parameters.h>
+#include <qti-audio-core/PlatformUtils.h>
 #include <qti-audio-core/StreamOutPrimary.h>
 #include <qti-audio/PlatformConverter.h>
 
@@ -58,8 +59,7 @@ StreamOutPrimary::StreamOutPrimary(StreamContext&& context, const SourceMetadata
     } else if (mTag == Usecase::DEEP_BUFFER_PLAYBACK) {
         mExt.emplace<DeepBufferPlayback>();
     } else if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK) {
-        mExt.emplace<CompressPlayback>(offloadInfo.value(), this,
-                                       mMixPortConfig);
+        mExt.emplace<CompressPlayback>(offloadInfo.value(), this, mMixPortConfig);
     } else if (mTag == Usecase::DIRECT_PCM_PLAYBACK) {
         mExt.emplace<DirectPcmPlayback>(mMixPortConfig);
     } else if (mTag == Usecase::VOIP_PLAYBACK) {
@@ -76,18 +76,19 @@ StreamOutPrimary::StreamOutPrimary(StreamContext&& context, const SourceMetadata
         mExt.emplace<BitPerfectPlayback>(mMixPortConfig);
     }
 
+    std::ostringstream os;
+    os << "[id:" << mMixPortConfig.id;
+    os << ",io:" << mMixPortConfig.ext.get<AudioPortExt::Tag::mix>().handle <<"]";
+    os << ": usecase: " << mTagName << " ";
+    mLogPrefix = os.str();
+
     mHwVolumeSupported = isHwVolumeSupported();
     mHwFlushSupported = isHwFlushSupported();
     mHwPauseSupported = isHwPauseSupported();
     if (mHwVolumeSupported) {
         mVolumes.resize(getChannelCount(mMixPortConfig.channelMask.value()));
     }
-    std::ostringstream os;
-    os << " : usecase: " << mTagName;
-    os << ", mix port config id:" << mMixPortConfig.id;
-    os << ", IoHandle:" << mMixPortConfig.ext.get<AudioPortExt::Tag::mix>().handle << " ";
-    mLogPrefix = os.str();
-    LOG(DEBUG) << __func__ << mLogPrefix;
+    LOG(DEBUG) << __func__ << mLogPrefix <<" created " << mMixPortConfig.toString();
 }
 
 bool StreamOutPrimary::isHwVolumeSupported() {
@@ -131,7 +132,7 @@ struct BufferConfig StreamOutPrimary::getBufferConfig() {
 
 StreamOutPrimary::~StreamOutPrimary() {
     cleanupWorker();
-    LOG(DEBUG) << __func__ << mLogPrefix;
+    LOG(DEBUG) << __func__ << mLogPrefix << "destroyed";
 }
 
 // start of methods called from IModule
@@ -922,6 +923,7 @@ void StreamOutPrimary::configure() {
     }
 
     const auto palOpenApiStartTime = std::chrono::steady_clock::now();
+    LOG(DEBUG) << __func__ << mLogPrefix << "pal_stream_open with " << toString(*attr.get());
     if (int32_t ret = ::pal_stream_open(attr.get(), palDevices.size(), palDevices.data(), 0,
                                         nullptr, palFn, cookie, &(this->mPalHandle));
         ret) {

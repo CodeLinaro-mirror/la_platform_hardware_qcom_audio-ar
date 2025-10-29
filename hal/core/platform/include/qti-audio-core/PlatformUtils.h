@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -144,4 +144,6 @@ std::unique_ptr<T, CustomDeletor> allocate(int size) {
     return std::unique_ptr<T, CustomDeletor>{obj, free};
 }
 
-} // namespace qti::audio::core
+std::string toString(const pal_stream_attributes& attributes);
+
+}  // namespace qti::audio::core

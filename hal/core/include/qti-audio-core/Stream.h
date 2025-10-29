@@ -195,7 +195,8 @@ class StreamContext {
     }
     int32_t getNominalLatencyMs() const { return mNominalLatency; }
     std::weak_ptr<Telephony> getTelephony() { return mTelephony; }
-    std::string getStreamName() const { return mStreamName; }
+    const std::string& getStreamName() const { return mStreamName; }
+    const std::string& getPrefixLog() const { return getStreamName(); }
 
   private:
     std::unique_ptr<CommandMQ> mCommandMQ;
@@ -284,6 +285,7 @@ class StreamWorkerCommonLogic : public StreamLogic {
         mTransientStateStart = std::chrono::steady_clock::now();
     }
 
+    const std::string& getPrefixLog() const { return mContext->getPrefixLog(); }
     // The context is only used for reading, except for updating the frame count,
     // which happens on the worker thread only.
     StreamContext* const mContext;
@@ -682,6 +684,7 @@ class StreamCommonImpl : virtual public StreamCommonInterface, virtual public Dr
 
     private:
     std::atomic<bool> mWorkerStopIssued = false;
+    const std::string& getPrefixLog() const { return mContextRef.getPrefixLog(); }
 };
 
 // Note: 'StreamIn/Out' can not be used on their own. Instead, they must be used for defining
@@ -727,6 +730,9 @@ class StreamIn : virtual public StreamCommonInterface,
 
     StreamContext mContext;
     const std::map<::aidl::android::media::audio::common::AudioDevice, std::string> mMicrophones;
+
+  private:
+    const std::string& getPrefixLog() const { return mContext.getPrefixLog(); }
 };
 
 class StreamOut : virtual public StreamCommonInterface,
@@ -785,6 +791,9 @@ class StreamOut : virtual public StreamCommonInterface,
     StreamContext mContext;
     const std::optional<::aidl::android::media::audio::common::AudioOffloadInfo> mOffloadInfo;
     std::optional<::aidl::android::hardware::audio::common::AudioOffloadMetadata> mOffloadMetadata;
+
+  private:
+    const std::string& getPrefixLog() const { return mContext.getPrefixLog(); }
 };
 
 // The recommended way to create a stream instance.

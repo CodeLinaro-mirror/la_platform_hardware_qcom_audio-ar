@@ -154,7 +154,7 @@ ndk::ScopedAStatus Module::createStreamContext(
         std::shared_ptr<::aidl::android::hardware::audio::core::IStreamCallback> asyncCallback,
         std::shared_ptr<::aidl::android::hardware::audio::core::IStreamOutEventCallback>
                 outEventCallback,
-        const std::string& streamName, StreamContext* out_context) {
+        std::string& streamName, StreamContext* out_context) {
     if (in_bufferSizeFrames <= 0) {
         LOG(ERROR) << __func__ << ": non-positive buffer size " << in_bufferSizeFrames;
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
@@ -171,6 +171,9 @@ ndk::ScopedAStatus Module::createStreamContext(
                    << portConfigIt->toString();
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
     }
+
+    int ioHandle = portConfigIt->ext.get<AudioPortExt::Tag::mix>().handle;
+    streamName += ",io:" + std::to_string(ioHandle) + "]";
     // Since this is a private method, it is assumed that
     // validity of the portConfigId has already been checked.
     const size_t frameSize =
@@ -914,7 +917,7 @@ ndk::ScopedAStatus Module::openInputStream(const OpenInputStreamArguments& in_ar
                    << " does not correspond to an input mix port";
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
     }
-    const std::string streamName = port->name + "_" + std::to_string(in_args.portConfigId);
+    std::string streamName = port->name + "[id:" + std::to_string(in_args.portConfigId);
     StreamContext context;
     RETURN_STATUS_IF_ERROR(createStreamContext(in_args.portConfigId, in_args.bufferSizeFrames,
                                                nullptr, nullptr, streamName, &context));
@@ -970,7 +973,7 @@ ndk::ScopedAStatus Module::openOutputStream(const OpenOutputStreamArguments& in_
                    << " has NON_BLOCKING flag set, requires async callback";
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
     }
-    const std::string streamName = port->name + "_" + std::to_string(in_args.portConfigId);
+    std::string streamName = port->name + "[id:" + std::to_string(in_args.portConfigId);
     StreamContext context;
     RETURN_STATUS_IF_ERROR(createStreamContext(in_args.portConfigId, in_args.bufferSizeFrames,
                                                isNonBlocking ? in_args.callback : nullptr,

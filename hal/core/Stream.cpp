@@ -30,6 +30,7 @@
 #include <qti-audio-core/Module.h>
 #include <qti-audio-core/ModulePrimary.h>
 #include <qti-audio-core/Stream.h>
+#include <qti-audio-core/Utils.h>
 #include <utils/SystemClock.h>
 #include <utils/Trace.h>
 
@@ -84,19 +85,19 @@ size_t StreamContext::getFrameSize() const {
 
 bool StreamContext::isValid() const {
     if (mCommandMQ && !mCommandMQ->isValid()) {
-        LOG(ERROR) << "command FMQ is invalid";
+        HAL_LOGE << "command FMQ is invalid";
         return false;
     }
     if (mReplyMQ && !mReplyMQ->isValid()) {
-        LOG(ERROR) << "reply FMQ is invalid";
+        HAL_LOGE << "reply FMQ is invalid";
         return false;
     }
     if (getFrameSize() == 0) {
-        LOG(ERROR) << "frame size is invalid";
+        HAL_LOGE << "frame size is invalid";
         return false;
     }
     if (mDataMQ && !mDataMQ->isValid()) {
-        LOG(ERROR) << "data FMQ is invalid";
+        HAL_LOGE << "data FMQ is invalid";
         return false;
     }
     return true;
@@ -128,8 +129,8 @@ std::string StreamWorkerCommonLogic::init() {
     mDataBuffer.reset(new (std::nothrow) DataBufferElement[mDataBufferSize]);
     if (mDataBuffer == nullptr) {
         return "Failed to allocate data buffer for element count " +
-               std::to_string(dataMQ->getQuantumCount()) + ", size in bytes: " +
-               std::to_string(mDataBufferSize);
+               std::to_string(dataMQ->getQuantumCount()) +
+               ", size in bytes: " + std::to_string(mDataBufferSize);
     }
     if (::android::status_t status = mDriver->init(); status != STATUS_OK) {
         return "Failed to initialize the driver: " + std::to_string(status);
@@ -137,8 +138,8 @@ std::string StreamWorkerCommonLogic::init() {
     constexpr int kThreadNameMaxLen = 15;
     const auto& threadName = mContext->getStreamName().substr(0, kThreadNameMaxLen);
     if (int errCode = pthread_setname_np(pthread_self(), threadName.c_str()); errCode != 0) {
-        LOG(WARNING) << ": Failed to set name for stream worker thread: " << strerror(errCode)
-                     << " " << threadName;
+        HAL_LOGW << "Failed to set name for stream worker thread: " << strerror(errCode) << " "
+                 << threadName;
     }
     return "";
 }
@@ -172,8 +173,8 @@ void StreamWorkerCommonLogic::populateReply(StreamDescriptor::Reply* reply,
 
 void StreamWorkerCommonLogic::populateReplyWrongState(
         StreamDescriptor::Reply* reply, const StreamDescriptor::Command& command) const {
-    LOG(WARNING) << "command '" << toString(command.getTag())
-                 << "' can not be handled in the state " << toString(mState);
+    HAL_LOGW << "command '" << toString(command.getTag()) << "' can not be handled in the state "
+             << toString(mState);
     reply->status = STATUS_INVALID_OPERATION;
 }
 
@@ -186,13 +187,12 @@ StreamInWorkerLogic::Status StreamInWorkerLogic::cycle() {
 
     StreamDescriptor::Command command{};
     if (!mContext->getCommandMQ()->readBlocking(&command, 1)) {
-        LOG(ERROR) << __func__ << ": reading of command from MQ failed";
+        HAL_LOGE << "reading of command from MQ failed";
         mState = StreamDescriptor::State::ERROR;
         return Status::ABORT;
     }
 
-    LOG(VERBOSE) << __func__ << ": received command " << command.toString() << " in "
-                 << mContext->getStreamName() << " in state " << toString(mState);
+    HAL_LOGV << "received " << command.toString() << " in state " << toString(mState);
 
     StreamDescriptor::Reply reply{};
     reply.status = STATUS_BAD_VALUE;
@@ -207,7 +207,7 @@ StreamInWorkerLogic::Status StreamInWorkerLogic::cycle() {
                 // This is an internal command, no need to reply.
                 return Status::EXIT;
             } else {
-                LOG(WARNING) << __func__ << ": EXIT command has a bad cookie: " << cookie;
+                HAL_LOGW << "EXIT command has a bad cookie: " << cookie;
             }
             break;
         case Tag::getStatus:
@@ -222,7 +222,7 @@ StreamInWorkerLogic::Status StreamInWorkerLogic::cycle() {
                                      ? StreamDescriptor::State::IDLE
                                      : StreamDescriptor::State::ACTIVE;
                 } else {
-                    LOG(ERROR) << __func__ << ": start failed: " << status;
+                    HAL_LOGE << "start failed: " << status;
                     // uncomment below, to treat the failure as HARD error, stream not recoverable
                     // mState = StreamDescriptor::State::ERROR;
                 }
@@ -233,8 +233,8 @@ StreamInWorkerLogic::Status StreamInWorkerLogic::cycle() {
         case Tag::burst:
             if (const int32_t fmqByteCount = command.get<Tag::burst>(); fmqByteCount >= 0) {
 #ifdef VERY_VERBOSE_LOGGING
-                LOG(VERBOSE) << __func__ << ": '" << toString(command.getTag()) << "' command for "
-                             << fmqByteCount << " bytes";
+                HAL_LOGV << "'" << toString(command.getTag()) << "' command for " << fmqByteCount
+                         << " bytes";
 #endif
                 if (mState == StreamDescriptor::State::IDLE ||
                     mState == StreamDescriptor::State::ACTIVE ||
@@ -261,7 +261,7 @@ StreamInWorkerLogic::Status StreamInWorkerLogic::cycle() {
                     populateReplyWrongState(&reply, command);
                 }
             } else {
-                LOG(WARNING) << __func__ << ": invalid burst byte count: " << fmqByteCount;
+                HAL_LOGW << "invalid burst byte count: " << fmqByteCount;
             }
             break;
         case Tag::drain:
@@ -273,7 +273,7 @@ StreamInWorkerLogic::Status StreamInWorkerLogic::cycle() {
                         populateReply(&reply, mIsConnected);
                         mState = StreamDescriptor::State::DRAINING;
                     } else {
-                        LOG(ERROR) << __func__ << ": drain failed: " << status;
+                        HAL_LOGE << "drain failed: " << status;
                         // uncomment below, to treat the failure as HARD error, stream not
                         // recoverable mState = StreamDescriptor::State::ERROR;
                     }
@@ -281,7 +281,7 @@ StreamInWorkerLogic::Status StreamInWorkerLogic::cycle() {
                     populateReplyWrongState(&reply, command);
                 }
             } else {
-                LOG(WARNING) << __func__ << ": invalid drain mode: " << toString(mode);
+                HAL_LOGW << "invalid drain mode: " << toString(mode);
             }
             break;
         case Tag::standby:
@@ -290,7 +290,7 @@ StreamInWorkerLogic::Status StreamInWorkerLogic::cycle() {
                     populateReply(&reply, mIsConnected);
                     mState = StreamDescriptor::State::STANDBY;
                 } else {
-                    LOG(ERROR) << __func__ << ": standby failed: " << status;
+                    HAL_LOGE << "standby failed: " << status;
                     // uncomment below, to treat the failure as HARD error, stream not recoverable
                     // mState = StreamDescriptor::State::ERROR;
                 }
@@ -304,7 +304,7 @@ StreamInWorkerLogic::Status StreamInWorkerLogic::cycle() {
                     populateReply(&reply, mIsConnected);
                     mState = StreamDescriptor::State::PAUSED;
                 } else {
-                    LOG(ERROR) << __func__ << ": pause failed: " << status;
+                    HAL_LOGE << "pause failed: " << status;
                     // uncomment below, to treat the failure as HARD error, stream not recoverable
                     // mState = StreamDescriptor::State::ERROR;
                 }
@@ -319,7 +319,7 @@ StreamInWorkerLogic::Status StreamInWorkerLogic::cycle() {
                     mDriver->standby(); // move to standby
                     mState = StreamDescriptor::State::STANDBY;
                 } else {
-                    LOG(ERROR) << __func__ << ": flush failed: " << status;
+                    HAL_LOGE << "flush failed: " << status;
                     // uncomment below, to treat the failure as HARD error, stream not recoverable
                     // mState = StreamDescriptor::State::ERROR;
                 }
@@ -333,11 +333,10 @@ StreamInWorkerLogic::Status StreamInWorkerLogic::cycle() {
     using LogSeverity = ::android::base::LogSeverity;
     const LogSeverity severity =
             (reply.status != STATUS_OK) ? LogSeverity::ERROR : LogSeverity::VERBOSE;
-    LOG(severity) << __func__ << ": writing reply " << reply.toString() << " in "
-                  << mContext->getStreamName();
+    STREAM_LOG(severity) << "writing reply " << reply.toString();
 
     if (!mContext->getReplyMQ()->writeBlocking(&reply, 1)) {
-        LOG(ERROR) << __func__ << ": writing of reply " << reply.toString() << " to MQ failed";
+        HAL_LOGE << "writing of reply " << reply.toString() << " to MQ failed";
         mState = StreamDescriptor::State::ERROR;
         return Status::ABORT;
     }
@@ -358,7 +357,7 @@ bool StreamInWorkerLogic::read(size_t clientSize, StreamDescriptor::Reply* reply
                                                            &actualFrameCount, &latency);
             status != ::android::OK) {
             fatal = true;
-            LOG(ERROR) << __func__ << ": read failed: " << status;
+            HAL_LOGE << "read failed: " << status;
         }
     } else {
         usleep(3000); // Simulate blocking transfer delay.
@@ -369,16 +368,15 @@ bool StreamInWorkerLogic::read(size_t clientSize, StreamDescriptor::Reply* reply
     if (bool success = actualByteCount > 0 ? dataMQ->write(&mDataBuffer[0], actualByteCount) : true;
         success) {
 #ifdef VERY_VERBOSE_LOGGING
-        LOG(VERBOSE) << __func__ << ": writing of " << actualByteCount << " bytes into data MQ"
-                     << " succeeded; connected? " << isConnected;
+        HAL_LOGV << "writing of " << actualByteCount << " bytes into data MQ"
+                 << " succeeded; connected? " << isConnected;
 #endif
         // Frames are provided and counted regardless of connection status.
         reply->fmqByteCount += actualByteCount;
         mContext->advanceFrameCount(actualFrameCount);
         populateReply(reply, isConnected);
     } else {
-        LOG(WARNING) << __func__ << ": writing of " << actualByteCount
-                     << " bytes of data to MQ failed";
+        HAL_LOGW << "writing of " << actualByteCount << " bytes of data to MQ failed";
         reply->status = STATUS_NOT_ENOUGH_DATA;
     }
     reply->latencyMs = latency;
@@ -398,7 +396,7 @@ bool StreamInWorkerLogic::readMmap(StreamDescriptor::Reply* reply) {
         reply->latencyMs = latency;
         return true;
     } else {
-        LOG(ERROR) << __func__ << ": transfer failed: " << status;
+        HAL_LOGE << "transfer failed: " << status;
         return false;
     }
 }
@@ -407,13 +405,13 @@ bool StreamOutAsyncWorkerLogic::handleTransferReady() {
     if (mState == StreamDescriptor::State::TRANSFERRING) {
         mState = StreamDescriptor::State::ACTIVE;
         mContext->getAsyncCallback()->onTransferReady();
-        LOG(VERBOSE) << __func__ << ": sent transfer ready to client";
+        HAL_LOGV << "sent transfer ready to client";
         return true;
     } else if (mState == StreamDescriptor::State::DRAINING && mDrainInternalState &&
                mDrainInternalState.value() == DrainInternalState::DRAINING_en_sent) {
         mContext->getAsyncCallback()->onTransferReady();
-        LOG(VERBOSE) << __func__ << ": sent transfer ready to client with drain internal state:"
-                     << toString(mDrainInternalState.value());
+        HAL_LOGV << "sent transfer ready to client with drain internal state:"
+                 << toString(mDrainInternalState.value());
         return true;
     }
     return false;
@@ -429,9 +427,9 @@ void StreamOutAsyncWorkerLogic::publishTransferReady() {
         return;
     } else if (mState == StreamDescriptor::State::TRANSFER_PAUSED) {
         mPendingCallBack = StreamCallbackType::TR;
-        LOG(VERBOSE) << __func__ << ": pending transfer ready";
+        HAL_LOGV << "pending transfer ready";
     } else {
-        LOG(WARNING) << __func__ << ": shouldn't happen !!";
+        HAL_LOGW << "shouldn't happen !!";
     }
 }
 
@@ -450,16 +448,15 @@ bool StreamOutAsyncWorkerLogic::handleDrainReady() {
                 }
                 mIsClipTransitionDataBurstsAvailable = false;
             } else {
-                LOG(WARNING) << __func__
-                             << ": shouldn't happen !! state:"  //<< toString(mState.load())
-                             << ", drain internal state:" << toString(mDrainInternalState.value());
+                HAL_LOGW << "shouldn't happen "
+                         << ", drain internal state:" << toString(mDrainInternalState.value());
                 return false;
             }
         } else {
             mState = StreamDescriptor::State::IDLE;
         }
         mContext->getAsyncCallback()->onDrainReady();
-        LOG(VERBOSE) << __func__ << ": sent drain ready to client";
+        HAL_LOGV << "sent drain ready to client";
         return true;
     }
     return false;
@@ -475,9 +472,9 @@ void StreamOutAsyncWorkerLogic::publishDrainReady() {
         return;
     } else if (mState == StreamDescriptor::State::DRAIN_PAUSED) {
         mPendingCallBack = StreamCallbackType::DR;
-        LOG(VERBOSE) << __func__ << ": pending drain ready";
+        HAL_LOGV << "pending drain ready";
     } else {
-        LOG(WARNING) << __func__ << ": shouldn't happen !!";
+        HAL_LOGW << "shouldn't happen !!";
     }
 }
 
@@ -487,7 +484,7 @@ bool StreamOutAsyncWorkerLogic::handleError() {
     }
     mContext->getAsyncCallback()->onError();
     mState = StreamDescriptor::State::ERROR;
-    LOG(ERROR) << __func__ << ": sent Error to the client";
+    HAL_LOGE << "sent Error to the client";
     return true;
 }
 
@@ -498,14 +495,13 @@ void StreamOutAsyncWorkerLogic::publishError() {
 StreamOutWorkerLogic::Status StreamOutAsyncWorkerLogic::cycle() {
     StreamDescriptor::Command command{};
     if (!mContext->getCommandMQ()->readBlocking(&command, 1)) {
-        LOG(ERROR) << __func__ << ": reading of command from MQ failed";
+        HAL_LOGE << "reading of command from MQ failed";
         mState = StreamDescriptor::State::ERROR;
         return Status::ABORT;
     }
 
-    LOG(VERBOSE) << __func__ << ": received command " << command.toString() << " in "
-                 << mContext->getStreamName()
-                 << " in state " << ::aidl::android::hardware::audio::core::toString(mState);
+    HAL_LOGV << "received " << command.toString() << " in state "
+             << ::aidl::android::hardware::audio::core::toString(mState);
 
     StreamDescriptor::Reply reply{};
     reply.status = STATUS_BAD_VALUE;
@@ -525,7 +521,7 @@ StreamOutWorkerLogic::Status StreamOutAsyncWorkerLogic::cycle() {
                 // This is an internal command, no need to reply.
                 return Status::EXIT;
             } else {
-                LOG(WARNING) << __func__ << ": EXIT command has a bad cookie: " << cookie;
+                HAL_LOGW << "EXIT command has a bad cookie: " << cookie;
             }
         } break;
         case Tag::getStatus: {
@@ -551,8 +547,8 @@ StreamOutWorkerLogic::Status StreamOutAsyncWorkerLogic::cycle() {
                             nextDrainInternalState = DrainInternalState::DRAINING_en_sent;
                         } else {
                             nextState = {};
-                            LOG(ERROR) << __func__ << ": bad drain internal state: "
-                                       << toString(mDrainInternalState.value());
+                            HAL_LOGE << "bad drain internal state: "
+                                     << toString(mDrainInternalState.value());
                         }
                     }
                     break;
@@ -575,7 +571,7 @@ StreamOutWorkerLogic::Status StreamOutAsyncWorkerLogic::cycle() {
                         mDrainInternalState = nextDrainInternalState.value();
                     }
                 } else {
-                    LOG(ERROR) << __func__ << ": start failed: " << status;
+                    HAL_LOGE << "start failed: " << status;
                     // uncomment below, to treat the failure as HARD error, stream not recoverable
                     // mState = StreamDescriptor::State::ERROR;
                 }
@@ -586,12 +582,12 @@ StreamOutWorkerLogic::Status StreamOutAsyncWorkerLogic::cycle() {
         } break;
         case Tag::burst: {
             if (const int32_t fmqByteCount = command.get<Tag::burst>(); fmqByteCount >= 0) {
-                LOG(VERBOSE) << __func__ << ": burst with bytes:" << fmqByteCount;
+                HAL_LOGV << "burst with bytes:" << fmqByteCount;
                 if (mState != StreamDescriptor::State::ERROR &&
                     mState != StreamDescriptor::State::TRANSFERRING &&
                     mState != StreamDescriptor::State::TRANSFER_PAUSED) {
                     if (!write(fmqByteCount, &reply)) {
-                        LOG(ERROR) << __func__ << ": write failed";
+                        HAL_LOGE << "write failed";
                         break;
                     }
                     if (mState == StreamDescriptor::State::STANDBY ||
@@ -612,8 +608,8 @@ StreamOutWorkerLogic::Status StreamOutAsyncWorkerLogic::cycle() {
                         } else if (!mDrainInternalState) {
                             mState = StreamDescriptor::State::TRANSFER_PAUSED;
                         } else {
-                            LOG(ERROR) << __func__ << ": bad drain internal state: "
-                                       << toString(mDrainInternalState.value());
+                            HAL_LOGE << "bad drain internal state: "
+                                     << toString(mDrainInternalState.value());
                             populateReplyWrongState(&reply, command);
                             break;
                         }
@@ -626,8 +622,7 @@ StreamOutWorkerLogic::Status StreamOutAsyncWorkerLogic::cycle() {
                             if (reply.status == STATUS_OK) {
                                 switchToTransientState(StreamDescriptor::State::TRANSFERRING);
                             } else {
-                                LOG(ERROR) << __func__
-                                           << ": write failed, but dont put in error state ";
+                                HAL_LOGE << "write failed, but dont put in error state ";
                                 populateReplyWrongState(&reply, command);
                                 break;
                             }
@@ -648,8 +643,7 @@ StreamOutWorkerLogic::Status StreamOutAsyncWorkerLogic::cycle() {
                                     switchToTransientState(StreamDescriptor::State::TRANSFERRING);
                                     mDrainInternalState = {};
                                 } else {
-                                    LOG(ERROR) << __func__
-                                               << ": write failed, but dont put in error state ";
+                                    HAL_LOGE << "write failed, but dont put in error state ";
                                     populateReplyWrongState(&reply, command);
                                     break;
                                 }
@@ -664,7 +658,7 @@ StreamOutWorkerLogic::Status StreamOutAsyncWorkerLogic::cycle() {
                     break;
                 }
             } else {
-                LOG(WARNING) << __func__ << ": invalid burst bytes: " << fmqByteCount;
+                HAL_LOGW << "invalid burst bytes: " << fmqByteCount;
                 populateReplyWrongState(&reply, command);
                 break;
             }
@@ -676,7 +670,7 @@ StreamOutWorkerLogic::Status StreamOutAsyncWorkerLogic::cycle() {
                     populateReply(&reply, mIsConnected);
                     return status;
                 } else {
-                    LOG(ERROR) << "issueDrain" << ": drain failed: " << status;
+                    HAL_LOGE << "issueDrain drain failed: " << status;
                     return status;
                 }
             };
@@ -724,7 +718,7 @@ StreamOutWorkerLogic::Status StreamOutAsyncWorkerLogic::cycle() {
                     mState = StreamDescriptor::State::STANDBY;
                     populateReply(&reply, mIsConnected);
                 } else {
-                    LOG(ERROR) << __func__ << ": standby failed: " << status;
+                    HAL_LOGE << "standby failed: " << status;
                     // uncomment below, to treat the failure as HARD error, stream not recoverable
                     // mState = StreamDescriptor::State::ERROR;
                 }
@@ -758,8 +752,8 @@ StreamOutWorkerLogic::Status StreamOutAsyncWorkerLogic::cycle() {
                                DrainInternalState::DRAINING_en_sent) {
                         nextInternalState = DrainInternalState::DRAIN_PAUSED_en_sent;
                     } else {
-                        LOG(ERROR) << __func__ << ": bad drain internal state: "
-                                   << toString(mDrainInternalState.value());
+                        HAL_LOGE << "bad drain internal state: "
+                                 << toString(mDrainInternalState.value());
                         populateReplyWrongState(&reply, command);
                         break;
                     }
@@ -771,7 +765,7 @@ StreamOutWorkerLogic::Status StreamOutAsyncWorkerLogic::cycle() {
                     mDrainInternalState = nextInternalState;
                     populateReply(&reply, mIsConnected);
                 } else {
-                    LOG(ERROR) << __func__ << ": pause failed: " << status;
+                    HAL_LOGE << "pause failed: " << status;
                     // uncomment below, to treat the failure as HARD error, stream not recoverable
                     // mState = StreamDescriptor::State::ERROR;
                 }
@@ -788,7 +782,7 @@ StreamOutWorkerLogic::Status StreamOutAsyncWorkerLogic::cycle() {
                     mDrainInternalState = {};
                     populateReply(&reply, mIsConnected);
                 } else {
-                    LOG(ERROR) << __func__ << ": flush failed: " << status;
+                    HAL_LOGE << "flush failed: " << status;
                     // uncomment below, to treat the failure as HARD error, stream not recoverable
                     // mState = StreamDescriptor::State::ERROR;
                 }
@@ -803,14 +797,13 @@ StreamOutWorkerLogic::Status StreamOutAsyncWorkerLogic::cycle() {
     using LogSeverity = ::android::base::LogSeverity;
     const LogSeverity severity =
             (reply.status != STATUS_OK) ? LogSeverity::ERROR : LogSeverity::VERBOSE;
-    LOG(severity) << __func__ << ": writing reply " << reply.toString()
-                  << (mDrainInternalState
-                              ? (": drain internal state:" + toString(mDrainInternalState.value()))
-                              : "")
-                  << " in " << mContext->getStreamName();
+    STREAM_LOG(severity) << "writing reply " << reply.toString()
+                         << (mDrainInternalState ? (": drain internal state:" +
+                                                    toString(mDrainInternalState.value()))
+                                                 : "");
 
     if (!mContext->getReplyMQ()->writeBlocking(&reply, 1)) {
-        LOG(ERROR) << __func__ << ": writing of reply " << reply.toString() << " to MQ failed ";
+        HAL_LOGE << "writing of reply " << reply.toString() << " to MQ failed ";
         mState = StreamDescriptor::State::ERROR;
         return Status::ABORT;
     }
@@ -824,8 +817,7 @@ StreamOutWorkerLogic::Status StreamOutAsyncWorkerLogic::cycle() {
             mPendingCallBack = {};
         } else {
             if (command.getTag() != Tag::getStatus) {
-                LOG(ERROR) << __func__
-                           << ": pending callback not handled, callback:" << *mPendingCallBack;
+                HAL_LOGE << "pending callback not handled, callback:" << *mPendingCallBack;
             }
         }
     }
@@ -836,7 +828,7 @@ StreamOutWorkerLogic::Status StreamOutAsyncWorkerLogic::cycle() {
 StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
     StreamDescriptor::Command command{};
     if (!mContext->getCommandMQ()->readBlocking(&command, 1)) {
-        LOG(ERROR) << __func__ << ": reading of command from MQ failed";
+        HAL_LOGE << "reading of command from MQ failed";
         mState = StreamDescriptor::State::ERROR;
         return Status::ABORT;
     }
@@ -850,8 +842,7 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
         }
     }
 
-    LOG(VERBOSE) << __func__ << ": received command " << command.toString() << " in "
-                 << mContext->getStreamName() << " in state " << toString(mState);
+    HAL_LOGV << "received " << command.toString() << " in state " << toString(mState);
 
     StreamDescriptor::Reply reply{};
     reply.status = STATUS_BAD_VALUE;
@@ -865,7 +856,7 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
                 // This is an internal command, no need to reply.
                 return Status::EXIT;
             } else {
-                LOG(WARNING) << __func__ << ": EXIT command has a bad cookie: " << cookie;
+                HAL_LOGW << "EXIT command has a bad cookie: " << cookie;
             }
         } break;
         case Tag::getStatus: {
@@ -896,7 +887,7 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
                         switchToTransientState(*nextState);
                     }
                 } else {
-                    LOG(ERROR) << __func__ << ": start failed: " << status;
+                    HAL_LOGE << "start failed: " << status;
                     // uncomment below, to treat the failure as HARD error, stream not recoverable
                     // mState = StreamDescriptor::State::ERROR;
                 }
@@ -904,8 +895,8 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
         } break;
         case Tag::burst: {
             if (const int32_t fmqByteCount = command.get<Tag::burst>(); fmqByteCount >= 0) {
-                LOG(VERBOSE) << __func__ << ": '" << toString(command.getTag()) << "' command for "
-                             << fmqByteCount << " bytes";
+                HAL_LOGV << "'" << toString(command.getTag()) << "' command for " << fmqByteCount
+                         << " bytes";
                 if (mState != StreamDescriptor::State::ERROR) {
                     std::optional<StreamDescriptor::State> nextState;
                     if (mState == StreamDescriptor::State::STANDBY ||
@@ -924,25 +915,24 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
                     bool isMmap = mContext->isMmap();
                     if (isMmap) {
                         if (!writeMmap(&reply)) {
-                            LOG(ERROR) << __func__ << ": mmap write failed";
+                            HAL_LOGE << "mmap write failed";
                             break;
                         }
                     } else if (!write(fmqByteCount, &reply)) {
-                        LOG(ERROR) << __func__ << ": write failed, but dont put in error state ";
+                        HAL_LOGE << "write failed, but dont put in error state ";
                     }
 
                     if (nextState && reply.fmqByteCount == fmqByteCount) {
                         mState = nextState.value();
                     } else {
-                        LOG(ERROR)
-                                << __func__ << ": couldn't write all data bytes: " << fmqByteCount
-                                << " != " << reply.fmqByteCount;
+                        HAL_LOGE << "couldn't write all data bytes: " << fmqByteCount
+                                 << " != " << reply.fmqByteCount;
                     }
                 } else {
                     populateReplyWrongState(&reply, command);
                 }
             } else {
-                LOG(WARNING) << __func__ << ": invalid burst byte count: " << fmqByteCount;
+                HAL_LOGW << "invalid burst byte count: " << fmqByteCount;
             }
         } break;
         case Tag::drain: {
@@ -958,7 +948,7 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
                             switchToTransientState(StreamDescriptor::State::DRAINING);
                         }
                     } else {
-                        LOG(ERROR) << __func__ << ": drain failed: " << status;
+                        HAL_LOGE << "drain failed: " << status;
                         // uncomment below, to treat the failure as HARD error, stream not
                         // recoverable mState = StreamDescriptor::State::ERROR;
                     }
@@ -966,7 +956,7 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
                     populateReplyWrongState(&reply, command);
                 }
             } else {
-                LOG(WARNING) << __func__ << ": invalid drain mode: " << toString(currentMode);
+                HAL_LOGW << "invalid drain mode: " << toString(currentMode);
             }
         } break;
         case Tag::standby: {
@@ -975,7 +965,7 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
                     populateReply(&reply, mIsConnected);
                     mState = StreamDescriptor::State::STANDBY;
                 } else {
-                    LOG(ERROR) << __func__ << ": standby failed: " << status;
+                    HAL_LOGE << "standby failed: " << status;
                     // uncomment below, to treat the failure as HARD error, stream not recoverable
                     // mState = StreamDescriptor::State::ERROR;
                 }
@@ -1000,7 +990,7 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
                     populateReply(&reply, mIsConnected);
                     mState = nextState.value();
                 } else {
-                    LOG(ERROR) << __func__ << ": pause failed: " << status;
+                    HAL_LOGE << "pause failed: " << status;
                     // uncomment below, to treat the failure as HARD error, stream not recoverable
                     // mState = StreamDescriptor::State::ERROR;
                 }
@@ -1013,7 +1003,7 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
                     populateReply(&reply, mIsConnected);
                     mState = StreamDescriptor::State::IDLE;
                 } else {
-                    LOG(ERROR) << __func__ << ": flush failed: " << status;
+                    HAL_LOGE << "flush failed: " << status;
                     // uncomment below, to treat the failure as HARD error, stream not recoverable
                     // mState = StreamDescriptor::State::ERROR;
                 }
@@ -1027,11 +1017,10 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
     using LogSeverity = ::android::base::LogSeverity;
     const LogSeverity severity =
             (reply.status != STATUS_OK) ? LogSeverity::ERROR : LogSeverity::VERBOSE;
-    LOG(severity) << __func__ << ": writing reply " << reply.toString() << " in "
-                  << mContext->getStreamName();
+    STREAM_LOG(severity) << "writing reply " << reply.toString();
 
     if (!mContext->getReplyMQ()->writeBlocking(&reply, 1)) {
-        LOG(ERROR) << __func__ << ": writing of reply " << reply.toString() << " to MQ failed";
+        HAL_LOGE << "writing of reply " << reply.toString() << " to MQ failed";
         mState = StreamDescriptor::State::ERROR;
         return Status::ABORT;
     }
@@ -1049,8 +1038,8 @@ bool StreamOutWorkerLogic::write(size_t clientSize, StreamDescriptor::Reply* rep
     if (bool success = readByteCount > 0 ? dataMQ->read(&mDataBuffer[0], readByteCount) : true) {
         const bool isConnected = mIsConnected;
 #ifdef VERY_VERBOSE_LOGGING
-        LOG(VERBOSE) << __func__ << ": reading of " << readByteCount << " bytes from data MQ"
-                     << " succeeded; connected? " << isConnected;
+        HAL_LOGV << "reading of " << readByteCount << " bytes from data MQ"
+                 << " succeeded; connected? " << isConnected;
 #endif
         // Amount of data that the HAL module is going to actually use.
         size_t byteCount = std::min({clientSize, readByteCount, mDataBufferSize});
@@ -1061,12 +1050,12 @@ bool StreamOutWorkerLogic::write(size_t clientSize, StreamDescriptor::Reply* rep
         }
         size_t actualFrameCount = 0;
         // No need to check for connected device, if there is issue, write returns failure
-        if (::android::status_t status = mDriver->transfer(
-                 mDataBuffer.get(), byteCount / frameSize, &actualFrameCount, &latency);
-                status != ::android::OK) {
-                reply->status = STATUS_DEAD_OBJECT;
-                fatal = true;
-                LOG(ERROR) << __func__ << ": write failed: " << status;
+        if (::android::status_t status = mDriver->transfer(mDataBuffer.get(), byteCount / frameSize,
+                                                           &actualFrameCount, &latency);
+            status != ::android::OK) {
+            reply->status = STATUS_DEAD_OBJECT;
+            fatal = true;
+            HAL_LOGE << "write failed: " << status;
         }
 
         const size_t actualByteCount = actualFrameCount * frameSize;
@@ -1075,8 +1064,7 @@ bool StreamOutWorkerLogic::write(size_t clientSize, StreamDescriptor::Reply* rep
         mContext->advanceFrameCount(actualFrameCount);
         populateReply(reply, isConnected);
     } else {
-        LOG(WARNING) << __func__ << ": reading of " << readByteCount
-                     << " bytes of data from MQ failed";
+        HAL_LOGW << "reading of " << readByteCount << " bytes of data from MQ failed";
         reply->status = STATUS_NOT_ENOUGH_DATA;
     }
     return !fatal;
@@ -1096,7 +1084,7 @@ bool StreamOutWorkerLogic::writeMmap(StreamDescriptor::Reply* reply) {
         reply->latencyMs = latency;
         return true;
     } else {
-        LOG(ERROR) << __func__ << ": transfer failed: " << status;
+        HAL_LOGE << "transfer failed: " << status;
         return false;
     }
 }
@@ -1108,10 +1096,10 @@ StreamCommonImpl::~StreamCommonImpl() {
     // implementation is not valid. Thus, here it can only be asserted whether the subclass has done
     // its job.
     if (!mWorkerStopIssued && !isClosed()) {
-        LOG(FATAL) << __func__ << ": the stream implementation must call 'cleanupWorker' "
-                   << "in order to clean up the worker thread.";
+        HAL_LOGF << "the stream implementation must call 'cleanupWorker' "
+                 << "in order to clean up the worker thread.";
     }
-    LOG(VERBOSE) << __func__ << ": destroy " << std::hex << this;
+    HAL_LOGV << "destroy " << std::hex << this;
 }
 
 ndk::ScopedAStatus StreamCommonImpl::initInstance(
@@ -1132,13 +1120,13 @@ ndk::ScopedAStatus StreamCommonImpl::initInstance(
         pid_t workerTid = mWorker->getTid();
         if (workerTid > 0) {
             struct sched_param param;
-            param.sched_priority = 3; // Must match SchedulingPolicyService.PRIORITY_MAX (Java).
-            LOG(DEBUG) << __func__ << ": increase scheduling for tid : " << workerTid;
+            param.sched_priority = 3;  // Must match SchedulingPolicyService.PRIORITY_MAX (Java).
+            HAL_LOGD << "increase scheduling for tid : " << workerTid;
             if (sched_setscheduler(workerTid, SCHED_FIFO | SCHED_RESET_ON_FORK, &param) != 0) {
-                LOG(WARNING) << __func__ << ": failed to set FIFO scheduler for a fast thread";
+                HAL_LOGW << "failed to set FIFO scheduler for a fast thread";
             }
         } else {
-            LOG(WARNING) << __func__ << ": invalid worker tid: " << workerTid;
+            HAL_LOGW << "invalid worker tid: " << workerTid;
         }
     }
     return ndk::ScopedAStatus::ok();
@@ -1147,15 +1135,15 @@ ndk::ScopedAStatus StreamCommonImpl::initInstance(
 ndk::ScopedAStatus StreamCommonImpl::getStreamCommonCommon(
         std::shared_ptr<IStreamCommon>* _aidl_return) {
     if (!mCommon) {
-        LOG(FATAL) << __func__ << ": the common interface was not created";
+        HAL_LOGF << "the common interface was not created";
     }
     *_aidl_return = mCommon.getInstance();
-    LOG(DEBUG) << __func__ << ": returning " << _aidl_return->get()->asBinder().get();
+    HAL_LOGV << "returning " << _aidl_return->get()->asBinder().get();
     return ndk::ScopedAStatus::ok();
 }
 
 ndk::ScopedAStatus StreamCommonImpl::updateHwAvSyncId(int32_t in_hwAvSyncId) {
-    LOG(DEBUG) << __func__ << ": id " << in_hwAvSyncId;
+    HAL_LOGV << "id " << in_hwAvSyncId;
     return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
 }
 
@@ -1172,9 +1160,9 @@ ndk::ScopedAStatus StreamCommonImpl::setVendorParameters(
 ndk::ScopedAStatus StreamCommonImpl::addEffect(
         const std::shared_ptr<::aidl::android::hardware::audio::effect::IEffect>& in_effect) {
     if (in_effect == nullptr) {
-        LOG(DEBUG) << __func__ << ": null effect";
+        HAL_LOGD << "null effect";
     } else {
-        LOG(DEBUG) << __func__ << ": effect Binder" << in_effect->asBinder().get();
+        HAL_LOGD << "effect Binder" << in_effect->asBinder().get();
     }
     return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
 }
@@ -1182,16 +1170,16 @@ ndk::ScopedAStatus StreamCommonImpl::addEffect(
 ndk::ScopedAStatus StreamCommonImpl::removeEffect(
         const std::shared_ptr<::aidl::android::hardware::audio::effect::IEffect>& in_effect) {
     if (in_effect == nullptr) {
-        LOG(DEBUG) << __func__ << ": null effect";
+        HAL_LOGD << "null effect";
     } else {
-        LOG(DEBUG) << __func__ << ": effect Binder" << in_effect->asBinder().get();
+        HAL_LOGD << "effect Binder" << in_effect->asBinder().get();
     }
     return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
 }
 
 ndk::ScopedAStatus StreamCommonImpl::close() {
     ModulePrimary::outListMutex.lock();
-    LOG(DEBUG) << __func__;
+    HAL_LOGD;
     if (!isClosed()) {
         stopAndJoinWorker();
         onClose();
@@ -1199,38 +1187,38 @@ ndk::ScopedAStatus StreamCommonImpl::close() {
         ModulePrimary::outListMutex.unlock();
         return ndk::ScopedAStatus::ok();
     } else {
-        LOG(ERROR) << __func__ << ": stream was already closed";
+        HAL_LOGE << "stream was already closed";
         ModulePrimary::outListMutex.unlock();
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
     }
 }
 
 ndk::ScopedAStatus StreamCommonImpl::prepareToClose() {
-    LOG(DEBUG) << __func__;
+    HAL_LOGD;
     if (!isClosed()) {
         return ndk::ScopedAStatus::ok();
     }
-    LOG(ERROR) << __func__ << ": stream was closed";
+    HAL_LOGE << "stream was closed";
     return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
 }
 
 void StreamCommonImpl::cleanupWorker() {
     if (!isClosed()) {
-        LOG(ERROR) << __func__ << ": stream was not closed prior to destruction, resource leak";
+        HAL_LOGE << "stream was not closed prior to destruction, resource leak";
         stopAndJoinWorker();
     }
 }
 
 void StreamCommonImpl::stopAndJoinWorker() {
     stopWorker();
-    LOG(DEBUG) << __func__ << ": joining the worker thread...";
+    HAL_LOGD << "joining the worker thread...";
     mWorker->join();
-    LOG(DEBUG) << __func__ << ": worker thread joined";
+    HAL_LOGD << "worker thread joined";
 }
 
 void StreamCommonImpl::stopWorker() {
     if (auto commandMQ = mContextRef.getCommandMQ(); commandMQ != nullptr) {
-        LOG(DEBUG) << __func__ << ": asking the worker to exit...";
+        HAL_LOGD << "asking the worker to exit...";
         auto cmd = StreamDescriptor::Command::make<StreamDescriptor::Command::Tag::halReservedExit>(
                 mContextRef.getInternalCommandCookie());
         // Note: never call 'pause' and 'resume' methods of StreamWorker
@@ -1238,23 +1226,23 @@ void StreamCommonImpl::stopWorker() {
         // the client side only. Preventing the worker loop from running
         // on the HAL side can cause a deadlock.
         if (!commandMQ->writeBlocking(&cmd, 1)) {
-            LOG(ERROR) << __func__ << ": failed to write exit command to the MQ";
+            HAL_LOGE << "failed to write exit command to the MQ";
         }
-        LOG(DEBUG) << __func__ << ": done";
+        HAL_LOGD << "done";
     }
     mWorkerStopIssued = true;
 }
 
 ndk::ScopedAStatus StreamCommonImpl::updateMetadataCommon(const Metadata& metadata) {
-    LOG(DEBUG) << __func__;
+    HAL_LOGV;
     if (!isClosed()) {
         if (metadata.index() != mMetadata.index()) {
-            LOG(FATAL) << __func__ << ": changing metadata variant is not allowed";
+            HAL_LOGF << "changing metadata variant is not allowed";
         }
         mMetadata = metadata;
         return ndk::ScopedAStatus::ok();
     }
-    LOG(ERROR) << __func__ << ": stream was closed";
+    HAL_LOGE << "stream was closed";
     return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
 }
 
@@ -1290,7 +1278,7 @@ static std::map<AudioDevice, std::string> transformMicrophones(
 
 StreamIn::StreamIn(StreamContext&& context, const std::vector<MicrophoneInfo>& microphones)
     : mContext(std::move(context)), mMicrophones(transformMicrophones(microphones)) {
-    LOG(DEBUG) << __func__;
+    HAL_LOGV;
 }
 
 void StreamIn::defaultOnClose() {
@@ -1312,46 +1300,46 @@ ndk::ScopedAStatus StreamIn::getActiveMicrophones(
         }
     }
     *_aidl_return = std::move(result);
-    LOG(DEBUG) << __func__ << ": returning " << ::android::internal::ToString(*_aidl_return);
+    HAL_LOGD << "returning " << ::android::internal::ToString(*_aidl_return);
     return ndk::ScopedAStatus::ok();
 }
 
 ndk::ScopedAStatus StreamIn::getMicrophoneDirection(MicrophoneDirection* _aidl_return) {
-    LOG(DEBUG) << __func__;
+    HAL_LOGV;
     (void)_aidl_return;
     return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
 }
 
 ndk::ScopedAStatus StreamIn::setMicrophoneDirection(MicrophoneDirection in_direction) {
-    LOG(DEBUG) << __func__ << ": direction " << toString(in_direction);
+    HAL_LOGV << "direction " << toString(in_direction);
     return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
 }
 
 ndk::ScopedAStatus StreamIn::getMicrophoneFieldDimension(float* _aidl_return) {
-    LOG(DEBUG) << __func__;
+    HAL_LOGV;
     (void)_aidl_return;
     return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
 }
 
 ndk::ScopedAStatus StreamIn::setMicrophoneFieldDimension(float in_zoom) {
-    LOG(DEBUG) << __func__ << ": zoom " << in_zoom;
+    HAL_LOGV << "zoom " << in_zoom;
     return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
 }
 
 ndk::ScopedAStatus StreamIn::getHwGain(std::vector<float>* _aidl_return) {
-    LOG(DEBUG) << __func__;
+    HAL_LOGD;
     (void)_aidl_return;
     return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
 }
 
 ndk::ScopedAStatus StreamIn::setHwGain(const std::vector<float>& in_channelGains) {
-    LOG(DEBUG) << __func__ << ": gains " << ::android::internal::ToString(in_channelGains);
+    HAL_LOGD << "gains " << ::android::internal::ToString(in_channelGains);
     return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
 }
 
 StreamOut::StreamOut(StreamContext&& context, const std::optional<AudioOffloadInfo>& offloadInfo)
     : mContext(std::move(context)), mOffloadInfo(offloadInfo) {
-    LOG(DEBUG) << __func__;
+    HAL_LOGV;
 }
 
 void StreamOut::defaultOnClose() {
@@ -1360,32 +1348,28 @@ void StreamOut::defaultOnClose() {
 
 ndk::ScopedAStatus StreamOut::updateOffloadMetadata(
         const AudioOffloadMetadata& in_offloadMetadata) {
-    LOG(DEBUG) << __func__;
     if (isClosed()) {
-        LOG(ERROR) << __func__ << ": stream was closed";
+        HAL_LOGE << "stream was closed";
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
     }
     if (!mOffloadInfo.has_value()) {
-        LOG(ERROR) << __func__ << ": not a compressed offload stream";
+        HAL_LOGE << "not a compressed offload stream";
         return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
     }
     if (in_offloadMetadata.sampleRate < 0) {
-        LOG(ERROR) << __func__ << ": invalid sample rate value: " << in_offloadMetadata.sampleRate;
+        HAL_LOGE << "invalid sample rate value: " << in_offloadMetadata.sampleRate;
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
     }
     if (in_offloadMetadata.averageBitRatePerSecond < 0) {
-        LOG(ERROR) << __func__
-                   << ": invalid average BPS value: " << in_offloadMetadata.averageBitRatePerSecond;
+        HAL_LOGE << "invalid average BPS value: " << in_offloadMetadata.averageBitRatePerSecond;
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
     }
     if (in_offloadMetadata.delayFrames < 0) {
-        LOG(ERROR) << __func__
-                   << ": invalid delay frames value: " << in_offloadMetadata.delayFrames;
+        HAL_LOGE << "invalid delay frames value: " << in_offloadMetadata.delayFrames;
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
     }
     if (in_offloadMetadata.paddingFrames < 0) {
-        LOG(ERROR) << __func__
-                   << ": invalid padding frames value: " << in_offloadMetadata.paddingFrames;
+        HAL_LOGE << "invalid padding frames value: " << in_offloadMetadata.paddingFrames;
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
     }
     mOffloadMetadata = in_offloadMetadata;
@@ -1393,64 +1377,63 @@ ndk::ScopedAStatus StreamOut::updateOffloadMetadata(
 }
 
 ndk::ScopedAStatus StreamOut::getHwVolume(std::vector<float>* _aidl_return) {
-    LOG(DEBUG) << __func__;
+    HAL_LOGD;
     (void)_aidl_return;
     return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
 }
 
 ndk::ScopedAStatus StreamOut::setHwVolume(const std::vector<float>& in_channelVolumes) {
-    LOG(DEBUG) << __func__ << ": gains " << ::android::internal::ToString(in_channelVolumes);
+    HAL_LOGD << "gains " << ::android::internal::ToString(in_channelVolumes);
     return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
 }
 
 ndk::ScopedAStatus StreamOut::getAudioDescriptionMixLevel(float* _aidl_return) {
-    LOG(DEBUG) << __func__;
+    HAL_LOGD;
     (void)_aidl_return;
     return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
 }
 
 ndk::ScopedAStatus StreamOut::setAudioDescriptionMixLevel(float in_leveldB) {
-    LOG(DEBUG) << __func__ << ": description mix level " << in_leveldB;
+    HAL_LOGD << "description mix level " << in_leveldB;
     return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
 }
 
 ndk::ScopedAStatus StreamOut::getDualMonoMode(AudioDualMonoMode* _aidl_return) {
-    LOG(DEBUG) << __func__;
+    HAL_LOGD;
     (void)_aidl_return;
     return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
 }
 
 ndk::ScopedAStatus StreamOut::setDualMonoMode(AudioDualMonoMode in_mode) {
-    LOG(DEBUG) << __func__ << ": dual mono mode " << toString(in_mode);
+    HAL_LOGD << "dual mono mode " << toString(in_mode);
     return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
 }
 
 ndk::ScopedAStatus StreamOut::getRecommendedLatencyModes(
         std::vector<AudioLatencyMode>* _aidl_return) {
-    LOG(DEBUG) << __func__;
+    HAL_LOGD;
     (void)_aidl_return;
     return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
 }
 
 ndk::ScopedAStatus StreamOut::setLatencyMode(AudioLatencyMode in_mode) {
-    LOG(DEBUG) << __func__ << ": latency mode " << toString(in_mode);
+    HAL_LOGD << "latency mode " << toString(in_mode);
     return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
 }
 
 ndk::ScopedAStatus StreamOut::getPlaybackRateParameters(AudioPlaybackRate* _aidl_return) {
-    LOG(DEBUG) << __func__;
+    HAL_LOGD;
     (void)_aidl_return;
     return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
 }
 
 ndk::ScopedAStatus StreamOut::setPlaybackRateParameters(const AudioPlaybackRate& in_playbackRate) {
-    LOG(DEBUG) << __func__ << ": " << in_playbackRate.toString();
+    HAL_LOGD << in_playbackRate.toString();
     return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
 }
 
 ndk::ScopedAStatus StreamOut::selectPresentation(int32_t in_presentationId, int32_t in_programId) {
-    LOG(DEBUG) << __func__ << ": presentationId " << in_presentationId << ", programId "
-               << in_programId;
+    HAL_LOGD << "presentationId " << in_presentationId << ", programId " << in_programId;
     return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
 }
 
