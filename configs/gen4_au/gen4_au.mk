@@ -519,10 +519,6 @@ PRODUCT_PACKAGES_ENG += \
 PRODUCT_PACKAGES_DEBUG += \
     AudioSettings
 
-
-PRODUCT_PROPERTY_OVERRIDES += \
-persist.vendor.service.bt.a2dp.sink=true
-
 PRODUCT_PROPERTY_OVERRIDES += \
 ro.bluetooth.a2dp_offload.supported=true
 
