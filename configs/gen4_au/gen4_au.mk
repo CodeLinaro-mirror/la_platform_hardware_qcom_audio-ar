@@ -114,7 +114,7 @@ AUDIO_FEATURE_ENABLED_AUDIO_PARSERS := true
 #enable qcom parsers for WMA/APE/FLAC/ALAC
 # disable 3GP qcom parser
 PRODUCT_PROPERTY_OVERRIDES += \
-vendor.mm.target.enable.qcom_parser=655376
+vendor.mm.target.enable.qcom_parser=655632
 
 
 ifneq ($(ENABLE_HYP),true)
