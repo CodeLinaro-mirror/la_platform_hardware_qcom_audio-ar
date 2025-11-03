@@ -51,7 +51,7 @@ using android::frameworks::automotive::vhal::VhalClientResult;
 
 static int fd = -1, efd = -1;
 static int exit_thread = 0; //by default exit thread is made false
-static bool card_status = false, speaker_status = false, audio_comp_status = false;
+static bool card_status = true, speaker_status = true, audio_comp_status = true;
 static int uuid = 0;
 std::shared_ptr<aidl::android::hardware::automotive::vehicle::IVehicle> AudioDiagnostics::mVhal;
 
@@ -96,7 +96,7 @@ ndk::ScopedAStatus updateVHAL() {
             LOG(INFO) << "setValue with audio_status: " << audio_status <<
                 " successful for AUDIO_AVAILABILITY_ON";
         } else {
-            LOG(ERROR) << "setValue failed for AUDIO_AVAILABILITY_ON";
+            LOG(ERROR) << "setValue failed for AUDIO_AVAILABILITY_ON, status: " << audio_status;
         }
         return;
     };
@@ -111,7 +111,7 @@ void AudioDiagnostics::monitorThreadLoop()
     struct pollfd *poll_fds;
     int rv = 0;
     char buf[12];
-    int card_status = 0;
+    int sound_card_status = 0;
     int tries = MAX_SLEEP_RETRY;
 
     card_status_t status = CARD_STATUS_NONE;
@@ -139,8 +139,8 @@ void AudioDiagnostics::monitorThreadLoop()
     while(isDiagnosticMonitorEnabled) {
         memset(buf , 0 ,sizeof(buf));
         read(fd, buf, 1);
-        sscanf(buf , "%d", &card_status);
-        ::card_status = (card_status == 1);
+        sscanf(buf , "%d", &sound_card_status);
+        card_status = (sound_card_status == 1);
         lseek(fd,0L,SEEK_SET);
 
         poll_fds[0].fd = fd;
@@ -156,23 +156,23 @@ void AudioDiagnostics::monitorThreadLoop()
         } else if ((poll_fds[0].revents & POLLPRI)) {
             lseek(poll_fds[0].fd,0L,SEEK_SET);
             read(poll_fds[0].fd, buf, 1);
-            sscanf(buf , "%d", &card_status);
-            LOG(INFO) << "card status: " << card_status;
-            if (card_status == 0) {
+            sscanf(buf , "%d", &sound_card_status);
+            LOG(INFO) << "sound card status: " << sound_card_status;
+            if (sound_card_status == 0) {
                status = CARD_STATUS_OFFLINE;
                //inform vhal for AUDIO DOWN
                card_status = false;
                updateVHAL();
             }
-            else if (card_status == 1) {
+            else if (sound_card_status == 1) {
                 status = CARD_STATUS_ONLINE;
                //inform vhal for AUDIO UP
-                card_status = true;
+               card_status = true;
                updateVHAL();
             }
-            else if (card_status == 2)
+            else if (sound_card_status == 2)
                 status = CARD_STATUS_STANDBY;
-            else if (card_status == 3)
+            else if (sound_card_status == 3)
                 break;
        } else if((poll_fds[1].revents & POLLIN)) {
             uint64_t eval;
@@ -257,6 +257,7 @@ AudioDiagnostics::AudioDiagnostics() {
     } else {
         LOG(INFO) << "Subscribed to VUC_SPEAKER_GROUP_AVAILABILITY property";
     }
+    updateVHAL();
     return;
 }
 
