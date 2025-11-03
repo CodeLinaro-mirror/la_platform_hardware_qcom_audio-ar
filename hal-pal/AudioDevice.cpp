@@ -36,7 +36,7 @@
  */
 
 /* Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -2240,7 +2240,7 @@ void AudioDevice::FillAndroidDeviceMap() {
     //android_device_map_.insert(std::make_pair(AUDIO_DEVICE_IN_DGTL_DOCK_HEADSET, PAL_DEVICE_IN_DGTL_DOCK_HEADSET);
     android_device_map_.insert(std::make_pair(AUDIO_DEVICE_IN_USB_ACCESSORY, PAL_DEVICE_IN_USB_ACCESSORY));
     android_device_map_.insert(std::make_pair(AUDIO_DEVICE_IN_USB_DEVICE, PAL_DEVICE_IN_USB_HEADSET));
-    android_device_map_.insert(std::make_pair(AUDIO_DEVICE_IN_FM_TUNER, PAL_DEVICE_IN_FM_TUNER));
+    android_device_map_.insert(std::make_pair(AUDIO_DEVICE_IN_FM_TUNER, PAL_DEVICE_IN_HANDSET_MIC));
     //android_device_map_.insert(std::make_pair(AUDIO_DEVICE_IN_TV_TUNER, PAL_DEVICE_IN_TV_TUNER);
     android_device_map_.insert(std::make_pair(AUDIO_DEVICE_IN_LINE, PAL_DEVICE_IN_LINE));
     android_device_map_.insert(std::make_pair(AUDIO_DEVICE_IN_SPDIF, PAL_DEVICE_IN_SPDIF));
