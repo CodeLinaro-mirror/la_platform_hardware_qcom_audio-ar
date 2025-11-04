@@ -31,6 +31,7 @@ extern "C" {
 
 #define AUDIO_PARAMETER_BTSINK_ENABLE "btsink_enable"
 #define AUDIO_PARAMETER_BTSINK_VOLUME "btsink_volume"
+#define AUDIO_PARAMETER_BTSINK_VOLUME_DUCK "btsink_volume_duck"
 
 struct btsink_module {
     bool running;
@@ -41,12 +42,12 @@ struct btsink_module {
 
 static struct btsink_module btsink = {
     .running = 0,
-    .volume = 0,
+    .volume = 12,
     .device = (audio_devices_t)0,
     .stream_handle = 0
 };
 
-int32_t btsink_set_volume(float value)
+int32_t btsink_set_volume(float value, bool isDuck)
 {
     int32_t vol, ret = 0;
     struct pal_volume_data *pal_volume = NULL;
@@ -74,6 +75,7 @@ int32_t btsink_set_volume(float value)
        return -ENOMEM;
 
     pal_volume->no_of_volpair = 1;
+    pal_volume->isDucking = isDuck;
     pal_volume->volume_pair[0].channel_mask = 0x03;
     pal_volume->volume_pair[0].vol = value;
 
@@ -85,7 +87,6 @@ int32_t btsink_set_volume(float value)
     AHAL_DBG("exit");
     return ret;
 }
-
 
 int32_t start_btsink(std::shared_ptr<AudioDevice> adev __unused, struct str_parms *parms __unused)
 {
@@ -140,7 +141,11 @@ int32_t start_btsink(std::shared_ptr<AudioDevice> adev __unused, struct str_parm
         return ret;
     }
     btsink.running = true;
-    btsink_set_volume(btsink.volume);
+
+    // Initial volume set without ducking
+    AHAL_DBG("Setting volume without ducking...");
+    btsink_set_volume(btsink.volume, false);
+
     return ret;
 }
 
@@ -165,6 +170,7 @@ int stop_btsink()
     AHAL_DBG("exit");
     return ret;
 }
+
 void btsink_set_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *parms)
 {
     int ret;
@@ -200,7 +206,18 @@ void btsink_set_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *
             AHAL_ERR("error in retrieving btsink volume");
             return;
         }
-        btsink_set_volume(vol);
+        btsink_set_volume(vol,false);
+    }
+
+    memset(value, 0, sizeof(value));
+    ret = str_parms_get_str(parms, AUDIO_PARAMETER_BTSINK_VOLUME_DUCK, value, sizeof(value));
+    if (ret >= 0) {
+       AHAL_DBG("Param: set volume");
+        if (sscanf(value, "%f", &vol) != 1){
+            AHAL_ERR("error in retrieving btsink volume");
+            return;
+        }
+        btsink_set_volume(vol,true);
     }
 
     AHAL_DBG("exit");
