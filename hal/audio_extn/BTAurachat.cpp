@@ -25,14 +25,16 @@ extern "C" {
 
 #define AUDIO_PARAMETER_AC_RX_ENABLE      "achat_rx_enable"
 #define AUDIO_PARAMETER_AC_TX_ENABLE      "achat_tx_enable"
-#define AUDIO_PARAMETER_KEY_AC_VOLUME     "ac_rx_volume"
+#define AUDIO_PARAMETER_KEY_AC_VOLUME     "achat_rx_volume"
+#define AUDIO_PARAMETER_AC_TX_ACQUIRE     "achat_tx_acquire"
 
 
 struct AurachatParams {
     bool is_achat_running;
     bool is_tx_running;
     bool is_rx_running;
-    float ac_rx_volume;
+    bool is_tx_acquire_enabled;
+    float achat_rx_volume;
     uint32_t sample_rate;
     pal_stream_handle_t *rx_stream_handle;
     pal_stream_handle_t *tx_stream_handle;
@@ -42,13 +44,71 @@ static struct AurachatParams achatParams = {
     .is_achat_running = 0,
     .is_tx_running = 0,
     .is_rx_running = 0,
-    .ac_rx_volume = 0,
+    .is_tx_acquire_enabled = 0,
+    .achat_rx_volume = 14,
     .sample_rate = 16000
+};
+
+const float volume_lookup[16] = {
+    0.0L,
+    17.0L  / 8192.0L,
+    38.0L  / 8192.0L,
+    81.0L  / 8192.0L,
+    121.0L / 8192.0L,
+    193.0L / 8192.0L,
+    307.0L / 8192.0L,
+    458.0L / 8192.0L,
+    728.0L / 8192.0L,
+    1157.0L / 8192.0L,
+    1551.0L / 8192.0L,
+    2185.0L / 8192.0L,
+    3078.0L / 8192.0L,
+    4129.0L / 8192.0L,
+    5816.0L / 8192.0L,
+    8192.0L / 8192.0L
 };
 
 static int32_t achatSetVolume(float value)
 {
-    return 0;
+    int32_t vol, ret = 0;
+    struct pal_volume_data *pal_volume = NULL;
+
+    achatParams.achat_rx_volume = value;
+
+    if (value < 0.0) {
+        AHAL_DBG("(%f) Under 0.0, assuming 0.0\n", value);
+        value = 0.0;
+    } else {
+        value = value> 15.0 ? 1.0 : volume_lookup[static_cast<int>(value)] ;
+        AHAL_DBG("Volume brought within range (%f)\n", value);
+    }
+
+    vol = lrint((value * 0x2000) + 0.5);
+
+    if (!achatParams.is_rx_running || !achatParams.rx_stream_handle) {
+        AHAL_DBG("Aurachat RX not active, ignoring set_volume call");
+        return -EIO;
+    }
+
+    AHAL_DBG("Setting Aurachat RX volume to %f", value);
+
+    pal_volume = (struct pal_volume_data *) calloc(1,sizeof(struct pal_volume_data) + sizeof(struct pal_channel_vol_kv));
+
+    if (!pal_volume)
+        return -ENOMEM;
+
+    pal_volume->no_of_volpair = 1;
+    pal_volume->isDucking = false;
+    pal_volume->volume_pair[0].channel_mask = 0x03;
+    pal_volume->volume_pair[0].vol = value;
+
+    ret = pal_stream_set_volume(achatParams.rx_stream_handle, pal_volume);
+    if (ret)
+        AHAL_ERR("set volume failed: %d", ret);
+
+    free(pal_volume);
+    AHAL_DBG("achatSetVolume exit");
+    return ret;
 }
 
 static int32_t achatStartTx(std::shared_ptr<AudioDevice> adev __unused,
@@ -114,6 +174,7 @@ static int32_t achatStartTx(std::shared_ptr<AudioDevice> adev __unused,
     AHAL_DBG("Aurachat tx start end");
     return ret;
 }
+
 static int32_t achatStartRx(std::shared_ptr<AudioDevice> adev __unused,
         struct str_parms *parms __unused)
 {
@@ -188,7 +249,7 @@ static int32_t achatStartRx(std::shared_ptr<AudioDevice> adev __unused,
 
     achatParams.is_rx_running = true;
     achatParams.is_achat_running = true;
-    achatSetVolume(achatParams.ac_rx_volume);
+    achatSetVolume(achatParams.achat_rx_volume);
 
     AHAL_DBG("BT Aurachat rx start end");
     return ret;
@@ -209,6 +270,7 @@ static int32_t achatStopTx()
     return ret;
 
 }
+
 static int32_t achatStopRx()
 {
     int32_t ret = 0;
@@ -245,6 +307,41 @@ void achat_init()
 bool isAuraChatActive(std::shared_ptr<AudioDevice> adev __unused)
 {
     return achatParams.is_achat_running;
+}
+
+int achat_tx_acquire_enable(std::shared_ptr<AudioDevice> adev, bool state)
+{
+    int rc = 0;
+
+    AHAL_DBG("achat_tx_acquire_enable called with state=%d", state);
+
+    // Check if state is already applied
+    if (state == achatParams.is_tx_acquire_enabled) {
+        AHAL_DBG("TX Acquire state already %d, no change needed", state);
+        return rc;
+    }
+
+    // Prepare structured payload
+    pal_voice_active_detection_payload vadPayload;
+    memset(&vadPayload, 0, sizeof(vadPayload));
+    vadPayload.isVadEnabled = state;
+
+    AHAL_DBG("Prepared TX Acquire payload -> isVadEnabled=%d", vadPayload.isVadEnabled);
+
+    // Call PAL API to set parameter
+    rc = pal_set_param(PAL_PARAM_ID_VOICE_ACTIVE_DETECTION,
+                       (void *)&vadPayload,
+                       sizeof(pal_voice_active_detection_payload));
+
+    if (rc) {
+        AHAL_ERR("Failed to set VAD state %d via pal_set_param, rc=%d", state, rc);
+    } else {
+        AHAL_DBG("Successfully set VAD state to %d", state);
+        achatParams.is_tx_acquire_enabled = state;
+    }
+
+    AHAL_DBG("achat_vad_enable exit with rc=%d", rc);
+    return rc;
 }
 
 void achat_set_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *parms)
@@ -287,6 +384,21 @@ void achat_set_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *p
         }
         else {
             AHAL_ERR("achat_tx_enable=%s is unsupported", value);
+        }
+    }
+
+    //TX Acquire parameter
+    memset(value, 0, sizeof(value));
+    status = str_parms_get_str(parms, AUDIO_PARAMETER_AC_TX_ACQUIRE, value, sizeof(value));
+    if (status >= 0) {
+        if (!strncmp(value, "true", sizeof(value))) {
+            AHAL_DBG("Enabling TX Acquire");
+            status = achat_tx_acquire_enable(adev, true);
+        } else if (!strncmp(value, "false", sizeof(value))) {
+            AHAL_DBG("Disabling TX Acquire");
+            status = achat_tx_acquire_enable(adev, false);
+        } else {
+            AHAL_ERR("Invalid TX Acquire parameter value: %s", value);
         }
     }
 
