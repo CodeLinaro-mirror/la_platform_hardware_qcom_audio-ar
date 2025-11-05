@@ -176,7 +176,9 @@ ndk::ScopedAStatus StreamOutPrimary::configureConnectedDevices_I() {
             telephony->onPlaybackStreamDevices(mConnectedDevices);
         }
     }
-
+    if (mTag == Usecase::VOIP_PLAYBACK && mPalHandle) {
+            mPlatform.setVoipRxStreamHandle(mPalHandle);
+    }
     if (!mPalHandle) {
         LOG(WARNING) << __func__ << mLogPrefix << ": stream is not configured";
         return ndk::ScopedAStatus::ok();
@@ -435,12 +437,6 @@ void StreamOutPrimary::resume() {
     if (mConnectedDevices.empty()) {
         LOG(DEBUG) << __func__ << mLogPrefix << ": stream is not connected";
         return ::android::OK;
-    }
-    if (hasOutputVoipRxFlag(mMixPortConfig.flags.value()) ||
-        hasOutputDeepBufferFlag(mMixPortConfig.flags.value())) {
-        if (auto telephony = mContext.getTelephony().lock()) {
-            telephony->onPlaybackStart(mConnectedDevices);
-        }
     }
     return ::android::OK;
 }
@@ -728,6 +724,14 @@ ndk::ScopedAStatus StreamOutPrimary::setHwVolume(const std::vector<float>& in_ch
     if (int32_t ret = mPlatform.setVolume(mPalHandle, in_channelVolumes); ret) {
         LOG(ERROR) << __func__ << mLogPrefix << " failed to set volume";
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
+    }
+
+    if(mPlatform.getTranslationRxMuteState() && mTag == Usecase::VOIP_PLAYBACK) {
+        LOG(DEBUG) << __func__ << mLogPrefix << "Mute VoIP Rx stream when device switch performed on translation with Rx mute enabled";
+        if (int32_t ret = ::pal_stream_set_mute(mPalHandle, mPlatform.getTranslationRxMuteState()); ret) {
+            LOG(ERROR) << __func__ << " pal_stream_set_mute failed!!! ret:" << ret;
+            return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
+        }
     }
 
     mVolumes = in_channelVolumes;
@@ -1191,7 +1195,12 @@ void StreamOutPrimary::configure() {
             telephony->CallTranslationManager("",CALL_TRANSLATION_DIR_RX);
         }
     }
-
+    if (hasOutputVoipRxFlag(mMixPortConfig.flags.value()) ||
+        hasOutputDeepBufferFlag(mMixPortConfig.flags.value())) {
+        if (auto telephony = mContext.getTelephony().lock()) {
+            telephony->onPlaybackStart(mConnectedDevices);
+        }
+    }
     if (mTag == Usecase::HAPTICS_PLAYBACK && mHapticsPalHandle) {
         if (int32_t ret = ::pal_stream_start(this->mHapticsPalHandle); ret) {
             LOG(ERROR) << __func__ << mLogPrefix << " failed to start haptics stream. ret:" << ret;

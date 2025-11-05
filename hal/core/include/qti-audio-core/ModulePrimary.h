@@ -176,6 +176,9 @@ class ModulePrimary final : public Module ,
         mStreamsIn.push_back(streamIn);
     }
 
+    void setVoipTxMute(bool mute_state);
+    void setVoipRxMute(bool state);
+
     // start of module parameters handling
     bool processSetVendorParameters(
             const std::vector<::aidl::android::hardware::audio::core::VendorParameter>&);

@@ -40,8 +40,8 @@ FdTracker::FdTracker() {
     int enableTracker = android::base::GetIntProperty(kFdTrackerEnabled, 0);
     if (isDebugBuild && enableTracker) {
         mEnableThreshold = android::base::GetIntProperty(kFdLeakmEnableThresholdProperty, 128);
-        mAbortThreshold = android::base::GetIntProperty(kFdLeakmAbortThresholdProperty, 4096);
-        mCheckInterval = android::base::GetIntProperty(kFdLeakmCheckIntervalProperty, 120);
+        mAbortThreshold = android::base::GetIntProperty(kFdLeakmAbortThresholdProperty, 1024);
+        mCheckInterval = android::base::GetIntProperty(kFdLeakmCheckIntervalProperty, 180);
 
         if (!mThreadStarted) {
             mThreadStarted = true;

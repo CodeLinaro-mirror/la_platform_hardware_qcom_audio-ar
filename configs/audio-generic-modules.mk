@@ -88,6 +88,9 @@ AUDIO_TESTS += VtsHalAECTargetTest
 AUDIO_TESTS += VtsHalAGC1TargetTest
 AUDIO_TESTS += VtsHalAGC2TargetTest
 AUDIO_TESTS += VtsHalNSTargetTest
+AUDIO_TESTS += VtsHalDynamicsProcessingTargetTest
+AUDIO_TESTS += VtsHalBassBoostTargetTest
+AUDIO_TESTS += VtsHalSpatializerTargetTest
 endif
 
 AUDIO_GENERIC_MODULES += $(MM_AUDIO)

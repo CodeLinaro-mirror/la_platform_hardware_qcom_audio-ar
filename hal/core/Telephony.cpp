@@ -96,6 +96,7 @@ ndk::ScopedAStatus Telephony::switchAudioMode(AudioMode newAudioMode) {
         LOG(ERROR) << __func__ << ": illegal mode " << toString(newAudioMode);
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
     }
+    AudioExtension::callMode = (int)newAudioMode;
 
     mPlatform.updateCallMode((int)newAudioMode);
 
@@ -138,6 +139,7 @@ ndk::ScopedAStatus Telephony::switchAudioMode(AudioMode newAudioMode) {
     }
     if (newAudioMode != AudioMode::IN_COMMUNICATION && mIsVoipStarted == true) {
         mIsVoipStarted = false;
+        mPlatform.setVoipRxStreamHandle(nullptr);
     }
 
     mAudioMode = newAudioMode;
@@ -220,6 +222,52 @@ bool Telephony::isValidDevice(const AudioDevice& rxDevice) {
         return false;
     }
     return true;
+}
+
+void Telephony::updateBluetoothDevice() {
+    bool is_suspend_setparam = false;
+    pal_param_bta2dp_t* param_bt_a2dp_ptr = nullptr;
+    bool a2dp_capture_suspended = false;
+    size_t bt_param_size = 0;
+    bool a2dp_suspended = false;
+    int ret = 0;
+
+    if (isBluetoothSCODevice(mRxDevice)) {
+        if (!mIsBTSCOEnabled) {
+            mRxDevice = kDefaultCRSRxDevice;
+            mTxDevice = getMatchingTxDevice(mRxDevice);
+        }
+    } else if (isBluetoothLEDevice(mRxDevice)) {
+        pal_param_bta2dp_t param_bt_a2dp;
+        std::unique_lock<std::mutex> guard(AudioExtension::reconfig_wait_mutex_);
+        param_bt_a2dp_ptr = &param_bt_a2dp;
+        param_bt_a2dp_ptr->dev_id = PAL_DEVICE_OUT_BLUETOOTH_BLE;
+        ret = pal_get_param(PAL_PARAM_ID_BT_A2DP_SUSPENDED, (void**)&param_bt_a2dp_ptr,
+                            &bt_param_size, nullptr);
+        if (!ret && bt_param_size && param_bt_a2dp_ptr) {
+            a2dp_suspended = param_bt_a2dp_ptr->a2dp_suspended;
+            is_suspend_setparam = param_bt_a2dp_ptr->is_suspend_setparam;
+        } else {
+            LOG(ERROR) << __func__ << " getparam for PAL_PARAM_ID_BT_A2DP_SUSPENDED failed";
+        }
+        param_bt_a2dp_ptr = &param_bt_a2dp;
+        param_bt_a2dp_ptr->dev_id = PAL_DEVICE_IN_BLUETOOTH_BLE;
+        bt_param_size = 0;
+        ret = pal_get_param(PAL_PARAM_ID_BT_A2DP_CAPTURE_SUSPENDED,
+                           (void**)&param_bt_a2dp_ptr, &bt_param_size, nullptr);
+        if (!ret && bt_param_size && param_bt_a2dp_ptr)
+            a2dp_capture_suspended = param_bt_a2dp_ptr->a2dp_capture_suspended;
+        else
+            LOG(ERROR) << __func__ << " getparam for BT_A2DP_CAPTURE_SUSPENDED failed";
+        param_bt_a2dp_ptr = nullptr;
+        bt_param_size = 0;
+        if (a2dp_suspended || a2dp_capture_suspended) {
+             mRxDevice = kDefaultCRSRxDevice;
+             mTxDevice = getMatchingTxDevice(mRxDevice);
+        }
+        LOG(INFO) << __func__ << "a2dp_suspended status: " << a2dp_suspended
+                  << "and a2dp_capture_suspended status: " << a2dp_capture_suspended;
+    }
 }
 
 bool Telephony::isUsbDeviceConnected(const AudioDevice& usbDevice) {
@@ -369,6 +417,11 @@ void Telephony::onExternalDeviceConnectionChanged(const AudioDevice& extDevice,
                                                   const bool& connect) {
     std::scoped_lock lock{mLock};
     // Placeholder for telephony to act upon external device connection
+    if(connect){
+        mExternalDevices.push_back(extDevice);
+    } else {
+        std::erase(mExternalDevices, extDevice);
+    }
     if (isBluetoothSCODevice(extDevice) || isBluetoothA2dpDevice(extDevice) ||
         isBluetoothLEBroadcastDevice(extDevice)) {
         LOG(VERBOSE) << __func__ << ": sco/a2dp/ble broadcast no change";
@@ -384,6 +437,7 @@ void Telephony::onExternalDeviceConnectionChanged(const AudioDevice& extDevice,
         } else {
             if (mTxDevice.type.type != extDevice.type.type) {
                 if (mIsCRSStarted) {
+                    mTxDevice = getMatchingTxDevice(mRxDevice);
                     updateDevices();
                 }
             }
@@ -419,52 +473,53 @@ void Telephony::onPlaybackStreamDevices(const std::vector<AudioDevice>& playback
         LOG(VERBOSE) << __func__ << ": voice call exist";
         return;
     }
-    if (hasValidPlaybackStream &&
-        playbackStreamDevices.size() == 1 &&
-        isValidDevice(playbackStreamDevices[0])) {// combo devices unsupported.
-        mPlaybackStreamDevices = playbackStreamDevices;
-        mRxDevice = playbackStreamDevices[0]; // expected to have 1 device.
-        mTxDevice = getMatchingTxDevice(mRxDevice);
-        updateDevices();
+    if (hasValidPlaybackStream && playbackStreamDevices.size() == 1) { // combo devices unsupported.
+        if (isValidDevice(playbackStreamDevices[0])) {
+            mPlaybackStreamDevices = playbackStreamDevices;
+            mRxDevice = playbackStreamDevices[0]; // expected to have 1 device.
+            mTxDevice = getMatchingTxDevice(mRxDevice);
+        } else {
+            mPlaybackStreamDevices = {kDefaultCRSRxDevice};
+            mRxDevice = mPlaybackStreamDevices[0];
+            mTxDevice = getMatchingTxDevice(mRxDevice);
+        }
+        if (mIsCRSStarted)
+            updateDevices();
      }
 }
 
 void Telephony::onBluetoothScoEvent(const bool& enable) {
     std::scoped_lock lock{mLock};
 
-    if (isAnyCallActive() || mAudioMode == AudioMode::IN_CALL) {
-        LOG(VERBOSE) << __func__ << ": voice call exist";
-        return;
+    mIsBTSCOEnabled = enable;
+    if (enable) {
+        mRxDevice = AudioDevice{.type.type = AudioDeviceType::OUT_DEVICE,
+                                .type.connection = AudioDeviceDescription::CONNECTION_BT_SCO};
+        mTxDevice = getMatchingTxDevice(mRxDevice);
+        CRSPluginDevices.push_back(mRxDevice);
+        if (mIsCRSStarted) {
+            updateDevices();
+        }
+    } else {
+        if (isBluetoothSCODevice(mRxDevice) || isBluetoothA2dpDevice(mRxDevice)) {
+            for (auto iter = CRSPluginDevices.begin(); iter != CRSPluginDevices.end();) {
+                 if ((*iter).type.connection == AudioDeviceDescription::CONNECTION_BT_SCO) {
+                     iter = CRSPluginDevices.erase(iter);
+                     continue;
+                 }
+                 iter++;
+            }
+            if (CRSPluginDevices.empty()) {
+                mRxDevice = kDefaultRxDevice;
+                mTxDevice = getMatchingTxDevice(mRxDevice);
+                if (mIsCRSStarted)
+                    updateDevices();
+            } else {
+                if (mIsCRSStarted)
+                    updateDevices();
+            }
+        }
     }
-
-   if (enable) {
-       mRxDevice = AudioDevice{.type.type = AudioDeviceType::OUT_DEVICE,
-                               .type.connection = AudioDeviceDescription::CONNECTION_BT_SCO};
-       mTxDevice = getMatchingTxDevice(mRxDevice);
-       CRSPluginDevices.push_back(mRxDevice);
-       if (mIsCRSStarted) {
-           updateDevices();
-       }
-   } else {
-       if (isBluetoothSCODevice(mRxDevice) || isBluetoothA2dpDevice(mRxDevice)) {
-          for (auto iter = CRSPluginDevices.begin(); iter != CRSPluginDevices.end();) {
-               if ((*iter).type.connection == AudioDeviceDescription::CONNECTION_BT_SCO) {
-                   iter = CRSPluginDevices.erase(iter);
-                   continue;
-               }
-               iter++;
-          }
-          if (CRSPluginDevices.empty()) {
-              mRxDevice = kDefaultRxDevice;
-              mTxDevice = getMatchingTxDevice(mRxDevice);
-              if (mIsCRSStarted)
-                  updateDevices();
-          } else {
-              if (mIsCRSStarted)
-                  updateDevices();
-          }
-     }
-  }
 }
 
 void Telephony::updateCrsDevice() {
@@ -479,12 +534,32 @@ void Telephony::updateCrsDevice() {
             mTxDevice = getMatchingTxDevice(mRxDevice);
         }
     } else {
-            mRxDevice = CRSPluginDevices.back();
-            mTxDevice = getMatchingTxDevice(mRxDevice);
+        mRxDevice = CRSPluginDevices.back();
+        mTxDevice = getMatchingTxDevice(mRxDevice);
+        if (isBluetoothDevice(mRxDevice)) {
+            updateBluetoothDevice();
+        }
     }
 }
 
+
+
 AudioDevice Telephony::getMatchingTxDevice(const AudioDevice& rxDevice) {
+    auto getComplementDeviceIfAny =
+            [&](const AudioDeviceDescription& desc) -> std::optional<AudioDevice> {
+        auto itr =
+                std::find_if(mExternalDevices.begin(), mExternalDevices.end(), [&](const auto& d) {
+                    if (d.type.connection == desc.connection && d.type.type == desc.type) {
+                        return true;
+                    }
+                    return false;
+                });
+        if (itr != mExternalDevices.end()) {
+            return *itr;
+        }
+        return std::nullopt;
+    };
+
     if (rxDevice.type.type == AudioDeviceType::OUT_SPEAKER_EARPIECE) {
         return AudioDevice{.type.type = AudioDeviceType::IN_MICROPHONE};
     } else if (rxDevice.type.type == AudioDeviceType::OUT_SPEAKER) {
@@ -500,17 +575,33 @@ AudioDevice Telephony::getMatchingTxDevice(const AudioDevice& rxDevice) {
     } else if (rxDevice.type.type == AudioDeviceType::OUT_DEVICE &&
                rxDevice.type.connection == AudioDeviceDescription::CONNECTION_ANALOG) {
         return AudioDevice{.type.type = AudioDeviceType::IN_MICROPHONE};
-    } else if ((rxDevice.type.type == AudioDeviceType::OUT_DEVICE ||
-                rxDevice.type.type == AudioDeviceType::OUT_HEADSET) &&
+    } else if (rxDevice.type.type == AudioDeviceType::OUT_DEVICE &&
                rxDevice.type.connection == AudioDeviceDescription::CONNECTION_BT_SCO) {
-        return AudioDevice{.type.type = AudioDeviceType::IN_HEADSET,
-                           .type.connection = AudioDeviceDescription::CONNECTION_BT_SCO,
-                           .address = rxDevice.address};
+        auto found = getComplementDeviceIfAny(
+                AudioDeviceDescription{.type = AudioDeviceType::IN_DEVICE,
+                                       .connection = AudioDeviceDescription::CONNECTION_BT_SCO});
+        if (found) {
+            return found.value();
+        }
+        return AudioDevice{.type.type = AudioDeviceType::IN_MICROPHONE};
+    } else if (rxDevice.type.type == AudioDeviceType::OUT_HEADSET &&
+               rxDevice.type.connection == AudioDeviceDescription::CONNECTION_BT_SCO) {
+        auto found = getComplementDeviceIfAny(
+                AudioDeviceDescription{.type = AudioDeviceType::IN_HEADSET,
+                                       .connection = AudioDeviceDescription::CONNECTION_BT_SCO});
+        if (found) {
+            return found.value();
+        }
+        return AudioDevice{.type.type = AudioDeviceType::IN_MICROPHONE};
     } else if (rxDevice.type.type == AudioDeviceType::OUT_HEADSET &&
                rxDevice.type.connection == AudioDeviceDescription::CONNECTION_BT_LE) {
-        return AudioDevice{.type.type = AudioDeviceType::IN_HEADSET,
-                           .type.connection = AudioDeviceDescription::CONNECTION_BT_LE,
-                           .address = rxDevice.address};
+        auto found = getComplementDeviceIfAny(
+                AudioDeviceDescription{.type = AudioDeviceType::IN_HEADSET,
+                                       .connection = AudioDeviceDescription::CONNECTION_BT_LE});
+        if (found) {
+            return found.value();
+        }
+        return AudioDevice{.type.type = AudioDeviceType::IN_MICROPHONE};
     } else if (rxDevice.type.type == AudioDeviceType::OUT_CARKIT &&
                rxDevice.type.connection == AudioDeviceDescription::CONNECTION_BT_SCO) {
         return AudioDevice{.type.type = AudioDeviceType::IN_HEADSET,
@@ -556,6 +647,7 @@ void Telephony::reconfigure(const SetUpdates& newUpdates) {
             mAudioMode == AudioMode::RINGTONE) {
              getPlaybackStreamDevices();
              updateCrsDevice();
+             palDevices = mPlatform.convertToPalDevices({mRxDevice, mTxDevice});
              if ((palDevices[0].id == PAL_DEVICE_OUT_BLUETOOTH_BLE) &&
                  (palDevices[1].id == PAL_DEVICE_IN_BLUETOOTH_BLE)) {
                  updateVoiceMetadataForBT(true);
@@ -796,9 +888,12 @@ void Telephony::triggerHACinVoipPlayback() {
 
 void Telephony::getPlaybackStreamDevices() {
     if (hasValidPlaybackStream) {
-       mRxDevice = mPlaybackStreamDevices[0];
-       mTxDevice = getMatchingTxDevice(mRxDevice);
-   }
+        mRxDevice = mPlaybackStreamDevices[0];
+        mTxDevice = getMatchingTxDevice(mRxDevice);
+        if (isBluetoothDevice(mRxDevice)) {
+            updateBluetoothDevice();
+        }
+    }
 }
 
 void Telephony::onPlaybackStart(const std::vector<AudioDevice>& playbackStreamDevices) {
@@ -840,10 +935,10 @@ void Telephony::setCRSVolumeFromIndex(const int index) {
 }
 
 void Telephony::updateVoiceVolume() {
+    float volumeFloat = 0.0f;
     if (mPalHandle == nullptr) {
         return;
     }
-    float volumeFloat = 0.0f;
     if (mSetUpdates.mIsCrsCall) {
         volumeFloat = mCRSVolume;
     } else if (mPlatform.getTranslationRxMuteState()) {

@@ -28,6 +28,7 @@ namespace qti::audio::core {
 
 std::mutex AudioExtension::reconfig_wait_mutex_;
 bool BatteryListenerExtension::isCharging;
+int32_t AudioExtension::callMode;
 
 AudioExtensionBase::AudioExtensionBase(std::string library, bool enabled)
     : mLibraryName(library), mEnabled(enabled) {
@@ -167,6 +168,8 @@ static int reconfig_cb(tSESSION_TYPE session_type, int state) {
             std::unique_lock<std::mutex> guard(AudioExtension::reconfig_wait_mutex_);
             param_bt_a2dp.a2dp_suspended = true;
             param_bt_a2dp.is_suspend_setparam = false;
+            param_bt_a2dp.reconfig = true;
+            param_bt_a2dp.is_in_call = (AudioExtension::callMode != AUDIO_MODE_NORMAL);
             param_bt_a2dp.dev_id = PAL_DEVICE_OUT_BLUETOOTH_BLE;
 
             ret = pal_set_param(PAL_PARAM_ID_BT_A2DP_SUSPENDED, (void *)&param_bt_a2dp,
@@ -331,6 +334,8 @@ void HfpExtension::audio_extn_hfp_set_device(const std::vector<AudioDevice>& dev
         if (hfp_set_device) {
             auto palDevices = mPlatform.convertToPalDevices({rxDevice, txDevice});
             hfp_set_device(reinterpret_cast<pal_device*>(palDevices.data()));
+        } else {
+            LOG(WARNING) << __func__ << ": no hfp pointers set ";
         }
     }
 }
@@ -340,8 +345,8 @@ void HfpExtension::audio_extn_hfp_set_parameters(struct str_parms *params) {
 }
 
 int HfpExtension::audio_extn_hfp_set_mic_mute(bool state) {
+    micMute = state;
     if (audio_extn_hfp_is_active()) {
-        micMute = state;
         return ((hfp_set_mic_mute) ? hfp_set_mic_mute(state) : -1);
     }
     return -1;
@@ -351,7 +356,10 @@ bool HfpExtension::audio_extn_hfp_is_active() {
     return ((hfp_is_active) ? hfp_is_active() : false);
 }
 
-HfpExtension::~HfpExtension() {}
+HfpExtension::~HfpExtension() {
+    LOG(DEBUG) << __func__ << "---- Feature HFP Disabled ----";
+}
+
 HfpExtension::HfpExtension() : AudioExtensionBase(kHfpLibrary, isExtensionEnabled(kHfpProperty)) {
     LOG(VERBOSE) << __func__ << " Enter";
     if (mHandle != nullptr) {

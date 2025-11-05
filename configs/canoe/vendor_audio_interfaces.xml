@@ -5,8 +5,26 @@
 -->
 <libraries>
     <!--
-    method expected API signature
-    "int32_t <function_name>()"
+    The purpose of this audio interface file is to enable modular and independent service
+    registration. This allows services to be enabled or disabled based on target-specific
+    requirements.
+
+    Example:
+    <library name="ExampleService" libraryName="libexampleService.so"
+            method="registerExampleService" mandatory="true"/>
+    ExampleService is a standalone and independent module.
+    The "registerExampleService" method must follow the API signature:
+    int32_t <function_name>()
+
+    Notes:
+    - Authors are encouraged to provide a detailed description of the service and its purpose.
+    - Services are registered in a defined sequence, from top to bottom.
+    If any mandatory service fails to register, the process will retry. If it fails on the final
+    attempt, the process will crash and automatically restart.
+    - A return value of "0" indicates successful registration.
+    Any non-zero return value indicates a failure in service registration.
+    - If the author of a new service is unsure about its position in the registration order,
+    the entry should be added at the end.
     -->
     <library name = "agmservice" libraryName="libagmipcservice.so"
             method="registerService" mandatory="true"/>
