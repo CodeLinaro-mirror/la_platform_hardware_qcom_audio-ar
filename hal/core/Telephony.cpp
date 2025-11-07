@@ -58,6 +58,7 @@ Telephony::Telephony() {
     // Todo check on default RX device
     mRxDevice = kDefaultRxDevice;
     mTxDevice = getMatchingTxDevice(mRxDevice);
+    callTranslationDirection = CALL_TRANSLATION_DEFAULT;
     tx_call_translation_conf = new call_translation_config();
     rx_call_translation_conf = new call_translation_config();
 }
