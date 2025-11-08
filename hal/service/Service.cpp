@@ -16,8 +16,8 @@
 #include <string>
 #include <vector>
 
-#include <thread>
 #include <mutex>
+#include <thread>
 
 #include <android-base/logging.h>
 #include <android-base/properties.h>
@@ -45,26 +45,42 @@ enum class StubMode {
     /**< auto boot into stub mode after 30S if sound card is not registered */
 };
 
-static void dumpAudioStatus()
-{
-    const char* dump_path[] = { "/d/asoc/components",
-                                "/proc/asound/cards"};
-    FILE *fp;
+static void dumpAudioStatus() {
+    std::vector<std::string> dumpPaths = {"/d/asoc/components", "/proc/asound/cards"};
+
     char dumpString[1024];
 
-    for (size_t i = 0; i < sizeof(dump_path) / sizeof(dump_path[0]); i++) {
-        fp = fopen(dump_path[i], "r");
-        if (fp == NULL) {
-            ALOGE("Failed to open path: %s", dump_path[i]);
+    for (const auto& path : dumpPaths) {
+        FILE* fp = fopen(path.c_str(), "r");
+        if (fp == nullptr) {
+            ALOGE("Failed to open path: %s", path.c_str());
             continue;
         }
-        ALOGI("Dump of %s", dump_path[i]);
-        while (fgets(dumpString, sizeof(dumpString), fp) != NULL) {
-            ALOGI("%s", dumpString);
+
+        std::string dumpInfo;
+        while (fgets(dumpString, sizeof(dumpString), fp) != nullptr) {
+            dumpInfo += std::string(dumpString) + " ; ";
         }
+
+        ALOGI("%s : %s", path.c_str(), dumpInfo.c_str());
         fclose(fp);
     }
+
+    std::vector<std::string> interfaces = {
+            "vendor.qti.hardware.agm.IAGM/default",
+            "vendor.qti.hardware.pal.IPAL/default",
+            "android.hardware.audio.core.IConfig/default",
+            "android.hardware.audio.core.IModule/default",
+    };
+
+    for (const auto& interface : interfaces) {
+        AIBinder* binder = AServiceManager_checkService(interface.c_str());
+        if (binder == nullptr) {
+            ALOGE("%s interface %s not registered", __func__, interface.c_str());
+        }
+    }
 }
+
 
 static bool isStubEnforced(StubMode stubMode)
 {
@@ -123,8 +139,12 @@ void registerInterfaces(const Interfaces& interfaces) {
 
 bool registerFromConfigs() {
     auto interfaces = parseInterfaces();
+    if (interfaces.empty()) {
+        ALOGE("%s no valid interface found, validate configuration!", __func__);
+        return false;
+    }
     registerInterfaces(interfaces);
-    return !interfaces.empty();
+    return true;
 }
 
 /*
