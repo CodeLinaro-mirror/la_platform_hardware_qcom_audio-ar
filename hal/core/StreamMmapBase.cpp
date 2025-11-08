@@ -37,6 +37,11 @@ using aidl::android::media::audio::common::AudioPortExt;
 
 namespace qti::audio::core {
 
+// Round up to the next buffer boundary to mark the beginning of the session.
+int64_t roundUpToBufferBoundary(int64_t frames, int64_t bufferSize) {
+    return ((frames + bufferSize - 1) / bufferSize) * bufferSize;
+}
+
 StreamMmapBase::StreamMmapBase(StreamContext* context, const Metadata& metadata, const bool input)
     : StreamCommonImpl(context, metadata),
       mTag(getUsecaseTag(getContext().getMixPortConfig())),
@@ -159,7 +164,8 @@ ndk::ScopedAStatus StreamMmapBase::createMMapBuffer(int64_t frameSize, MmapBuffe
     mMmapBufferDesc.burstSizeFrames = palMMapBuf.burst_size_frames;
     mMmapBufferDesc.flags = palMMapBuf.flags;
 
-    *bufferSizeFrames = palMMapBuf.buffer_size_frames;
+    *bufferSizeFrames = mBufferSizeInFrames = palMMapBuf.buffer_size_frames;
+
     LOG(DEBUG) << __func__ << mLogPrefix << " " << mMmapBufferDesc.toString()
                << " bufferSizeFrames " << *bufferSizeFrames;
     return fillDescriptor(desc);
@@ -174,32 +180,35 @@ struct BufferConfig StreamMmapBase::getBufferConfig() {
 }
 
 ::android::status_t StreamMmapBase::init() {
-    LOG(DEBUG) << __func__ << mLogPrefix ;
+    LOG(DEBUG) << __func__ << mLogPrefix;
     return ::android::OK;
 }
 
 ::android::status_t StreamMmapBase::drain(
         ::aidl::android::hardware::audio::core::StreamDescriptor::DrainMode) {
-    LOG(DEBUG) << __func__ << mLogPrefix ;
+    LOG(DEBUG) << __func__ << mLogPrefix;
     return stopMMAP();
 }
 
 ::android::status_t StreamMmapBase::flush() {
-    LOG(DEBUG) << __func__ << mLogPrefix ;
+    LOG(DEBUG) << __func__ << mLogPrefix;
     return stopMMAP();
 }
 
 ::android::status_t StreamMmapBase::pause() {
-    LOG(DEBUG) << __func__ << mLogPrefix ;
+    LOG(DEBUG) << __func__ << mLogPrefix;
     return stopMMAP();
 }
 
 ::android::status_t StreamMmapBase::standby() {
-    LOG(DEBUG) << __func__ << mLogPrefix ;
+    LOG(DEBUG) << __func__ << mLogPrefix;
     if (mPalHandle != nullptr) {
         ::pal_stream_stop(mPalHandle);
         ::pal_stream_close(mPalHandle);
         mPalHandle = nullptr;
+        mFramesAtSessionStart += roundUpToBufferBoundary(mFramesInSession, mBufferSizeInFrames);
+        LOG(DEBUG) << __func__ << mLogPrefix << ": position rounded to " << mFramesAtSessionStart
+                   << " for bufferCapacity " << mBufferSizeInFrames;
         mMmapBufferDesc.sharedMemory.fd.set(-1);  // reset shared mem fd
         mClosed = true;
     }
@@ -207,9 +216,8 @@ struct BufferConfig StreamMmapBase::getBufferConfig() {
 }
 
 ::android::status_t StreamMmapBase::start() {
-    LOG(DEBUG) << __func__ << mLogPrefix ;
+    LOG(DEBUG) << __func__ << mLogPrefix;
     return ::android::OK;
-    //return startMMAP();
 }
 
 ::android::status_t StreamMmapBase::transfer(void* buffer, size_t frameCount,
@@ -247,7 +255,7 @@ struct BufferConfig StreamMmapBase::getBufferConfig() {
 
     mFramesInSession = pal_mmap_pos.position_frames;
 
-    reply->hardware.frames = mTotalFrames + mFramesInSession;
+    reply->hardware.frames = mFramesAtSessionStart + mFramesInSession;
 
     int64_t totalDelayFrames = 0;
     totalDelayFrames = getLatencyMs() * mMixPortConfig.sampleRate.value().value / 1000;
@@ -257,7 +265,8 @@ struct BufferConfig StreamMmapBase::getBufferConfig() {
 
     LOG(VERBOSE) << __func__ << mLogPrefix << ": hw_frames:" << reply->hardware.frames
                  << " obs_frames " << reply->observable.frames
-                 << ", hw_timeNs:" << reply->hardware.timeNs;
+                 << ", hw_timeNs:" << reply->hardware.timeNs << " mFramesAtSessionStart "
+                 << mFramesAtSessionStart;
     return 0;
 }
 
@@ -407,9 +416,8 @@ ndk::ScopedAStatus StreamMmapBase::createMmapBuffer(
         return -EINVAL;
     }
 
-    mTotalFrames = mTotalFrames + mFramesInSession;
     mIsStarted = false;
-    LOG(VERBOSE) << __func__ << mLogPrefix << ": MMAP stop success";
+    LOG(DEBUG) << __func__ << mLogPrefix << ": MMAP stop success";
 
     return 0;
 }
