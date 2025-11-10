@@ -1302,7 +1302,7 @@ PlaybackRateStatus Platform::setPlaybackRate(
         pal_stream_handle_t* handle, const Usecase& tag,
         const ::aidl::android::media::audio::common::AudioPlaybackRate& playbackRate) {
 
-    if (!usecaseSupportsOffloadSpeed(tag)) {
+    if (!supportsPlaybackRate(tag)) {
         return PlaybackRateStatus::UNSUPPORTED;
     }
 

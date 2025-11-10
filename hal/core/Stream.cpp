@@ -1413,15 +1413,29 @@ ndk::ScopedAStatus StreamOut::setLatencyMode(AudioLatencyMode in_mode) {
     return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
 }
 
-ndk::ScopedAStatus StreamOut::getPlaybackRateParameters(AudioPlaybackRate* _aidl_return) {
-    HAL_LOGD;
-    (void)_aidl_return;
-    return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
+ndk::ScopedAStatus StreamOut::getPlaybackRateParameters(
+        ::aidl::android::media::audio::common::AudioPlaybackRate* _aidl_return) {
+    if (!supportsPlaybackRate()) {
+        return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
+    }
+    HAL_LOGD << mPlaybackRate.toString();
+    *_aidl_return = mPlaybackRate;
+    return ndk::ScopedAStatus::ok();
 }
 
-ndk::ScopedAStatus StreamOut::setPlaybackRateParameters(const AudioPlaybackRate& in_playbackRate) {
-    HAL_LOGD << in_playbackRate.toString();
-    return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
+ndk::ScopedAStatus StreamOut::setPlaybackRateParameters(
+        const ::aidl::android::media::audio::common::AudioPlaybackRate& in_playbackRate) {
+    if (!supportsPlaybackRate()) {
+        return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
+    }
+    auto status = setPlaybackRateImpl(in_playbackRate);
+    if (status.isOk()) {
+        mPlaybackRate = in_playbackRate;
+        HAL_LOGD << mPlaybackRate.toString();
+    } else {
+        HAL_LOGE << "failed " << status <<" for " << mPlaybackRate.toString();
+    }
+    return status;
 }
 
 ndk::ScopedAStatus StreamOut::selectPresentation(int32_t in_presentationId, int32_t in_programId) {
@@ -1429,4 +1443,17 @@ ndk::ScopedAStatus StreamOut::selectPresentation(int32_t in_presentationId, int3
     return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
 }
 
-} // namespace qti::audio::core
+ndk::ScopedAStatus StreamOut::setPlaybackRateImpl(
+        const ::aidl::android::media::audio::common::AudioPlaybackRate& in_playbackRate) {
+    return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
+}
+
+void StreamOut::applyPlaybackRateIfNonDefault() {
+    if (!supportsPlaybackRate()) return;
+
+    if (mPlaybackRate != sDefaultPlaybackRate) {
+        HAL_LOGD << mPlaybackRate.toString();
+        setPlaybackRateImpl(mPlaybackRate);
+    }
+}
+}  // namespace qti::audio::core

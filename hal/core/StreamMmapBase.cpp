@@ -12,8 +12,8 @@
 #include <hardware/audio.h>
 #include <qti-audio-core/StreamMmapBase.h>
 
-#include <qti-audio/PlatformConverter.h>
 #include <qti-audio-core/PlatformUtils.h>
+#include <qti-audio/PlatformConverter.h>
 
 using aidl::android::hardware::audio::common::AudioOffloadMetadata;
 using aidl::android::hardware::audio::common::SinkMetadata;
@@ -50,11 +50,11 @@ StreamMmapBase::StreamMmapBase(StreamContext* context, const Metadata& metadata,
       mIsInput(input) {
     std::ostringstream os;
     os << "[id:" << mMixPortConfig.id;
-    os << ",io:" << mMixPortConfig.ext.get<AudioPortExt::Tag::mix>().handle <<"]";
+    os << ",io:" << mMixPortConfig.ext.get<AudioPortExt::Tag::mix>().handle << "]";
     os << ": usecase: " << mTagName << " ";
     mLogPrefix = os.str();
 
-    LOG(DEBUG) << __func__ << mLogPrefix <<" created " << mMixPortConfig.toString();
+    LOG(DEBUG) << __func__ << mLogPrefix << " created " << mMixPortConfig.toString();
 }
 
 StreamMmapBase::~StreamMmapBase() {
@@ -524,6 +524,15 @@ ndk::ScopedAStatus StreamOutMmap::setHwVolume(const std::vector<float>& in_chann
 
     LOG(DEBUG) << __func__ << mLogPrefix << ::android::internal::ToString(mVolumes);
     return ndk::ScopedAStatus::ok();
+}
+
+bool StreamOutMmap::supportsPlaybackRate() const {
+    return mPlatform.supportsPlaybackRate(mTag);
+}
+
+ndk::ScopedAStatus StreamOutMmap::setPlaybackRateImpl(
+        const ::aidl::android::media::audio::common::AudioPlaybackRate& rate) {
+    return toBinderStatus(mPlatform.setPlaybackRate(mPalHandle, mTag, rate));
 }
 
 }  // namespace qti::audio::core

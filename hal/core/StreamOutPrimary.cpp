@@ -78,7 +78,7 @@ StreamOutPrimary::StreamOutPrimary(StreamContext&& context, const SourceMetadata
 
     std::ostringstream os;
     os << "[id:" << mMixPortConfig.id;
-    os << ",io:" << mMixPortConfig.ext.get<AudioPortExt::Tag::mix>().handle <<"]";
+    os << ",io:" << mMixPortConfig.ext.get<AudioPortExt::Tag::mix>().handle << "]";
     os << ": usecase: " << mTagName << " ";
     mLogPrefix = os.str();
 
@@ -88,12 +88,12 @@ StreamOutPrimary::StreamOutPrimary(StreamContext&& context, const SourceMetadata
     if (mHwVolumeSupported) {
         mVolumes.resize(getChannelCount(mMixPortConfig.channelMask.value()));
     }
-    LOG(DEBUG) << __func__ << mLogPrefix <<" created " << mMixPortConfig.toString();
+    LOG(DEBUG) << __func__ << mLogPrefix << " created " << mMixPortConfig.toString();
 }
 
 bool StreamOutPrimary::isHwVolumeSupported() {
     switch (mTag) {
-        //TODO: See how Bitperfect volume support can be added
+        // TODO: See how Bitperfect volume support can be added
         case Usecase::COMPRESS_OFFLOAD_PLAYBACK:
         case Usecase::DIRECT_PCM_PLAYBACK:
         case Usecase::VOIP_PLAYBACK:
@@ -608,33 +608,6 @@ ndk::ScopedAStatus StreamOutPrimary::setHwVolume(const std::vector<float>& in_ch
     return ndk::ScopedAStatus::ok();
 }
 
-ndk::ScopedAStatus StreamOutPrimary::getPlaybackRateParameters(AudioPlaybackRate* _aidl_return) {
-    if (!mPlatform.usecaseSupportsOffloadSpeed(mTag)) {
-        return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
-    }
-
-    LOG(DEBUG) << __func__ << mLogPrefix << mPlaybackRate.toString();
-    *_aidl_return = mPlaybackRate;
-    return ndk::ScopedAStatus::ok();
-}
-
-ndk::ScopedAStatus StreamOutPrimary::setPlaybackRateParameters(
-        const AudioPlaybackRate& in_playbackRate) {
-    auto ret = mPlatform.setPlaybackRate(mPalHandle, mTag, in_playbackRate);
-    if (PlaybackRateStatus::SUCCESS == ret) {
-        mPlaybackRate = in_playbackRate;
-        LOG(DEBUG) << __func__ << mLogPrefix << mPlaybackRate.toString();
-        return ndk::ScopedAStatus::ok();
-    } else if (PlaybackRateStatus::UNSUPPORTED == ret) {
-        LOG(VERBOSE) << __func__ << mLogPrefix << "raise EX_UNSUPPORTED_OPERATION exception for "
-                     << mPlaybackRate.toString();
-        return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
-    }
-
-    LOG(ERROR) << __func__ << mLogPrefix << "raise EX_ILLEGAL_ARGUMENT exception for "
-                 << mPlaybackRate.toString();
-    return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
-}
 
 // end of IStreamOut Methods
 
@@ -1069,10 +1042,7 @@ void StreamOutPrimary::configure() {
 
     LOG(VERBOSE) << __func__ << mLogPrefix << " pal_stream_start successful";
 
-    if (mPlaybackRate != sDefaultPlaybackRate) {
-        LOG(DEBUG) << __func__ << mLogPrefix << ": using playspeed " << mPlaybackRate.speed;
-        mPlatform.setPlaybackRate(mPalHandle, mTag, mPlaybackRate);
-    }
+    applyPlaybackRateIfNonDefault();
 
     LOG(INFO) << __func__ << mLogPrefix << ": stream is configured with " << mConnectedDevices;
     enableOffloadEffects(true);
@@ -1184,5 +1154,13 @@ void StreamOutPrimary::shutdown_I() {
     LOG(VERBOSE) << __func__ << mLogPrefix;
 }
 
+bool StreamOutPrimary::supportsPlaybackRate() const {
+    return mPlatform.supportsPlaybackRate(mTag);
+}
 
-} // namespace qti::audio::core
+ndk::ScopedAStatus StreamOutPrimary::setPlaybackRateImpl(
+        const ::aidl::android::media::audio::common::AudioPlaybackRate& rate) {
+    return toBinderStatus(mPlatform.setPlaybackRate(mPalHandle, mTag, rate));
+}
+
+}  // namespace qti::audio::core

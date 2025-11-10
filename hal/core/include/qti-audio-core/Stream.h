@@ -792,6 +792,21 @@ class StreamOut : virtual public StreamCommonInterface,
 
   private:
     const std::string& getPrefixLog() const { return mContext.getPrefixLog(); }
+
+  protected:
+    static constexpr ::aidl::android::media::audio::common::AudioPlaybackRate sDefaultPlaybackRate =
+            {.speed = 1.0f,
+             .pitch = 1.0f,
+             .fallbackMode = ::aidl::android::media::audio::common::AudioPlaybackRate::
+                     TimestretchFallbackMode::FAIL};
+    ::aidl::android::media::audio::common::AudioPlaybackRate mPlaybackRate{sDefaultPlaybackRate};
+
+    virtual bool supportsPlaybackRate() const { return false; }
+    virtual ndk::ScopedAStatus setPlaybackRateImpl(
+            const ::aidl::android::media::audio::common::AudioPlaybackRate& rate);
+
+    // Call this after pal_stream_start to apply any cached rate.
+    void applyPlaybackRateIfNonDefault();
 };
 
 // The recommended way to create a stream instance.

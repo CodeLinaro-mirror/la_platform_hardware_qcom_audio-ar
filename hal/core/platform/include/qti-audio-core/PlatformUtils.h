@@ -146,4 +146,21 @@ std::unique_ptr<T, CustomDeletor> allocate(int size) {
 
 std::string toString(const pal_stream_attributes& attributes);
 
+/**
+ * @brief Converts a PlaybackRateStatus value to an AIDL binder status.
+ *
+ * This function maps the given PlaybackRateStatus to an appropriate
+ * ndk::ScopedAStatus object, which represents the status of an AIDL
+ * transaction. It returns:
+ * - ndk::ScopedAStatus::ok() if the operation was successful.
+ * - ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION) if the
+ *   operation is not supported.
+ * - ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT) for all other
+ *   invalid cases.
+ *
+ * @param ret The PlaybackRateStatus value indicating the result of the operation.
+ * @return A corresponding ndk::ScopedAStatus object representing the binder status.
+ */
+
+ndk::ScopedAStatus toBinderStatus(PlaybackRateStatus ret);
 }  // namespace qti::audio::core

@@ -366,4 +366,15 @@ std::string toString(const pal_stream_attributes& attributes) {
     return oss.str();
 }
 
+ndk::ScopedAStatus toBinderStatus(PlaybackRateStatus ret) {
+    switch (ret) {
+        case PlaybackRateStatus::SUCCESS:
+            return ndk::ScopedAStatus::ok();
+        case PlaybackRateStatus::UNSUPPORTED:
+            return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
+        default:
+            return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
+    }
+}
+
 }  // namespace qti::audio::core

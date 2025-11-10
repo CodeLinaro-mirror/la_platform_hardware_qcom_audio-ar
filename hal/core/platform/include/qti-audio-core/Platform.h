@@ -328,7 +328,7 @@ class Platform {
             noexcept;
 
     bool platformSupportsOffloadSpeed() { return mOffloadSpeedSupported; }
-    bool usecaseSupportsOffloadSpeed(const Usecase& tag) {
+    bool supportsPlaybackRate(const Usecase& tag) {
         return platformSupportsOffloadSpeed() && isOffload(tag);
     }
 
