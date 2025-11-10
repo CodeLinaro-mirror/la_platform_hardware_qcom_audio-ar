@@ -430,10 +430,11 @@ StreamInMmap::StreamInMmap(StreamContext&& context, const SinkMetadata& sinkMeta
 ndk::ScopedAStatus StreamInMmap::configureMMapStream(
         ::aidl::android::hardware::audio::core::MmapBufferDescriptor* desc,
         int32_t* bufferSizeFrames) {
-    auto status = StreamMmapBase::configureMMapStream(desc, bufferSizeFrames);
+    auto ret = StreamMmapBase::configureMMapStream(desc, bufferSizeFrames);
+    if (!ret.isOk()) {
+        return ret;
+    }
     setStreamMicMute(mPlatform.getMicMuteStatus());
-    LOG(INFO) << __func__ << mLogPrefix << ": stream is configured with " << mConnectedDevices;
-
     return ndk::ScopedAStatus::ok();
 }
 
@@ -464,10 +465,11 @@ ndk::ScopedAStatus StreamOutMmap::configureMMapStream(
         ::aidl::android::hardware::audio::core::MmapBufferDescriptor* desc,
         int32_t* bufferSizeFrames) {
     setBluetoothMetadata();
-    auto status = StreamMmapBase::configureMMapStream(desc, bufferSizeFrames);
+    auto ret = StreamMmapBase::configureMMapStream(desc, bufferSizeFrames);
+    if (!ret.isOk()) {
+        return ret;
+    }
     setHwVolume(mVolumes);
-    LOG(INFO) << __func__ << mLogPrefix << ": stream is configured with " << mConnectedDevices;
-
     return ndk::ScopedAStatus::ok();
 }
 

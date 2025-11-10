@@ -270,7 +270,7 @@ bool compare(const pal_device& device1, const pal_device& device2) {
         return false;
     }
 
-    PalAddressTag tag1 = getAddressTag(device2.id);
+    PalAddressTag tag1 = getAddressTag(device1.id);
     PalAddressTag tag2 = getAddressTag(device2.id);
 
     if (tag1 != tag2) {
