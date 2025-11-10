@@ -942,11 +942,7 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
                     if (::android::status_t status = mDriver->drain(currentMode);
                         status == ::android::OK) {
                         populateReply(&reply, mIsConnected);
-                        if (mContext->getForceSynchronousDrain()) {
-                            mState = StreamDescriptor::State::IDLE;
-                        } else {
-                            switchToTransientState(StreamDescriptor::State::DRAINING);
-                        }
+                        switchToTransientState(StreamDescriptor::State::DRAINING);
                     } else {
                         HAL_LOGE << "drain failed: " << status;
                         // uncomment below, to treat the failure as HARD error, stream not
@@ -1043,11 +1039,7 @@ bool StreamOutWorkerLogic::write(size_t clientSize, StreamDescriptor::Reply* rep
 #endif
         // Amount of data that the HAL module is going to actually use.
         size_t byteCount = std::min({clientSize, readByteCount, mDataBufferSize});
-        if (byteCount >= frameSize && mContext->getForceTransientBurst()) {
-            // In order to prevent the state machine from going to ACTIVE state,
-            // simulate partial write.
-            byteCount -= frameSize;
-        }
+
         size_t actualFrameCount = 0;
         // No need to check for connected device, if there is issue, write returns failure
         if (::android::status_t status = mDriver->transfer(mDataBuffer.get(), byteCount / frameSize,

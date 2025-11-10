@@ -166,8 +166,6 @@ class StreamContext {
     ::aidl::android::media::audio::common::AudioIoFlags getFlags() const {
         return mMixPortConfig.flags.value();
     }
-    bool getForceTransientBurst() const { return mDebugParameters.forceTransientBurst; }
-    bool getForceSynchronousDrain() const { return mDebugParameters.forceSynchronousDrain; }
     size_t getFrameSize() const;
     int getInternalCommandCookie() const { return mInternalCommandCookie; }
     int32_t getMixPortHandle() const {

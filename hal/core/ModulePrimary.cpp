@@ -444,16 +444,12 @@ ndk::ScopedAStatus ModulePrimary::setVendorParameters(
         const std::vector<::aidl::android::hardware::audio::core::VendorParameter>& in_parameters,
         bool in_async) {
     LOG(VERBOSE) << __func__ << ": parameter count " << in_parameters.size()
-               << ", async: " << in_async;
+                 << ", async: " << in_async;
     for (const auto& p : in_parameters) {
         if (p.id == VendorDebug::kForceTransientBurstName) {
-            if (!extractParameter<Boolean>(p, &mVendorDebug.forceTransientBurst)) {
-                return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
-            }
+            return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
         } else if (p.id == VendorDebug::kForceSynchronousDrainName) {
-            if (!extractParameter<Boolean>(p, &mVendorDebug.forceSynchronousDrain)) {
-                return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
-            }
+            return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
         } else {
             struct str_parms* parms = NULL;
             std::string kvpairs = getkvPairsForVendorParameter(in_parameters);
@@ -813,13 +809,9 @@ ndk::ScopedAStatus ModulePrimary::getVendorParameters(
     LOG(DEBUG) << __func__ << ": id count: " << in_ids.size();
     for (const auto& id : in_ids) {
         if (id == VendorDebug::kForceTransientBurstName) {
-            VendorParameter forceTransientBurst{.id = id};
-            forceTransientBurst.ext.setParcelable(Boolean{mVendorDebug.forceTransientBurst});
-            _aidl_return->push_back(std::move(forceTransientBurst));
+            return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
         } else if (id == VendorDebug::kForceSynchronousDrainName) {
-            VendorParameter forceSynchronousDrain{.id = id};
-            forceSynchronousDrain.ext.setParcelable(Boolean{mVendorDebug.forceSynchronousDrain});
-            _aidl_return->push_back(std::move(forceSynchronousDrain));
+            return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
         }
     }
 

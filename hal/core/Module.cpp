@@ -1517,22 +1517,7 @@ const std::string Module::VendorDebug::kForceSynchronousDrainName = "aosp.forceS
 ndk::ScopedAStatus Module::getVendorParameters(const std::vector<std::string>& in_ids,
                                                std::vector<VendorParameter>* _aidl_return) {
     LOG(DEBUG) << __func__ << ": id count: " << in_ids.size();
-    bool allParametersKnown = true;
-    for (const auto& id : in_ids) {
-        if (id == VendorDebug::kForceTransientBurstName) {
-            VendorParameter forceTransientBurst{.id = id};
-            forceTransientBurst.ext.setParcelable(Boolean{mVendorDebug.forceTransientBurst});
-            _aidl_return->push_back(std::move(forceTransientBurst));
-        } else if (id == VendorDebug::kForceSynchronousDrainName) {
-            VendorParameter forceSynchronousDrain{.id = id};
-            forceSynchronousDrain.ext.setParcelable(Boolean{mVendorDebug.forceSynchronousDrain});
-            _aidl_return->push_back(std::move(forceSynchronousDrain));
-        } else {
-            allParametersKnown = false;
-            LOG(ERROR) << __func__ << ": unrecognized parameter \"" << id << "\"";
-        }
-    }
-    if (allParametersKnown) return ndk::ScopedAStatus::ok();
+
     return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
 }
 
@@ -1540,22 +1525,6 @@ ndk::ScopedAStatus Module::setVendorParameters(const std::vector<VendorParameter
                                                bool in_async) {
     LOG(DEBUG) << __func__ << ": parameter count " << in_parameters.size()
                << ", async: " << in_async;
-    bool allParametersKnown = true;
-    for (const auto& p : in_parameters) {
-        if (p.id == VendorDebug::kForceTransientBurstName) {
-            if (!extractParameter<Boolean>(p, &mVendorDebug.forceTransientBurst)) {
-                return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
-            }
-        } else if (p.id == VendorDebug::kForceSynchronousDrainName) {
-            if (!extractParameter<Boolean>(p, &mVendorDebug.forceSynchronousDrain)) {
-                return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
-            }
-        } else {
-            allParametersKnown = false;
-            LOG(ERROR) << __func__ << ": unrecognized parameter \"" << p.id << "\"";
-        }
-    }
-    if (allParametersKnown) return ndk::ScopedAStatus::ok();
     return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
 }
 
