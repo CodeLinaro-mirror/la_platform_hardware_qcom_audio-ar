@@ -720,7 +720,9 @@ ModulePrimary::SetParameterToFeatureMap ModulePrimary::fillSetParameterToFeature
                                  {Parameters::kFbspValiWaitTime, Feature::FTM},
                                  {Parameters::kFbspValiValiTime, Feature::FTM},
                                  {Parameters::kTriggerSpeakerCall, Feature::FTM},
+#if defined(AUDIO_FEATURE_ENABLED_MIC_OCCLUSION)
                                  {Parameters::kMicOcclusionParam, Feature::MICOCCLUSION},
+#endif
                                  {Parameters::kWfdChannelMap, Feature::WFD},
                                  {Parameters::kWfdIPAsProxyDevConnected, Feature::WFD},
                                  {Parameters::kProxyRecordFMQSize, Feature::WFD},
@@ -985,6 +987,7 @@ std::vector<VendorParameter> ModulePrimary::onGetFTMParameters(
     return results;
 }
 
+#if defined(AUDIO_FEATURE_ENABLED_MIC_OCCLUSION)
 std::vector<VendorParameter> ModulePrimary::onGetMicOcclusionParameters(
         const std::vector<std::string>& ids) {
     std::vector<VendorParameter> results{};
@@ -1008,6 +1011,7 @@ std::vector<VendorParameter> ModulePrimary::onGetMicOcclusionParameters(
     }
     return results;
 }
+#endif
 
 // static
 ModulePrimary::GetParameterToFeatureMap ModulePrimary::fillGetParameterToFeatureMap() {
@@ -1026,7 +1030,9 @@ ModulePrimary::GetParameterToFeatureMap ModulePrimary::fillGetParameterToFeature
                                  {Parameters::kWfdIPAsProxyDevConnected, Feature::WFD},
                                  {Parameters::kFTMParam, Feature::FTM},
                                  {Parameters::kFTMSPKRParam, Feature::FTM},
+#if defined(AUDIO_FEATURE_ENABLED_MIC_OCCLUSION)
                                  {Parameters::kMicOcclusionParam, Feature::MICOCCLUSION},
+#endif
                                  {Parameters::kFMStatus, Feature::AUDIOEXTENSION}};
     return map;
 }
@@ -1039,7 +1045,9 @@ ModulePrimary::FeatureToGetHandlerMap ModulePrimary::fillFeatureToGetHandlerMap(
                                {Feature::WFD, &ModulePrimary::onGetWFDParameters},
                                {Feature::FTM, &ModulePrimary::onGetFTMParameters},
                                {Feature::AUDIOEXTENSION, &ModulePrimary::onGetAudioExtnParams},
+#if defined(AUDIO_FEATURE_ENABLED_MIC_OCCLUSION)
                                {Feature::MICOCCLUSION, &ModulePrimary::onGetMicOcclusionParameters},
+#endif
                                {Feature::GENERIC, &ModulePrimary::onGetGenericParams}};
     return map;
 }

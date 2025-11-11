@@ -288,8 +288,9 @@ class Platform {
                                      bool const isDynamicCalibration) const noexcept;
     std::optional<std::string> getFTMResult() const noexcept;
     std::optional<std::string> getSpeakerCalibrationResult() const noexcept;
+#if defined(AUDIO_FEATURE_ENABLED_MIC_OCCLUSION)
     std::optional<std::string> getMicocclusionparameter() const noexcept;
-
+#endif
     void updateScreenRotation(const ::aidl::android::hardware::audio::core::IModule::ScreenRotation
                                       in_rotation) noexcept;
     ::aidl::android::hardware::audio::core::IModule::ScreenRotation getCurrentScreenRotation() const

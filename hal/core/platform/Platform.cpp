@@ -729,6 +729,7 @@ std::optional<std::string> Platform::getSpeakerCalibrationResult() const noexcep
     return std::string(calValue, dataSize);
 }
 
+#if defined(AUDIO_FEATURE_ENABLED_MIC_OCCLUSION)
 std::optional<std::string> Platform::getMicocclusionparameter() const noexcept {
     void *micInfo = nullptr;
     size_t dataSize = 0;
@@ -768,6 +769,7 @@ std::optional<std::string> Platform::getMicocclusionparameter() const noexcept {
 
     return micOccInfoReply;
 }
+#endif
 
 void Platform::updateScreenRotation(const IModule::ScreenRotation in_rotation) noexcept {
     pal_param_device_rotation_t paramDeviceRotation{};
