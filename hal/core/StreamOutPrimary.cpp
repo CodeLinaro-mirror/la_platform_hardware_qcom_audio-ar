@@ -1583,15 +1583,15 @@ void StreamOutPrimary::abandonFocus() {
 #endif
 
 ::android::status_t StreamOutPrimary::getHwTimeStamp(::aidl::android::hardware::audio::core::StreamDescriptor::Reply* reply) {
-    LOG(DEBUG) << "Enter :" << __func__;
+    LOG(VERBOSE) << "Enter :" << __func__;
     if (!reply) {
         LOG(ERROR) << "Null in reply - " << "Failed to get hw timestamp";
         return ::android::INVALID_OPERATION;
     }
     // for stream out we use the system uptime as the time stamp
     reply->observable.timeNs = ::android::uptimeNanos();
-    LOG(DEBUG) << "android::uptimeNanos() -> TimeStamp - reply->observable.timeNs: " << reply->observable.timeNs;
-    LOG(DEBUG) << "Exit : " << __func__;
+    LOG(VERBOSE) << "android::uptimeNanos() -> TimeStamp - reply->observable.timeNs: " << reply->observable.timeNs;
+    LOG(VERBOSE) << "Exit : " << __func__;
     return ::android::OK;
 }
 
