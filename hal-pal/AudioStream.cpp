@@ -751,8 +751,8 @@ static char* astream_out_get_parameters(const struct audio_stream *stream,
     std::shared_ptr<StreamOutPrimary> astream_out;
     std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance();
     struct str_parms *reply = str_parms_create();
-    //int index = 0;
-    //int table_size = 0;
+    int index = 0;
+    int table_size = 0;
 
     if (adevice) {
         astream_out = adevice->OutGetStream((audio_stream_t*)stream);
@@ -802,7 +802,6 @@ static char* astream_out_get_parameters(const struct audio_stream *stream,
         return str;
     }
 
-#if 0
     ret = str_parms_get_str(query, AUDIO_PARAMETER_STREAM_SUP_FORMATS, value, sizeof(value));
     if (ret >= 0) {
         value[0] = '\0';
@@ -843,9 +842,6 @@ exit:
     /* do we need new hooks inside pal? */
     str = str_parms_to_str(reply);
     return str;
-#endif
-exit:
-    return 0;
 }
 
 static int astream_out_set_volume(struct audio_stream_out *stream,
