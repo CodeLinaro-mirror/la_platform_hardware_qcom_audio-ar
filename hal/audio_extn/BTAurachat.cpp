@@ -380,6 +380,10 @@ void achat_set_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *p
         }
         //stop TX if it is running
         else if (!strncmp(value, "false", sizeof(value)) && achatParams.is_tx_running) {
+            if (achatParams.is_tx_acquire_enabled) {
+                AHAL_DBG("TX acquire is enabled, disabling it now for Tx Stop");
+                achat_tx_acquire_enable(adev, false);
+            }
             achatStopTx();
         }
         else {
