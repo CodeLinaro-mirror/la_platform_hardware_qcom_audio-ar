@@ -215,7 +215,8 @@ void  set_spatilisation(struct str_parms *parms)
                 spparams.value[0] = it->second;
                 pal_param->param_size = sizeof(::aidl::qti::awx::VolumeParams);
                 pal_param->data = &spparams;
-                ::aidl::qti::awx::PalParamDelegator::AWX_set_param(pal_param, aidl::qti::awx::SYNC_WITH_AUDIO_BUS);
+
+                ::aidl::qti::awx::PalParamDelegator::AWX_set_param(pal_param, aidl::qti::awx::SYNC_WITH_AUDIO_BUS,true);
                 free(pal_param);
             }
 

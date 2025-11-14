@@ -61,6 +61,15 @@ struct PalParamDelegator {
         * @param effect effect type
         */
         static void AWX_set_param(pal_awx_param_t *parms, effect_type effect);
+
+        /**
+        * @brief AWX_set_param sends the pal parameters to PAL for AWX module
+        * @param params Parameter data
+        * @param effect effect type
+        * @param bool flag to override StreamType
+        */
+        static void AWX_set_param(pal_awx_param_t *parms, effect_type effect, bool overrideStreamType);
+
         /**
         * @brief AWX_set_param_handle sends the pal parameters to PAL for AWX module
         * @param handle Pal handle
