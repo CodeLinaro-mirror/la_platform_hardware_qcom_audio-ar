@@ -171,6 +171,15 @@ void AudioExtension::out_set_power_policy(uint8_t enable)
             }
         }
     }
+
+    struct str_parms* params = NULL;
+    std::string kvpairs("power_policy=");
+    kvpairs = kvpairs+std::to_string(enable);
+
+    params = str_parms_create_str(kvpairs.c_str());
+    LOG(DEBUG) << __func__ << " params: "<< str_parms_to_str(params);
+    mAutoOemExtension->audio_extn_autooem_set_parameters(params);
+
     LOG(DEBUG) << __func__ << " Exit:out_set_power_policy:  " << enable;
 }
 

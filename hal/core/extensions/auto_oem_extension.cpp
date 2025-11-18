@@ -68,6 +68,7 @@
 #define FADER_PARAM_ID 0x11112520
 #define BALANCE_PARAM_ID 0x11112521
 #define SPATIALISATION_PARAM_ID 0x11112505
+#define PARAM_ID_SDVC 0x11112523
 
 #define AWX_MODULE_CUSTOM_TAG 0XC0000057
 
@@ -99,6 +100,9 @@ static int gs_audioSourceType = INVALID_INIT_VALUE;
 static int gs_Balance = INVALID_INIT_VALUE;
 static int gs_Fader = INVALID_INIT_VALUE;
 static int gs_FanSpeed = INVALID_INIT_VALUE;
+static int gs_SDVCPofile = INVALID_INIT_VALUE;
+static pal_stream_handle_t* gsp_palHandle = NULL;
+static int gs_powerpolicy = INVALID_INIT_VALUE;
 
 namespace {
 
@@ -131,6 +135,66 @@ std::map<std::string, int> SpeakerMap = {
     {"Left", 8},
 };
 
+// Open the Dummy Stream for Set TKV Handling for SDVC and RBVM sources.
+void open_stream() {
+
+    struct pal_stream_attributes stream_dl_attr = {};
+    struct pal_device devices[1] = {};
+    struct pal_buffer_config outBufCfg = {0, 0, 0};
+    uint32_t DL_buffer_size;
+    void * DL_stream_buffer = nullptr;
+    struct pal_channel_info ch_info;
+    uint32_t ret = 0;
+
+    ch_info.channels = 1;
+    ch_info.ch_map[0] = PAL_CHMAP_CHANNEL_FL;
+    stream_dl_attr.type = PAL_STREAM_PLAYBACK_BUS;
+    stream_dl_attr.bus_addr = "BUS02_NAV_GUIDANCE2";
+    stream_dl_attr.direction = PAL_AUDIO_OUTPUT;
+    stream_dl_attr.out_media_config.sample_rate = 48000;
+    stream_dl_attr.out_media_config.bit_width = 16;
+    stream_dl_attr.out_media_config.ch_info = ch_info;
+    stream_dl_attr.out_media_config.aud_fmt_id = PAL_AUDIO_FMT_PCM_S16_LE;
+
+    devices[0].id = PAL_DEVICE_OUT_SPEAKER;;
+    devices[0].config.sample_rate = 48000;
+    devices[0].config.bit_width = 16;
+    devices[0].config.ch_info = ch_info;
+    devices[0].config.aud_fmt_id = PAL_AUDIO_FMT_PCM_S16_LE;
+
+    LOG(DEBUG) << __func__ << " Opening Dummy Stream handle";
+    ret = pal_stream_open(&stream_dl_attr, 1, &devices[0], 0, NULL, NULL, 0, &gsp_palHandle);
+
+    if(ret)
+    {
+        LOG(DEBUG) << " Stream open Failed " << __func__;
+        gsp_palHandle = NULL ;
+    }
+
+    DL_buffer_size= 512*16*ch_info.channels;
+    DL_stream_buffer = realloc(DL_stream_buffer, DL_buffer_size);
+    outBufCfg.buf_size = DL_buffer_size;
+    outBufCfg.buf_count = 4;
+    ret = pal_stream_set_buffer_size(gsp_palHandle, NULL, &outBufCfg);
+
+    ret = pal_stream_start(gsp_palHandle);
+
+    if(ret)
+    {
+        LOG(DEBUG) << " Stream start Failed " << __func__;
+        gsp_palHandle = NULL ;
+    }
+    return;
+
+}
+
+// Close the Dummy Stream
+void close_stream()
+{
+    if (gsp_palHandle)
+        pal_stream_close(gsp_palHandle);
+}
+
 // Helper to subscribe to VHal notifications
 bool subscribeToVHal(ISubscriptionClient* client, VehicleProperty propertyId) {
     // Register for vehicle state change callbacks we care about
@@ -145,9 +209,7 @@ bool subscribeToVHal(ISubscriptionClient* client, VehicleProperty propertyId) {
         LOG(ERROR) << "VHAL subscription for property " << static_cast<int32_t>(propertyId)
                      << "error" << result.error().message();
         return false;
-    }
-    else
-    {
+    } else {
         LOG(DEBUG) << "VHAL subscription for propertyId = " << static_cast<int32_t>(propertyId) << " Success";
     }
 
@@ -227,6 +289,84 @@ void  set_spatilisation(struct str_parms *parms)
     }
 }
 
+void update_sdvc(param_type2_t *params) {
+    LOG(VERBOSE) << "Enter " << __func__;
+
+    aidl::qti::awx::pal_awx_param_t *pal_param = (aidl::qti::awx::pal_awx_param_t *)malloc(sizeof(aidl::qti::awx::pal_awx_param_t));
+
+    if (params != NULL) {
+        if (pal_param != NULL) {
+            pal_param->param_id = PARAM_ID_SDVC;
+            pal_param->param_size = sizeof(param_type2_t);
+            pal_param->data = (void *)params;
+            LOG(VERBOSE) << __func__ << ": Successfully created pal_param";
+            if (gs_powerpolicy) {
+                if (gsp_palHandle == NULL) {
+                    open_stream();
+                }
+
+                // Check the pal Handle is not NULL before processing the request.
+                if (gsp_palHandle != NULL) {
+                    aidl::qti::awx::PalParamDelegator::AWX_set_param_handle(gsp_palHandle,pal_param, aidl::qti::awx::SYNC_WITHOUT_AUDIO_BUS);
+                }
+            }
+        } else {
+            LOG(ERROR) << "pal_param is null";
+            goto exit;
+        }
+    } else {
+        LOG(ERROR) << "Input Param is null";
+    }
+
+exit:
+    if (pal_param) {
+        free(pal_param);
+    }
+
+    LOG(DEBUG) << __func__ << ": Exit ";
+}
+
+
+void set_sdvc(struct str_parms *parms)
+{
+    char value[256];
+    LOG(DEBUG) << __func__ << ": parameters : " << str_parms_to_str(parms);
+    int ret = str_parms_get_str(parms, "sdvcprofile", value, sizeof(value));
+
+    if (ret >= 0) {
+        int result = atoi(value);
+        gs_SDVCPofile = result;
+        LOG(DEBUG)<< __func__<<": value:"<< value << " result:" << result;
+        struct param_type2_t sdvc_data;
+        sdvc_data.value = gs_SDVCPofile;
+        update_sdvc(&sdvc_data);
+
+    }
+}
+
+void set_powerpolicy(struct str_parms *parms)
+{
+    char value[256];
+    LOG(DEBUG) << __func__ << ": parameters : " << str_parms_to_str(parms);
+    int ret = str_parms_get_str(parms, "power_policy", value, sizeof(value));
+
+    if (ret >= 0) {
+        int result = atoi(value);
+        LOG(DEBUG)<< __func__<<": value:"<< value << " result:" << result;
+
+        // Power Policy is enabled
+        if (result) {
+            gs_powerpolicy = 1U;
+            // Open Graph and gsp_palHandle
+            open_stream();
+        } else {
+            // Close Graph and update gsp_palHandle to NULL
+            gs_powerpolicy = 0U;
+            close_stream();
+        }
+    }
+}
+
 int find_source_type(struct str_parms *parms) {
     LOG(DEBUG) << __func__ << ": Enter " ;
     int ret = 0;
@@ -239,14 +379,11 @@ int find_source_type(struct str_parms *parms) {
         LOG(DEBUG)<< __func__<<": value:"<< value;
         if (strncmp(value, "FM", 2) == 0) {
             source_type = 0;
-        }
-        else if (strncmp(value, "AM", 2) == 0) {
+        } else if (strncmp(value, "AM", 2) == 0) {
             source_type = 1;
-        }
-        else if (strncmp(value, "DAB", 3) == 0) {
+        } else if (strncmp(value, "DAB", 3) == 0) {
             source_type = 2;
-        }
-        else {
+        } else {
             source_type = 3;
         }
     }
@@ -264,12 +401,10 @@ void update_audiosourcedata(struct pal_awx_source_data *source_data) {
         pal_param->data = (void *)source_data;
 
         aidl::qti::awx::PalParamDelegator::AWX_set_param(pal_param, aidl::qti::awx::ASYNC);
-    }
-    else {
+    } else {
         LOG(ERROR) << "pal_param is null";
         goto exit;
     }
-
 
     if (pal_param) {
         free(pal_param);
@@ -286,15 +421,13 @@ int set_oem_audio_source_params(struct str_parms *parms) {
     memset(&source_data, 0, sizeof(struct pal_awx_source_data));
 
     ret = find_source_type(parms);
-    if (ret >= MIN_AUDIO_SOURCE_VALUE && ret <= MAX_AUDIO_SOURCE_VALUE)
-    {
+    if (ret >= MIN_AUDIO_SOURCE_VALUE && ret <= MAX_AUDIO_SOURCE_VALUE) {
         LOG(DEBUG) << __func__ << ": valid audio source type" ;
         source_data.value[EQ_MASK_SOURCE_VAL] = ret;
         // cache the previous source data
         gs_audioSourceType = ret;
         update_audiosourcedata(&source_data);
-    }
-    else {
+    } else {
         LOG(WARNING) << __func__ << ": invalid audio source type" ;
     }
     return ret;
@@ -341,7 +474,6 @@ void update_fan_speed_pal_param(param_type2_t *params) {
 
     aidl::qti::awx::pal_awx_param_t *pal_param = (aidl::qti::awx::pal_awx_param_t *)malloc(sizeof(aidl::qti::awx::pal_awx_param_t));
 
-
     if (params != NULL) {
         if (pal_param != NULL) {
             pal_param->param_id = HVAC_FAN_SPEED_PARAM_ID;
@@ -350,13 +482,11 @@ void update_fan_speed_pal_param(param_type2_t *params) {
             LOG(DEBUG) << __func__ << ": Successfully created pal_param";
 
             aidl::qti::awx::PalParamDelegator::AWX_set_param(pal_param, aidl::qti::awx::SYNC_WITHOUT_AUDIO_BUS);
-        }
-        else {
+        } else {
             LOG(ERROR) << ": pal_param is null";
             goto exit;
         }
-    }
-    else
+    } else
     {
         LOG(ERROR) << ": input params is null";
     }
@@ -380,13 +510,11 @@ void update_vehicle_speed_pal_param(param_type2_t *params) {
             pal_param->data = (void *)params;
             LOG(VERBOSE) << __func__ << ": Successfully created pal_param";
             aidl::qti::awx::PalParamDelegator::AWX_set_param(pal_param, aidl::qti::awx::SYNC_WITHOUT_AUDIO_BUS);
-        }
-        else {
+        } else {
             LOG(ERROR) << "pal_param is null";
             goto exit;
         }
-    }
-    else {
+    } else {
         LOG(ERROR) << "Input Param is null";
     }
 
@@ -400,12 +528,10 @@ exit:
 
 int convertFloatToInt(float value) {
     // Ensure the value is within the expected range
-    if (value < FADER_BALANCE_MIN_INPUT)
-    {
+    if (value < FADER_BALANCE_MIN_INPUT) {
         value = FADER_BALANCE_MIN_INPUT;
     }
-    if (value > FADER_BALANCE_MAX_INPUT)
-    {
+    if (value > FADER_BALANCE_MAX_INPUT) {
         value = FADER_BALANCE_MAX_INPUT;
     }
 
@@ -433,8 +559,7 @@ void  set_type2_param(int paramID, int ParamValue)
         LOG(DEBUG) << __func__ << ": Successfully created pal_param";
 
         aidl::qti::awx::PalParamDelegator::AWX_set_param(pal_param, aidl::qti::awx::SYNC_WITHOUT_AUDIO_BUS);
-    }
-    else {
+    } else {
         LOG(ERROR) << "pal_param is null";
         goto exit;
     }
@@ -452,14 +577,12 @@ int setGeometryParam(struct str_parms *parms)
 {
     int ret = 0;
 
-    if (parms != NULL)
-    {
+    if (parms != NULL) {
         char value[256];
 
         ret = str_parms_get_str(parms, "Fader", value, sizeof(value));
 
-        if (ret >= 0)
-        {
+        if (ret >= 0) {
             float valueinFloat;
             char *endptr = NULL;
 
@@ -498,8 +621,7 @@ int setGeometryParam(struct str_parms *parms)
             set_type2_param(paramID,awxValue);
         }
     }
-    else
-    {
+    else {
         LOG(ERROR) << "input Params are NULL\n";
     }
 
@@ -523,8 +645,7 @@ int oem_pal_param_update(const std::string& id) {
         pal_param.param_id = FADER_PARAM_ID;
         if (gs_Fader != INVALID_INIT_VALUE)
             cachedValue = gs_Fader;
-    }
-    else if (id == "isFaderAvailable")
+    } else if (id == "isFaderAvailable")
     {
         ::qti::audio::oem::config::AudioConfigType req = AUDIO_CONFIG_FADER_AVAILABLITY ;
         ::qti::audio::oem::config::AudioConfigData configData;
@@ -532,8 +653,7 @@ int oem_pal_param_update(const std::string& id) {
         std::string s = std::to_string(configData.defaultValue);
         LOG(DEBUG) << "String " << s << " Integer " << configData.defaultValue;
         return configData.defaultValue;
-    }
-    else {
+    } else {
         LOG(ERROR) << __func__ << ": invalid audio parameter id";
         return ret;
     }
@@ -577,8 +697,7 @@ extern "C" __attribute__((visibility("default")))int oem_init(void)
             LOG(ERROR) << "Didn't register for PERF_VEHICLE_SPEED , Exiting.";
             retValue = EXIT_FAILURE;
         }
-        else
-        {
+        else {
             LOG(DEBUG) << "regiter for PERF_VEHICLE_SPEED done.";
         }
 
@@ -587,8 +706,7 @@ extern "C" __attribute__((visibility("default")))int oem_init(void)
             LOG(ERROR) << "Didn't register for  HVAC_FAN_SPEED notification, Exiting.";
             retValue = EXIT_FAILURE;
         }
-        else
-        {
+        else {
             LOG(DEBUG) << "Register for HVAC_FAN_SPEED done.";
         }
     }
@@ -622,8 +740,7 @@ extern "C" __attribute__((visibility("default")))void oem_set_parameters(struct 
 
     int ret = 0;
     // AudioManager.setvendorparams()
-       if (parms != NULL)
-        {
+       if (parms != NULL) {
             ret = set_oem_audio_source_params(parms);
 
             // if Source Params are found no need to check for Geometry
@@ -631,10 +748,11 @@ extern "C" __attribute__((visibility("default")))void oem_set_parameters(struct 
             {
               setGeometryParam(parms);
               set_spatilisation(parms);
+              set_sdvc(parms);
+              set_powerpolicy(parms);
             }
         }
-        else
-        {
+        else {
             LOG(ERROR) << "audio source params are null, unable to proceed ";
             goto exit;
         }
@@ -649,12 +767,9 @@ extern "C" __attribute__((visibility("default")))int oem_get_parameters(const st
 
     // AudioManager.getvendorparams()
     status = oem_pal_param_update(id);
-    if (status < 0)
-    {
+    if (status < 0) {
         LOG(ERROR) << "oem_pal_param_update failed with ret:" << status;
-    }
-    else
-    {
+    } else {
         LOG(DEBUG) << "oem_pal_param_update get val: " << status;
     }
     LOG(DEBUG) << __func__ << ": Exit";
@@ -666,26 +781,21 @@ extern "C" __attribute__((visibility("default"))) void streamInfo(pal_stream_typ
     oemStreamType = streamType;
     LOG(DEBUG) << __func__ << " oemStreamType: " << oemStreamType;
 
-    if (gs_VehicleSpeed != INVALID_INIT_VALUE )
-    {
+    if (gs_VehicleSpeed != INVALID_INIT_VALUE ) {
         set_vehicle_speed(gs_VehicleSpeed);
     }
-    if (gs_audioSourceType != INVALID_INIT_VALUE )
-    {
+    if (gs_audioSourceType != INVALID_INIT_VALUE ) {
         struct pal_awx_source_data source_data;
         source_data.value[EQ_MASK_SOURCE_VAL] = gs_audioSourceType;
         update_audiosourcedata(&source_data);
     }
-    if (gs_Balance != INVALID_INIT_VALUE)
-    {
+    if (gs_Balance != INVALID_INIT_VALUE) {
         set_type2_param(BALANCE_PARAM_ID,gs_Balance);
     }
-    if (gs_Fader != INVALID_INIT_VALUE)
-    {
+    if (gs_Fader != INVALID_INIT_VALUE) {
         set_type2_param(FADER_PARAM_ID,gs_Fader);
     }
-    if (gs_FanSpeed != INVALID_INIT_VALUE)
-    {
+    if (gs_FanSpeed != INVALID_INIT_VALUE) {
         set_fan_speed(gs_FanSpeed);
     }
 }

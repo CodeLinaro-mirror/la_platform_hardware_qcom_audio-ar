@@ -21,14 +21,18 @@ LOCAL_SRC_FILES:= \
 LOCAL_STATIC_LIBRARIES := libaudioeffecthal_base_impl_static
 
 LOCAL_C_INCLUDES := \
-    $(TOP)/vendor/qcom/opensource/audio-hal-ar/primary-hal/hal/core/extensions/include/extensions
+    $(TOP)/vendor/qcom/opensource/audio-hal-ar/primary-hal/hal/core/extensions/include/extensions \
+    $(TOP)/frameworks/native/include
 
 LOCAL_SHARED_LIBRARIES:= \
     $(EFFECTS_DEFAULTS_SHARED_LIBRARIES) \
     libexpat \
     libar-pal \
     liblog \
-    libAWXPAL
+    libAWXPAL \
+    libbinder \
+    libbinder_ndk \
+    qti-audio-types-aidl-V1-ndk
 
 LOCAL_HEADER_LIBRARIES:= \
     $(EFFECTS_DEFAULTS_HEADERS_LIBRARIES) \
