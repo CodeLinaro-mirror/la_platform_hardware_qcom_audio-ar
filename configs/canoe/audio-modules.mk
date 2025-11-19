@@ -147,6 +147,7 @@ AUDIO_MODULES += ffv__6.1.3_0.1__eai_5.6.0_enpu_v6.pmd
 AUDIO_MODULES += ffv__7.0.1_0.1__eai_5.6_enpu_v6.pmd
 AUDIO_MODULES += ffv__7.0.1_0.2__eai_5.6_enpu_v6.pmd
 AUDIO_MODULES += ffv__7.1.1_0.2__eai_5.6_enpu_v6.pmd
+AUDIO_MODULES += ffv__16.0.1.1_0.0__eai_5.7_enpu_v6.pmd
 AUDIO_MODULES += hk01b_relu_eAI_5.6_eNPU_V6_adsp_i.pmd
 AUDIO_MODULES += click.pcm
 AUDIO_MODULES += double_click.pcm
