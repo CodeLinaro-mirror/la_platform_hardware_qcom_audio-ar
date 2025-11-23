@@ -8,23 +8,6 @@ endif
 #Packages that should not be installed in QMAA are enabled here
 ifneq ($(AUDIO_MODULES_DISABLED),true)
 
-#AGM
-ifeq (,$(filter gen4_gvm_gy, $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)))
-AUDIO_AGM := libagmclient
-AUDIO_AGM += libagmipcservice
-AUDIO_AGM += libagm
-AUDIO_AGM += agmplay
-AUDIO_AGM += agmcap
-AUDIO_AGM += libagmmixer
-AUDIO_AGM += agmcompressplay
-AUDIO_AGM += libagm_mixer_plugin
-AUDIO_AGM += libagm_pcm_plugin
-AUDIO_AGM += libagm_compress_plugin
-AUDIO_AGM += agmcompresscap
-AUDIO_AGM += agmvoiceui
-AUDIO_AGM += agmhostless
-endif
-
 #PAL Module
 AUDIO_PAL := libar-pal
 AUDIO_PAL += lib_bt_bundle
@@ -89,9 +72,6 @@ AUDIO_ACDB := workspaceFileXml.qwsp
 AUDIO_ACDB += acdb_cal.acdb
 AUDIO_ACDB += acdb_cal.acdbdelta
 
-ifeq (,$(filter gen4_gvm_gy, $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)))
-AUDIO_MODULES := $(AUDIO_AGM)
-endif
 AUDIO_MODULES += $(AUDIO_PAL)
 AUDIO_MODULES += $(AUDIO_ACDB)
 
@@ -99,7 +79,6 @@ AUDIO_MODULES += $(AUDIO_ACDB)
 AUDIO_MODULES += libqtigefar
 
 # AWE PAL PLUGIN and dependency packages
-ifneq (,$(filter gen4_gvm_gy, $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)))
 AUDIO_AWE += libsession_awe
 AUDIO_AWE += libvui_intf
 AUDIO_AWE += libcustomva_intf
@@ -107,7 +86,6 @@ AUDIO_AWE += libhotword_intf
 AUDIO_AWE += libarmemlog
 AUDIO_AWE += libtinyalsav2
 AUDIO_MODULES += $(AUDIO_AWE)
-endif
 
  # sound trigger aidl library
 #AUDIO_MODULES += libsoundtriggerhal.qti
