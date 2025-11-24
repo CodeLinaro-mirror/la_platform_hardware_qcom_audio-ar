@@ -709,19 +709,28 @@ ndk::ScopedAStatus Module::connectExternalDevice(const AudioPort& in_templateIdA
             connectedPort.profiles = connectedProfilesIt->second;
         }
     }
+    auto tryRevertingConnection = [&]() {
+        onExternalDeviceConnectionChanged(connectedPort, false /*connected*/);
+        if (mTelephony) {
+            const auto& extDevice = connectedPort.ext.get<AudioPortExt::Tag::device>().device;
+            mTelephony->onExternalDeviceConnectionChanged(extDevice, false);
+        }
+        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
+    };
+
     if (connectedPort.profiles.empty()) {
         LOG(ERROR) << "Profiles of a connected port still empty after connecting external device "
                    << connectedPort.toString();
-        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
+        return tryRevertingConnection();
     }
     for (auto profile : connectedPort.profiles) {
         if (profile.channelMasks.empty()) {
             LOG(ERROR) << __func__ << ": the profile " << profile.name << " has no channel masks";
-            return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
+            return tryRevertingConnection();
         }
         if (profile.sampleRates.empty()) {
             LOG(ERROR) << __func__ << ": the profile " << profile.name << " has no sample rates";
-            return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
+            return tryRevertingConnection();
         }
     }
 
