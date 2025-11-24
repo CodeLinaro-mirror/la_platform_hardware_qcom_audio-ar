@@ -727,7 +727,7 @@ void adev_close_output_stream(struct audio_hw_device *dev,
 
     astream_out = adevice->OutGetStream((audio_stream_t*)stream);
     if (!astream_out) {
-        AHAL_ERR("invalid astream_in object");
+        AHAL_ERR("invalid astream_out object");
         return;
     }
 
@@ -1706,6 +1706,7 @@ int AudioDevice::SetParameters(const char *kvpairs) {
         }
     }
 
+
     if (str_parms_get_str(parms, AUDIO_PARAMETER_DEVICE_CONNECT,value, sizeof(value)) >= 0) {
         pal_param_device_connection_t param_device_connection;
         memset(&param_device_connection, 0, sizeof(pal_param_device_connection_t));
@@ -2135,8 +2136,7 @@ int AudioDevice::SetParameters(const char *kvpairs) {
             sizeof(pal_param_bta2dp_t));
     }
 
-    ret = str_parms_get_str(parms, "asrc_start", value, sizeof(value));
-    if (ret >= 0) {
+    if ((str_parms_get_str(parms, "asrc_start", value, sizeof(value))) >= 0) {
         AHAL_DBG("Getting ASRC parameters starts! ");
         typedef struct {
             uint32_t effective;
