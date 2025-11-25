@@ -32,29 +32,27 @@ typedef enum
 {
     AUDIO_EXTN_AWE_CONTROL_INDEX_MEDIA_VOLUME           =0,
     AUDIO_EXTN_AWE_CONTROL_INDEX_CALL_VOLUME            =1,
-    AUDIO_EXTN_AWE_CONTROL_INDEX_VOIP_CALL_VOLUME       =2,
+    AUDIO_EXTN_AWE_CONTROL_INDEX_CALL_RING_VOLUME       =2,
     AUDIO_EXTN_AWE_CONTROL_INDEX_NAV_ASSIST_VOLUME      =3,
-    AUDIO_EXTN_AWE_CONTROL_INDEX_CHIMES_VOLUME          =4,
+    AUDIO_EXTN_AWE_CONTROL_INDEX_VR_VOLUME              =4,
     AUDIO_EXTN_AWE_CONTROL_INDEX_SYSTEM_VOLUME          =5,
     AUDIO_EXTN_AWE_CONTROL_INDEX_DRIVER_ZONE_VOLUME     =6,
     AUDIO_EXTN_AWE_CONTROL_INDEX_ICC_VOLUME             =7,
-    AUDIO_EXTN_AWE_CONTROL_INDEX_ALERTS_VOLUME          =8,
-    AUDIO_EXTN_AWE_CONTROL_INDEX_ENT_MUTE               =9,
-    AUDIO_EXTN_AWE_CONTROL_INDEX_HFP_MIC_MUTE           =12,
-    AUDIO_EXTN_AWE_CONTROL_INDEX_TONE_BASS              =13,
-    AUDIO_EXTN_AWE_CONTROL_INDEX_TONE_MID               =14,
-    AUDIO_EXTN_AWE_CONTROL_INDEX_TONE_TREBLE            =15,
-    AUDIO_EXTN_AWE_CONTROL_INDEX_FADE                   =16,
-    AUDIO_EXTN_AWE_CONTROL_INDEX_BALANCE                =17,
+    AUDIO_EXTN_AWE_CONTROL_INDEX_ENT_MUTE               =8,
+    AUDIO_EXTN_AWE_CONTROL_INDEX_MUTE_ALL               =9,
+    AUDIO_EXTN_AWE_CONTROL_INDEX_DUCK_AWE               =10,
+    AUDIO_EXTN_AWE_CONTROL_INDEX_HFP_MIC_MUTE           =11,
+    AUDIO_EXTN_AWE_CONTROL_INDEX_SR_CARPLAY             =12,
+    AUDIO_EXTN_AWE_CONTROL_INDEX_SR_VOIP                =13,
+    AUDIO_EXTN_AWE_CONTROL_INDEX_MEDIA_ACTIVE           =14,
+    AUDIO_EXTN_AWE_CONTROL_INDEX_NAV_ACTIVE             =15,
+    AUDIO_EXTN_AWE_CONTROL_INDEX_VR_ACTIVE              =16,
+    AUDIO_EXTN_AWE_CONTROL_INDEX_CALL_RING_ACTIVE       =17,
     AUDIO_EXTN_AWE_CONTROL_INDEX_CALL_MODE              =24,
     AUDIO_EXTN_AWE_CONTROL_INDEX_VOICE_CALL_ZONE        =25,
     AUDIO_EXTN_AWE_CONTROL_INDEX_VOIP_CALL_ZONE         =26,
     AUDIO_EXTN_AWE_CONTROL_INDEX_ASSIST_ZONE            =27,
     AUDIO_EXTN_AWE_CONTROL_INDEX_RECORDING_ZONE         =28,
-    AUDIO_EXTN_AWE_CONTROL_INDEX_SWB_FB_MODE            =29,
-    AUDIO_EXTN_AWE_CONTROL_INDEX_SWB_FB_MODE_VOIP       =30,
-    AUDIO_EXTN_AWE_CONTROL_INDEX_MEDIA_ACTIVE           =31,
-    AUDIO_EXTN_AWE_CONTROL_INDEX_NAV_ACTIVE             =32,
     AUDIO_EXTN_AWE_CONTROL_INDEX_COUNT                  =33,
 } audio_extn_awe_control_index_type_t;
 
@@ -86,13 +84,19 @@ typedef enum
 // FUTURE: move this to a configuration file!
 std::multimap<std::string,int> mapVolumeParamId = {
     {"BUS00_MEDIA",             AUDIO_EXTN_AWE_CONTROL_INDEX_MEDIA_VOLUME},
-    {"BUS01_SYS_NOTIFICATION",  AUDIO_EXTN_AWE_CONTROL_INDEX_CHIMES_VOLUME},
     {"BUS02_NAV_GUIDANCE",      AUDIO_EXTN_AWE_CONTROL_INDEX_NAV_ASSIST_VOLUME},
     {"BUS03_PHONE",             AUDIO_EXTN_AWE_CONTROL_INDEX_CALL_VOLUME},
-    {"BUS03_PHONE",             AUDIO_EXTN_AWE_CONTROL_INDEX_VOIP_CALL_VOLUME},
-    {"BUS05_ALERTS",            AUDIO_EXTN_AWE_CONTROL_INDEX_ALERTS_VOLUME},
     {"BUS08_FRONT_PASSENGER",   AUDIO_EXTN_AWE_CONTROL_INDEX_DRIVER_ZONE_VOLUME},
     {"BUS16_REAR_SEAT",         AUDIO_EXTN_AWE_CONTROL_INDEX_NAV_ASSIST_VOLUME},
+    {"BUSxx_VR",                AUDIO_EXTN_AWE_CONTROL_INDEX_VR_VOLUME}, //Update Bus address of VR
+    {"BUSxx_CALLRING",          AUDIO_EXTN_AWE_CONTROL_INDEX_CALL_RING_VOLUME}, //Update Bus address of CALL Ring
+};
+
+std::multimap<std::string,int> mapActiveStreamParamId = {
+    {"BUS00_MEDIA",             AUDIO_EXTN_AWE_CONTROL_INDEX_MEDIA_ACTIVE},
+    {"BUS02_NAV_GUIDANCE",      AUDIO_EXTN_AWE_CONTROL_INDEX_NAV_ACTIVE},
+    {"BUSxx_VR",                AUDIO_EXTN_AWE_CONTROL_INDEX_VR_ACTIVE}, //Update Bus address of VR
+    {"BUSxx_CALLRING",          AUDIO_EXTN_AWE_CONTROL_INDEX_CALL_RING_ACTIVE}, //Update Bus address of CALL Ring  
 };
 
 
@@ -105,9 +109,6 @@ static int awe_set_custom_param(int index, void *value);
 static int awe_get_custom_param(int index, void *value);
 
 
-// #define Custom_Control_IPC_In_value_HANDLE 0x87530008
-// #define Custom_Control_IPC_In_value_MASK 0x00000100
-// #define Custom_Control_IPC_In_value_SIZE 0x0000000B
 
 // Future for updated AWE release with additional indices
 // #define AWE_CUSTOMER_NUM_COMMAND_INDEXES        ((int)AUDIO_EXTN_AWE_CONTROL_INDEX_COUNT)
@@ -115,8 +116,6 @@ static int awe_get_custom_param(int index, void *value);
 #define AWE_CUSTOMER_COMMAND_BUFFER_LENGTH      (AWE_CUSTOMER_NUM_COMMAND_INDEXES)
 #define AWE_PAYLOAD_SIZE                        (AWE_CUSTOMER_NUM_COMMAND_INDEXES + 5)
 
-// #define AWE_MODULE_INSTANCE_ID                  (0x438E)        // Old for 4.2.4.0 or 4.5.5.0
-// #define AWE_MODULE_INSTANCE_ID                  (0x4169)        // Updated ID for Zinger-based 4.5.6.0-56
 #define AWE_MODULE_INSTANCE_ID                  (0x0)              // Set MIID with zero here, and the PAL finds the module by TAG
 // #define AWE_MODULE_CONFIG_PARAM_ID              (0x08002177)    // Old value for ES4.1 timeframe
 #define AWE_MODULE_CONFIG_PARAM_ID              (0x18052002)       // Updated for ES5.2
@@ -232,7 +231,7 @@ int awe_set_parameters(std::shared_ptr<AudioDevice> adev , struct str_parms *par
     // the android setparam in the future.
     if (str_parms_get_str(params, AUDIO_PARAMETER_HFP_ENABLE, value,sizeof(value)) >= 0) {
         hfp_enable = 0;
-        if (!strncmp(value, "true", sizeof(value)))
+        if (!strncmp(value, "true", strlen("true")))
             hfp_enable = 1;
         customVal = (float)hfp_enable;
         ret = awe_set_custom_param(AUDIO_EXTN_AWE_CONTROL_INDEX_CALL_MODE, (void *)&customVal);
@@ -302,6 +301,28 @@ int awe_set_mic_mute(bool state) {
 }
 
 
+int awe_set_stream_active(int stream_type, const char *address,int value) {
+
+    int ret = 0;
+    AHAL_INFO("Enter awe_set_stream_active: Stream Type %d and Bus addr %s, value %d", stream_type, address, value);
+
+    // Set volume level to AWE if necessary
+    if (stream_type == PAL_STREAM_PLAYBACK_BUS && address != NULL) {
+
+        for (std::multimap<std::string, int>::iterator itr = mapActiveStreamParamId.begin(); itr != mapActiveStreamParamId.end(); ++itr) {
+            if (itr->first == address) {
+                float valToSet = value;
+                int aweSetIndex = itr->second;
+                AHAL_DBG("found match for %s: %d", address, aweSetIndex);
+                ret = awe_set_custom_param(aweSetIndex, (void *)&valToSet);
+            }
+        }
+
+    }
+
+    AHAL_DBG("Exit ret: %d", ret);
+    return ret;
+}
 
 
 int awe_set_volume(int stream_type, const char *address, float left , float right) {
@@ -341,7 +362,7 @@ int awe_set_custom_param(int index, void *value)
     size_t  size = 0;
     struct apm_module_param_data_t* header;
 
-    if (index > AWE_CUSTOMER_NUM_COMMAND_INDEXES) {
+    if (index >= AWE_CUSTOMER_NUM_COMMAND_INDEXES) {
         AHAL_ERR("%s: Cannot set custom param index=%d.", __func__, index);
         return -EINVAL;
     }
@@ -397,7 +418,7 @@ int awe_get_custom_param(int index, void *value)
     size_t  size = 0;
     struct apm_module_param_data_t* header;
 
-    if (index > AWE_CUSTOMER_NUM_COMMAND_INDEXES) {
+    if (index >= AWE_CUSTOMER_NUM_COMMAND_INDEXES) {
         AHAL_ERR("%s: Cannot get custom param index=%d.", __func__, index);
         return -EINVAL;
     }
