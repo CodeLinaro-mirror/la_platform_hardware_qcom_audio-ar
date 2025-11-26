@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -8,10 +8,9 @@
 
 #include "ConfigManager.h"
 #include <log/log.h>
+#include <system/audio_config.h>
 #include <tinyxml2.h>
 #include <unistd.h>
-
-#include <system/audio_config.h>
 
 using namespace tinyxml2;
 
@@ -69,13 +68,10 @@ Interfaces parseWithPath(std::string &&path) {
 }
 
 Interfaces parseInterfaces() {
-    for (const std::string &location : ::android::audio_get_configuration_paths()) {
-        std::string defaultPath = location + '/' + DEFAULT_NAME;
-        if (access(defaultPath.c_str(), R_OK) != 0) {
-            continue;
-        }
-        auto result = parseWithPath(std::move(defaultPath));
-        return result;
+    auto path = ::android::audio_find_readable_configuration_file(DEFAULT_NAME);
+    if (path.empty()) {
+        LOG_ALWAYS_FATAL("%s %s not found, validate configurations", __func__, DEFAULT_NAME);
     }
-    return {};
+
+    return parseWithPath(std::move(path));
 }

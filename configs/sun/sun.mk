@@ -77,7 +77,7 @@ PRODUCT_PACKAGES += fai__3.0.0_0.0__eai_4.6_enpuv5.pmd
 # Audio configuration xml's related to Lanai
 QCV_FAMILY_SKUS := sun
 DEVICE_SKU := sun
-UV_WRAPPER2 := true
+UV_WRAPPER2 := false
 
 CONFIG_PAL_SRC_DIR := vendor/qcom/opensource/pal/configs/qcom/$(BA_NAME)/sun
 CONFIG_HAL_SRC_DIR := vendor/qcom/opensource/audio-hal/primary-hal/configs/sun

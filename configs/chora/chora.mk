@@ -1,0 +1,1 @@
+AUDIO_USE_STUB_HAL := true

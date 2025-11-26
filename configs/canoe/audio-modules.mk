@@ -112,7 +112,8 @@ AUDIO_MODULES += ftm_test_config_canoe-qrd-snd-card
 AUDIO_MODULES += ftm_test_config_canoe-qrd-wsa884x-snd-card
 AUDIO_MODULES += ftm_test_config_alor-mtp-wcd9378-snd-card
 AUDIO_MODULES += ftm_test_config_alor-mtp-wcd939x-snd-card
-AUDIO_MODULES += ftm_test_config_alor-qrd-snd-card
+AUDIO_MODULES += ftm_test_config_alor-qrd-wsa884x-snd-card
+
 AUDIO_MODULES += audioadsprpcd
 AUDIO_MODULES += MTP_acdb_cal.acdb
 AUDIO_MODULES += MTP_workspaceFileXml.qwsp
@@ -190,9 +191,8 @@ AUDIO_MODULES += hotword_plugin
 AUDIO_MODULES += customva_plugin
 AUDIO_MODULES += sva_plugin
 AUDIO_MODULES += libvui_utils
-AUDIO_MODULES += libVoiceSdk
-AUDIO_MODULES += libtensorflowlite_c
 AUDIO_MODULES += libqasr
+AUDIO_MODULES += qasr_vintf.xml
 
 AUDIO_MODULES += $(AUDIO_AGM)
 AUDIO_MODULES += $(AUDIO_PAL)
@@ -206,7 +206,8 @@ AUDIO_MODULES += libsoundtriggerhal.qti
 AUDIO_MODULES += \
     liblistensoundmodelaidl \
     liblistensoundmodel2vendor \
-    vendor.qti.hardware.ListenSoundModelAidl-V1-ndk.vendor
+    vendor.qti.hardware.ListenSoundModelAidl-V1-ndk.vendor \
+    Manifest_IListenSoundModel.xml
 
 # AIDL Audio modules
 

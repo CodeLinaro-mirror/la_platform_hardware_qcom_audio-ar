@@ -180,6 +180,7 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
     void getPlaybackStreamDevices();
     void startCallTranslation(pal_call_translation_direction direction);
     void stopCallTranslation();
+    void updateBluetoothDevice();
     ::aidl::android::media::audio::common::AudioDevice getMatchingTxDevice(
             const ::aidl::android::media::audio::common::AudioDevice & rxDevice);
     bool isValidDevice(const ::aidl::android::media::audio::common::AudioDevice & rxDevice);
@@ -208,7 +209,10 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
     bool hasValidPlaybackStream{false};
     bool mIsVoiceStarted{false};
     bool mIsVoipStarted{false};
+    bool mIsBTSCOEnabled{false};
     std::string mMuteDirection{""};
+
+    std::vector<::aidl::android::media::audio::common::AudioDevice> mExternalDevices;
 
     using TtyMap = std::map<TelecomConfig::TtyMode, pal_tty_t>;
     const TtyMap mTtyMap{

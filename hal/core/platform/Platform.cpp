@@ -235,6 +235,15 @@ bool Platform::setStreamMicMute(pal_stream_handle_t* streamHandlePtr, const bool
     return true;
 }
 
+void Platform::setVoipRxStreamHandle(pal_stream_handle_t* palHandle) {
+    LOG(DEBUG) << __func__ << ": Setting VOIP RX stream handle to " << palHandle;
+    mVoipRxPalHandle = palHandle;
+}
+
+pal_stream_handle_t* Platform::getVoipRxStreamHandle() const {
+    return mVoipRxPalHandle;
+}
+
 bool Platform::updateScreenState(const bool isTurnedOn) noexcept {
     mIsScreenTurnedOn = isTurnedOn;
     pal_param_screen_state_t screenState{.screen_state = mIsScreenTurnedOn};
@@ -855,6 +864,20 @@ void Platform::updateScreenRotation(const IModule::ScreenRotation in_rotation) n
     mCurrentScreenRotation = in_rotation;
 }
 
+void Platform::setRotation() const noexcept {
+    pal_param_device_rotation_t paramDeviceRotation{};
+    paramDeviceRotation.rotation_type =
+        (mCurrentScreenRotation == IModule::ScreenRotation::DEG_270) ?
+        PAL_SPEAKER_ROTATION_RL : PAL_SPEAKER_ROTATION_LR;
+
+    if (int32_t ret = ::pal_set_param(PAL_PARAM_ID_DEVICE_ROTATION,
+                                      &paramDeviceRotation,
+                                      sizeof(pal_param_device_rotation_t)); ret) {
+        LOG(ERROR) << __func__ << ": PAL_PARAM_ID_DEVICE_ROTATION failed： " << ret;
+        return;
+    }
+}
+
 IModule::ScreenRotation Platform::getCurrentScreenRotation() const noexcept {
     return mCurrentScreenRotation;
 }
@@ -1249,7 +1272,7 @@ uint32_t Platform::getBluetoothLatencyMs(const std::vector<AudioDevice>& bluetoo
             }
         }
     }
-    LOG(DEBUG) << __func__ << " bt latency: " << param_bt_a2dp_ptr->latency;
+    LOG(VERBOSE) << __func__ << " bt latency: " << param_bt_a2dp_ptr->latency;
     return param_bt_a2dp_ptr->latency;
 }
 

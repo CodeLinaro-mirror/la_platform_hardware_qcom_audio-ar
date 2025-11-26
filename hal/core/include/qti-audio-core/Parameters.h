@@ -39,11 +39,16 @@ const static std::string kVoiceHDVoice{"hd_voice"};
 const static std::string kVoiceIsCRsSupported{"isCRSsupported"};
 const static std::string kVoiceCRSCall{"crs_call"};
 const static std::string kVoiceCRSVolume{"CRS_volume"};
-/** kVoiceTranslationRxMute : helps to set the Voice Rx Volume
+/** kVoiceTranslationRxMute : helps to set the Voice/VoIP Rx Volume
 * to mute when the param is set to enabled during the
 * voice call translation usecase running.
 **/
 const static std::string kVoiceTranslationRxMute{"voice_translation_rx_mute"};
+/** kVoiceTranslationTxMute : helps to set the Voice/VoIP Tx Volume
+* to mute when the param is set to enabled during the
+* voice call translation usecase running.
+**/
+const static std::string kVoiceTranslationTxMute{"voice_translation_tx_mute"};
 /** kTranslationConfig : Use this parameter to set the config to
 * ASR, TTS and NMT modules for the Voice Call Translation graph.
 **/

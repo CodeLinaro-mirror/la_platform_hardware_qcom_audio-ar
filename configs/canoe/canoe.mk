@@ -48,12 +48,13 @@ PRODUCT_PACKAGES += fai__8.0.2_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_5.6.0_e
 PRODUCT_PACKAGES += fai__3.0.0_0.0__eai_5.6.0_enpuv6.pmd
 
 # Adding WNR Model File
-#PRODUCT_PACKAGES += wind_filter__1.0__48k__2ch__16b__eai_5.5.eai
+PRODUCT_PACKAGES += wind_filter__1.0__48k__2ch__16b__eai_5.5.eai
+PRODUCT_PACKAGES += wind_filter__1.0__48k__2ch__16b__eai_5.8.eai
 
 # Audio configuration xml's related to Kaanapali
 QCV_FAMILY_SKUS := canoe
 DEVICE_SKU := canoe
-UV_WRAPPER2 := true
+UV_WRAPPER2 := false
 
 CONFIG_PAL_SRC_DIR := vendor/qcom/opensource/pal/configs/qcom/$(BA_NAME)/canoe
 CONFIG_HAL_SRC_DIR := vendor/qcom/opensource/audio-hal/primary-hal/configs/canoe
@@ -83,6 +84,11 @@ PRODUCT_COPY_FILES += \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_canoe_mtp_wsa884x.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_canoe_mtp_wsa884x.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_canoe_qrd.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_canoe_qrd.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_canoe_qrd_wsa884x.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_canoe_qrd_wsa884x.xml \
+    $(CONFIG_PAL_SRC_DIR)/mcs_defs_canoe_cdp_wsa885xi2s.xml:$(CONFIG_SKU_OUT_DIR)/mcs_defs_canoe_cdp_wsa885xi2s.xml \
+    $(CONFIG_PAL_SRC_DIR)/mcs_defs_canoe_mtp.xml:$(CONFIG_SKU_OUT_DIR)/mcs_defs_canoe_mtp.xml \
+    $(CONFIG_PAL_SRC_DIR)/mcs_defs_canoe_mtp_wsa884x.xml:$(CONFIG_SKU_OUT_DIR)/mcs_defs_canoe_mtp_wsa884x.xml \
+    $(CONFIG_PAL_SRC_DIR)/mcs_defs_canoe_qrd.xml:$(CONFIG_SKU_OUT_DIR)/mcs_defs_canoe_qrd.xml \
+    $(CONFIG_PAL_SRC_DIR)/mcs_defs_canoe_qrd_wsa884x.xml:$(CONFIG_SKU_OUT_DIR)/mcs_defs_canoe_qrd_wsa884x.xml \
     $(CONFIG_PAL_SRC_DIR)/usecaseKvManager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usecaseKvManager.xml \
     $(CONFIG_PAL_SRC_DIR)/Hapticsconfig.xml:$(TARGET_COPY_OUT_VENDOR)/etc/Hapticsconfig.xml \
     $(CONFIG_PAL_SRC_DIR)/plugin_manager.xml:$(CONFIG_SKU_OUT_DIR)/plugin_manager.xml \
@@ -134,11 +140,82 @@ PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/codec2/service/1.0/c2audio.vendor.ext-arm64.policy:vendor/etc/seccomp_policy/c2audio.vendor.ext-arm64.policy
 PRODUCT_COPY_FILES += \
     $(CONFIG_HAL_SRC_DIR)/vendor_audio_interfaces.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/vendor_audio_interfaces.xml
-   
+
+# Audio configuration xml's related to Alana
+QCV_FAMILY_SKUS := whale
+DEVICE_SKU := whale
+UV_WRAPPER2 := false
+
+CONFIG_PAL_SRC_DIR := vendor/qcom/opensource/pal/configs/qcom/$(BA_NAME)/canoe
+CONFIG_HAL_SRC_DIR := vendor/qcom/opensource/audio-hal/primary-hal/configs/canoe
+CONFIG_SKU_OUT_DIR := $(TARGET_COPY_OUT_VENDOR)/etc/audio/sku_$(DEVICE_SKU)
+
+PRODUCT_COPY_FILES += \
+    $(CONFIG_HAL_SRC_DIR)/audio_effects.conf:$(CONFIG_SKU_OUT_DIR)/audio_effects.conf \
+    $(CONFIG_HAL_SRC_DIR)/audio_effects.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects.xml \
+    $(CONFIG_HAL_SRC_DIR)/audio_effects_config.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects_config.xml \
+    $(CONFIG_HAL_SRC_DIR)/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/microphone_characteristics.xml \
+    $(CONFIG_PAL_SRC_DIR)/card-defs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/card-defs.xml \
+    $(CONFIG_PAL_SRC_DIR)/mixer_paths_canoe_mtp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_canoe_mtp.xml \
+    $(CONFIG_PAL_SRC_DIR)/mixer_paths_canoe_mtp_wsa884x.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_canoe_mtp_wsa884x.xml \
+    $(CONFIG_PAL_SRC_DIR)/mixer_paths_canoe_mtp_qmp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_canoe_mtp_qmp.xml \
+    $(CONFIG_PAL_SRC_DIR)/mixer_paths_canoe_atp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_canoe_atp.xml \
+    $(CONFIG_PAL_SRC_DIR)/mixer_paths_canoe_cdp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_canoe_cdp.xml \
+    $(CONFIG_PAL_SRC_DIR)/mixer_paths_canoe_cdp_wsa884x.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_canoe_cdp_wsa884x.xml \
+    $(CONFIG_PAL_SRC_DIR)/mixer_paths_canoe_cdp_wsa885xi2s.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_canoe_cdp_wsa885xi2s.xml \
+    $(CONFIG_PAL_SRC_DIR)/mixer_paths_canoe_qrd.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_canoe_qrd.xml \
+    $(CONFIG_PAL_SRC_DIR)/mixer_paths_canoe_qrd_wsa884x.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_canoe_qrd_wsa884x.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_canoe_atp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_canoe_atp.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_canoe_cdp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_canoe_cdp.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_canoe_cdp_wsa884x.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_canoe_cdp_wsa884x.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_canoe_cdp_wsa885xi2s.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_canoe_cdp_wsa885xi2s.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_canoe_mtp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_canoe_mtp.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_canoe_mtp_qmp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_canoe_mtp_qmp.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_canoe_mtp_wsa884x.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_canoe_mtp_wsa884x.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_canoe_qrd.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_canoe_qrd.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_canoe_qrd_wsa884x.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_canoe_qrd_wsa884x.xml \
+    $(CONFIG_PAL_SRC_DIR)/mcs_defs_canoe_cdp_wsa885xi2s.xml:$(CONFIG_SKU_OUT_DIR)/mcs_defs_canoe_cdp_wsa885xi2s.xml \
+    $(CONFIG_PAL_SRC_DIR)/mcs_defs_canoe_mtp.xml:$(CONFIG_SKU_OUT_DIR)/mcs_defs_canoe_mtp.xml \
+    $(CONFIG_PAL_SRC_DIR)/mcs_defs_canoe_mtp_wsa884x.xml:$(CONFIG_SKU_OUT_DIR)/mcs_defs_canoe_mtp_wsa884x.xml \
+    $(CONFIG_PAL_SRC_DIR)/mcs_defs_canoe_qrd.xml:$(CONFIG_SKU_OUT_DIR)/mcs_defs_canoe_qrd.xml \
+    $(CONFIG_PAL_SRC_DIR)/mcs_defs_canoe_qrd_wsa884x.xml:$(CONFIG_SKU_OUT_DIR)/mcs_defs_canoe_qrd_wsa884x.xml \
+    $(CONFIG_PAL_SRC_DIR)/usecaseKvManager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usecaseKvManager.xml \
+    $(CONFIG_PAL_SRC_DIR)/Hapticsconfig.xml:$(TARGET_COPY_OUT_VENDOR)/etc/Hapticsconfig.xml \
+    $(CONFIG_PAL_SRC_DIR)/plugin_manager.xml:$(CONFIG_SKU_OUT_DIR)/plugin_manager.xml \
+    vendor/qcom/opensource/audio-hal/primary-hal/configs/common/media_codecs_vendor_audio.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_vendor_audio.xml \
+    frameworks/native/data/etc/android.hardware.audio.pro.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.pro.xml \
+    frameworks/native/data/etc/android.hardware.audio.low_latency.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.low_latency.xml \
+    frameworks/native/data/etc/android.hardware.sensor.dynamic.head_tracker.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/sku_$(DEVICE_SKU)/android.hardware.sensor.dynamic.head_tracker.xml
+# Copy AudioEffects config
+PRODUCT_COPY_FILES += \
+    hardware/interfaces/audio/aidl/default/audio_effects_config.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects_config_stub.xml
+
+# Copy Quasar config
+PRODUCT_COPY_FILES += \
+    $(CONFIG_HAL_SRC_DIR)/quasar_config.xml:$(CONFIG_SKU_OUT_DIR)/quasar_config.xml
+
+#XML Audio configuration files
+ifneq ($(TARGET_USES_AOSP_FOR_AUDIO), true)
+PRODUCT_COPY_FILES += \
+    $(CONFIG_HAL_SRC_DIR)/audio_policy_configuration.xml:$(CONFIG_SKU_OUT_DIR)/audio_policy_configuration.xml
+
+#Audio configuration xml's common to whale family
+PRODUCT_COPY_FILES += \
+$(foreach DEVICE_SKU, $(QCV_FAMILY_SKUS), \
+    $(CONFIG_HAL_SRC_DIR)/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/sku_$(DEVICE_SKU)_qssi/audio_policy_configuration.xml)
+
+PRODUCT_COPY_FILES += \
+    $(CONFIG_HAL_SRC_DIR)/audio_module_config_primary.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/audio_module_config_primary.xml
+endif
+
+# XML config file for memory logger
+PRODUCT_COPY_FILES += $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/$(DEVICE_SKU)/mem_logger_config.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mem_logger_config.xml
+
+
 # Audio configuration xml's related to Molokai
 QCV_FAMILY_SKUS := alor
 DEVICE_SKU := alor
-UV_WRAPPER2 := true
+UV_WRAPPER2 := false
 
 CONFIG_PAL_SRC_DIR := vendor/qcom/opensource/pal/configs/qcom/$(BA_NAME)/canoe
 CONFIG_HAL_SRC_DIR := vendor/qcom/opensource/audio-hal/primary-hal/configs/canoe
@@ -255,7 +332,7 @@ PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.hw.aac.encoder=false
 #ADM Buffering size in ms
 PRODUCT_PROPERTY_OVERRIDES += \
-vendor.audio.adm.buffering.ms=2
+vendor.audio.adm.buffering.ms=3
 
 #enable headset calibration
 PRODUCT_PROPERTY_OVERRIDES += \
