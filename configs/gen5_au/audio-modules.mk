@@ -85,6 +85,7 @@ AUDIO_AWE += libcustomva_intf
 AUDIO_AWE += libhotword_intf
 AUDIO_AWE += libarmemlog
 AUDIO_AWE += libtinyalsav2
+AUDIO_AWE += libvui_dmgr_client
 AUDIO_MODULES += $(AUDIO_AWE)
 
  # sound trigger aidl library
