@@ -23,6 +23,13 @@
 #include "effect-impl/EffectContext.h"
 #include "effect-impl/EffectUUID.h"
 #include <hardware/audio_effect.h>
+#include <android/binder_manager.h>
+#include <binder/IServiceManager.h>
+#include <aidl/android/hardware/audio/core/IModule.h>
+#include <aidl/qti/audio/core/VString.h>
+using aidl::android::hardware::audio::core::IModule;
+using aidl::android::hardware::audio::core::VendorParameter;
+using aidl::qti::audio::core::VString;
 
 using aidl::android::media::audio::common::AudioDeviceDescription;
 using aidl::qti::effects::EffectContext;
@@ -151,7 +158,8 @@ class SDVCContext final : public RslContext {
     bool mTempDisabled = false;
     uint16_t mNumProfiles = MAX_SDVC_PROFILE;
     uint16_t mCurrentProfile = DEFAULT_SDVC_PROFILE;
-
+    std::shared_ptr<IModule> mModule;
+    int getDeviceInstance() ;
 };
 
 class SteadyVolumeContext final : public RslContext {
