@@ -57,6 +57,7 @@ struct AudioCompIndex {
         A2B_LINK2 = 0x4,
         EXT_AMP1 = 0x5,
         EXT_AMP2 = 0x6,
+        RESERVED2 = 0x7,
     };
 };
 
@@ -110,4 +111,17 @@ public:
         LOG(ERROR) << "onPropertySetError: failed to set VHAL property";
         return;
     }
+};
+
+class AudioVhalAvailibilityCallback final :
+      public android::frameworks::automotive::vhal::ISubscriptionCallback {
+public:
+    void onPropertyEvent(const std::vector<std::unique_ptr<android::frameworks::automotive::vhal::IHalPropValue>>& values) override;
+    void onPropertySetError(
+            [[maybe_unused]] const std::vector<android::frameworks::automotive::vhal::HalPropError>&
+                    errors) override {
+        LOG(ERROR) << "onPropertySetError: failed to set VHAL property";
+        return;
+    }
+
 };
