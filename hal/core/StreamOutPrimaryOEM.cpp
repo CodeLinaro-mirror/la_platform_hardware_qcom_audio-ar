@@ -497,7 +497,7 @@ skip_ecnr_configuration :
         }
 
         if (mUseCachedVolume) {
-            setHwVolume(mVolumes);
+            setStreamVolume(mVolumes);
         }
 
         const auto palOpenApiEndTime = std::chrono::steady_clock::now();

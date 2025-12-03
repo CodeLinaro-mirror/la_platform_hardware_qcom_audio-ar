@@ -162,30 +162,29 @@ void open_stream() {
     devices[0].config.ch_info = ch_info;
     devices[0].config.aud_fmt_id = PAL_AUDIO_FMT_PCM_S16_LE;
 
-    LOG(DEBUG) << __func__ << " Opening Dummy Stream handle";
-    ret = pal_stream_open(&stream_dl_attr, 1, &devices[0], 0, NULL, NULL, 0, &gsp_palHandle);
+    if(gsp_palHandle != NULL) {
+        LOG(DEBUG) << __func__ << " Stream Handle already exists ";
+    } else {
+        LOG(DEBUG) << __func__ << " Opening Dummy Stream handle";
+        ret = pal_stream_open(&stream_dl_attr, 1, &devices[0], 0, NULL, NULL, 0, &gsp_palHandle);
 
-    if(ret)
-    {
-        LOG(DEBUG) << " Stream open Failed " << __func__;
-        gsp_palHandle = NULL ;
-    }
+        if(ret)
+            LOG(ERROR) << " Stream open Failed " << __func__;
 
-    DL_buffer_size= 512*16*ch_info.channels;
-    DL_stream_buffer = realloc(DL_stream_buffer, DL_buffer_size);
-    outBufCfg.buf_size = DL_buffer_size;
-    outBufCfg.buf_count = 4;
-    ret = pal_stream_set_buffer_size(gsp_palHandle, NULL, &outBufCfg);
+        DL_buffer_size= 512*16*ch_info.channels;
+        DL_stream_buffer = realloc(DL_stream_buffer, DL_buffer_size);
+        outBufCfg.buf_size = DL_buffer_size;
+        outBufCfg.buf_count = 4;
+        ret = pal_stream_set_buffer_size(gsp_palHandle, NULL, &outBufCfg);
 
-    ret = pal_stream_start(gsp_palHandle);
+        ret = pal_stream_start(gsp_palHandle);
 
-    if(ret)
-    {
-        LOG(DEBUG) << " Stream start Failed " << __func__;
-        gsp_palHandle = NULL ;
+        if(ret) {
+            LOG(ERROR) << " Stream start Failed " << __func__;
+            gsp_palHandle = NULL ;
+        }
     }
     return;
-
 }
 
 // Close the Dummy Stream
@@ -481,7 +480,22 @@ void update_fan_speed_pal_param(param_type2_t *params) {
             pal_param->data = (void *)params;
             LOG(DEBUG) << __func__ << ": Successfully created pal_param";
 
-            aidl::qti::awx::PalParamDelegator::AWX_set_param(pal_param, aidl::qti::awx::SYNC_WITHOUT_AUDIO_BUS);
+            if (gs_powerpolicy) {
+                if (gsp_palHandle == NULL) {
+                    open_stream();
+                }
+
+                // Check the pal Handle is not NULL before processing the request.
+                if (gsp_palHandle != NULL) {
+                    aidl::qti::awx::PalParamDelegator::AWX_set_param_handle(gsp_palHandle,pal_param, aidl::qti::awx::SYNC_WITHOUT_AUDIO_BUS);
+                }
+                else {
+                    LOG(ERROR) << "Open Stream Failed";
+                }
+            }
+            else{
+                LOG(ERROR) << "Power policy sleep is enabled no updates can be done";
+            }
         } else {
             LOG(ERROR) << ": pal_param is null";
             goto exit;
@@ -509,7 +523,22 @@ void update_vehicle_speed_pal_param(param_type2_t *params) {
             pal_param->param_size = sizeof(param_type2_t);
             pal_param->data = (void *)params;
             LOG(VERBOSE) << __func__ << ": Successfully created pal_param";
-            aidl::qti::awx::PalParamDelegator::AWX_set_param(pal_param, aidl::qti::awx::SYNC_WITHOUT_AUDIO_BUS);
+            if (gs_powerpolicy) {
+                if (gsp_palHandle == NULL) {
+                    open_stream();
+                }
+
+                // Check the pal Handle is not NULL before processing the request.
+                if (gsp_palHandle != NULL) {
+                    aidl::qti::awx::PalParamDelegator::AWX_set_param_handle(gsp_palHandle,pal_param, aidl::qti::awx::SYNC_WITHOUT_AUDIO_BUS);
+                }
+                else {
+                    LOG(ERROR) << "Open Stream Failed";
+                }
+            }
+            else{
+                LOG(ERROR) << "Power policy sleep is enabled no updates can be done";
+            }
         } else {
             LOG(ERROR) << "pal_param is null";
             goto exit;
