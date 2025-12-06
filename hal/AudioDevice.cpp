@@ -33,9 +33,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
  *
- * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -1545,16 +1545,15 @@ int AudioDevice::SetParameters(const char *kvpairs) {
     ret = str_parms_get_str(parms, AUDIO_PARAMETER_KEY_HAC, value, sizeof(value));
     if (ret >= 0) {
         adev_->hac_voip = false;
-        if (strcmp(value, AUDIO_PARAMETER_VALUE_HAC_ON) == 0) {
+        if (strcmp(value, AUDIO_PARAMETER_VALUE_HAC_ON) == 0)
             adev_->hac_voip = true;
-            for (int i = 0; i < stream_out_list_.size(); i++) {
-                stream_out_list_[i]->GetStreamHandle(&stream_out);
-                astream_out = adev_->OutGetStream((audio_stream_t*)stream_out);
-                if (astream_out->GetUseCase() == USECASE_AUDIO_PLAYBACK_VOIP) {
-                    new_devices = astream_out->mAndroidOutDevices;
-                    astream_out->RouteStream(new_devices, true);
-                    break;
-                }
+        for (int i = 0; i < stream_out_list_.size(); i++) {
+            stream_out_list_[i]->GetStreamHandle(&stream_out);
+            astream_out = adev_->OutGetStream((audio_stream_t*)stream_out);
+            if (astream_out->GetUseCase() == USECASE_AUDIO_PLAYBACK_VOIP) {
+                new_devices = astream_out->mAndroidOutDevices;
+                astream_out->RouteStream(new_devices, true);
+                break;
             }
         }
     }
