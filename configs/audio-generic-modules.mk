@@ -18,7 +18,7 @@ EFFECTS_DEFAULTS_SHARED_LIBRARIES := \
     libcutils \
     libfmq \
     libutils \
-    lib_default_plugin_controls
+
 
 EFFECTS_DEFAULTS_HEADERS_LIBRARIES := \
     libaudioeffectsaidlqti_headers \
@@ -34,6 +34,7 @@ ifeq ($(TARGET_USES_QMAA),true)
 endif
 #Packages that should not be installed in QMAA are enabled here
 ifneq ($(AUDIO_MODULES_DISABLED),true)
+EFFECTS_DEFAULTS_SHARED_LIBRARIES += lib_default_plugin_controls
 #MM_AUDIO product packages
 MM_AUDIO := libcapiv2uvvendor
 MM_AUDIO += libsoundtriggerhal.qti

@@ -9,7 +9,7 @@ endif
 ifneq ($(AUDIO_MODULES_DISABLED),true)
 
 #AGM
-ifeq (,$(filter gen4_gvm_gy gen5_gvm gen5_gvm_gy, $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)))
+ifeq (,$(filter gen4_gvm_gy, $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)))
 AUDIO_AGM := libagmclient
 AUDIO_AGM += libagmipcservice
 AUDIO_AGM += libagm
@@ -89,7 +89,7 @@ AUDIO_ACDB := workspaceFileXml.qwsp
 AUDIO_ACDB += acdb_cal.acdb
 AUDIO_ACDB += acdb_cal.acdbdelta
 
-ifeq (,$(filter gen4_gvm_gy gen5_gvm gen5_gvm_gy, $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)))
+ifeq (,$(filter gen4_gvm_gy, $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)))
 AUDIO_MODULES := $(AUDIO_AGM)
 endif
 AUDIO_MODULES += $(AUDIO_PAL)
@@ -99,7 +99,7 @@ AUDIO_MODULES += $(AUDIO_ACDB)
 AUDIO_MODULES += libqtigefar
 
 # AWE PAL PLUGIN and dependency packages
-ifneq (,$(filter gen4_gvm_gy gen5_gvm gen5_gvm_gy, $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)))
+ifneq (,$(filter gen4_gvm_gy, $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)))
 AUDIO_AWE += libsession_awe
 AUDIO_AWE += libvui_intf
 AUDIO_AWE += libcustomva_intf
