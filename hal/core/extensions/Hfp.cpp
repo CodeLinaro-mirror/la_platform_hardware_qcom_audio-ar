@@ -56,6 +56,7 @@ extern "C" {
 #define AUDIO_PARAMETER_HFP_SET_SAMPLING_RATE "hfp_set_sampling_rate"
 #define AUDIO_PARAMETER_KEY_HFP_VOLUME "hfp_volume"
 #define AUDIO_PARAMETER_HFP_PCM_DEV_ID "hfp_pcm_dev_id"
+#define AUDIO_PARAMETER_HFP_ZONE        "hfp_zone"
 
 #define AUDIO_PARAMETER_KEY_HFP_MIC_VOLUME "hfp_mic_volume"
 
@@ -71,6 +72,7 @@ struct hfp_module {
 
 #define PLAYBACK_VOLUME_MAX 0x2000
 #define CAPTURE_VOLUME_DEFAULT (15.0)
+#define MAX_HFP_ZONES 7
 static struct hfp_module hfpmod = {
         .is_hfp_running = 0,
         .hfp_volume = 0,
@@ -455,6 +457,7 @@ void hfp_set_parameters(bool adev_mute, struct str_parms *parms) {
     float vol;
     int val;
     int rate;
+    int zone_id = 0;
 
     LOG(DEBUG) << __func__ << " enter";
 
@@ -511,6 +514,28 @@ void hfp_set_parameters(bool adev_mute, struct str_parms *parms) {
         }
         LOG(DEBUG) << __func__ << " set_hfp_mic_volume usecase, Vol: " << vol;
         if (hfp_set_mic_volume(vol) == 0) hfpmod.mic_volume = vol;
+    }
+    memset(value, 0, sizeof(value));
+    status = str_parms_get_str(parms, AUDIO_PARAMETER_HFP_ZONE, value, sizeof(value));
+    if (status >= 0) {
+        if (sscanf(value, "%d", &zone_id) != 1) {
+            LOG(ERROR) << __func__ << " error in retrieving hfp zone_id";
+            goto exit;
+        }
+        if (zone_id < 0) {
+            LOG(ERROR) << __func__ << " invalid zone_id: " << zone_id;
+            goto exit;
+        }
+        if (zone_id > MAX_HFP_ZONES) {  // Define MAX_HFP_ZONES based on PAL spec
+            LOG(ERROR) << __func__ << " zone_id exceeds maximum: " << zone_id;
+            goto exit;
+        }
+        LOG(DEBUG) << __func__ << " zonal_hfp zone_id , Zone_id: " << zone_id;
+        int ret = pal_set_param(PAL_PARAM_ID_SET_HFP_ZONE, (void*)&zone_id, sizeof(int));
+        if (ret) {
+            LOG(ERROR) << __func__ << " zonal_hfp set HFP zone failed";
+            goto exit;
+        }
     }
 
 exit:
