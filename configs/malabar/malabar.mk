@@ -66,12 +66,12 @@ PRODUCT_COPY_FILES += \
     $(CONFIG_HAL_SRC_DIR)/audio_effects_config.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects_config.xml \
     $(CONFIG_HAL_SRC_DIR)/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/microphone_characteristics.xml \
     $(CONFIG_PAL_SRC_DIR)/card-defs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/card-defs.xml \
-    $(CONFIG_PAL_SRC_DIR)/mixer_paths_canoe_mtp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_malabar_mtp.xml \
-    $(CONFIG_PAL_SRC_DIR)/mixer_paths_canoe_qrd.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_malabar_qrd.xml \
-    $(CONFIG_PAL_SRC_DIR)/resourcemanager_canoe_mtp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_malabar_mtp.xml \
-    $(CONFIG_PAL_SRC_DIR)/resourcemanager_canoe_qrd.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_malabar_qrd.xml \
-    $(CONFIG_PAL_SRC_DIR)/mcs_defs_canoe_mtp.xml:$(CONFIG_SKU_OUT_DIR)/mcs_defs_malabar_mtp.xml \
-    $(CONFIG_PAL_SRC_DIR)/mcs_defs_canoe_qrd.xml:$(CONFIG_SKU_OUT_DIR)/mcs_defs_malabar_qrd.xml \
+    $(CONFIG_PAL_SRC_DIR)/mixer_paths_malabar_mtp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_malabar_mtp.xml \
+    $(CONFIG_PAL_SRC_DIR)/mixer_paths_malabar_qrd.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_malabar_qrd.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_malabar_mtp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_malabar_mtp.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_malabar_qrd.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_malabar_qrd.xml \
+    $(CONFIG_PAL_SRC_DIR)/mcs_defs_malabar_mtp.xml:$(CONFIG_SKU_OUT_DIR)/mcs_defs_malabar_mtp.xml \
+    $(CONFIG_PAL_SRC_DIR)/mcs_defs_malabar_qrd.xml:$(CONFIG_SKU_OUT_DIR)/mcs_defs_malabar_qrd.xml \
     $(CONFIG_PAL_SRC_DIR)/usecaseKvManager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usecaseKvManager.xml \
     $(CONFIG_PAL_SRC_DIR)/Hapticsconfig.xml:$(TARGET_COPY_OUT_VENDOR)/etc/Hapticsconfig.xml \
     $(CONFIG_PAL_SRC_DIR)/plugin_manager.xml:$(CONFIG_SKU_OUT_DIR)/plugin_manager.xml \
@@ -229,7 +229,7 @@ $(warning "Enabling codec2.0 SW only for non-generic odm build variant")
 #Rank OMX SW codecs lower than OMX HW codecs
 PRODUCT_PROPERTY_OVERRIDES += debug.stagefright.omx_default_rank=0
 endif
-endif
+
 #enable keytone FR
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.hal.output.suspend.supported=true
