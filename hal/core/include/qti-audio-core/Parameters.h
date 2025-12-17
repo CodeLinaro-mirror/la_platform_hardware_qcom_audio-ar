@@ -88,6 +88,8 @@ const static std::string kOffloadPlaySpeedSupported{"offloadVariableRateSupporte
 const static std::string kSupportsHwSuspend{"supports_hw_suspend"};
 const static std::string kIsDirectPCMTrack{"is_direct_pcm_track"};
 const static std::string kTranslateRecord{"translate_record"};
+const static std::string kVoice_Assistant_Zone{"voice_assistant_zone"};
+const static std::string kInput_Mic_Zone{"input_mic_zone"};
 /**
  * translate_record : AUDIO_FLUENCE_FFECNS PCM_RECORD
  * Use this parameter to for the Voice Translation usecase.
