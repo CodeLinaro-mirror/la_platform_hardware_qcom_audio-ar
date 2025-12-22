@@ -511,16 +511,32 @@ void AudioVHALListener::onPropertyEvent(const std::vector<std::unique_ptr<IHalPr
             }
         }
 #endif
-
-        if (propId == SOMEIP_CONNECTION_STATE) {
+        if (value->getPropId() == ThermalPropertyId) {
+            auto tempInfo = value->getInt32Values();
+            if (tempInfo.empty()) {
+                LOG(ERROR) << "Thermal Event Received, Payload Empty";
+                goto exit;
+            } else if (!isDeratingEnabled) {
+                //change to verbose
+                LOG(INFO) << "Thermal Event Received, Device Temperature:" << tempInfo[0];
+                for (auto it: tempInfo) {
+                    LOG(INFO) << it << " ";
+                }
+                isOTWStatusSet = parseOTWStatus(tempInfo);
+                if (isOTWStatusSet) {
+                    isDeratingEnabled = true;
+                    cv.notify_one();
+                }
+            }
+        }
+        if (value->getPropId() == SOMEIP_CONNECTION_STATE) {
             LOG(INFO) << __func__ << "PropId matching with SOMEIP_CONNECTION_STATE";
              if (value->getInt32Values().size() < 1) {
                 LOG(ERROR) << "Invalid SOMEIP_CONNECTION_STATE  size, empty value :" << value->getInt32Values().size();
                 goto exit;
             } else {
                 LOG(DEBUG) << "Event Notify: New SOMEIP_CONNECTION_STATE event received. Val:" << value->getInt32Values()[0];
-                if (value->getInt32Values()[0])
-                {
+                if (value->getInt32Values()[0]) {
                     subscribeVhalProp();
                 }
             }
