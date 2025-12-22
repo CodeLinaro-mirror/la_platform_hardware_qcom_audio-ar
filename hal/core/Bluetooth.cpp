@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-/*
- * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+/**
+ * ​Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -43,6 +43,9 @@ Bluetooth::Bluetooth() {
 }
 
 ndk::ScopedAStatus Bluetooth::setScoConfig(const ScoConfig& in_config, ScoConfig* _aidl_return) {
+    if (Platform::getInstance().isScoManagedByAudio()) {
+        return ndk::ScopedAStatus::ok();
+    }
     if (in_config.isEnabled.has_value()) {
         mScoConfig.isEnabled = in_config.isEnabled;
         mScoConfig.isEnabled.value().value == true ? mPlatform.setBluetoothParameters("BT_SCO=on")

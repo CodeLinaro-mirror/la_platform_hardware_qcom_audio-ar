@@ -923,6 +923,9 @@ bool Platform::setVendorParameters(
 }
 
 bool Platform::setBluetoothParameters(const char* kvpairs) {
+    if (mIsScoManagedbyAudio) {
+        return true;
+    }
     struct str_parms* parms = NULL;
     int ret = 0, val = 0;
     char value[256];
@@ -1626,6 +1629,33 @@ std::vector<MicrophoneDynamicInfo> Platform::getMicrophoneDynamicInfo(
     return result;
 }
 
+bool Platform::isScoManagedByAudio() const noexcept {
+    return mIsScoManagedbyAudio;
+}
+
+void Platform::onInitBluetoothPrep() {
+    /** BT HFP offload sync with BTHost; managed by system property and owned by BT */
+    const std::string kIsHFPOffloadSyncProp = "bluetooth.sco.managed_by_audio";
+    mIsScoManagedbyAudio = ::android::base::GetBoolProperty(kIsHFPOffloadSyncProp, false);
+    LOG(INFO) << __func__ << " :SCO is managed by Audio: " << mIsScoManagedbyAudio;
+    if (!mIsScoManagedbyAudio) {
+       if (int32_t ret = ::pal_set_param(PAL_PARAM_ID_DISABLE_HFP_SYNC, nullptr, 0); ret) {
+           LOG(ERROR) << __func__ << ": PAL_PARAM_ID_DISABLE_BT_HFP_SYNC failed";
+       }
+    }
+}
+
+void Platform::onInitSuccess() {
+    {
+        mOffloadSpeedSupported =
+                ::android::base::GetBoolProperty("vendor.audio.offload.playspeed", true);
+        MicrophoneInfoParser micInfoParser;
+        mMicrophoneInfo = micInfoParser.getMicrophoneInfo();
+        mMicrophoneDynamicInfoMap = micInfoParser.getMicrophoneDynamicInfoMap();
+    }
+    onInitBluetoothPrep();
+}
+
 Platform::Platform() {
     initUsecaseOpMap();
     if (int32_t ret = pal_init(); ret) {
@@ -1641,10 +1671,8 @@ Platform::Platform() {
     }
     mSndCardStatus = CARD_STATUS_ONLINE;
     LOG(VERBOSE) << __func__ << " pal register global callback successful";
-    mOffloadSpeedSupported = property_get_bool("vendor.audio.offload.playspeed", true);
-    MicrophoneInfoParser micInfoParser;
-    mMicrophoneInfo = micInfoParser.getMicrophoneInfo();
-    mMicrophoneDynamicInfoMap = micInfoParser.getMicrophoneDynamicInfoMap();
+
+    onInitSuccess();
 }
 
 // static

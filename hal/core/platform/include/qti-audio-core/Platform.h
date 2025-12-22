@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -67,6 +67,8 @@ class Platform {
     Platform(Platform&& other) = delete;
     Platform& operator=(Platform&& other) = delete;
     static int palGlobalCallback(uint32_t event_id, uint32_t* event_data, uint64_t cookie);
+    void onInitSuccess();
+    void onInitBluetoothPrep();
 
   public:
     // BT related params used across
@@ -347,6 +349,7 @@ class Platform {
     bool getUSBCapEnable() { return mUSBCapEnable; }
     void updateHotwordPortConfig(
         ::aidl::android::media::audio::common::AudioPortConfig& portConfig);
+    bool isScoManagedByAudio() const noexcept;
   private:
     void customizePalDevices(
             const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig,
@@ -440,6 +443,7 @@ class Platform {
     PalDevToMicDynamicInfoMap mMicrophoneDynamicInfoMap;
     // proxy related info
     size_t mProxyRecordFMQSize{0};
+    bool mIsScoManagedbyAudio{false};
     std::weak_ptr<::aidl::android::hardware::audio::core::ITelephony> mTelephony;
     PlatformGlobalCallback* mPlatformGlobalCallback = nullptr;
 };
