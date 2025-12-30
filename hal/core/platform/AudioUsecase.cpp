@@ -1282,7 +1282,7 @@ CompressCapture::CompressCapture(
         const ::aidl::android::media::audio::common::AudioFormatDescription& format,
         const int32_t sampleRate,
         const ::aidl::android::media::audio::common::AudioChannelLayout& channelLayout)
-    : mCompressFormat(format), mSampleRate(sampleRate), mChannelLayout(channelLayout) {
+    : mCompressFormat(format), mChannelLayout(channelLayout), mSampleRate(sampleRate) {
     if (mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_LC ||
         mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_ADTS_LC) {
         mPalSndEnc.aac_enc.enc_cfg.aac_enc_mode = Aac::EncodingMode::LC;
