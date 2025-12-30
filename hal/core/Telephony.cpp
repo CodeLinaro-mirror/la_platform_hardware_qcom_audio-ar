@@ -58,6 +58,7 @@ Telephony::Telephony() {
     // Todo check on default RX device
     mRxDevice = kDefaultRxDevice;
     mTxDevice = getMatchingTxDevice(mRxDevice);
+    callTranslationDirection = CALL_TRANSLATION_DEFAULT;
     tx_call_translation_conf = new call_translation_config();
     rx_call_translation_conf = new call_translation_config();
 }
@@ -196,6 +197,16 @@ void Telephony::setMicMute(const bool muted) {
     }
     if (!mPlatform.setStreamMicMute(mPalHandle, muted)) {
         LOG(ERROR) << __func__ << ": failed";
+    }
+}
+
+void Telephony::setTranslationTxMute(const bool muted) {
+    if (mPalCallTranslationTxHandle != nullptr) {
+        LOG(INFO) << __func__ << ":Mute Translation TX stream with stream handle : 0x" << mPalCallTranslationTxHandle;
+        if (int32_t ret = ::pal_stream_set_mute(mPalCallTranslationTxHandle, muted); ret) {
+            LOG(ERROR) << __func__ << " pal_stream_set_mute failed!!! ret:" << ret;
+            return;
+        }
     }
 }
 
