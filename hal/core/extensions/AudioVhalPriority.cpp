@@ -529,6 +529,20 @@ void AudioVHALListener::onPropertyEvent(const std::vector<std::unique_ptr<IHalPr
                 }
             }
         }
+        if (value->getPropId() == MuteRadioOrderByAAMId) {
+            if (value->getInt32Values().size() < 1) {
+                LOG(ERROR) << "Invalid Radio Mute getInt32Values size, empty value :" << value->getInt32Values().size();
+                goto exit;
+            } else {
+                if (value->getInt32Values()[0] < MIN_RADIO_MUTE_VALUE || value->getInt32Values()[0] > MAX_RADIO_MUTE_VALUE) {
+                    LOG(ERROR) << "Invalid Radio Mute value :" << value->getInt32Values()[0];
+                }
+                else{
+                    LOG(DEBUG) << "Event Notify: New Radio Mute event received. Val:" << value->getInt32Values()[0];
+                    handler_radioMute(value->getInt32Values()[0]);
+                }
+            }
+        }
         if (value->getPropId() == SOMEIP_CONNECTION_STATE) {
             LOG(INFO) << __func__ << "PropId matching with SOMEIP_CONNECTION_STATE";
              if (value->getInt32Values().size() < 1) {
