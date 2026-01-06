@@ -246,7 +246,8 @@ vendor.audio.feature.a2dp_offload.enable=true \
 vendor.audio.feature.battery_listener.enable=true \
 vendor.audio.feature.hfp.enable=true \
 vendor.audio.feature.kpi_optimize.enable=true \
-vendor.audio.feature.dmabuf.cma.memory.enable=false
+vendor.audio.feature.dmabuf.cma.memory.enable=false \
+vendor.audio.gsl.shmem.dmaheap.uncached=true
 
 AUDIO_FEATURE_ENABLED_GKI := true
 BUILD_AUDIO_TECHPACK_SOURCE := true
