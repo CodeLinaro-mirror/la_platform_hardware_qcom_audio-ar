@@ -25,7 +25,7 @@ EFFECTS_DEFAULTS_SHARED_LIBRARIES := \
     $(LATEST_ANDROID_HARDWARE_COMMON_FMQ) \
     $(CUSTOM_AMPERE_HARDWARE_AUDIO_EFFECT) \
     $(CUSTOM_AMPERE_HARDWARE_AUDIO_CONFIG) \
-    android.hardware.audio.core-V2-ndk \
+    $(LATEST_ANDROID_HARDWARE_AUDIO_CORE) \
     libaudioaidlcommon \
     libbase \
     libbinder_ndk \
