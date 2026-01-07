@@ -22,9 +22,11 @@ LOCAL_HEADER_LIBRARIES :=  \
     liberror_headers
 
 LOCAL_SHARED_LIBRARIES := \
+    $(LATEST_ANDROID_AUDIO_CORE) \
+    $(LATEST_ANDROID_HARDWARE_COMMON) \
+    $(LATEST_ANDROID_MEDIA_AUDIO_COMMON_TYPES) \
     libaudioaidlcommon \
     libaudioserviceexampleimpl \
-    android.hardware.audio.core-V3-ndk \
     libbase \
     libbinder_ndk \
     libcutils \
@@ -37,9 +39,7 @@ LOCAL_SHARED_LIBRARIES := \
     libstagefright_foundation \
     libhidlbase \
     libhardware \
-    libfmq \
-    android.hardware.common-V2-ndk \
-    android.media.audio.common.types-V4-ndk
+    libfmq
 
 include $(BUILD_SHARED_LIBRARY)
 
