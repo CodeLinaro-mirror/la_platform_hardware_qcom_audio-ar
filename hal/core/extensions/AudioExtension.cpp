@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -124,7 +124,7 @@ feature_disabled:
 
 void AudioExtension::in_set_power_policy(uint8_t enable)
 {
-    LOG(DEBUG) << __func__ << " Enter:  " << enable;
+    LOG(DEBUG) << __func__ << " Enter - state: " << (enable ? "ONLINE" : "OFFLINE");
     in_power_policy = enable ? POWER_POLICY_STATUS_ONLINE : POWER_POLICY_STATUS_OFFLINE;
     PowerPolicyManager &mPPolicy = PowerPolicyManager::getInstance();
     std::vector<std::weak_ptr<StreamInPrimary>> &stream_in_list = mPPolicy.getStreamInPrimaryList();
@@ -143,12 +143,11 @@ void AudioExtension::in_set_power_policy(uint8_t enable)
             }
         }
     }
-    LOG(DEBUG) << __func__ << " Exit: " << enable;
 }
 
 void AudioExtension::out_set_power_policy(uint8_t enable)
 {
-    LOG(DEBUG) << __func__ << " Enter: " << enable;
+    LOG(DEBUG) << __func__ << " Enter - state: " << (enable ? "ONLINE" : "OFFLINE");
     out_power_policy = enable ? POWER_POLICY_STATUS_ONLINE : POWER_POLICY_STATUS_OFFLINE;
     PowerPolicyManager &mPPolicy = PowerPolicyManager::getInstance();
     std::vector<std::weak_ptr<StreamOutPrimary>> &stream_out_list = mPPolicy.getStreamOutPrimaryList();
@@ -167,19 +166,16 @@ void AudioExtension::out_set_power_policy(uint8_t enable)
             }
         }
     }
-    LOG(DEBUG) << __func__ << " Exit:  " << enable;
 }
 
 void extn_out_set_power_policy(uint8_t enable)
 {
-    LOG(DEBUG) << __func__ << " status: " << enable;
     AudioExtension & AudioExtns =  AudioExtension::getInstance();
     return AudioExtns.out_set_power_policy(enable);
 }
 
 void extn_in_set_power_policy(uint8_t enable)
 {
-    LOG(DEBUG) << __func__ << " status: " << enable;
     AudioExtension & AudioExtns =  AudioExtension::getInstance();
     return AudioExtns.in_set_power_policy(enable);
 }
@@ -211,6 +207,7 @@ void AudioExtension::audio_extn_set_parameters(struct str_parms *params) {
     mHfpExtension->audio_extn_hfp_set_parameters(params);
     mFmExtension->audio_extn_fm_set_parameters(params);
     mIccExtension->audio_extn_icc_set_parameters(params);
+    mAsrcExtension->audio_extn_asrc_set_parameters(params);
     audio_feature_stats_set_parameters(params);
     audio_feature_softStepVolume_set_parameters(params);
 }
@@ -551,6 +548,42 @@ feature_disabled:
 
     a2dp_bt_audio_pre_init = nullptr;
     LOG(VERBOSE) << __func__ << "---- Feature A2DP offload is disabled ---";
+}
+
+AsrcExtension::~AsrcExtension() {
+    LOG(INFO) << __func__ << ": ASRC - Exit";
+    asrc_set_parameters = nullptr;
+}
+
+void AsrcExtension::audio_extn_asrc_set_parameters(struct str_parms* params) {
+    if (asrc_set_parameters == nullptr) {
+        LOG(ERROR) << __func__ << ": ASRC - Failed, asrc_set_parameters is null";
+        return;
+    }
+    return asrc_set_parameters(params);
+}
+
+
+AsrcExtension::AsrcExtension() : AudioExtensionBase(kAsrcLibrary, isExtensionEnabled(kAsrcProperty)){
+    LOG(INFO) << __func__ << ": ASRC - Enter";
+    /* asrc_get_parameters not implemented */
+    asrc_get_parameters = nullptr;
+    if (mHandle != nullptr) {
+        asrc_set_parameters = (set_parameters_t) dlsym(mHandle, "asrc_set_parameters");
+        if (!asrc_set_parameters) {
+            LOG(ERROR) << __func__ << " dlsym failed: " << dlerror();
+            goto extension_error;
+        }
+        LOG(VERBOSE) << __func__ << " ---- Feature ASRC is Enabled ---";
+        return;
+    }
+extension_error:
+    LOG(ERROR) << __func__ << " ---- Feature ASRC Error ---";
+    asrc_set_parameters = nullptr;
+    if (mHandle != nullptr) {
+        dlclose(mHandle);
+        mHandle = NULL;
+    }
 }
 
 AudioDevice HfpExtension::audio_extn_hfp_get_matching_tx_device(const AudioDevice& rxDevice) {

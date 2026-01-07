@@ -1,11 +1,9 @@
-include vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio-modules.mk
+include vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen5_au/audio-modules.mk
 PRODUCT_PACKAGES += $(AUDIO_MODULES)
-#BOARD_USES_GENERIC_AUDIO := true
-#
+
 #AUDIO_FEATURE_FLAGS
 AUDIO_FRAMEWORK_AUDIOREACH := true
 ifeq ($(AUDIO_FRAMEWORK_AUDIOREACH),true)
-#$(error AUDIO_FRAMEWORK_AUDIOREACH is $(AUDIO_FRAMEWORK_AUDIOREACH))
 ifeq ($(TARGET_USES_QMAA_OVERRIDE_AUDIO), false)
 ifeq ($(TARGET_USES_QMAA),true)
 AUDIO_USE_STUB_HAL := true
@@ -16,16 +14,11 @@ ifeq ($(TARGET_USES_AUDIOLITE),true)
 AUDIO_USE_STUB_HAL := true
 endif #ends TARGET_USES_AUDIOLITE
 
-ifneq (,$(filter gen4_gvm_gy, $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)$(TARGET_BOARD_DERIVATIVE_SUFFIX)))
 AUDIO_FEATURE_ENABLED_POWER_POLICY := true
-endif
 
 ifeq ($(ENABLE_HYP), false)
 ifeq ($(TARGET_GVMGH_SPECIFIC), false)
     TARGET_USES_ION_CMA_MEMORY := true
-ifneq ( ,$(filter T Tiramisu 13, $(PLATFORM_VERSION)))
-    AUDIO_FEATURE_ENABLED_POWER_POLICY := true
-endif
 endif
 endif
 
@@ -114,8 +107,7 @@ AUDIO_FEATURE_ENABLED_AUDIO_PARSERS := true
 #enable qcom parsers for WMA/APE/FLAC/ALAC
 # disable 3GP qcom parser
 PRODUCT_PROPERTY_OVERRIDES += \
-vendor.mm.target.enable.qcom_parser=655632
-
+vendor.mm.target.enable.qcom_parser=655376
 
 ifneq ($(ENABLE_HYP),true)
 AUDIO_FEATURE_ENABLED_AUTO_AUDIOD := true
@@ -160,19 +152,7 @@ endif
 #Automotive audio specific device overlays
 DEVICE_PACKAGE_OVERLAYS += vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/overlay
 
-# Configuration files shared between msmnile_gvmgh and others
-PRODUCT_COPY_FILES += \
-    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/card-defs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/card-defs.xml \
-    vendor/qcom/opensource/agm/plugins/tinyalsa/test/backend_conf.xml:$(TARGET_COPY_OUT_VENDOR)/etc/backend_conf.xml
-
-# Configuration files for devices inheriting from gen4_gvm
 ifeq ($(ENABLE_HYP), true)
-ifeq ($(TARGET_GVMGH_SPECIFIC), false)
-PRODUCT_COPY_FILES += \
-    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/mixer_paths_gvmauto8295_adp_star.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_gvmauto8295_adp_star.xml \
-    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/mixer_paths_gvmauto8295_adp_star.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_gvmauto8255_adp_star.xml \
-    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/mixer_paths_gvmauto8295_adp_star.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_gvmauto7255_adp_star.xml
-
 # framework configuration files
 PRODUCT_COPY_FILES += \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/r_submix_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/r_submix_audio_policy_configuration.xml \
@@ -184,92 +164,30 @@ PRODUCT_COPY_FILES += \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/audio_policy_volumes.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_volumes.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/default_volume_tables.xml:$(TARGET_COPY_OUT_VENDOR)/etc/default_volume_tables.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/bluetooth_with_le_audio_policy_configuration_7_0.xml:$(TARGET_COPY_OUT_VENDOR)/etc/bluetooth_audio_policy_configuration.xml \
-    $(TOPDIR)frameworks/native/data/etc/android.hardware.audio.pro.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.pro.xml \
+    #$(TOPDIR)frameworks/native/data/etc/android.hardware.audio.pro.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.pro.xml \
     $(TOPDIR)frameworks/native/data/etc/android.hardware.audio.low_latency.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.low_latency.xml
 
-# push both value-added and pure xml files for runtime selection in AHAL
-# Dont push value-added xml for gen5
-ifeq (,$(filter gen4_gvm_gy, $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)$(TARGET_BOARD_DERIVATIVE_SUFFIX)))
+# common vendor configuration files
 PRODUCT_COPY_FILES += \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_module_config_primary_va.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_module_config_primary_va.xml
-endif
-PRODUCT_COPY_FILES += \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_module_config_primary.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_module_config_primary.xml
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen5_au/card-defs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/card-defs.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen5_au/audio_module_config_primary.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_module_config_primary.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen5_au/car_audio_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/car_audio_configuration.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen5_au/car_audio_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/car_audio_configuration.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen5_au/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_configuration.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen5_au/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_configuration.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen5_au/audio_effects_config.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects_config.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen5_au/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/microphone_characteristics.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen5_au/mem_logger_config.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mem_logger_config.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen5_au/audio_effects.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen5_au/audio_effects_64.conf:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects.conf \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen5_au/bluetooth_qti_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/bluetooth_qti_audio_policy_configuration.xml \
 
-ifneq (,$(filter gen4_gvm_cmu, $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)$(TARGET_BOARD_DERIVATIVE_SUFFIX)))
 PRODUCT_COPY_FILES += \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/car_audio_configuration_cmu.xml:$(TARGET_COPY_OUT_VENDOR)/etc/car_audio_configuration.xml \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/car_audio_configuration_cmu.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/car_audio_configuration.xml
-else
-PRODUCT_COPY_FILES += \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/car_audio_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/car_audio_configuration.xml \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/car_audio_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/car_audio_configuration.xml
-endif
-
-# common configuration files
-PRODUCT_COPY_FILES += \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_configuration.xml \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_configuration.xml \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_effects_config.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects_config.xml \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/microphone_characteristics.xml \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/mem_logger_config.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mem_logger_config.xml \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_effects.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects.xml \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_effects_64.conf:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects.conf \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/bluetooth_with_le_qti_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/bluetooth_with_le_qti_audio_policy_configuration.xml \
-    #$(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common/bluetooth_qti_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/bluetooth_qti_audio_policy_configuration.xml \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/sound_trigger_mixer_paths.xml:$(TARGET_COPY_OUT_VENDOR)/etc/sound_trigger_mixer_paths.xml
-
-# gvm_gy specific configuration files
-ifneq (,$(filter gen4_gvm_gy, $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)$(TARGET_BOARD_DERIVATIVE_SUFFIX)))
-PRODUCT_COPY_FILES += \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/vendor_audio_interfaces.xml:$(TARGET_COPY_OUT_VENDOR)/etc/vendor_audio_interfaces.xml \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/mixer_paths_VIOSND.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_VIOSND.xml \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/vendor_audio_interfaces_VIOSND.xml:$(TARGET_COPY_OUT_VENDOR)/etc/vendor_audio_interfaces.xml \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/modules.audio.ar.blocklist:$(TARGET_COPY_OUT_VENDOR_DLKM)/lib/modules/modules.audio.ar.blocklist \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/modules.audio.legacy.blocklist:$(TARGET_COPY_OUT_VENDOR_DLKM)/lib/modules/modules.audio.legacy.blocklist
-else
-PRODUCT_COPY_FILES += \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_policy_configuration_7_0.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_configuration.xml
-endif
-endif # ends TARGET_GVMGH_SPECIFIC, false
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen5_au/mixer_paths_VIOSND.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_VIOSND.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen5_au/vendor_audio_interfaces_VIOSND.xml:$(TARGET_COPY_OUT_VENDOR)/etc/vendor_audio_interfaces.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen5_au/modules.audio.ar.blocklist:$(TARGET_COPY_OUT_VENDOR_DLKM)/lib/modules/modules.audio.ar.blocklist \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen5_au/modules.audio.legacy.blocklist:$(TARGET_COPY_OUT_VENDOR_DLKM)/lib/modules/modules.audio.legacy.blocklist
 endif # ends ENABLE_HYP
-
-ifeq ($(ENABLE_HYP), false)
-ifeq ($(TARGET_GVMGH_SPECIFIC), false)
-PRODUCT_COPY_FILES += \
-    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/mixer_paths_sa8255_adp_star.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_sa8255_adp_star.xml
-endif
-
-ifneq (,$(filter $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), gen4_au))
-PRODUCT_COPY_FILES += \
-    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/modules.audio.ar.blocklist:$(TARGET_COPY_OUT_VENDOR_DLKM)/lib/modules/modules.audio.ar.blocklist \
-    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/modules.audio.legacy.blocklist:$(TARGET_COPY_OUT_VENDOR_DLKM)/lib/modules/modules.audio.legacy.blocklist
-endif
-endif
-
-ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), gen4_au)
-# Configuration files for gen4_au AudioReach value added SI
-PRODUCT_COPY_FILES += \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/car_audio_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/car_audio_configuration.xml \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/a2dp_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/a2dp_audio_policy_configuration.xml \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_configuration.xml \
-    $(TOPDIR)frameworks/av/services/audiopolicy/config/r_submix_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/r_submix_audio_policy_configuration.xml \
-    $(TOPDIR)frameworks/av/services/audiopolicy/config/usb_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/usb_audio_policy_configuration.xml \
-    $(TOPDIR)frameworks/av/services/audiopolicy/config/audio_policy_volumes.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_volumes.xml \
-    $(TOPDIR)frameworks/av/services/audiopolicy/config/default_volume_tables.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/default_volume_tables.xml
-endif
-
-ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)$(TARGET_BOARD_DERIVATIVE_SUFFIX), gen4_gvm)
-PRODUCT_COPY_FILES += \
-    $(TOPDIR)vendor/qcom/opensource/pal/configs/gen4_au/plugin_manager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/plugin_manager.xml \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/vendor_audio_interfaces.xml:$(TARGET_COPY_OUT_VENDOR)/etc/vendor_audio_interfaces.xml
-endif # configuration files for gen4_gvm
-
-# cma memory for MDF
-ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), gen4_au)
-PRODUCT_PROPERTY_OVERRIDES += \
-vendor.audio.feature.dmabuf.cma.memory.enable=true
-endif
 
 #Audio HAL version
 PRODUCT_PROPERTY_OVERRIDES += \
@@ -447,17 +365,8 @@ vendor.audio.feature.vbat.enable=false \
 vendor.audio.feature.wsa.enable=false \
 vendor.audio.feature.audiozoom.enable=false \
 vendor.audio.feature.auto_hal.enable=true \
-vendor.audio.feature.auto_hal_pal.enable=true
-ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), gen4_au)
-ifneq ( ,$(filter T Tiramisu 13, $(PLATFORM_VERSION)))
-PRODUCT_ODM_PROPERTIES += \
+vendor.audio.feature.auto_hal_pal.enable=true \
 vendor.audio.feature.arpowerpolicy.enable=true
-endif
-ifneq (,$(filter gen4_gvm_gy, $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)$(TARGET_BOARD_DERIVATIVE_SUFFIX)))
-PRODUCT_ODM_PROPERTIES += \
-vendor.audio.feature.arpowerpolicy.enable=true
-endif
-endif
 else
 # Non-Generic ODM varient related
 PRODUCT_ODM_PROPERTIES += \
@@ -499,17 +408,8 @@ vendor.audio.feature.vbat.enable=true \
 vendor.audio.feature.wsa.enable=false \
 vendor.audio.feature.audiozoom.enable=false \
 vendor.audio.feature.auto_hal.enable=true \
-vendor.audio.feature.auto_hal_pal.enable=true
-ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), gen4_au)
-ifneq ( ,$(filter T Tiramisu 13, $(PLATFORM_VERSION)))
-PRODUCT_ODM_PROPERTIES += \
+vendor.audio.feature.auto_hal_pal.enable=true \
 vendor.audio.feature.arpowerpolicy.enable=true
-endif
-endif
-ifneq (,$(filter gen4_gvm_gy, $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)$(TARGET_BOARD_DERIVATIVE_SUFFIX)))
-PRODUCT_ODM_PROPERTIES += \
-vendor.audio.feature.arpowerpolicy.enable=true
-endif
 endif
 
 PRODUCT_PACKAGES_ENG += \
@@ -528,21 +428,9 @@ vendor.audio.feature.a2dp_offload.enable=true
 # for AudioReach HAL
 PRODUCT_PACKAGES += \
     audiohalservice.qti \
-	libaudiocorehal.qti \
-	libaudiocorehal.default \
-	libaudioeffecthal.qti
+    libaudiocorehal.qti \
+    libaudiocorehal.default \
+    libaudioeffecthal.qti
 #$(error   PRODUCT_PACKAGES is $(PRODUCT_PACKAGES))
 
-ifeq ($(ENABLE_HYP),true)
-PRODUCT_PROPERTY_OVERRIDES += \
-persist.vendor.audio.calfile0=/vendor/etc/acdbdata/adsp_avs_config.acdb\
-persist.vendor.audio.calfile1=/vendor/etc/acdbdata/ADP/Bluetooth_cal.acdb\
-persist.vendor.audio.calfile2=/vendor/etc/acdbdata/ADP/Codec_cal.acdb\
-persist.vendor.audio.calfile3=/vendor/etc/acdbdata/ADP/General_cal.acdb\
-persist.vendor.audio.calfile4=/vendor/etc/acdbdata/ADP/Global_cal.acdb\
-persist.vendor.audio.calfile5=/vendor/etc/acdbdata/ADP/Handset_cal.acdb\
-persist.vendor.audio.calfile6=/vendor/etc/acdbdata/ADP/Hdmi_cal.acdb\
-persist.vendor.audio.calfile7=/vendor/etc/acdbdata/ADP/Headset_cal.acdb\
-persist.vendor.audio.calfile8=/vendor/etc/acdbdata/ADP/Speaker_cal.acdb
-endif
 endif # AUDIO_FRAMEWORK_AUDIOREACH

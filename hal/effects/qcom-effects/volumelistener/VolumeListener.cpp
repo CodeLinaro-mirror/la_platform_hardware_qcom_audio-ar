@@ -69,6 +69,7 @@ extern "C" binder_exception_t queryEffect(const AudioUuid* uuid, Descriptor* _ai
 namespace aidl::qti::effects {
 
 VolumeListener::VolumeListener(const AudioUuid& uuid) {
+    CHECK(this);
     LOG(VERBOSE) << __func__ << toString(uuid);
     if (uuid == kAlarmVolumeListenerUUID) {
         mType = VolumeListenerType::ALARM;
