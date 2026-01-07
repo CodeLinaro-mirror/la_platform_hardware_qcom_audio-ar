@@ -706,8 +706,12 @@ int ModulePrimary::getMedia_volume() {
                 if (auto address = devicePort.device.address.get<AudioDeviceAddress::Tag::id>();
                         !address.empty()) {
                     if (address == MEDIA_BUS) {
-                        volume = portConfig.gain->values[0];
-                        LOG(DEBUG) << __func__ << " volume: " << volume;
+                        if (portConfig.gain && !portConfig.gain->values.empty()) {
+                            volume = portConfig.gain->values[0];
+                            LOG(DEBUG) << __func__ << " volume: " << volume;
+                        } else {
+                            LOG(DEBUG) << __func__ << " gain config is null or values are empty";
+                        }
                     }
                 }
             }

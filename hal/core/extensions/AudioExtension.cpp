@@ -171,6 +171,15 @@ void AudioExtension::out_set_power_policy(uint8_t enable)
             }
         }
     }
+
+    struct str_parms* params = NULL;
+    std::string kvpairs("power_policy=");
+    kvpairs = kvpairs+std::to_string(enable);
+
+    params = str_parms_create_str(kvpairs.c_str());
+    LOG(DEBUG) << __func__ << " params: "<< str_parms_to_str(params);
+    mAutoOemExtension->audio_extn_autooem_set_parameters(params);
+
     LOG(DEBUG) << __func__ << " Exit:out_set_power_policy:  " << enable;
 }
 
@@ -543,11 +552,14 @@ void HfpExtension::audio_extn_hfp_set_parameters(struct str_parms *params) {
 }
 
 int HfpExtension::audio_extn_hfp_set_mic_mute(bool state) {
+    // Always update cache to avoid losing mute changes while HFP is inactive.
+    micMute = state;
     if (audio_extn_hfp_is_active()) {
-        micMute = state;
+        // Apply immediately if hfp active/running.
         return ((hfp_set_mic_mute) ? hfp_set_mic_mute(state) : -1);
     }
-    return -1;
+    // if HFP inactive: we accept & cache of mic_mute state; will apply at hfp_enable=true.
+    return 0;
 }
 
 bool HfpExtension::audio_extn_hfp_is_active() {

@@ -86,6 +86,95 @@ cleanup:
     LOG(DEBUG) << "Exit " << __func__;
 }
 
+// AWX set param for vendorExtension audio effect
+void PalParamDelegator::AWX_set_param(pal_awx_param_t* param, effect_type effect, bool overrideStreamType) {
+    LOG(DEBUG) << "Enter " << __func__;
+    bool otherBus = false;
+    pal_stream_type_t streamType = PAL_STREAM_INVALID;
+
+    if (param == NULL){
+        LOG(ERROR) << __func__ <<" Param is null ";
+        return;
+    }
+
+    // Override Stream Type if otherBus is False
+    if (overrideStreamType == false)
+    {
+        streamType = oemStreamType;
+    }
+    else
+    {
+        streamType = PAL_STREAM_PLAYBACK_BUS;
+    }
+
+    int status = 0;
+    size_t padBytes = 0;
+    pal_param_payload* pal_payload = nullptr;
+    effect_pal_payload_t* effect_payload = nullptr;
+    pal_effect_custom_payload_t* customPayload = nullptr;
+    pal_awx_param_t* data = param;
+    uint8_t* payloadInfo = NULL;
+    uint32_t pal_param_size = data->param_size;
+    pal_device_id_t aud_source_effect_device = PAL_DEVICE_OUT_SPEAKER;
+
+    uint32_t payload_size = sizeof(pal_param_payload) + sizeof(effect_pal_payload_t)
+                            + sizeof(pal_effect_custom_payload_t) + pal_param_size;
+    padBytes = PADDING_8BYTE_ALIGN(payload_size);
+
+    payloadInfo = (uint8_t*) calloc(1, (payload_size + padBytes));
+
+    if (payloadInfo == NULL) {
+        LOG(DEBUG) << __func__ << " payloadInfo null";
+        status = -ENOMEM;
+        goto cleanup;
+    }
+
+    createPayload(payloadInfo, &pal_payload, &effect_payload,
+                                &customPayload, data->param_id, pal_param_size);
+
+    memcpy(customPayload->data, data->data, pal_param_size);
+
+    LOG(DEBUG) << __func__ << std::hex << " param Id: " << customPayload->paramId << " value: "
+                              << customPayload->data[0] << " param_size: " << pal_param_size;
+
+    if(streamType == PAL_STREAM_COMPRESSED || streamType==PAL_STREAM_PCM_OFFLOAD
+            || streamType==PAL_STREAM_PLAYBACK_BUS){
+        LOG(DEBUG) << __func__ << " oemStreamType: " << streamType;
+        status = pal_gef_rw_param(PAL_PARAM_ID_UIEFFECT, (void *) pal_payload, payload_size,
+                       aud_source_effect_device, streamType, GEF_PARAM_WRITE, NULL);
+    } else {
+        LOG(ERROR) << __func__ << " Invalid stream";
+        status = -ENOMEM;
+        goto cleanup;
+    }
+    if (effect == ASYNC) {
+        status = handleEffectASYNC(status, pal_payload, payload_size, aud_source_effect_device, customPayload);
+    }
+
+    if(status != 0){
+        LOG(DEBUG) << __func__ << "pal_gef_rw_param failed";
+        goto cleanup;
+    }
+
+cleanup:
+    if (payloadInfo) {
+        free(payloadInfo);
+    }
+    pal_payload = nullptr;
+    effect_payload = nullptr;
+    customPayload = nullptr;
+
+    if (status != 0) {
+        LOG(ERROR) << "Error setting param with error: " << status;
+    } else {
+        LOG(INFO) << __func__ << " Set parameter successfully";
+    }
+
+    LOG(DEBUG) << "Exit " << __func__;
+}
+
+
+
 // AWX get param for vendorExtension audio effect
 int PalParamDelegator::AWX_get_param(pal_awx_param_t* param, effect_type effect) {
     LOG(DEBUG) << "Enter " << __func__;

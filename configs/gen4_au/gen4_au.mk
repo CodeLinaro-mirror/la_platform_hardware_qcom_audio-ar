@@ -27,6 +27,81 @@ else
 PRODUCT_ODM_PROPERTIES +=\
     vendor.audio.feature.oemgainconversion.enable=false
 endif
+
+#------------soong-config flags (APEX) start----------------
+
+ifeq ($(AUDIO_USE_STUB_HAL), false)
+ifeq ($(TARGET_USES_QCOM_MM_AUDIO), true)
+$(call soong_config_set_bool,qti, ENABLE_HARPAL, true)
+else
+$(call soong_config_set_bool,qti, ENABLE_HARPAL, false)
+endif
+endif
+
+ifeq ($(AUDIO_USE_STUB_HAL), false)
+$(call soong_config_set_bool,qti,AUDIO_USE_STUB_HAL, false)
+else
+$(call soong_config_set_bool,qti,AUDIO_USE_STUB_HAL, true)
+endif
+
+ifeq ($(TARGET_USES_QCOM_MM_AUDIO), true)
+$(call soong_config_set_bool,qti,TARGET_USES_QCOM_MM_AUDIO, true)
+else
+$(call soong_config_set_bool,qti,TARGET_USES_QCOM_MM_AUDIO, false)
+endif
+
+ifeq ($(USE_PAL_STATIC_LINKING_MODULES),true)
+$(call soong_config_set_bool,qti,USE_PAL_STATIC_LINKING_MODULES, true)
+else
+$(call soong_config_set_bool,qti,USE_PAL_STATIC_LINKING_MODULES, false)
+endif
+
+ifeq ($(TARGET_USES_QTI_TINYCOMPRESS),true)
+$(call soong_config_set_bool,qti,TARGET_USES_QTI_TINYCOMPRESS, true)
+else
+$(call soong_config_set_bool,qti,TARGET_USES_QTI_TINYCOMPRESS, false)
+endif
+
+ifeq ($(strip $(AUDIO_FEATURE_ENABLE_BT_A2DP_LPI)),true)
+$(call soong_config_set_bool,qti,AUDIO_FEATURE_ENABLE_BT_A2DP_LPI, true)
+else
+$(call soong_config_set_bool,qti,AUDIO_FEATURE_ENABLE_BT_A2DP_LPI, false)
+endif
+
+$(call soong_config_set,qti,TARGET_BOARD_PLATFORM,$(TARGET_BOARD_PLATFORM))
+
+$(call soong_config_set,qti,TARGET_KERNEL_VERSION,$(TARGET_KERNEL_VERSION))
+
+$(call soong_config_set,qti,PRODUCT_NAME, $(PRODUCT_NAME))
+
+ifneq ($(filter R, $(PLATFORM_VERSION)),)
+$(call soong_config_set, qti, PLATFORM_VERSION, R)
+endif
+
+ifneq ($(filter 11, $(PLATFORM_VERSION)),)
+$(call soong_config_set, qti, PLATFORM_VERSION, 11)
+endif
+
+ifeq ($(AUDIO_FEATURE_OLD_ION_IMPL),true)
+$(call soong_config_set_bool,qti,AUDIO_FEATURE_OLD_ION_IMPL, true)
+else
+$(call soong_config_set_bool,qti,AUDIO_FEATURE_OLD_ION_IMPL, false)
+endif
+
+ifeq ($(TARGET_SUPPORTS_WEAR_AON),true)
+$(call soong_config_set_bool,qti,TARGET_SUPPORTS_WEAR_AON, true)
+else
+$(call soong_config_set_bool,qti,TARGET_SUPPORTS_WEAR_AON, false)
+endif
+
+ifeq ($(TARGET_COMPILE_WITH_MSM_KERNEL), true)
+$(call soong_config_set_bool,qti,TARGET_COMPILE_WITH_MSM_KERNEL, true)
+else
+$(call soong_config_set_bool,qti,TARGET_COMPILE_WITH_MSM_KERNEL, false)
+endif
+
+#------------soong-config flags (APEX) end----------------
+
 ifeq ($(ENABLE_HYP), false)
 ifeq ($(TARGET_GVMGH_SPECIFIC), false)
     TARGET_USES_ION_CMA_MEMORY := true

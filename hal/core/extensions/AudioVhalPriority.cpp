@@ -79,10 +79,12 @@ using ::aidl::android::hardware::automotive::vehicle::RawPropValues;
 using aidl::android::media::audio::common::AudioDeviceType;
 using namespace ::qti::audio::oem::config;
 
+using GetValueCallbackFunc = std::function<void(VhalClientResult<std::unique_ptr<android::frameworks::automotive::vhal::IHalPropValue>>)>;
 std::shared_ptr<aidl::android::hardware::automotive::vehicle::IVehicle> mVhal;
 using ::aidl::android::hardware::automotive::vehicle::IVehicle;
 using ::android::automotive::car_binder_lib::LargeParcelableBase;
 
+#define SOMEIP_CONNECTION_STATE  0x0A3D + 0x20000000 + 0x01000000+ 0x00200000  // VehiclePropertyGroup:VENDOR, VehicleArea:GLOBAL, VehiclePropertyType:BOOLEAN
 #ifdef ENABLE_VHAL_TEST_WITH_KITCHENSINK
 const int32_t ThermalPropertyId = 356517121; //VehicleProperty::HVAC_FAN_DIRECTION
 const int32_t MuteRadioOrderByAAMId = 289408269; //VehicleProperty::HVAC_STEERING_WHEEL_HEAT
@@ -314,6 +316,110 @@ int32_t parseOTWTemperature(std::vector<int32_t> &values) {
     return temperature;
 }
 
+
+std::shared_ptr<IVhalClient> getVhalClient() {
+    static std::shared_ptr<IVhalClient> vhalClient;
+    if (vhalClient == nullptr) {
+        vhalClient = IVhalClient::create();
+    }
+    return vhalClient;
+}
+
+ndk::ScopedAStatus subscribeVhalProp();
+
+void VhalPropCallback(VhalClientResult<std::unique_ptr<android::frameworks::automotive::vhal::IHalPropValue>> result) {
+    if (!result.ok()) {
+        LOG(ERROR) << "VHAL callback error: " << result.error().message();
+        return;
+    }
+    if(result.value() == nullptr) {
+        return;
+    }
+    if (result.value()->getPropId() == SOMEIP_CONNECTION_STATE) {
+        if (result.value()->getInt32Values()[0] == true)
+        {
+            subscribeVhalProp();
+        }
+    }
+    if (result.value()->getPropId() == MuteRadioOrderByAAMId) {
+        if (result.value()->getInt32Values().size() < 1) {
+            LOG(ERROR) << "Invalid Radio Mute getInt32Values size, empty value :" << result.value()->getInt32Values().size();
+            return;
+        } else {
+            if (result.value()->getInt32Values()[0] < MIN_RADIO_MUTE_VALUE || result.value()->getInt32Values()[0] > MAX_RADIO_MUTE_VALUE) {
+                LOG(ERROR) << "Invalid Radio Mute value :" << result.value()->getInt32Values()[0];
+            }
+            else{
+                LOG(DEBUG) << "Event Notify: New Radio Mute event received. Val:" << result.value()->getInt32Values()[0];
+                handler_radioMute(result.value()->getInt32Values()[0]);
+            }
+        }
+    }
+    if (result.value()->getPropId() == ThermalPropertyId) {
+        auto tempInfo = result.value()->getInt32Values();
+        if (tempInfo.empty()) {
+            LOG(ERROR) << "Thermal Event Received, Payload Empty";
+            return;
+        } else if (!isDeratingEnabled) {
+            //change to verbose
+            LOG(INFO) << "Thermal Event Received, Device Temperature:" << tempInfo[0];
+            for (auto it: tempInfo) {
+                LOG(INFO) << it << " ";
+            }
+            isOTWStatusSet = parseOTWStatus(tempInfo);
+            if (isOTWStatusSet) {
+                isDeratingEnabled = true;
+                cv.notify_one();
+            }
+        }
+    }
+}
+
+ndk::ScopedAStatus subscribeVhalProp() {
+    std::vector<aidl::android::hardware::automotive::vehicle::SubscribeOptions> options;
+    std::shared_ptr<AudioVHALListener> pAudioListener = std::make_shared<AudioVHALListener>();
+    auto vhalClient = getVhalClient();
+    if (vhalClient == nullptr) {
+        LOG(ERROR) << "Vehicle HAL getService returned NULL.  Exiting.";
+        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
+    } else {
+        auto ThermalPropertyClient = vhalClient->getSubscriptionClient(pAudioListener);
+        options = {
+            {
+                .propId = ThermalPropertyId,
+                .areaIds = {},
+            }
+        };
+        if (auto status = ThermalPropertyClient->subscribe(options); !status.ok()) {
+            LOG(ERROR) << "Subscription to ThermalPropertyId property faied!!";
+        } else {
+            LOG(INFO) << "Subscribed to ThermalPropertyId property";
+            auto requestThermalPropValue = vhalClient->createHalPropValue(ThermalPropertyId);
+
+            auto Thermalcallback = std::make_shared<IVhalClient::GetValueCallbackFunc>(VhalPropCallback);
+            vhalClient->getValue(*requestThermalPropValue,Thermalcallback);
+        }
+
+        auto MuteRadioOrderClient = vhalClient->getSubscriptionClient(pAudioListener);
+        options = {
+            {
+                .propId = MuteRadioOrderByAAMId,
+                .areaIds = {},
+            }
+        };
+        if (auto status = MuteRadioOrderClient->subscribe(options); !status.ok()) {
+            LOG(ERROR) << "Subscription to MuteRadioOrderByAAMId property failed!!";
+        } else {
+            LOG(INFO) << "Subscribed to MuteRadioOrderByAAMId property";
+            auto requestMutePropValue = vhalClient->createHalPropValue(MuteRadioOrderByAAMId);
+
+            auto Mutecallback = std::make_shared<IVhalClient::GetValueCallbackFunc>(VhalPropCallback);
+            vhalClient->getValue(*requestMutePropValue,Mutecallback);
+        }
+    }
+    return ndk::ScopedAStatus::ok();
+}
+
 void AudioVHALListener::onPropertyEvent(const std::vector<std::unique_ptr<IHalPropValue>>& values) {
     LOG(DEBUG) << __func__ << ": Enter " ;
     if (values.empty()) {
@@ -405,20 +511,6 @@ void AudioVHALListener::onPropertyEvent(const std::vector<std::unique_ptr<IHalPr
             }
         }
 #endif
-        if (value->getPropId() == MuteRadioOrderByAAMId) {
-            if (value->getInt32Values().size() < 1) {
-                LOG(ERROR) << "Invalid Radio Mute getInt32Values size, empty value :" << value->getInt32Values().size();
-                goto exit;
-            } else {
-                if (value->getInt32Values()[0] < MIN_RADIO_MUTE_VALUE || value->getInt32Values()[0] > MAX_RADIO_MUTE_VALUE) {
-                    LOG(ERROR) << "Invalid Radio Mute value :" << value->getInt32Values()[0];
-                }
-                else{
-                    LOG(DEBUG) << "Event Notify: New Radio Mute event received. Val:" << value->getInt32Values()[0];
-                    handler_radioMute(value->getInt32Values()[0]);
-                }
-            }
-        }
         if (value->getPropId() == ThermalPropertyId) {
             auto tempInfo = value->getInt32Values();
             if (tempInfo.empty()) {
@@ -434,6 +526,32 @@ void AudioVHALListener::onPropertyEvent(const std::vector<std::unique_ptr<IHalPr
                 if (isOTWStatusSet) {
                     isDeratingEnabled = true;
                     cv.notify_one();
+                }
+            }
+        }
+        if (value->getPropId() == MuteRadioOrderByAAMId) {
+            if (value->getInt32Values().size() < 1) {
+                LOG(ERROR) << "Invalid Radio Mute getInt32Values size, empty value :" << value->getInt32Values().size();
+                goto exit;
+            } else {
+                if (value->getInt32Values()[0] < MIN_RADIO_MUTE_VALUE || value->getInt32Values()[0] > MAX_RADIO_MUTE_VALUE) {
+                    LOG(ERROR) << "Invalid Radio Mute value :" << value->getInt32Values()[0];
+                }
+                else{
+                    LOG(DEBUG) << "Event Notify: New Radio Mute event received. Val:" << value->getInt32Values()[0];
+                    handler_radioMute(value->getInt32Values()[0]);
+                }
+            }
+        }
+        if (value->getPropId() == SOMEIP_CONNECTION_STATE) {
+            LOG(INFO) << __func__ << "PropId matching with SOMEIP_CONNECTION_STATE";
+             if (value->getInt32Values().size() < 1) {
+                LOG(ERROR) << "Invalid SOMEIP_CONNECTION_STATE  size, empty value :" << value->getInt32Values().size();
+                goto exit;
+            } else {
+                LOG(DEBUG) << "Event Notify: New SOMEIP_CONNECTION_STATE event received. Val:" << value->getInt32Values()[0];
+                if (value->getInt32Values()[0]) {
+                    subscribeVhalProp();
                 }
             }
         }
@@ -465,20 +583,19 @@ extern "C" __attribute__((visibility("default"))) void handler_radioMute(int32_t
         g_focusHandler.requestFocus(focusInfo, &focusSessionInfo.FocusId);
         LOG(INFO) << "Focus Id: " << focusSessionInfo.FocusId;
         const auto& it = FocusHandler::focusIdMap.find("RADIO_AAM_MUTE_ORDER");
-        if(it != FocusHandler::focusIdMap.end())
+        if (it != FocusHandler::focusIdMap.end())
             it->second.push_back(focusSessionInfo.FocusId);
         else
             FocusHandler::focusIdMap.insert({"RADIO_AAM_MUTE_ORDER", {focusSessionInfo.FocusId}});
         }
-    else{
+    else {
         LOG(DEBUG) << "RADIO_AAM_MUTE_ORDER property is deactivated, calling Focus Service to unduck" ;
 
         const auto& it = FocusHandler::focusIdMap.find("RADIO_AAM_MUTE_ORDER");
-        if(it != FocusHandler::focusIdMap.end() && !it->second.empty()) {
+        if (it != FocusHandler::focusIdMap.end() && !it->second.empty()) {
             focusSessionInfo.FocusId = it->second.back(); // Retrieving the last Id value
             it->second.pop_back();
-        }
-        else{
+        } else {
             LOG(ERROR) << "No RADIO_AAM_MUTE_ORDER Focus Session to unduck";
             goto exit;
         }
@@ -504,13 +621,13 @@ extern "C" __attribute__((visibility("default"))) void handler_vhal(){
     focusInfo.usage = "NIGHT_MODE";
     focusInfo.isExternalGain = true;
     float gainValue = DEFAULT_GAIN_VALUE;
-    if(getAttenuationTarget() != -1.0f){
+    if (getAttenuationTarget() != -1.0f) {
         gainValue = getAttenuationTarget();
     }
     focusInfo.gain = gainValue;
 
     if(vhal_data != nullptr){
-        if(vhal_data->nightModeValue == 1){
+        if(vhal_data->nightModeValue == 1) {
             LOG(DEBUG) << "Night mode value is set" ;
 
             if(vhal_data->driverDoor == 1 || vhal_data->frontPassengerDoor==1 || vhal_data->rearLeftDoor==1 || vhal_data->rearRightDoor==1){
@@ -527,11 +644,11 @@ extern "C" __attribute__((visibility("default"))) void handler_vhal(){
                 else
                     FocusHandler::focusIdMap.insert({"NIGHT_MODE", {focusSessionInfo.FocusId}});
             }
-            else if(vhal_data->driverDoor == 0 && vhal_data->frontPassengerDoor==0 && vhal_data->rearLeftDoor==0 && vhal_data->rearRightDoor==0){
+            else if (vhal_data->driverDoor == 0 && vhal_data->frontPassengerDoor==0 && vhal_data->rearLeftDoor==0 && vhal_data->rearRightDoor==0) {
                 LOG(DEBUG) << "All doors are closed, calling Focus Service to Unduck" ;
                 const auto& it = FocusHandler::focusIdMap.find("NIGHT_MODE");
-                if(it != FocusHandler::focusIdMap.end() && !it->second.empty()) {
-                    while(!it->second.empty()){
+                if (it != FocusHandler::focusIdMap.end() && !it->second.empty()) {
+                    while (!it->second.empty()) {
                         focusSessionInfo.FocusId = it->second.back();
                         LOG(DEBUG) << __func__ << ": Releasing NIGHT_MODE audio focus: " << focusSessionInfo.FocusId;
                         if (!g_focusHandler.isValid()) {
@@ -542,14 +659,13 @@ extern "C" __attribute__((visibility("default"))) void handler_vhal(){
                         focusSessionInfo.FocusId = 0;
                         it->second.pop_back();
                     }
-                }
-                else{
+                } else {
                     LOG(DEBUG) << "No NIGHT_MODE Focus Session to unduck";
                     goto exit;
                 }
             }
         }
-        else{
+        else {
             LOG(DEBUG) << "NIGHT_MODE value is not set" ;
         }
     }
@@ -584,14 +700,6 @@ std::pair<int32_t, bool> processVehiclePropValue(std::unique_ptr<IHalPropValue> 
         }
     }
     return {OTWTemperature, isOTWStatusSet};
-}
-
-std::shared_ptr<IVhalClient> getVhalClient() {
-    static std::shared_ptr<IVhalClient> vhalClient;
-    if (vhalClient == nullptr) {
-        vhalClient = IVhalClient::create();
-    }
-    return vhalClient;
 }
 
 std::pair<int32_t, bool> getOTWInfo() {
@@ -711,15 +819,7 @@ extern "C" __attribute__((visibility("default")))int priority_init(void)
         return EXIT_FAILURE;
     } else {
         auto subscriptionClient = pVnet->getSubscriptionClient(pAudioListener);
-        // Register for vehicle state change callbacks we care about
-        // Changes in these values are what will trigger a reconfiguration.
-        if (!subscribeToVHal(subscriptionClient.get(), MuteRadioOrderByAAMId)) {
-            LOG(ERROR) << "Didn't register for RADIO_AAM_MUTE_ORDER notification, Exiting.";
-        }
-        else
-        {
-            LOG(DEBUG) << "Register for RADIO_AAM_MUTE_ORDER done.";
-        }
+
 #ifdef ENABLE_QCOM_VHAL_NIGHTMODE
         if (!subscribeToVHal(subscriptionClient.get(), NightModePropertyId)) {
             LOG(ERROR) << "Didn't register for NIGHT_MODE , Exiting.";
@@ -761,12 +861,22 @@ extern "C" __attribute__((visibility("default")))int priority_init(void)
             LOG(DEBUG) << "Register for Rear Right Door done.";
         }
 #endif
-        if (!subscribeToVHal(subscriptionClient.get(), ThermalPropertyId)) {
-            LOG(ERROR) << "Didn't register for Thermal Property, Exiting.";
-        }
-        else
-        {
-            LOG(DEBUG) << "Register for Thermal Property done.";
+
+        std::vector<aidl::android::hardware::automotive::vehicle::SubscribeOptions> options;
+        options = {
+            {
+                .propId = SOMEIP_CONNECTION_STATE,
+                .areaIds = {},
+            }
+        };
+        if (auto status = subscriptionClient->subscribe(options); !status.ok()) {
+            LOG(ERROR) << "Subscription to SOMEIP_CONNECTION_STATE property faied!!";
+        } else {
+            LOG(INFO) << "Subscribed to SOMEIP_CONNECTION_STATE property";
+            auto propValue = pVnet->createHalPropValue(SOMEIP_CONNECTION_STATE);
+            auto callbackPtr = std::make_shared<GetValueCallbackFunc>(VhalPropCallback);
+            pVnet->getValue(*propValue, callbackPtr);
+            subscribeVhalProp();
         }
     }
     return EXIT_SUCCESS;

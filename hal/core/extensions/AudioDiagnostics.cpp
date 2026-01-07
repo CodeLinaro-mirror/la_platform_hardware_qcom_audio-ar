@@ -19,6 +19,7 @@
 * limitations under the License.
 */
 
+#include <cstdint>
 #define LOG_TAG "AudioDiagnostics"
 #include <stdlib.h>
 #include <unistd.h>
@@ -48,13 +49,19 @@ using android::frameworks::automotive::vhal::VhalClientResult;
 #define VUC_SPEAKER_GROUP_AVAILABILITY 0x0A21 + 0x20000000 + 0x01000000 + 0x00410000 // VehiclePropertyGroup:VENDOR, VehicleArea:GLOBAL, VehiclePropertyType:INT
 #define VUC_SPEAKER_GROUP_AVAILABILITY_SIZE 4
 #define AUDIO_NOTI_DETECT_FAILURE_V2_SIZE 8
+#define SOMEIP_CONNECTION_STATE  0x0A3D + 0x20000000 + 0x01000000+ 0x00200000  // VehiclePropertyGroup:VENDOR, VehicleArea:GLOBAL, VehiclePropertyType:BOOLEAN
 
 static int fd = -1, efd = -1;
 static int exit_thread = 0; //by default exit thread is made false
 static bool card_status = true, speaker_status = true, audio_comp_status = true;
 static int uuid = 0;
+using GetValueCallbackFunc = std::function<void(VhalClientResult<std::unique_ptr<android::frameworks::automotive::vhal::IHalPropValue>>)>;
+
 std::shared_ptr<aidl::android::hardware::automotive::vehicle::IVehicle> AudioDiagnostics::mVhal;
 
+ndk::ScopedAStatus subscribeDiagProp() ;
+ndk::ScopedAStatus updateVHAL() ;
+ndk::ScopedAStatus updateSpeakerGroupAvailability(std::vector<int32_t> speakerInfo);
 int getUUID() {
     return (++uuid) % INT_MAX;
 }
@@ -65,6 +72,73 @@ std::shared_ptr<IVhalClient> getVhalClient() {
         vhalClient = IVhalClient::create();
     }
     return vhalClient;
+}
+void SomeipCallback(VhalClientResult<std::unique_ptr<android::frameworks::automotive::vhal::IHalPropValue>> result) {
+    if (!result.ok()) {
+        LOG(ERROR) << "VHAL callback error: " << result.error().message();
+        return;
+    }
+    if(result.value() == nullptr) {
+        return;
+    }
+    if (result.value()->getPropId() == SOMEIP_CONNECTION_STATE) {
+        if (result.value()->getInt32Values()[0]== true) {
+            subscribeDiagProp();
+        }
+    }
+    if (result.value()->getPropId() == AUDIO_NOTI_DETECT_FAILURE_V2) {
+        std::vector<int32_t> audioCompInfo = result.value()->getInt32Values();
+        for (auto it: audioCompInfo) {
+            LOG(INFO) << __func__ << it;
+        }
+        if (audioCompInfo.size() != AUDIO_NOTI_DETECT_FAILURE_V2_SIZE) {
+            LOG(ERROR) << "Invalid AUDIO_NOTI_DETECT_FAILURE_V2_SIZE getInt32Values size: "
+                << audioCompInfo.size();
+        } else {
+            if (audioCompInfo[AudioCompIndex::AMP1] != AudioCompStatus::OK &&
+                audioCompInfo[AudioCompIndex::AMP2] != AudioCompStatus::OK &&
+                audioCompInfo[AudioCompIndex::A2B_LINK1] != AudioCompStatus::OK &&
+                audioCompInfo[AudioCompIndex::A2B_LINK2] != AudioCompStatus::OK &&
+                audioCompInfo[AudioCompIndex::EXT_AMP1] != AudioCompStatus::OK &&
+                audioCompInfo[AudioCompIndex::EXT_AMP2] != AudioCompStatus::OK) {
+                LOG(ERROR) << "AUDIO UNAVAILABLE, reporting to VHAL";
+                speaker_status = false;
+            } else {
+                LOG(INFO) << "Audio Components are in connected state";
+                speaker_status = true;
+            }
+            updateVHAL();
+
+        }
+    }
+    if (result.value()->getPropId() == VUC_SPEAKER_GROUP_AVAILABILITY) {
+        std::vector<int32_t> speakerInfo = result.value()->getInt32Values();
+        for (auto it: speakerInfo) {
+            LOG(INFO) << __func__ << it;
+        }
+        {
+            LOG(INFO) << "Updating SPEAKER_GROUP_AVAILABILITY";
+            updateSpeakerGroupAvailability(speakerInfo);
+        }
+        if (speakerInfo.size() != VUC_SPEAKER_GROUP_AVAILABILITY_SIZE) {
+            LOG(ERROR) << "Invalid VUC_SPEAKER_GROUP_AVAILABILITY_SIZE getInt32Values size: "
+                << speakerInfo.size();
+        } else {
+            if (speakerInfo[SpeakerIndex::FRONT_LEFT] != SpeakerState::OK &&
+                speakerInfo[SpeakerIndex::FRONT_RIGHT] != SpeakerState::OK &&
+                speakerInfo[SpeakerIndex::REAR_LEFT] != SpeakerState::OK &&
+                speakerInfo[SpeakerIndex::REAR_RIGHT] != SpeakerState::OK) {
+                LOG(ERROR) << "AUDIO UNAVAILABLE, reporting to VHAL";
+                audio_comp_status = false;
+            } else {
+                LOG(INFO) << "SPEAKERs are in connected state";
+                audio_comp_status = true;
+            }
+            updateVHAL();
+        }
+
+    }
+
 }
 
 ndk::ScopedAStatus updateSpeakerGroupAvailability(std::vector<int32_t> speakerInfo) {
@@ -82,6 +156,50 @@ ndk::ScopedAStatus updateSpeakerGroupAvailability(std::vector<int32_t> speakerIn
     std::shared_ptr<IVhalClient::SetValueCallbackFunc>
         setValueCallbackFunc = std::make_shared<IVhalClient::SetValueCallbackFunc>(callback);
     vhalClient->setValue(*requestPropValue, setValueCallbackFunc);
+    return ndk::ScopedAStatus::ok();
+}
+ndk::ScopedAStatus subscribeDiagProp() {
+    std::vector<aidl::android::hardware::automotive::vehicle::SubscribeOptions> options;
+    auto vhalClient = getVhalClient();
+    if (vhalClient == nullptr) {
+        LOG(ERROR) << "Vehicle HAL getService returned NULL.  Exiting.";
+        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
+    } else {
+        auto audioFailureDetectClient = vhalClient->getSubscriptionClient(
+                                std::make_shared<AudioFailureDetectCallback>());
+        options = {
+            {
+                .propId = AUDIO_NOTI_DETECT_FAILURE_V2,
+                .areaIds = {},
+            }
+        };
+        if (auto status = audioFailureDetectClient->subscribe(options); !status.ok()) {
+            LOG(ERROR) << "Subscription to AUDIO_NOTI_DETECT_FAILURE_V2 property faied!!";
+        } else {
+            LOG(INFO) << "Subscribed to AUDIO_NOTI_DETECT_FAILURE_V2 property";
+            auto requestAudioFailurePropValue = vhalClient->createHalPropValue(AUDIO_NOTI_DETECT_FAILURE_V2);
+
+            auto AudioFailurecallback = std::make_shared<IVhalClient::GetValueCallbackFunc>(SomeipCallback);
+            vhalClient->getValue(*requestAudioFailurePropValue,AudioFailurecallback);
+        }
+
+        auto speakerGroupAvailClient = vhalClient->getSubscriptionClient(
+                                std::make_shared<SpeakerGroupAvailCallback>());
+        options = {
+            {
+                .propId = VUC_SPEAKER_GROUP_AVAILABILITY,
+                .areaIds = {},
+            }
+        };
+        if (auto status = speakerGroupAvailClient->subscribe(options); !status.ok()) {
+            LOG(ERROR) << "Subscription to VUC_SPEAKER_GROUP_AVAILABILITY property failed!!";
+        } else {
+            LOG(INFO) << "Subscribed to VUC_SPEAKER_GROUP_AVAILABILITY property";
+            auto requestSpeakerPropValue = vhalClient->createHalPropValue(VUC_SPEAKER_GROUP_AVAILABILITY);
+            auto SpeakerGroupCallback = std::make_shared<IVhalClient::GetValueCallbackFunc>(SomeipCallback);
+            vhalClient->getValue(*requestSpeakerPropValue,SpeakerGroupCallback);
+        }
+    }
     return ndk::ScopedAStatus::ok();
 }
 
@@ -229,33 +347,24 @@ AudioDiagnostics::AudioDiagnostics() {
         LOG(ERROR) << "VHAL client creation failed!!";
         return;
     }
-    std::vector<aidl::android::hardware::automotive::vehicle::SubscribeOptions> options;
-    auto audioFailureDetectClient = mVhalClient->getSubscriptionClient(
-                            std::make_shared<AudioFailureDetectCallback>());
-    options = {
-        {
-            .propId = AUDIO_NOTI_DETECT_FAILURE_V2,
-            .areaIds = {},
-        }
-    };
-    if (auto status = audioFailureDetectClient->subscribe(options); !status.ok()) {
-        LOG(ERROR) << "Subscription to AUDIO_NOTI_DETECT_FAILURE_V2 property faied!!";
-    } else {
-        LOG(INFO) << "Subscribed to AUDIO_NOTI_DETECT_FAILURE_V2 property";
-    }
 
-    auto speakerGroupAvailClient = mVhalClient->getSubscriptionClient(
-                            std::make_shared<SpeakerGroupAvailCallback>());
+    std::vector<aidl::android::hardware::automotive::vehicle::SubscribeOptions> options;
+    auto audioSomeipStatusClient = mVhalClient->getSubscriptionClient(
+                            std::make_shared<AudioVhalAvailibilityCallback>());
     options = {
         {
-            .propId = VUC_SPEAKER_GROUP_AVAILABILITY,
+            .propId = SOMEIP_CONNECTION_STATE,
             .areaIds = {},
         }
     };
-    if (auto status = speakerGroupAvailClient->subscribe(options); !status.ok()) {
-        LOG(ERROR) << "Subscription to VUC_SPEAKER_GROUP_AVAILABILITY property failed!!";
+    if (auto status = audioSomeipStatusClient->subscribe(options); !status.ok()) {
+        LOG(ERROR) << "Subscription to SOMEIP_CONNECTION_STATE property faied!!";
     } else {
-        LOG(INFO) << "Subscribed to VUC_SPEAKER_GROUP_AVAILABILITY property";
+        LOG(INFO) << "Subscribed to SOMEIP_CONNECTION_STATE property";
+        auto propValue = mVhalClient->createHalPropValue(SOMEIP_CONNECTION_STATE);
+        auto callbackPtr = std::make_shared<GetValueCallbackFunc>(SomeipCallback);
+        mVhalClient->getValue(*propValue, callbackPtr);
+        subscribeDiagProp();
     }
     updateVHAL();
     return;
@@ -349,6 +458,35 @@ void SpeakerGroupAvailCallback::onPropertyEvent(
                     audio_comp_status = true;
                 }
                 updateVHAL();
+            }
+        }
+    }
+    return;
+}
+
+
+/*------------------------------------------------------------------------------------------------------------*/
+
+void AudioVhalAvailibilityCallback::onPropertyEvent(
+    const std::vector<std::unique_ptr<
+            android::frameworks::automotive::vhal::IHalPropValue>>& values) {
+    LOG(DEBUG) << __func__ << ": Enter " ;
+    for(const auto& value : values) {
+        int32_t propId = value->getPropId();
+        int32_t areadId = value->getAreaId();
+        LOG(DEBUG) << __func__ << ": PropId : " << propId << ": areaId : " << areadId;
+        if (propId != SOMEIP_CONNECTION_STATE) {
+            LOG(ERROR) << __func__ << "PropId not matching with SOMEIP_CONNECTION_STATE";
+        } else {
+            LOG(INFO) << __func__ << "PropId matching with SOMEIP_CONNECTION_STATE";
+             if (value->getInt32Values().size() < 1) {
+                LOG(ERROR) << "Invalid SOMEIP_CONNECTION_STATE  size, empty value :" << value->getInt32Values().size();
+                return;
+            } else {
+                LOG(DEBUG) << "Event Notify: New SOMEIP_CONNECTION_STATE event received. Val:" << value->getInt32Values()[0];
+                if (value->getInt32Values()[0]) {
+                    subscribeDiagProp();
+                }
             }
         }
     }

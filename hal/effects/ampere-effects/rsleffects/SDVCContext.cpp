@@ -54,8 +54,9 @@ void SDVCContext::deInit() {
 }
 
 RetCode SDVCContext::start(pal_stream_handle_t* palHandle) {
-    LOG(DEBUG) << "Enter " << __func__ << " ioHandle " << getIoHandle();
 
+    LOG(DEBUG) << "Enter " << __func__ << " ioHandle " << getIoHandle();
+/*
     std::lock_guard lg(mMutex);
     mPalHandle = palHandle;
 
@@ -64,16 +65,20 @@ RetCode SDVCContext::start(pal_stream_handle_t* palHandle) {
     } else {
         LOG(DEBUG) << "Not yet enabled";
     }
-
+*/
     return RetCode::SUCCESS;
 }
 
 RetCode SDVCContext::stop() {
+
+    /*
     std::lock_guard lg(mMutex);
     LOG(DEBUG) << "Enter " << __func__ << " ioHandle " << getIoHandle();
     struct param_type2_t sdvcParam = {0}; // by default enable bit is 0
     setSdvcCurrentProfile(DEFAULT_SDVC_PROFILE);
     mPalHandle = nullptr;
+    */
+
     return RetCode::SUCCESS;
 }
 
@@ -285,6 +290,46 @@ int SDVCContext::getSdvcCurrentProfile() {
     return params.value;
 }
 
+int SDVCContext::getDeviceInstance() {
+
+    auto serviceName = std::string(IModule::descriptor) + "/default";
+    mModule = IModule::fromBinder(
+            ndk::SpAIBinder(AServiceManager_waitForService(serviceName.c_str())));
+    if (mModule == nullptr) {
+        ALOGE("%s fromBinder %s failed", __func__, serviceName.c_str());
+        return -1;
+    }
+
+    return 0;
+}
+
+int SDVCContext::updatePalParameters(struct param_type2_t *params) {
+    LOG(DEBUG) << "Enter " << __func__;
+
+    (void)getDeviceInstance();
+
+    if (mModule == nullptr) {
+        LOG(ERROR) << __func__ << "IModule Not Available";
+        return -1;
+    }
+
+    VendorParameter parameter;
+    VString parcel;
+    const std::string key = "sdvcprofile";
+    std::string value = std::to_string(mSdvcParams.value);
+    parameter.id = key;
+    parcel.value = value;
+
+    if (parameter.ext.setParcelable(parcel) != ::android::OK) {
+        ALOGD("%s : failed to set parcel for %s",__func__,parcel.descriptor);
+        return -1 ;
+    }
+    mModule->setVendorParameters({parameter}, false);
+        LOG(DEBUG) << "Exit " << __func__;
+    return 0;
+}
+
+/*
 int SDVCContext::updatePalParameters(struct param_type2_t *params) {
     LOG(DEBUG) << "Enter " << __func__;
 
@@ -318,4 +363,5 @@ int SDVCContext::updatePalParameters(struct param_type2_t *params) {
     LOG(DEBUG) << "Exit " << __func__;
     return 0;
 }
+*/
 } // namespace aidl::ampere::effects
