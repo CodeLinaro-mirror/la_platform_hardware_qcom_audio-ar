@@ -20,6 +20,11 @@ LOCAL_HEADER_LIBRARIES :=  \
     libexpectedutils_headers
 
 LOCAL_SHARED_LIBRARIES := \
+    $(LATEST_ANDROID_MEDIA_AUDIO_COMMON_TYPES) \
+    $(LATEST_ANDROID_AUDIO_CORE) \
+    $(LATEST_ANDROID_HARDWARE_COMMON_FMQ) \
+    $(LATEST_ANDROID_HARDWARE_COMMON) \
+    $(LATEST_QTI_AUDIO_TYPES_AIDL) \
     libaudioaidlcommon \
     libbase \
     libbinder_ndk \
@@ -30,11 +35,6 @@ LOCAL_SHARED_LIBRARIES := \
     libstagefright_foundation \
     libutils \
     libxml2 \
-    android.hardware.common-V2-ndk \
-    android.hardware.common.fmq-V1-ndk \
-    android.media.audio.common.types-V4-ndk \
-    android.hardware.audio.core-V3-ndk \
-    qti-audio-types-aidl-V1-ndk \
     libar-pal
 
 include $(BUILD_STATIC_LIBRARY)
@@ -140,11 +140,11 @@ LOCAL_CFLAGS := \
     -Wno-unused-variable
 
 LOCAL_SHARED_LIBRARIES := \
+    $(LATEST_ANDROID_HARDWARE_HEALTH) \
     android.hardware.health@1.0 \
     android.hardware.health@2.0 \
     android.hardware.health@2.1 \
     android.hardware.power@1.2 \
-    android.hardware.health-V1-ndk \
     libbinder_ndk \
     libaudioutils \
     libbase \

@@ -1,13 +1,23 @@
 LATEST_ANDROID_HARDWARE_AUDIO_EFFECT := android.hardware.audio.effect-V3-ndk
 LATEST_ANDROID_HARDWARE_COMMON := android.hardware.common-V2-ndk
-LATEST_ANDROID_MEDIA_ADUIO_COMMON_TYPES := android.media.audio.common.types-V4-ndk
+LATEST_ANDROID_MEDIA_AUDIO_COMMON_TYPES := android.media.audio.common.types-V4-ndk
 LATEST_ANDROID_HARDWARE_COMMON_FMQ := android.hardware.common.fmq-V1-ndk
+LATEST_ANDROID_HARDWARE_AUDIO_CORE_SOUNDDOSE := android.hardware.audio.core.sounddose-V1-ndk
+LATEST_ANDROID_HARDWARE_HEALTH := android.hardware.health-V1-ndk
+LATEST_VENDOR_HARDWARE_LISTENSOUNDMODEL_AIDL_VENDOR := vendor.qti.hardware.ListenSoundModelAidl-V1-ndk.vendor
+LATEST_QTI_AUDIO_TYPES_AIDL := qti-audio-types-aidl-V1-ndk
+LATEST_ANDROID_AUDIO_CORE := android.hardware.audio.core-V3-ndk
+
+AHAL_DEFAULT_AIDL_INTERFACE_DEPENDENCIES := \
+    $(LATEST_ANDROID_AUDIO_CORE) \
+    $(LATEST_ANDROID_HARDWARE_COMMON) \
+    $(LATEST_ANDROID_MEDIA_AUDIO_COMMON_TYPES)
 
 # to have similar to cc_defaults in make files
 EFFECTS_DEFAULTS_SHARED_LIBRARIES := \
     $(LATEST_ANDROID_HARDWARE_AUDIO_EFFECT) \
     $(LATEST_ANDROID_HARDWARE_COMMON) \
-    $(LATEST_ANDROID_MEDIA_ADUIO_COMMON_TYPES) \
+    $(LATEST_ANDROID_MEDIA_AUDIO_COMMON_TYPES) \
     $(LATEST_ANDROID_HARDWARE_COMMON_FMQ) \
     libaudioaidlcommon \
     libbase \
