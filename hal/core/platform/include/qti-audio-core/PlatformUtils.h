@@ -6,6 +6,7 @@
 #pragma once
 
 #include <PalApi.h>
+#include <PalDefs.h>
 #include <aidl/android/hardware/audio/core/VendorParameter.h>
 #include <aidl/android/media/audio/common/AudioPlaybackRate.h>
 #include <aidl/qti/audio/core/VString.h>
@@ -163,4 +164,8 @@ std::string toString(const pal_stream_attributes& attributes);
  */
 
 ndk::ScopedAStatus toBinderStatus(PlaybackRateStatus ret);
-}  // namespace qti::audio::core
+
+pal_device getDummyOutDevice() noexcept;
+pal_device getDummyInDevice() noexcept;
+
+} // namespace qti::audio::core
