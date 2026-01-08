@@ -95,6 +95,9 @@
 
 #define INVALID_INIT_VALUE  -255
 
+//To convert meter/sec to 10meter/hour
+#define SPEED_CONVERTOR 360
+
 static int gs_VehicleSpeed = INVALID_INIT_VALUE ;
 static int gs_audioSourceType = INVALID_INIT_VALUE;
 static int gs_Balance = INVALID_INIT_VALUE;
@@ -229,7 +232,7 @@ void AudioVehicleListener::onPropertyEvent(const std::vector<std::unique_ptr<IHa
                 goto exit;
             } else {
                 LOG(VERBOSE) << "Event Notify: New Vehicle Speed event received. Val:" << value->getFloatValues()[0];
-                auto status = set_vehicle_speed(value->getFloatValues()[0]);
+                auto status = set_vehicle_speed(SPEED_CONVERTOR * value->getFloatValues()[0]);
                 if (status != 0) {
                     LOG(ERROR) << "Failed to set perf_vehicle_speed";
                     goto exit;
