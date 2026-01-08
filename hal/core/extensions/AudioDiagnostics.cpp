@@ -160,46 +160,79 @@ ndk::ScopedAStatus updateSpeakerGroupAvailability(std::vector<int32_t> speakerIn
 }
 ndk::ScopedAStatus subscribeDiagProp() {
     std::vector<aidl::android::hardware::automotive::vehicle::SubscribeOptions> options;
+
+    // Track per-property subscription success across calls
+    static bool audioFailureSubscribed   = false;
+    static bool speakerGroupSubscribed   = false;
+
     auto vhalClient = getVhalClient();
     if (vhalClient == nullptr) {
         LOG(ERROR) << "Vehicle HAL getService returned NULL.  Exiting.";
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
-    } else {
-        auto audioFailureDetectClient = vhalClient->getSubscriptionClient(
-                                std::make_shared<AudioFailureDetectCallback>());
+    }
+
+    if (!audioFailureSubscribed) {
+        auto audioFailureDetectClient =
+            vhalClient->getSubscriptionClient(std::make_shared<AudioFailureDetectCallback>());
+
         options = {
             {
                 .propId = AUDIO_NOTI_DETECT_FAILURE_V2,
                 .areaIds = {},
             }
         };
+
         if (auto status = audioFailureDetectClient->subscribe(options); !status.ok()) {
-            LOG(ERROR) << "Subscription to AUDIO_NOTI_DETECT_FAILURE_V2 property faied!!";
+            LOG(ERROR) << "Subscription to AUDIO_NOTI_DETECT_FAILURE_V2 property failed!!";
+            audioFailureSubscribed = false; // keep false, so we retry next time
         } else {
             LOG(INFO) << "Subscribed to AUDIO_NOTI_DETECT_FAILURE_V2 property";
-            auto requestAudioFailurePropValue = vhalClient->createHalPropValue(AUDIO_NOTI_DETECT_FAILURE_V2);
+            audioFailureSubscribed = true;
 
-            auto AudioFailurecallback = std::make_shared<IVhalClient::GetValueCallbackFunc>(SomeipCallback);
-            vhalClient->getValue(*requestAudioFailurePropValue,AudioFailurecallback);
+            auto requestAudioFailurePropValue =
+                vhalClient->createHalPropValue(AUDIO_NOTI_DETECT_FAILURE_V2);
+            auto AudioFailurecallback =
+                std::make_shared<IVhalClient::GetValueCallbackFunc>(SomeipCallback);
+            vhalClient->getValue(*requestAudioFailurePropValue, AudioFailurecallback);
         }
+    } else {
+        LOG(INFO) << "AUDIO_NOTI_DETECT_FAILURE_V2 already subscribed; skipping.";
+    }
 
-        auto speakerGroupAvailClient = vhalClient->getSubscriptionClient(
-                                std::make_shared<SpeakerGroupAvailCallback>());
+    if (!speakerGroupSubscribed) {
+        auto speakerGroupAvailClient =
+            vhalClient->getSubscriptionClient(std::make_shared<SpeakerGroupAvailCallback>());
+
         options = {
             {
                 .propId = VUC_SPEAKER_GROUP_AVAILABILITY,
                 .areaIds = {},
             }
         };
+
         if (auto status = speakerGroupAvailClient->subscribe(options); !status.ok()) {
             LOG(ERROR) << "Subscription to VUC_SPEAKER_GROUP_AVAILABILITY property failed!!";
+            speakerGroupSubscribed = false; // keep false, so we retry next time
         } else {
             LOG(INFO) << "Subscribed to VUC_SPEAKER_GROUP_AVAILABILITY property";
-            auto requestSpeakerPropValue = vhalClient->createHalPropValue(VUC_SPEAKER_GROUP_AVAILABILITY);
-            auto SpeakerGroupCallback = std::make_shared<IVhalClient::GetValueCallbackFunc>(SomeipCallback);
-            vhalClient->getValue(*requestSpeakerPropValue,SpeakerGroupCallback);
+            speakerGroupSubscribed = true;
+
+            auto requestSpeakerPropValue =
+                vhalClient->createHalPropValue(VUC_SPEAKER_GROUP_AVAILABILITY);
+            auto SpeakerGroupCallback =
+                std::make_shared<IVhalClient::GetValueCallbackFunc>(SomeipCallback);
+            vhalClient->getValue(*requestSpeakerPropValue, SpeakerGroupCallback);
         }
+    } else {
+        LOG(INFO) << "VUC_SPEAKER_GROUP_AVAILABILITY already subscribed; skipping.";
     }
+
+    if (audioFailureSubscribed && speakerGroupSubscribed) {
+        LOG(DEBUG) << "All diag subscriptions completed; future calls will skip.";
+    } else {
+        LOG(WARNING) << "Some diag subscriptions failed; only failed ones will retry next time.";
+    }
+
     return ndk::ScopedAStatus::ok();
 }
 

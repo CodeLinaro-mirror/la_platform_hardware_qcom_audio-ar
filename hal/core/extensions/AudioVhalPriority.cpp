@@ -375,48 +375,77 @@ void VhalPropCallback(VhalClientResult<std::unique_ptr<android::frameworks::auto
     }
 }
 
-ndk::ScopedAStatus subscribeVhalProp() {
+ndk::ScopedAStatus subscribeVhal() {
     std::vector<aidl::android::hardware::automotive::vehicle::SubscribeOptions> options;
-    std::shared_ptr<AudioVHALListener> pAudioListener = std::make_shared<AudioVHALListener>();
+
+    // Persist per-property subscription state across calls
+    static bool thermalSubscribed = false;
+    static bool muteSubscribed    = false;
+
     auto vhalClient = getVhalClient();
     if (vhalClient == nullptr) {
-        LOG(ERROR) << "Vehicle HAL getService returned NULL.  Exiting.";
+        LOG(ERROR) << "Vehicle HAL getService returned NULL. Exiting.";
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
-    } else {
-        auto ThermalPropertyClient = vhalClient->getSubscriptionClient(pAudioListener);
+    }
+
+    std::shared_ptr<AudioVHALListener> pAudioListener = std::make_shared<AudioVHALListener>();
+
+    if (!thermalSubscribed) {
+        auto thermalClient = vhalClient->getSubscriptionClient(pAudioListener);
+
         options = {
             {
                 .propId = ThermalPropertyId,
                 .areaIds = {},
             }
         };
-        if (auto status = ThermalPropertyClient->subscribe(options); !status.ok()) {
-            LOG(ERROR) << "Subscription to ThermalPropertyId property faied!!";
+
+        if (auto status = thermalClient->subscribe(options); !status.ok()) {
+            LOG(ERROR) << "Subscription to ThermalPropertyId property failed!!";
+            thermalSubscribed = false;
         } else {
             LOG(INFO) << "Subscribed to ThermalPropertyId property";
-            auto requestThermalPropValue = vhalClient->createHalPropValue(ThermalPropertyId);
+            thermalSubscribed = true;
 
-            auto Thermalcallback = std::make_shared<IVhalClient::GetValueCallbackFunc>(VhalPropCallback);
-            vhalClient->getValue(*requestThermalPropValue,Thermalcallback);
+            auto reqThermal = vhalClient->createHalPropValue(ThermalPropertyId);
+            auto thermalCb  = std::make_shared<IVhalClient::GetValueCallbackFunc>(VhalPropCallback);
+            vhalClient->getValue(*reqThermal, thermalCb);
         }
+    } else {
+        LOG(DEBUG) << "ThermalPropertyId already subscribed; skipping.";
+    }
 
-        auto MuteRadioOrderClient = vhalClient->getSubscriptionClient(pAudioListener);
+    if (!muteSubscribed) {
+        auto muteClient = vhalClient->getSubscriptionClient(pAudioListener);
+
         options = {
             {
                 .propId = MuteRadioOrderByAAMId,
                 .areaIds = {},
             }
         };
-        if (auto status = MuteRadioOrderClient->subscribe(options); !status.ok()) {
+
+        if (auto status = muteClient->subscribe(options); !status.ok()) {
             LOG(ERROR) << "Subscription to MuteRadioOrderByAAMId property failed!!";
+            muteSubscribed = false;
         } else {
             LOG(INFO) << "Subscribed to MuteRadioOrderByAAMId property";
-            auto requestMutePropValue = vhalClient->createHalPropValue(MuteRadioOrderByAAMId);
+            muteSubscribed = true;
 
-            auto Mutecallback = std::make_shared<IVhalClient::GetValueCallbackFunc>(VhalPropCallback);
-            vhalClient->getValue(*requestMutePropValue,Mutecallback);
+            auto reqMute = vhalClient->createHalPropValue(MuteRadioOrderByAAMId);
+            auto muteCb  = std::make_shared<IVhalClient::GetValueCallbackFunc>(VhalPropCallback);
+            vhalClient->getValue(*reqMute, muteCb);
         }
+    } else {
+        LOG(DEBUG) << "MuteRadioOrderByAAMId already subscribed; skipping.";
     }
+
+    if (thermalSubscribed && muteSubscribed) {
+        LOG(DEBUG) << "All VHAL subscriptions completed; future calls will skip.";
+    } else {
+        LOG(WARNING) << "Some VHAL subscriptions failed; only failed ones will retry next time.";
+    }
+
     return ndk::ScopedAStatus::ok();
 }
 
