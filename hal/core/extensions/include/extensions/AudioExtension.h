@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 #pragma once
@@ -75,12 +75,14 @@ static std::string kIccLibrary = "libicc_pal.so";
 static std::string kFmLibrary = "libfmpal.so";
 static std::string kKarokeLibrary = "dummy.so"; // TODO
 static std::string kGefLibrary = "libqtigefar.so";
+static std::string kAsrcLibrary = "lib_asrc.so";
 
 static std::string kBatteryListenerProperty = "vendor.audio.feature.battery_listener.enable";
 static std::string kHfpProperty = "vendor.audio.feature.hfp.enable";
 static std::string kIccProperty = "vendor.audio.feature.icc.enable";
 static std::string kBluetoothProperty = "vendor.audio.feature.a2dp_offload.enable";
 static std::string kAutoHalProperty = "vendor.audio.feature.auto_hal_pal.enable";
+static std::string kAsrcProperty = "vendor.audio.feature.asrc.enable";
 
 const std::map<tSESSION_TYPE, pal_device_id_t> SessionTypePalDevMap{
         {A2DP_HARDWARE_OFFLOAD_DATAPATH, PAL_DEVICE_OUT_BLUETOOTH_A2DP},
@@ -194,6 +196,15 @@ class IccExtension : public AudioExtensionBase {
     void audio_extn_icc_set_parameters(struct str_parms* params);
 };
 
+class AsrcExtension: public AudioExtensionBase {
+  public:
+    AsrcExtension();
+    ~AsrcExtension();
+    set_parameters_t asrc_set_parameters;
+    get_parameters_t asrc_get_parameters;
+    void audio_extn_asrc_set_parameters(struct str_parms* params);
+};
+
 class HfpExtension : public AudioExtensionBase {
   public:
     HfpExtension();
@@ -299,6 +310,7 @@ class AudioExtension {
     std::unique_ptr<HfpExtension> mHfpExtension = std::make_unique<HfpExtension>();
     std::unique_ptr<FmExtension> mFmExtension = std::make_unique<FmExtension>();
     std::unique_ptr<IccExtension> mIccExtension = std::make_unique<IccExtension>();
+    std::unique_ptr<AsrcExtension> mAsrcExtension = std::make_unique<AsrcExtension>();
     std::unique_ptr<KarokeExtension> mKarokeExtension = std::make_unique<KarokeExtension>();
     std::unique_ptr<GefExtension> mGefExtension = std::make_unique<GefExtension>();
     std::unique_ptr<AutohalExtension> mAutohalExtension = std::make_unique<AutohalExtension>();

@@ -26,7 +26,8 @@
 
 #define LC3_SWB_CODEC_CONFIG_INDEX 4
 #define LC3_BROADCAST_TRANSIT_MODE 1
-#define LC3_HFP_TRANSIT_MODE 3
+#define LC3_HFP_TRANSIT_MODE       3
+#define MAX_SUPPORTED_ZONES        6
 
 using ::aidl::android::media::audio::common::AudioChannelLayout;
 using ::aidl::android::media::audio::common::AudioDevice;
@@ -654,6 +655,38 @@ void Platform::updateUHQA(const bool enable) noexcept {
 
 bool Platform::isUHQAEnabled() const noexcept {
     return mIsUHQAEnabled;
+}
+
+void Platform::updateVoiceAssistantZone(uint32_t zoneid) noexcept {
+
+    if (zoneid > MAX_SUPPORTED_ZONES) {
+      LOG(ERROR) << __func__ << ": Invalid zone ID " << zoneid;
+      return;
+    }
+
+    if (int32_t ret =
+                :: pal_set_param(PAL_PARAM_ID_RENDER_ZONE, (void*)&zoneid, sizeof(int));
+        ret) {
+        LOG(ERROR) << __func__ << "PAL_PARAM_ID_RENDER_ZONE failed: " << ret;
+        return;
+    }
+    return;
+}
+
+void Platform::updateInputAssistantZone(uint32_t zoneid) noexcept {
+
+    if (zoneid > MAX_SUPPORTED_ZONES) {
+      LOG(ERROR) << __func__ << ": Invalid zone ID " << zoneid;
+      return;
+    }
+
+    if (int32_t ret =
+                :: pal_set_param(PAL_PARAM_ID_CAPTURE_ZONE, (void*)&zoneid, sizeof(int));
+        ret) {
+        LOG(ERROR) << __func__ << "PAL_PARAM_ID_CAPTURE_ZONE failed: " << ret;
+        return;
+    }
+    return;
 }
 
 void Platform::setFTMSpeakerProtectionMode(uint32_t const heatUpTime, uint32_t const runTime,

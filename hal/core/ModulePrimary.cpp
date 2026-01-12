@@ -617,6 +617,16 @@ void ModulePrimary::onSetGenericParameters(const std::vector<VendorParameter>& p
             mPlatform.setTranslationRecordState(isOn);
             LOG(INFO) << __func__ << ": PCM Record FFECNS for Translation:" << isOn;
         }
+        else if (Parameters::kVoice_Assistant_Zone == param.id)
+        {
+            const auto zoneid = static_cast<uint32_t>(getInt64FromString(paramValue));
+            mPlatform.updateVoiceAssistantZone(zoneid);
+        }
+        else if (Parameters::kInput_Mic_Zone == param.id)
+        {
+            const auto zoneid = static_cast<uint32_t>(getInt64FromString(paramValue));
+            mPlatform.updateInputAssistantZone(zoneid);
+        }
     }
 }
 
