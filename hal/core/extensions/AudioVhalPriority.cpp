@@ -375,7 +375,7 @@ void VhalPropCallback(VhalClientResult<std::unique_ptr<android::frameworks::auto
     }
 }
 
-ndk::ScopedAStatus subscribeVhal() {
+ndk::ScopedAStatus subscribeVhalProp() {
     std::vector<aidl::android::hardware::automotive::vehicle::SubscribeOptions> options;
 
     // Persist per-property subscription state across calls
