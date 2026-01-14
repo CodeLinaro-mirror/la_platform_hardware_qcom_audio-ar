@@ -1,5 +1,6 @@
 #Audio product definitions
 include vendor/qcom/opensource/audio-hal/primary-hal/configs/audio-generic-modules.mk
+include vendor/qcom/opensource/audio-kernel/audio_kernel_modules.mk
 PRODUCT_PACKAGES += $(AUDIO_GENERIC_MODULES)
 
 PRODUCT_PACKAGES_DEBUG += $(MM_AUDIO_DBG)
@@ -78,8 +79,10 @@ ifneq ($(BUILD_AUDIO_TECHPACK_SOURCE), true)
     SOONG_CONFIG_qtiaudio_hy22 := true
 endif
 
-.PHONY: audio_tp audio_tp_hal
+.PHONY: audio_tp audio_tp_hal audio_tp_dlkm
 
-audio_tp: audio_tp_hal
+audio_tp: audio_tp_hal audio_tp_dlkm
 
 audio_tp_hal: $(AUDIO_MODULES) $(AUDIO_GENERIC_MODULES)
+
+audio_tp_dlkm: $(AUDIO_KERNEL_MODULES)
