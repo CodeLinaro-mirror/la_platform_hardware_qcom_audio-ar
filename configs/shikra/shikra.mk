@@ -1,5 +1,5 @@
 # Business Application definition
-BA_NAME := mobile
+BA_NAME := IoT
 # Audio product definitions
 include vendor/qcom/opensource/audio-hal/primary-hal/configs/shikra/audio-modules.mk
 PRODUCT_PACKAGES += $(AUDIO_MODULES)
@@ -33,25 +33,7 @@ ifneq ($(strip $(TARGET_USES_RRO)), true)
 #Audio Specific device overlays
 DEVICE_PACKAGE_OVERLAYS += vendor/qcom/opensource/audio-hal/primary-hal/configs/common/overlay
 endif
-PRODUCT_PACKAGES += fai__2.7.2_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_5.3.0_enpuv6.pmd
-PRODUCT_PACKAGES += fai__2.9.0_1.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_5.3.0_enpuv6.pmd
-PRODUCT_PACKAGES += fai__2.9.2_1.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_5.3.0_enpuv6.pmd
-PRODUCT_PACKAGES += fai__4.8.4_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_5.3.0_enpuv6.pmd
-PRODUCT_PACKAGES += fai__8.0.2_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_5.3.0_enpuv6.pmd
-PRODUCT_PACKAGES += fai__3.0.0_0.0__eai_5.3.0_enpuv6.pmd
-PRODUCT_PACKAGES += fai__2.7.2_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_5.6.0_enpuv6.pmd
-PRODUCT_PACKAGES += fai__2.9.0_1.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_5.6.0_enpuv6.pmd
-PRODUCT_PACKAGES += fai__2.9.2_1.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_5.6.0_enpuv6.pmd
-PRODUCT_PACKAGES += fai__4.8.21_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_5.6.0_enpuv6.pmd
-PRODUCT_PACKAGES += fai__8.0.3_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_5.6.0_enpuv6.pmd
-PRODUCT_PACKAGES += fai__8.0.2_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_5.6.0_enpuv6.pmd
-PRODUCT_PACKAGES += fai__3.0.0_0.0__eai_5.6.0_enpuv6.pmd
-
-# Adding WNR Model File
-PRODUCT_PACKAGES += wind_filter__1.0__48k__2ch__16b__eai_5.5.eai
-PRODUCT_PACKAGES += wind_filter__1.0__48k__2ch__16b__eai_5.8.eai
-
-# Audio configuration xml's related to Hawi
+# Audio configuration xml's related to Shikra
 QCV_FAMILY_SKUS := shikra
 DEVICE_SKU := shikra
 UV_WRAPPER2 := false
@@ -61,8 +43,6 @@ CONFIG_HAL_SRC_DIR := vendor/qcom/opensource/audio-hal/primary-hal/configs/shikr
 CONFIG_SKU_OUT_DIR := $(TARGET_COPY_OUT_VENDOR)/etc/audio/sku_$(DEVICE_SKU)
 
 PRODUCT_COPY_FILES += \
-    $(CONFIG_HAL_SRC_DIR)/audio_effects.conf:$(CONFIG_SKU_OUT_DIR)/audio_effects.conf \
-    $(CONFIG_HAL_SRC_DIR)/audio_effects.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects.xml \
     $(CONFIG_HAL_SRC_DIR)/audio_effects_config.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects_config.xml \
     $(CONFIG_HAL_SRC_DIR)/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/microphone_characteristics.xml \
     $(CONFIG_PAL_SRC_DIR)/card-defs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/card-defs.xml \
