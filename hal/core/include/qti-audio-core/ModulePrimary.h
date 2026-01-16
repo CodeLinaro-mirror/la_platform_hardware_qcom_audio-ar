@@ -133,7 +133,9 @@ class ModulePrimary final : public Module {
         HDR,
         WFD,
         FTM, // Factory Test Mode
+#if defined(AUDIO_FEATURE_ENABLED_MIC_OCCLUSION)
         MICOCCLUSION,
+#endif
         AUDIOEXTENSION,
         HAPTICS,
     };
@@ -206,8 +208,10 @@ class ModulePrimary final : public Module {
     // GetHandler for FTM
     std::vector<::aidl::android::hardware::audio::core::VendorParameter> onGetFTMParameters(
             const std::vector<std::string>&);
+#if defined(AUDIO_FEATURE_ENABLED_MIC_OCCLUSION)
     std::vector<::aidl::android::hardware::audio::core::VendorParameter> onGetMicOcclusionParameters(
             const std::vector<std::string>&);
+#endif
     std::vector<::aidl::android::hardware::audio::core::VendorParameter> onGetAudioExtnParams(
             const std::vector<std::string>&);
     std::vector<::aidl::android::hardware::audio::core::VendorParameter> onGetBluetoothParams(

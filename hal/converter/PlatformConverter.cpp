@@ -465,6 +465,7 @@ std::string PlatformConverter::toString() noexcept {
     return os.str();
 }
 
+#if defined(AUDIO_FEATURE_ENABLED_MIC_OCCLUSION)
 std::string PlatformConverter::getAudioDeviceDescForPalDevId(pal_device_id_t deviceID) {
     std::ostringstream os;
     LOG(VERBOSE) << __func__ << "deviceID is = "<< deviceID;
@@ -480,5 +481,6 @@ std::string PlatformConverter::getAudioDeviceDescForPalDevId(pal_device_id_t dev
     LOG(VERBOSE) << __func__ << " no matching AudioDeviceDescription found for deviceID: " << deviceID;
     return "Unknown AudioDeviceDescription";
 }
+#endif
 
 } // namespace qti::audio

@@ -53,6 +53,8 @@ class PlatformConverter {
 
     static std::unique_ptr<pal_channel_info> getPalChannelInfoForChannelCount(int count) noexcept;
     static std::string toString() noexcept;
+#if defined(AUDIO_FEATURE_ENABLED_MIC_OCCLUSION)
     static std::string getAudioDeviceDescForPalDevId(pal_device_id_t deviceID);
+#endif
 };
 } // namespace qti::audio
