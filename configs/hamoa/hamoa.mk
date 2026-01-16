@@ -36,19 +36,19 @@ endif
 
 # Audio configuration xml's related to Hamoa
 QCV_FAMILY_SKUS := hamoa
-DEVICE_SKU := hamoa
+DEVICE_SKU := bluey_4294967295
 UV_WRAPPER2 := false
 
 CONFIG_PAL_SRC_DIR := vendor/qcom/opensource/pal/configs/qcom/$(BA_NAME)/hamoa
 CONFIG_HAL_SRC_DIR := vendor/qcom/opensource/audio-hal/primary-hal/configs/hamoa
 CONFIG_SKU_OUT_DIR := $(TARGET_COPY_OUT_VENDOR)/etc/audio/sku_$(DEVICE_SKU)
-CONFIG_NO_SKU_OUT_DIR := $(TARGET_COPY_OUT_VENDOR)/etc
 
 PRODUCT_COPY_FILES += \
     $(CONFIG_HAL_SRC_DIR)/audio_effects.conf:$(CONFIG_SKU_OUT_DIR)/audio_effects.conf \
     $(CONFIG_HAL_SRC_DIR)/audio_effects.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects.xml \
     $(CONFIG_HAL_SRC_DIR)/audio_effects_config.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects_config.xml \
     $(CONFIG_HAL_SRC_DIR)/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/microphone_characteristics.xml \
+    $(CONFIG_HAL_SRC_DIR)/mem_logger_config.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mem_logger_config.xml \
     $(CONFIG_PAL_SRC_DIR)/card-defs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/card-defs.xml \
     $(CONFIG_PAL_SRC_DIR)/mixer_paths_hamoa_x1e80100_crd_wsa884x.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_hamoa_x1e80100_crd_wsa884x.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_hamoa_x1e80100_crd_wsa884x.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_hamoa_x1e80100_crd_wsa884x.xml \
@@ -56,17 +56,6 @@ PRODUCT_COPY_FILES += \
     $(CONFIG_PAL_SRC_DIR)/usecaseKvManager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usecaseKvManager.xml \
     $(CONFIG_PAL_SRC_DIR)/Hapticsconfig.xml:$(TARGET_COPY_OUT_VENDOR)/etc/Hapticsconfig.xml \
     $(CONFIG_PAL_SRC_DIR)/plugin_manager.xml:$(CONFIG_SKU_OUT_DIR)/plugin_manager.xml \
-    $(CONFIG_HAL_SRC_DIR)/audio_effects.conf:$(CONFIG_NO_SKU_OUT_DIR)/audio_effects.conf \
-    $(CONFIG_HAL_SRC_DIR)/audio_effects.xml:$(CONFIG_NO_SKU_OUT_DIR)/audio_effects.xml \
-    $(CONFIG_HAL_SRC_DIR)/audio_policy_configuration.xml:$(CONFIG_NO_SKU_OUT_DIR)/audio_policy_configuration.xml \
-    $(CONFIG_HAL_SRC_DIR)/audio_module_config_primary.xml:$(CONFIG_NO_SKU_OUT_DIR)/audio_module_config_primary.xml \
-    $(CONFIG_HAL_SRC_DIR)/audio_policy_configuration.xml:$(CONFIG_NO_SKU_OUT_DIR)/audio/audio_policy_configuration.xml \
-    $(CONFIG_HAL_SRC_DIR)/audio_module_config_primary.xml:$(CONFIG_NO_SKU_OUT_DIR)/audio/audio_module_config_primary.xml \
-    $(CONFIG_HAL_SRC_DIR)/audio_effects_config.xml:$(CONFIG_NO_SKU_OUT_DIR)/audio_effects_config.xml \
-    $(CONFIG_PAL_SRC_DIR)/mixer_paths_hamoa_x1e80100_crd_wsa884x.xml:$(CONFIG_NO_SKU_OUT_DIR)/mixer_paths_hamoa_x1e80100_crd_wsa884x.xml \
-    $(CONFIG_PAL_SRC_DIR)/resourcemanager_hamoa_x1e80100_crd_wsa884x.xml:$(CONFIG_NO_SKU_OUT_DIR)/resourcemanager_hamoa_x1e80100_crd_wsa884x.xml \
-    $(CONFIG_PAL_SRC_DIR)/mcs_defs_hamoa_x1e80100_crd_wsa884x.xml:$(CONFIG_NO_SKU_OUT_DIR)/mcs_defs_hamoa_x1e80100_crd_wsa884x.xml \
-    $(CONFIG_PAL_SRC_DIR)/plugin_manager.xml:$(CONFIG_NO_SKU_OUT_DIR)/plugin_manager.xml \
     vendor/qcom/opensource/audio-hal/primary-hal/configs/common/media_codecs_vendor_audio.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_vendor_audio.xml \
     frameworks/native/data/etc/android.hardware.audio.pro.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.pro.xml \
     frameworks/native/data/etc/android.hardware.audio.low_latency.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.low_latency.xml \
@@ -94,7 +83,9 @@ PRODUCT_COPY_FILES += \
 endif
 
 # XML config file for memory logger
+ifneq ($(DEVICE_SKU),bluey_4294967295)
 PRODUCT_COPY_FILES += $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/$(DEVICE_SKU)/mem_logger_config.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mem_logger_config.xml
+endif
 
 PRODUCT_COPY_FILES += \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/a2dp_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/a2dp_audio_policy_configuration.xml \
@@ -114,18 +105,12 @@ PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/codec2/service/1.0/c2audio.vendor.ext-arm64.policy:vendor/etc/seccomp_policy/c2audio.vendor.ext-arm64.policy
 PRODUCT_COPY_FILES += \
     $(CONFIG_HAL_SRC_DIR)/vendor_audio_interfaces.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/vendor_audio_interfaces.xml \
-    $(CONFIG_HAL_SRC_DIR)/vendor_audio_interfaces.xml:$(CONFIG_NO_SKU_OUT_DIR)/vendor_audio_interfaces.xml
+    $(CONFIG_HAL_SRC_DIR)/vendor_audio_interfaces.xml:$(TARGET_COPY_OUT_VENDOR)/etc/vendor_audio_interfaces.xml
 
 ifneq (,$(filter userdebug eng, $(TARGET_BUILD_VARIANT)))
 PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/init.qti.audio.debug.sh:$(TARGET_COPY_OUT_VENDOR)/bin/init.qti.audio.debug.sh
 endif
-
-PRODUCT_COPY_FILES += \
-    $(CONFIG_HAL_SRC_DIR)/audio_module_config_primary.xml:$(CONFIG_NO_SKU_OUT_DIR)/audio_module_config_primary.xml \
-    $(CONFIG_HAL_SRC_DIR)/audio_policy_configuration.xml:$(CONFIG_NO_SKU_OUT_DIR)/audio_policy_configuration.xml \
-    $(CONFIG_HAL_SRC_DIR)/audio_module_config_primary.xml:$(CONFIG_NO_SKU_OUT_DIR)/audio/audio_module_config_primary.xml \
-    $(CONFIG_HAL_SRC_DIR)/audio_policy_configuration.xml:$(CONFIG_NO_SKU_OUT_DIR)/audio/audio_policy_configuration.xml \
 
 # Reduce AF standby time for playback threads (except offload)
 PRODUCT_PROPERTY_OVERRIDES += \
@@ -156,6 +141,9 @@ vendor.audio.offload.multiple.enabled=false
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.flac.sw.decoder.24bit=true
 
+#Enable mspp by default
+PRODUCT_PROPERTY_OVERRIDES += \
+vendor.audio.mspp.enable=true
 #split a2dp DSP supported encoder list
 PRODUCT_PROPERTY_OVERRIDES += \
 persist.vendor.bt.a2dp_offload_cap=sbc-aptx-aptxtws-aptxhd-aac-ldac
