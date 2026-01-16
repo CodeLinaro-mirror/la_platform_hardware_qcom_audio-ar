@@ -69,6 +69,8 @@ else
 -include $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/$(TARGET_BOARD_PLATFORM)/$(TARGET_BOARD_PLATFORM).mk
 endif
 
+-include $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/version_manager/versions.mk
+
 ifneq ($(BUILD_AUDIO_TECHPACK_SOURCE), true)
     SOONG_CONFIG_qtiaudio_var00 := true
     SOONG_CONFIG_qtiaudio_var11 := true

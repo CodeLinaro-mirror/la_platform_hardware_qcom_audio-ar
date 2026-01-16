@@ -12,7 +12,7 @@ LOCAL_CFLAGS := \
     -Werror \
     -Wthread-safety
 
-LOCAL_VINTF_FRAGMENTS := manifest_audiocorehal_default.xml
+LOCAL_VINTF_FRAGMENTS := vintf/$(CORE_HAL_AIDL_VERSION)/manifest_audiocorehal_default.xml
 
 LOCAL_SRC_FILES := \
     DefaultServices.cpp

@@ -5,13 +5,15 @@ cc_library_static {
     srcs: [
         "MicrophoneInfoParser.cpp",
     ],
+    defaults: [
+        "current_android_media_audio_common_types",
+    ],
     shared_libs: [
         "libbase",
         "libcutils",
         "liblog",
         "libutils",
         "libxml2",
-        "android.media.audio.common.types-V4-ndk", // LATEST_ANDROID_MEDIA_ADUIO_COMMON_TYPES
     ],
     header_libs: [
         "libxsdc-utils",
@@ -28,4 +30,3 @@ cc_library_static {
         "-Wthread-safety",
     ],
 }
-
