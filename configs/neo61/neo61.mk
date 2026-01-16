@@ -195,8 +195,8 @@ PRODUCT_PACKAGES += $(AUDIO_PAL)
 PRODUCT_PACKAGES += $(AUDIO_C2)
 
 # Audio configuration xml's related to neo
-QCV_FAMILY_SKUS := neo
-DEVICE_SKU := neo
+QCV_FAMILY_SKUS := neo61
+DEVICE_SKU := neo61
 
 CONFIG_PAL_SRC_DIR := vendor/qcom/opensource/pal/configs/neo61
 CONFIG_AGM_SRC_DIR := vendor/qcom/opensource/agm/plugins/tinyalsa/test
