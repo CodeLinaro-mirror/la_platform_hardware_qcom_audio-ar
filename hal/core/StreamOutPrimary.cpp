@@ -815,11 +815,12 @@ ndk::ScopedAStatus StreamOutPrimary::setStreamVolume(const std::vector<float>& i
         mAudExt.mAutoAudioHalPriorityExtension->updateVolume(focusId, volumeMdB, false /*internal volume change*/);
     }
 #endif
-    if (!mPalHandle) {
+    if (!mPalHandle || AudioExtension::getInstance().out_power_policy == POWER_POLICY_STATUS_OFFLINE) {
         mVolumes = in_channelVolumes;
         mUseCachedVolume = true;
         LOG(DEBUG) << __func__ << mLogPrefix << " cache volume "
-                   << ::android::internal::ToString(in_channelVolumes);
+                   << ::android::internal::ToString(in_channelVolumes)
+                   << (AudioExtension::getInstance().out_power_policy == POWER_POLICY_STATUS_OFFLINE ? " (Power Policy OFFLINE)" : "");
         return ndk::ScopedAStatus::ok();
     }
 
@@ -895,11 +896,12 @@ ndk::ScopedAStatus StreamOutPrimary::setHwVolume(const std::vector<float>& in_ch
         mAudExt.mAutoAudioHalPriorityExtension->updateVolume(focusId, volumeMdB, false /*internal volume change*/);
     }
 #endif
-    if (!mPalHandle) {
+    if (!mPalHandle || AudioExtension::getInstance().out_power_policy == POWER_POLICY_STATUS_OFFLINE) {
         mVolumes = in_channelVolumes;
         mUseCachedVolume = true;
         LOG(DEBUG) << __func__ << mLogPrefix << " cache volume "
-                   << ::android::internal::ToString(in_channelVolumes);
+                   << ::android::internal::ToString(in_channelVolumes)
+                   << (AudioExtension::getInstance().out_power_policy == POWER_POLICY_STATUS_OFFLINE ? " (Power Policy OFFLINE)" : "");
         return ndk::ScopedAStatus::ok();
     }
 
