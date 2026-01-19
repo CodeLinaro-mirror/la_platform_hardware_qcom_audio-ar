@@ -277,6 +277,11 @@ class StreamWorkerCommonLogic : public StreamLogic {
     void populateReplyWrongState(
             ::aidl::android::hardware::audio::core::StreamDescriptor::Reply* reply,
             const ::aidl::android::hardware::audio::core::StreamDescriptor::Command& command) const;
+
+    void populateReplyUnsupportedCommand(
+            ::aidl::android::hardware::audio::core::StreamDescriptor::Reply* reply,
+            const ::aidl::android::hardware::audio::core::StreamDescriptor::Command& command) const;
+
     void switchToTransientState(
             ::aidl::android::hardware::audio::core::StreamDescriptor::State state) {
         mState = state;

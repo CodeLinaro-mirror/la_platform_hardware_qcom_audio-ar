@@ -178,6 +178,12 @@ void StreamWorkerCommonLogic::populateReplyWrongState(
     reply->status = STATUS_INVALID_OPERATION;
 }
 
+void StreamWorkerCommonLogic::populateReplyUnsupportedCommand(
+        StreamDescriptor::Reply* reply, const StreamDescriptor::Command& command) const {
+    LOG(WARNING) << "command '" << toString(command.getTag()) << "' is not supported by the stream";
+    reply->status = STATUS_INVALID_OPERATION;
+}
+
 StreamInWorkerLogic::Status StreamInWorkerLogic::cycle() {
     // Note: for input streams, draining is driven by the client, thus
     // "empty buffer" condition can only happen while handling the 'burst'
@@ -326,6 +332,9 @@ StreamInWorkerLogic::Status StreamInWorkerLogic::cycle() {
             } else {
                 populateReplyWrongState(&reply, command);
             }
+            break;
+        case Tag::flushFromFrame:
+            populateReplyUnsupportedCommand(&reply, command);
             break;
     }
     reply.state = mState;
@@ -791,6 +800,10 @@ StreamOutWorkerLogic::Status StreamOutAsyncWorkerLogic::cycle() {
                 break;
             }
         } break;
+        case Tag::flushFromFrame: {
+            populateReplyUnsupportedCommand(&reply, command);
+            break;
+        }
     }
     reply.state = mState;
 
@@ -1007,6 +1020,10 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
                 populateReplyWrongState(&reply, command);
             }
         } break;
+        case Tag::flushFromFrame: {
+            populateReplyUnsupportedCommand(&reply, command);
+            break;
+        }
     }
     reply.state = mState;
 

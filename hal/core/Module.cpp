@@ -54,6 +54,7 @@ using aidl::android::media::audio::common::AudioPortConfig;
 using aidl::android::media::audio::common::AudioPortExt;
 using aidl::android::media::audio::common::AudioProfile;
 using aidl::android::media::audio::common::Boolean;
+using aidl::android::media::audio::common::FlushFromFrameSupport;
 using aidl::android::media::audio::common::Int;
 using aidl::android::media::audio::common::MicrophoneInfo;
 using aidl::android::media::audio::common::PcmType;
@@ -1716,6 +1717,12 @@ ndk::ScopedAStatus Module::onMasterMuteChanged(bool mute __unused) {
 ndk::ScopedAStatus Module::onMasterVolumeChanged(float volume __unused) {
     LOG(VERBOSE) << __func__ << ": do nothing and return ok";
     return ndk::ScopedAStatus::ok();
+}
+
+ndk::ScopedAStatus Module::getFlushFromFrameSupport(const AudioPortConfig& in_config __unused,
+                                                    FlushFromFrameSupport* _aidl_return __unused) {
+    LOG(VERBOSE) << __func__ << ": do nothing and return unsupported operation";
+    return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
 }
 
 } // namespace qti::audio::core
