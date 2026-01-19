@@ -30,6 +30,12 @@ LOCAL_WHOLE_STATIC_LIBRARIES := \
     libaudioplatform.qti
 
 LOCAL_SHARED_LIBRARIES := \
+    $(LATEST_ANDROID_AUDIO_CORE) \
+    $(LATEST_ANDROID_MEDIA_AUDIO_COMMON_TYPES) \
+    $(LATEST_ANDROID_HARDWARE_AUDIO_EFFECT) \
+    $(LATEST_ANDROID_HARDWARE_AUDIO_CORE_SOUNDDOSE) \
+    $(LATEST_ANDROID_HARDWARE_COMMON) \
+    $(LATEST_QTI_AUDIO_TYPES_AIDL) \
     libaudioaidlcommon \
     libbase \
     libbinder_ndk \
@@ -44,15 +50,9 @@ LOCAL_SHARED_LIBRARIES := \
     libutils \
     libaudioutils \
     libxml2 \
-    android.hardware.common-V2-ndk \
-    android.media.audio.common.types-V4-ndk \
-    android.hardware.audio.core-V3-ndk \
-    $(LATEST_ANDROID_HARDWARE_AUDIO_EFFECT) \
-    android.hardware.audio.core.sounddose-V1-ndk \
     libar-pal \
     libaudioserviceexampleimpl \
     libaudioplatformconverter.qti \
-    qti-audio-types-aidl-V1-ndk \
     libbinder \
     libaudiocorehal.qti \
     libaudiocorehal.default \

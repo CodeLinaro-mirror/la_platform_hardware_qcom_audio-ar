@@ -19,6 +19,13 @@ LOCAL_C_INCLUDES := \
     system/core/libsystem/include
 
 LOCAL_SHARED_LIBRARIES := \
+    $(LATEST_ANDROID_AUDIO_CORE) \
+    $(LATEST_ANDROID_HARDWARE_AUDIO_CORE_SOUNDDOSE) \
+    $(LATEST_ANDROID_HARDWARE_COMMON) \
+    $(LATEST_ANDROID_HARDWARE_COMMON_FMQ) \
+    $(LATEST_ANDROID_MEDIA_AUDIO_COMMON_TYPES) \
+    $(LATEST_ANDROID_HARDWARE_AUDIO_EFFECT) \
+    $(LATEST_QTI_AUDIO_TYPES_AIDL) \
     libagmipcservice \
     libaudioaidlcommon \
     libbase \
@@ -33,16 +40,9 @@ LOCAL_SHARED_LIBRARIES := \
     libutils \
     libaudioutils \
     libxml2 \
-    $(LATEST_ANDROID_HARDWARE_COMMON) \
-    $(LATEST_ANDROID_HARDWARE_COMMON_FMQ) \
-    $(LATEST_ANDROID_MEDIA_ADUIO_COMMON_TYPES) \
-    android.hardware.audio.core-V3-ndk \
-    $(LATEST_ANDROID_HARDWARE_AUDIO_EFFECT) \
-    android.hardware.audio.core.sounddose-V2-ndk \
     libar-pal \
     libaudioserviceexampleimpl \
     libaudioplatformconverter.qti \
-    qti-audio-types-aidl-V1-ndk \
     libaudiocorehal.qti \
     libclang_rt.ubsan_standalone
 
