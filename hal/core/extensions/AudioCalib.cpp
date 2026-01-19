@@ -20,6 +20,8 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <future>
+#include <mutex>
 
 
 #define LOG_NDDEBUG 0
@@ -36,6 +38,8 @@ bool AudioCalibManager::sgAudioCalibInitialized = false;
 AudioCalibData AudioCalibManager::mCurrentData = {};
 std::string AudioCalibManager::mCurrentElement = "";
 std::vector<AudioCalibData> AudioCalibManager::mCalibDataList;
+std::map<std::string, std::string> AudioCalibManager::mCalibPathCache;
+std::mutex AudioCalibManager::mCacheMutex;
 
 
 AudioCalibManager::AudioCalibManager() {
@@ -53,14 +57,21 @@ AudioCalibManager::~AudioCalibManager() {
     LOG(DEBUG) << __func__ <<"Exit"<<std::endl;
 }
 
-std::string  AudioCalibManager::getAudioCalibPath(std::string stringId)
+std::string AudioCalibManager::getAudioCalibPath(std::string stringId)
 {
+    // First check if we have this path cached
+    std::string cachedPath = getCachedCalibPath(stringId);
+    if (!cachedPath.empty()) {
+        LOG(DEBUG) << __func__ << " Using cached path for " << stringId << ": " << cachedPath;
+        return cachedPath;
+    }
+
     std::string retString;
 
-     auto it = std::find_if(mCalibDataList.begin(), mCalibDataList.end(), [&stringId](const AudioCalibData& configingId){return configingId.stringId == stringId;});
+    auto it = std::find_if(mCalibDataList.begin(), mCalibDataList.end(), [&stringId](const AudioCalibData& configingId){return configingId.stringId == stringId;});
 
-     if (it != mCalibDataList.end())
-     {
+    if (it != mCalibDataList.end())
+    {
         #ifdef ENABLE_CONFIGHUB
         LOG(DEBUG) << __func__ <<"ConfigHUB is enabled";
         vendor::alliance::hardware::automotive::confighub::V2_0::CalibrationData configData;
@@ -82,19 +93,31 @@ std::string  AudioCalibManager::getAudioCalibPath(std::string stringId)
         {
             configHub->getCalibrationFilePath(configData,outReadValue);
             LOG(DEBUG) << __func__ <<"Calib value returned is " <<calibPath;
+
+            // Cache the result for future use
+            if (!calibPath.empty()) {
+                std::lock_guard<std::mutex> lock(mCacheMutex);
+                mCalibPathCache[stringId] = calibPath;
+            }
+
             return calibPath;
         }
         #else
             LOG(DEBUG) << __func__ <<"Calib value returned is " << it->default_path;
+
+            // Cache the default path
+            std::lock_guard<std::mutex> lock(mCacheMutex);
+            mCalibPathCache[stringId] = it->default_path;
+
             return it->default_path;
         #endif
-     }
-     else
-     {
-        LOG(DEBUG) << __func__ <<"Requested SCD id  not found " << stringId;
-     }
+    }
+    else
+    {
+        LOG(DEBUG) << __func__ <<"Requested SCD id not found " << stringId;
+    }
 
-     LOG(DEBUG) << __func__ <<"Calib value returned is  " <<retString;
+    LOG(DEBUG) << __func__ <<"Calib value returned is  " <<retString;
     return retString;
 }
 
@@ -171,6 +194,14 @@ void AudioCalibManager::Init() {
         LOG(ERROR) << __func__ <<"Reading XML failed"<<std::endl;
     }
     printXMLData();
+
+    // Preload all calibration paths from ConfigHub
+    if (preloadAllCalibrationPaths()) {
+        LOG(DEBUG) << __func__ << " Successfully preloaded all calibration paths";
+    } else {
+        LOG(WARNING) << __func__ << " Some calibration paths could not be loaded from ConfigHub";
+    }
+
     LOG(DEBUG) << __func__ <<"Exit"<<std::endl;
 }
 
@@ -178,5 +209,72 @@ void AudioCalibManager::printXMLData() {
      for (const auto& data : mCalibDataList) {
         LOG(DEBUG) << __func__ << " ID: " << data.id  << ", name : " << data.stringId<< ", Key: " << data.key << ", Default Path: " << data.default_path << std::endl;
      }
+}
+
+bool AudioCalibManager::preloadAllCalibrationPaths() {
+    LOG(DEBUG) << __func__ << " Entry";
+    bool success = true;
+
+#ifdef ENABLE_CONFIGHUB
+    auto configHub = vendor::alliance::hardware::automotive::confighub::V2_0::IConfigHub::getService();
+    if (configHub == nullptr) {
+        LOG(ERROR) << __func__ << " Failed to get ConfigHub service";
+        return false;
+    }
+
+    std::vector<std::future<void>> futures;
+    std::mutex cacheMutex;
+
+    // Process each calibration data entry
+    for (const auto& calibData : mCalibDataList) {
+        futures.push_back(std::async(std::launch::async, [&, calibData]() {
+            vendor::alliance::hardware::automotive::confighub::V2_0::CalibrationData configData;
+            configData.lid = calibData.key;
+
+            std::string calibPath;
+            auto outReadValue = [&calibPath](const android::hardware::hidl_string outVal) {
+                calibPath = outVal;
+            };
+
+            // Call the HIDL service to get the calibration file path
+            configHub->getCalibrationFilePath(configData, outReadValue);
+
+            // If we got a valid path, store it in the cache
+            if (!calibPath.empty()) {
+                std::lock_guard<std::mutex> lock(cacheMutex);
+                mCalibPathCache[calibData.stringId] = calibPath;
+                LOG(DEBUG) << __func__ << " Updated path for " << calibData.stringId << ": " << calibPath;
+            } else {
+                std::lock_guard<std::mutex> lock(cacheMutex);
+                // Fall back to default path if ConfigHub didn't provide one
+                mCalibPathCache[calibData.stringId] = calibData.default_path;
+                LOG(DEBUG) << __func__ << " Using default path for " << calibData.stringId << ": " << calibData.default_path;
+                success = false;
+            }
+        }));
+    }
+    // Wait for all async operations to complete
+    for (auto& future : futures) {
+        future.wait();
+    }
+#else
+    // If ConfigHub is not enabled, just use default paths
+    for (const auto& calibData : mCalibDataList) {
+        mCalibPathCache[calibData.stringId] = calibData.default_path;
+        LOG(DEBUG) << __func__ << " Using default path for " << calibData.stringId << ": " << calibData.default_path;
+    }
+#endif
+
+    LOG(DEBUG) << __func__ << " Exit, loaded " << mCalibPathCache.size() << " calibration paths";
+    return success;
+}
+
+std::string AudioCalibManager::getCachedCalibPath(const std::string& stringId) {
+    std::lock_guard<std::mutex> lock(mCacheMutex);
+    auto it = mCalibPathCache.find(stringId);
+    if (it != mCalibPathCache.end()) {
+        return it->second;
+    }
+    return "";
 }
 }// qti::audio::oem::calib

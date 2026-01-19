@@ -7,8 +7,10 @@
 #include <iostream>
 #include <expat.h>
 #include <cstring> // strlen
-
 #include <map>
+#include <vector>
+#include <string>
+#include <mutex>
 
 #define CALIB_FILE_PATH "/vendor/etc/audio_calibration.xml"
 
@@ -81,13 +83,19 @@ class AudioCalibManager {
         }
         void printXMLData();
 
-        std::string  getAudioCalibPath(std::string scd_file_name);
+        std::string getAudioCalibPath(std::string scd_file_name);
+        
+        // New methods for calibration path management
+        bool preloadAllCalibrationPaths();
+        std::string getCachedCalibPath(const std::string& stringId);
 
     private:
         static std::vector<AudioCalibData> mCalibDataList;
         static AudioCalibData mCurrentData;
         static std::string mCurrentElement;
         static bool sgAudioCalibInitialized;
+        static std::map<std::string, std::string> mCalibPathCache;
+        static std::mutex mCacheMutex;
 
         AudioCalibManager();
         ~AudioCalibManager();

@@ -763,6 +763,8 @@ extern "C" __attribute__((visibility("default")))int oem_init(void)
     std::string agcS = std::to_string(agcConfigData.defaultValue);
     LOG(VERBOSE) << "String " << s << " Integer " << agcConfigData.defaultValue;
     property_set("persist.vendor.default_agc",agcS.c_str());
+    //Called Here Explicitly to create object of AudioCalibManager
+    ::qti::audio::oem::calib::AudioCalibManager::getInstance();
 
     return retValue;
 
