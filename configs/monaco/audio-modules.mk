@@ -119,7 +119,8 @@ AUDIO_MODULES += libsoundtriggerhal.qti
 AUDIO_MODULES += \
     liblistensoundmodelaidl \
     liblistensoundmodel2vendor \
-    vendor.qti.hardware.ListenSoundModelAidl-V1-ndk.vendor
+    $(LATEST_VENDOR_HARDWARE_LISTENSOUNDMODEL_AIDL_VENDOR)
+
 # AIDL Audio modules
 
 AUDIO_MODULES += \
@@ -134,14 +135,14 @@ AUDIO_MODULES += \
 
 LATEST_ANDROID_HARDWARE_AUDIO_EFFECT := android.hardware.audio.effect-V3-ndk
 LATEST_ANDROID_HARDWARE_COMMON := android.hardware.common-V2-ndk
-LATEST_ANDROID_MEDIA_ADUIO_COMMON_TYPES := android.media.audio.common.types-V4-ndk
+LATEST_ANDROID_MEDIA_AUDIO_COMMON_TYPES := android.media.audio.common.types-V4-ndk
 LATEST_ANDROID_HARDWARE_COMMON_FMQ := android.hardware.common.fmq-V1-ndk
 
 # to have similar to cc_defaults in make files
 EFFECTS_DEFAULTS_SHARED_LIBRARIES := \
     $(LATEST_ANDROID_HARDWARE_AUDIO_EFFECT) \
     $(LATEST_ANDROID_HARDWARE_COMMON) \
-    $(LATEST_ANDROID_MEDIA_ADUIO_COMMON_TYPES) \
+    $(LATEST_ANDROID_MEDIA_AUDIO_COMMON_TYPES) \
     $(LATEST_ANDROID_HARDWARE_COMMON_FMQ) \
     libaudioaidlcommon \
     libbase \

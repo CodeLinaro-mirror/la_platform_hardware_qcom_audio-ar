@@ -23,12 +23,12 @@ LOCAL_HEADER_LIBRARIES := \
     libaudio_system_headers
 
 LOCAL_SHARED_LIBRARIES := \
+    $(LATEST_ANDROID_AUDIO_CORE) \
+    $(LATEST_ANDROID_MEDIA_AUDIO_COMMON_TYPES) \
+    $(LATEST_QTI_AUDIO_TYPES_AIDL) \
     libbase \
     libutils \
-    libaudioutils \
-    android.media.audio.common.types-V4-ndk \
-    android.hardware.audio.core-V3-ndk \
-    qti-audio-types-aidl-V1-ndk
+    libaudioutils
 
 LOCAL_CFLAGS := \
     -DBACKEND_NDK \

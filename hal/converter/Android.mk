@@ -15,10 +15,10 @@ LOCAL_SRC_FILES := \
     PlatformConverter.cpp
 
 LOCAL_SHARED_LIBRARIES := \
+    $(LATEST_ANDROID_AUDIO_CORE) \
+    $(LATEST_ANDROID_MEDIA_AUDIO_COMMON_TYPES) \
     libbase \
     libstagefright_foundation \
-    android.hardware.audio.core-V3-ndk \
-    android.media.audio.common.types-V4-ndk \
     libar-pal
 
 include $(BUILD_SHARED_LIBRARY)
