@@ -143,19 +143,29 @@ RetCode BMTContext::setBMTBandLevels(
     // ideally, send it to PAL and check if operation is successful then only update
     for (auto& bandLevel : bandLevels) {
         int level = bandLevel.levelMb;
-
-        if ( level < MIN_BMT_VALUE || level > MAX_BMT_VALUE ) {
-            LOG(DEBUG) << __func__ << "Error in setting value, not in range -9 to +9 " << level;
-            return RetCode::SUCCESS;
+        if (level < MIN_BMT_VALUE || level > MAX_BMT_VALUE) {
+            LOG(DEBUG) << __func__
+                       << " Error: BMT BandLevel out of range [-900, 900]: BandLevel =" << level
+                       << " (band index " << bandLevel.index << ")";
+            return RetCode::ERROR_ILLEGAL_PARAMETER;
         }
 
-        mBMTLevel[bandLevel.index].value = bandLevel.levelMb;
+        // Convert to [-9, 9] by dividing by 100 for HARMAN AWX matching range
+        // 19 steps [-9, -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+        int level_awx = 0;
+        if (level > 0) {
+            level_awx = (int)((level + 50) / BMT_FACTOR);
+        } else {
+            level_awx = (int)((level - 50) / BMT_FACTOR);
+        }
+        mBMTLevel[bandLevel.index].value = level_awx;
 
-        LOG(VERBOSE) << __func__ << " level " << bandLevel.index << " level" << bandLevel.levelMb
-                     << " refined level" << level;
-
-        mBMTParams.value = level;
-        updatePalParameters(bandLevel.index, &mBMTParams) ;
+        LOG(VERBOSE) << __func__
+                     << " band " << bandLevel.index
+                     << " level=" << level_awx
+                     << " (range [-900..900] -> [-9..9])";
+        mBMTParams.value = level_awx;
+        updatePalParameters(bandLevel.index, &mBMTParams);
     }
 
     LOG(VERBOSE) << " Exit " <<  __func__;
@@ -171,8 +181,9 @@ std::vector<Equalizer::BandLevel> BMTContext::getBMTBandLevels() const {
     bandLevels.reserve(mMaxBandLevel);
 
     for (std::size_t i = 0; i < mMaxBandLevel; i++) {
+        int32_t levelMb = getValueFromPalParam(i);
         bandLevels.emplace_back(
-                Equalizer::BandLevel{static_cast<int32_t>(i), getValueFromPalParam(i)});
+                Equalizer::BandLevel{static_cast<int32_t>(i), levelMb * BMT_FACTOR});
     }
 
     LOG(DEBUG) << " Exit " <<  __func__;
