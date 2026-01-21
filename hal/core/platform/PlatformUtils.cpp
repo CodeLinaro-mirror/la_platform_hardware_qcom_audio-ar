@@ -376,34 +376,19 @@ ndk::ScopedAStatus toBinderStatus(PlaybackRateStatus ret) {
     }
 }
 
-pal_device getDummyOutDevice() noexcept {
-    struct pal_device dummyDevice = {};
+pal_device getDefaultDummyDevice(const bool isInput) noexcept {
+    constexpr std::uint32_t kDummyDefaultOutputSampleRate = 48'000;
+    constexpr std::uint32_t kDummyDefaultPCMBidWidth = 16;
+    constexpr auto kDummyDefaultPalPCMFormat = PAL_AUDIO_FMT_PCM_S16_LE;
+    constexpr std::uint32_t kDummyDefaultChannels = 2;
 
-    constexpr uint32_t kDummyOutDefaultOutputSampleRate = 48000;
-    constexpr uint32_t kDummyOutDefaultPCMBidWidth = 16;
-    constexpr auto kDummyOutDefaultPalPCMFormat = PAL_AUDIO_FMT_PCM_S16_LE;
-
-    dummyDevice.config.sample_rate = kDummyOutDefaultOutputSampleRate;
-    dummyDevice.config.bit_width = kDummyOutDefaultPCMBidWidth;
-    dummyDevice.config.aud_fmt_id = kDummyOutDefaultPalPCMFormat;
-    dummyDevice.config.ch_info.channels = 2;
-    dummyDevice.id = PAL_DEVICE_OUT_DUMMY;
-    return dummyDevice;
-}
-
-pal_device getDummyInDevice() noexcept {
-    struct pal_device dummyDevice = {};
-
-    constexpr uint32_t kDummyInDefaultOutputSampleRate = 48000;
-    constexpr uint32_t kDummyInDefaultPCMBidWidth = 16;
-    constexpr auto kDummyInDefaultPalPCMFormat = PAL_AUDIO_FMT_PCM_S16_LE;
-
-    dummyDevice.config.sample_rate = kDummyInDefaultOutputSampleRate;
-    dummyDevice.config.bit_width = kDummyInDefaultPCMBidWidth;
-    dummyDevice.config.aud_fmt_id = kDummyInDefaultPalPCMFormat;
-    dummyDevice.config.ch_info.channels = 2;
-    dummyDevice.id = PAL_DEVICE_IN_DUMMY;
-    return dummyDevice;
+    pal_device dev{};
+    dev.id = isInput ? PAL_DEVICE_IN_DUMMY : PAL_DEVICE_OUT_DUMMY;
+    dev.config.sample_rate = kDummyDefaultOutputSampleRate;
+    dev.config.bit_width = kDummyDefaultPCMBidWidth;
+    dev.config.aud_fmt_id = kDummyDefaultPalPCMFormat;
+    dev.config.ch_info.channels = kDummyDefaultChannels;
+    return dev;
 }
 
 } // namespace qti::audio::core

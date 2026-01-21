@@ -1374,10 +1374,10 @@ void Telephony::updateDevices() {
     if (mPalHandle == nullptr) return;
 
     if (palDevices[RxDeviceIndex].id == PAL_DEVICE_NONE) {
-        palDevices[RxDeviceIndex] = getDummyOutDevice();
+        palDevices[RxDeviceIndex] = getDefaultDummyDevice(false);
     }
     if (palDevices[TxDeviceIndex].id == PAL_DEVICE_NONE) {
-        palDevices[TxDeviceIndex] = getDummyInDevice();
+        palDevices[TxDeviceIndex] = getDefaultDummyDevice(true);
     }
 
     if (int32_t ret = ::pal_stream_set_device(mPalHandle, 2,

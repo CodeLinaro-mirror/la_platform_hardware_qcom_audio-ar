@@ -165,7 +165,10 @@ std::string toString(const pal_stream_attributes& attributes);
 
 ndk::ScopedAStatus toBinderStatus(PlaybackRateStatus ret);
 
-pal_device getDummyOutDevice() noexcept;
-pal_device getDummyInDevice() noexcept;
+/**
+ * Returns a default dummy device.
+ * If `isInput` is true, returns an output dummy device; otherwise, an input dummy device.
+ */
+pal_device getDefaultDummyDevice(const bool isInput) noexcept;
 
 } // namespace qti::audio::core

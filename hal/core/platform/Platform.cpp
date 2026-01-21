@@ -383,23 +383,6 @@ std::vector<pal_device> Platform::convertToPalDevices(
     return palDevices;
 }
 
-std::vector<pal_device> Platform::getDummyPalDevices(const AudioPortConfig& mixPortConfig) const {
-    struct pal_device dummyDevice = {};
-
-    dummyDevice.config.sample_rate = Platform::kDefaultOutputSampleRate;
-    dummyDevice.config.bit_width = Platform::kDefaultPCMBidWidth;
-    dummyDevice.config.aud_fmt_id = Platform::kDefaultPalPCMFormat;
-    dummyDevice.config.ch_info.channels = 2;
-
-    if (isInputMixPortConfig(mixPortConfig)) {
-        dummyDevice.id = PAL_DEVICE_IN_DUMMY;
-    } else {
-        dummyDevice.id = PAL_DEVICE_OUT_DUMMY;
-    }
-
-    return {dummyDevice};
-}
-
 /**
  * API is common for both Output and input streams
  */
@@ -408,7 +391,7 @@ std::vector<pal_device> Platform::configureAndFetchPalDevices(
         const std::vector<AudioDevice>& devices, const bool dummyDevice) const {
     if (devices.empty()) {
         if (dummyDevice) {
-            return getDummyPalDevices(mixPortConfig);
+            return {getDefaultDummyDevice(isInputMixPortConfig(mixPortConfig))};
         } else {
             LOG(ERROR) << __func__ << " the set devices is empty";
             return {};
