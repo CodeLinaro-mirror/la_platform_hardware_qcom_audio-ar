@@ -148,7 +148,7 @@ ndk::ScopedAStatus BluetoothA2dp::reconfigureOffload(
         const std::vector<::aidl::android::hardware::audio::core::VendorParameter>& in_parameters
                 __unused) {
     LOG(DEBUG) << __func__ << ": " << ::android::internal::ToString(in_parameters);
-    mPlatform.setBluetoothParameters("reconfigA2dp=true");
+    mPlatform.reconfigureA2DP();
     return ndk::ScopedAStatus::ok();
 }
 

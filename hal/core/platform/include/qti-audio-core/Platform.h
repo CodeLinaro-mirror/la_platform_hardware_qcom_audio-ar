@@ -101,6 +101,7 @@ class Platform {
 
     void registerPlatformGlobalCallBack(PlatformGlobalCallback* cb);
     bool setParameter(const std::string& key, const std::string& value);
+    void reconfigureA2DP() noexcept;
     bool setBluetoothParameters(const char* kvpairs);
     bool setVendorParameters(
             const std::vector<::aidl::android::hardware::audio::core::VendorParameter>&

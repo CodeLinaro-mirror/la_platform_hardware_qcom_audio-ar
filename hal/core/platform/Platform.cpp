@@ -922,6 +922,17 @@ bool Platform::setVendorParameters(
     return true;
 }
 
+void Platform::reconfigureA2DP() noexcept {
+    pal_param_bta2dp_t param {.reconfig = true};
+    if (auto ret = ::pal_set_param(PAL_PARAM_ID_BT_A2DP_RECONFIG, reinterpret_cast<void*>(&param),
+                                   sizeof(pal_param_bta2dp_t));
+        ret != 0) {
+        LOG(ERROR) << __func__ << ": BT A2DP reconfig failed";
+        return;
+    }
+    LOG(VERBOSE) << __func__ << ": BT A2DP reconfigured";
+}
+
 bool Platform::setBluetoothParameters(const char* kvpairs) {
     if (mIsScoManagedbyAudio) {
         return true;
@@ -931,15 +942,6 @@ bool Platform::setBluetoothParameters(const char* kvpairs) {
     char value[256];
     LOG(VERBOSE) << __func__ << "kvpairs " << kvpairs;
     parms = str_parms_create_str(kvpairs);
-    ret = str_parms_get_str(parms, AUDIO_PARAMETER_RECONFIG_A2DP, value, sizeof(value));
-    if (ret >= 0) {
-        pal_param_bta2dp_t param_bt_a2dp;
-        param_bt_a2dp.reconfig = true;
-
-        LOG(VERBOSE) << __func__ << " BT A2DP Reconfig command received";
-        ret = pal_set_param(PAL_PARAM_ID_BT_A2DP_RECONFIG, (void*)&param_bt_a2dp,
-                            sizeof(pal_param_bta2dp_t));
-    }
     ret = str_parms_get_str(parms, "A2dpSuspended", value, sizeof(value));
     if (ret >= 0) {
         pal_param_bta2dp_t param_bt_a2dp;
