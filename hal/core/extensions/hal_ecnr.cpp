@@ -611,7 +611,7 @@ HalECNRExtension::HalECNRExtension() {
                     return ret;
                 }
                 if(*current_file_path == INVALID_PATH) {
-                    snprintf(scd_file_path, sizeof(scd_file_path), "%s%s", retCalibPath.c_str() ,scd_file_name);
+                    snprintf(scd_file_path, sizeof(scd_file_path), "%s", retCalibPath.c_str());
                     ret = audio_extn_fillSCDbuffer(scd_file_path, &(pECNR_ProcessData->scd_buffer[0]), &(pECNR_ProcessData->scd_buffer_size[0]), dir, SSE);
                     *current_file_path = CALIB_PATH;
                     if(ret) {
