@@ -22,6 +22,9 @@ AUDIO_AGM += libtinycompress_module_agm
 AUDIO_AGM += agmcompresscap
 AUDIO_AGM += agmvoiceui
 AUDIO_AGM += agmhostless
+AUDIO_AGM += libagm_mixer_plugin_native
+AUDIO_AGM += libagm_pcm_plugin_native
+AUDIO_AGM += libtinycompress_module_agm_native
 
 #PAL Module
 AUDIO_PAL := libar-pal

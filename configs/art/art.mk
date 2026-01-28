@@ -78,6 +78,7 @@ PRODUCT_COPY_FILES += \
     $(CONFIG_HAL_SRC_DIR)/audio_effects_config.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects_config.xml \
     $(CONFIG_HAL_SRC_DIR)/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/microphone_characteristics.xml \
     $(CONFIG_PAL_SRC_DIR)/card-defs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/card-defs.xml \
+    $(CONFIG_PAL_SRC_DIR)/card-defs-native.xml:$(TARGET_COPY_OUT_VENDOR)/etc/card-defs-native.xml \
     $(CONFIG_PAL_SRC_DIR)/mixer_paths_art_mtp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_art_mtp.xml \
     $(CONFIG_PAL_SRC_DIR)/mixer_paths_art_mtp_qmp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_art_mtp_qmp.xml \
     $(CONFIG_PAL_SRC_DIR)/mixer_paths_art_cdp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_art_cdp.xml \
