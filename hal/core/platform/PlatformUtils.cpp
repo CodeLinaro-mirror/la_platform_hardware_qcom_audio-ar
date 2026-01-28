@@ -298,7 +298,6 @@ bool compare(const pal_device& device1, const pal_device& device2) {
     }
 }
 
-
 static std::string streamDirectionToString(pal_stream_direction_t direction) {
     switch (direction) {
         case PAL_AUDIO_OUTPUT:
@@ -377,4 +376,19 @@ ndk::ScopedAStatus toBinderStatus(PlaybackRateStatus ret) {
     }
 }
 
-}  // namespace qti::audio::core
+pal_device getDefaultDummyDevice(const bool isInput) noexcept {
+    constexpr std::uint32_t kDummyDefaultOutputSampleRate = 48'000;
+    constexpr std::uint32_t kDummyDefaultPCMBidWidth = 16;
+    constexpr auto kDummyDefaultPalPCMFormat = PAL_AUDIO_FMT_PCM_S16_LE;
+    constexpr std::uint32_t kDummyDefaultChannels = 2;
+
+    pal_device dev{};
+    dev.id = isInput ? PAL_DEVICE_IN_DUMMY : PAL_DEVICE_OUT_DUMMY;
+    dev.config.sample_rate = kDummyDefaultOutputSampleRate;
+    dev.config.bit_width = kDummyDefaultPCMBidWidth;
+    dev.config.aud_fmt_id = kDummyDefaultPalPCMFormat;
+    dev.config.ch_info.channels = kDummyDefaultChannels;
+    return dev;
+}
+
+} // namespace qti::audio::core

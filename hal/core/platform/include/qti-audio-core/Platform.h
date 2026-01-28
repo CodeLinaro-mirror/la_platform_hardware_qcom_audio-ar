@@ -156,8 +156,6 @@ class Platform {
             const std::vector<::aidl::android::media::audio::common::AudioDevice>& setDevices,
             const bool dummyDevice = false) const;
 
-    std::vector<pal_device> getDummyPalDevices(
-            const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig) const;
     /*
     * @breif In order to get stream position in the DSP pipeline
     * 

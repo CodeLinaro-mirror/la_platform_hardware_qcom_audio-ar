@@ -28,6 +28,7 @@
 #include <qti-audio-core/StreamOutPrimary.h>
 #include <qti-audio-core/Telephony.h>
 #include <qti-audio-core/Utils.h>
+#include <qti-audio-core/PlatformUtils.h>
 #include <system/audio.h>
 
 using aidl::android::media::audio::common::AudioDevice;
@@ -44,6 +45,9 @@ const AudioDevice Telephony::kDefaultRxDevice =
         AudioDevice{.type.type = AudioDeviceType::OUT_SPEAKER_EARPIECE};
 const AudioDevice Telephony::kDefaultCRSRxDevice =
         AudioDevice{.type.type = AudioDeviceType::OUT_SPEAKER};
+
+constexpr auto RxDeviceIndex = 0u;
+constexpr auto TxDeviceIndex = 1u;
 
 Telephony::Telephony() {
     mVoiceSession.session[VSID1_VOICE_SESSION].CallUpdate.mVSID = VSID::VSID_1;
@@ -272,7 +276,25 @@ bool Telephony::isUsbDeviceConnected(const AudioDevice& usbDevice) {
 
 void Telephony::resetDevices(const bool resetRx) {
     std::scoped_lock lock{mLock};
-    LOG(VERBOSE) <<__func__<<": ignore reset device ";
+    auto noneDevice = AudioDevice{.type.type = AudioDeviceType::NONE};
+    if (resetRx) { /* for Rx patch reset */
+        if (mRxDevice == noneDevice) {
+            return;
+        }
+        mRxDevice = noneDevice;
+        /* as a policy, when Rx is none, we choose Tx to be also none */
+        mTxDevice = noneDevice;
+        updateDevices();
+    } else { /* for Tx patch reset */
+        if (mTxDevice == noneDevice) {
+            return;
+        }
+        mTxDevice = noneDevice;
+        /* as a policy, when Tx is none, we choose Rx to be existing */
+        updateDevices();
+    }
+
+    LOG(VERBOSE) << __func__;
 }
 
 void Telephony::setDevices(const std::vector<AudioDevice>& devices, const bool updateRx) {
@@ -535,6 +557,8 @@ AudioDevice Telephony::getMatchingTxDevice(const AudioDevice& rxDevice) {
         }
     } else if (rxDevice.type.type == AudioDeviceType::OUT_HEARING_AID) {
         return AudioDevice{.type.type = AudioDeviceType::IN_MICROPHONE};
+    } else if(rxDevice.type.type == AudioDeviceType::NONE) {
+        return AudioDevice{.type.type = AudioDeviceType::NONE};
     } else {
         LOG(ERROR) << __func__ << ": unable to find matching TX device for " << rxDevice.toString();
     }
@@ -1348,6 +1372,13 @@ void Telephony::updateDevices() {
     }
 
     if (mPalHandle == nullptr) return;
+
+    if (palDevices[RxDeviceIndex].id == PAL_DEVICE_NONE) {
+        palDevices[RxDeviceIndex] = getDefaultDummyDevice(false);
+    }
+    if (palDevices[TxDeviceIndex].id == PAL_DEVICE_NONE) {
+        palDevices[TxDeviceIndex] = getDefaultDummyDevice(true);
+    }
 
     if (int32_t ret = ::pal_stream_set_device(mPalHandle, 2,
                                               reinterpret_cast<pal_device*>(palDevices.data()));
