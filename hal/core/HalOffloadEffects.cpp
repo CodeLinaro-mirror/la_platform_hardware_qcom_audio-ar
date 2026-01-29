@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -12,8 +12,7 @@
 namespace qti::audio::core {
 
 HalOffloadEffects::HalOffloadEffects() {
-    loadLibrary(kOffloadPostProcBundlePath);
-    loadLibrary(kOffloadVisualizerPath);
+    mLoaded = false;
 }
 
 void HalOffloadEffects::loadLibrary(std::string path) {
@@ -48,13 +47,41 @@ void HalOffloadEffects::loadLibrary(std::string path) {
                                          std::unique_ptr<struct OffloadEffectLibIntf>(effectIntf)));
 }
 
+void HalOffloadEffects::ensureLoaded() {
+    // Fast path: already initialized, no locking needed.
+    if (mLoaded) return;
+    std::lock_guard<std::mutex> _l(mLoadMutex);
+    // Double-checked locking: another thread may have initialized while we were waiting
+    if (mLoaded) return;
+
+    loadLibrary(kOffloadPostProcBundlePath);
+    loadLibrary(kOffloadVisualizerPath);
+
+    if (mEffects.empty()) {
+        LOG(ERROR) << __func__ << ": no offload effect libraries loaded";
+        return;
+    }
+    mLoaded = true;
+}
+
 void HalOffloadEffects::startEffect(int ioHandle, pal_stream_handle_t *palHandle) {
+    ensureLoaded();
+    if (!mLoaded || mEffects.empty()) {
+        LOG(WARNING) << __func__ << ": effects not loaded, skip start";
+        return;
+    }
+
     for (const auto &effect : mEffects) {
         effect.second->mStartEffect(ioHandle, palHandle);
     }
 }
 
 void HalOffloadEffects::stopEffect(int ioHandle) {
+    if (!mLoaded || mEffects.empty()) {
+        LOG(WARNING) << __func__ << ": effects not loaded, skip stop";
+        return;
+    }
+
     for (const auto &effect : mEffects) {
         effect.second->mStopEffect(ioHandle);
     }
