@@ -1348,10 +1348,10 @@ void StreamOutPrimary::configure() {
         mPlatform.setPlaybackRate(mPalHandle, mTag, mPlaybackRate);
     }
 
-    if(mMuted) {
-         LOG(INFO) << __func__ << mLogPrefix << ": Volume for stream is Muted";
-         pal_stream_set_mute(mPalHandle, mMuted);
-    }
+    LOG(INFO) << __func__ << mLogPrefix << ": Volume for stream is " <<
+      (mMuted ? "Muted" : "Unmuted");
+    pal_stream_set_mute(mPalHandle, mMuted);
+
     LOG(INFO) << __func__ << mLogPrefix << ": stream is configured";
     enableOffloadEffects(true);
     const auto endTime = std::chrono::steady_clock::now();
