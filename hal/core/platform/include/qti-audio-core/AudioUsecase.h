@@ -176,9 +176,9 @@ class DeepBufferPlayback : public UsecaseConfig<DeepBufferPlayback> {
 
 class LowLatencyPlayback : public UsecaseConfig<LowLatencyPlayback> {
   public:
-    constexpr static size_t kPeriodCount = 2;
+    constexpr static size_t kPeriodCount = 4;
     constexpr static size_t kPlatformDelayMs = 13;
-    constexpr static size_t kPeriodDurationMs = 4;
+    constexpr static size_t kPeriodDurationMs = 5;
     constexpr static size_t kPeriodSize = kPeriodDurationMs * DEFAULT_SAMPLE_RATE /1000;
     static std::unordered_set<size_t> kSupportedFrameSizes;
 
@@ -203,9 +203,9 @@ class MediaPlayback : public UsecaseConfig<MediaPlayback> {
 
 class NavGuidancePlayback : public UsecaseConfig<NavGuidancePlayback> {
   public:
-    constexpr static size_t kPeriodCount = 2;
+    constexpr static size_t kPeriodCount = 4;
     constexpr static size_t kPlatformDelayMs = 13;
-    constexpr static size_t kPeriodDurationMs = 4;
+    constexpr static size_t kPeriodDurationMs = 5;
     constexpr static size_t kPeriodSize = kPeriodDurationMs * DEFAULT_SAMPLE_RATE /1000;
     static std::unordered_set<size_t> kSupportedFrameSizes;
 
@@ -274,9 +274,9 @@ class RearSeatPlayback : public UsecaseConfig<RearSeatPlayback> {
 
 class SysNotificationPlayback : public UsecaseConfig<SysNotificationPlayback> {
   public:
-    constexpr static size_t kPeriodCount = 2;
+    constexpr static size_t kPeriodCount = 4;
     constexpr static size_t kPlatformDelayMs = 13;
-    constexpr static size_t kPeriodDurationMs = 4;
+    constexpr static size_t kPeriodDurationMs = 5;
     constexpr static size_t kPeriodSize = kPeriodDurationMs * DEFAULT_SAMPLE_RATE /1000;
     static std::unordered_set<size_t> kSupportedFrameSizes;
 
@@ -530,9 +530,9 @@ class InCallMusic : public UsecaseConfig<InCallMusic> {
 class HapticsPlayback : public UsecaseConfig<HapticsPlayback> {
   public:
     constexpr static size_t kPeriodSize = 240; // same as low-latency
-    constexpr static size_t kPeriodCount = 2;
+    constexpr static size_t kPeriodCount = 4;
     constexpr static size_t kPlatformDelayMs = 30;
-    constexpr static size_t kPeriodDurationMs = 4;
+    constexpr static size_t kPeriodDurationMs = 5;
 
     static size_t getFrameCount(
             const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig);
