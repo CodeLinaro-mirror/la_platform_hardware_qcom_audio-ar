@@ -556,6 +556,8 @@ void Telephony::updateCrsDevice() {
 
 
 AudioDevice Telephony::getMatchingTxDevice(const AudioDevice& rxDevice) {
+    /** Todo: A more comprehensive approach is needed for predicting the Tx device based on the
+     * given Rx device.*/
     auto getComplementDeviceIfAny =
             [&](const AudioDeviceDescription& desc) -> std::optional<AudioDevice> {
         auto itr =
@@ -586,7 +588,8 @@ AudioDevice Telephony::getMatchingTxDevice(const AudioDevice& rxDevice) {
     } else if (rxDevice.type.type == AudioDeviceType::OUT_DEVICE &&
                rxDevice.type.connection == AudioDeviceDescription::CONNECTION_ANALOG) {
         return AudioDevice{.type.type = AudioDeviceType::IN_MICROPHONE};
-    } else if (rxDevice.type.type == AudioDeviceType::OUT_DEVICE &&
+    } else if ((rxDevice.type.type == AudioDeviceType::OUT_DEVICE ||
+                rxDevice.type.type == AudioDeviceType::OUT_HEADSET) &&
                rxDevice.type.connection == AudioDeviceDescription::CONNECTION_BT_SCO) {
         auto found = getComplementDeviceIfAny(
                 AudioDeviceDescription{.type = AudioDeviceType::IN_DEVICE,
@@ -594,10 +597,7 @@ AudioDevice Telephony::getMatchingTxDevice(const AudioDevice& rxDevice) {
         if (found) {
             return found.value();
         }
-        return AudioDevice{.type.type = AudioDeviceType::IN_MICROPHONE};
-    } else if (rxDevice.type.type == AudioDeviceType::OUT_HEADSET &&
-               rxDevice.type.connection == AudioDeviceDescription::CONNECTION_BT_SCO) {
-        auto found = getComplementDeviceIfAny(
+        found = getComplementDeviceIfAny(
                 AudioDeviceDescription{.type = AudioDeviceType::IN_HEADSET,
                                        .connection = AudioDeviceDescription::CONNECTION_BT_SCO});
         if (found) {
