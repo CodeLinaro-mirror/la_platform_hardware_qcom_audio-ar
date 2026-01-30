@@ -79,7 +79,7 @@ static int32_t achatSetVolume(float value)
         AHAL_DBG("(%f) Under 0.0, assuming 0.0\n", value);
         value = 0.0;
     } else {
-        value = value> 15.0 ? 1.0 : volume_lookup[static_cast<int>(value)] ;
+        value = value> 15.0 ? 1.0 : volume_lookup[static_cast<int>(value)];
         AHAL_DBG("Volume brought within range (%f)\n", value);
     }
 
@@ -92,7 +92,8 @@ static int32_t achatSetVolume(float value)
 
     AHAL_DBG("Setting Aurachat RX volume to %f", value);
 
-    pal_volume = (struct pal_volume_data *) calloc(1,sizeof(struct pal_volume_data) + sizeof(struct pal_channel_vol_kv));
+    pal_volume = (struct pal_volume_data *) calloc(1,
+                    sizeof(struct pal_volume_data) + sizeof(struct pal_channel_vol_kv));
 
     if (!pal_volume)
         return -ENOMEM;
@@ -184,6 +185,7 @@ static int32_t achatStartRx(std::shared_ptr<AudioDevice> adev __unused,
     struct pal_stream_attributes stream_tx_attr = {};
     struct pal_device devices[2] = {};
     struct pal_channel_info ch_info;
+    struct pal_channel_info ch_info_spk;
 
     AHAL_DBG("Aurachat rx start enter");
     if (achatParams.rx_stream_handle)
@@ -224,7 +226,15 @@ static int32_t achatStartRx(std::shared_ptr<AudioDevice> adev __unused,
     devices[0].config.ch_info = ch_info;
     devices[0].config.aud_fmt_id = PAL_AUDIO_FMT_PCM_S16_LE;
 
+    ch_info_spk.channels = 2;
+    ch_info_spk.ch_map[0] = PAL_CHMAP_CHANNEL_FL;
+    ch_info_spk.ch_map[1] = PAL_CHMAP_CHANNEL_FR;
+
     devices[1].id = PAL_DEVICE_OUT_SPEAKER;
+    devices[1].config.sample_rate = 48000;
+    devices[1].config.bit_width = 16;
+    devices[1].config.ch_info = ch_info_spk;
+    devices[1].config.aud_fmt_id = PAL_AUDIO_FMT_PCM_S16_LE;
     strlcpy(devices[1].custom_config.custom_key, "bt-ac-rx-usecase",
         sizeof(devices[1].custom_config.custom_key));
     ret = pal_stream_open(&stream_attr,
