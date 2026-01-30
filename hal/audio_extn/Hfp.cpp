@@ -143,6 +143,7 @@ static int32_t hfp_set_volume(float value)
        return -ENOMEM;
 
     pal_volume->no_of_volpair = 1;
+    pal_volume->isDucking = false;
     pal_volume->volume_pair[0].channel_mask = 0x03;
     pal_volume->volume_pair[0].vol = value;
     ret = pal_stream_set_volume(hfpmod.rx_stream_handle, pal_volume);

@@ -143,8 +143,8 @@ LOCAL_SHARED_LIBRARIES := \
     libutils \
 
 LOCAL_STATIC_LIBRARIES := libhealthhalutils
-
 include $(BUILD_SHARED_LIBRARY)
+
 #-------------------------------------------
 #            Build BT Aurachat LIB
 #-------------------------------------------
