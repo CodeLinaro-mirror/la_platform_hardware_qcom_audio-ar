@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -32,9 +32,10 @@ class GlobalConfigs {
     struct pal_amp_db_and_gain_table* getGainTable() {
         return mGainMappingTable;
     }
+    void initGainMappings();
+    bool isInitialized() { return mInitialized; }
 
   private:
-    void initGainMappings();
     void printVolumeTable();
     struct pal_amp_db_and_gain_table mGainMappingTable[MAX_VOLUME_CAL_STEPS] = {
             /* Level 0 in the calibration database contains default calibration */
@@ -46,6 +47,7 @@ class GlobalConfigs {
 
     int mTotalVolumeCalSteps = MAX_GAIN_LEVELS;
     bool mHeadsetCalEnabled = false;
+    bool mInitialized = false;
 };
 
 class GlobalVolumeListenerSession {
