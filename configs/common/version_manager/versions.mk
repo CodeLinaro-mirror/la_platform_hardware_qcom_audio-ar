@@ -7,6 +7,7 @@ else
 ifeq ($(strip $(CORE_HAL_AIDL_VERSION)),)
   $(error "audio: CORE_HAL_AIDL_VERSION can't be empty in non-stub mode")
 endif
+endif
 
 $(call soong_config_set, qti_audio_hal, core_aidl_hal_version, v$(CORE_HAL_AIDL_VERSION))
 
@@ -89,4 +90,3 @@ $(warning audiohal: CORE_HAL_AIDL_VERSION: $(CORE_HAL_AIDL_VERSION))
 $(warning audiohal: EFFECT_HAL_AIDL_VERSION: $(EFFECT_HAL_AIDL_VERSION))
 $(warning audiohal: dependencies libs: $(ALL_HAL_DEPS))
 $(warning audiohal: c_flags: $(ALL_HAL_DEP_C_FLAGS))
-endif
