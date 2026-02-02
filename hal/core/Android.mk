@@ -25,11 +25,9 @@ LOCAL_SRC_FILES := \
     Bluetooth.cpp \
     Module.cpp \
     ModulePrimary.cpp \
-    ModuleStub.cpp \
     SoundDose.cpp \
     StreamWorker.cpp \
     Stream.cpp \
-    StreamStub.cpp \
     Telephony.cpp \
     StreamInPrimary.cpp \
     StreamOutPrimary.cpp \
