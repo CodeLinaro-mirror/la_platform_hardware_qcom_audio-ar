@@ -11,7 +11,6 @@
 #include <audio_utils/clock.h>
 #include <hardware/audio.h>
 #include <qti-audio-core/Module.h>
-#include <qti-audio-core/ModulePrimary.h>
 #include <qti-audio-core/Parameters.h>
 #include <qti-audio-core/PlatformUtils.h>
 #include <qti-audio-core/StreamOutPrimary.h>
@@ -645,10 +644,10 @@ int32_t StreamOutPrimary::setAggregateSourceMetadata(bool voiceActive) {
     std::vector<playback_track_metadata_t> total_tracks;
     source_metadata_t btSourceMetadata;
 
-    ModulePrimary::outListMutex.lock();
-    std::vector<std::weak_ptr<StreamOut>>& outStreams = ModulePrimary::getOutStreams();
+    Module::outListMutex.lock();
+    std::vector<std::weak_ptr<StreamOut>>& outStreams = Module::getOutStreams();
     if (voiceActive || outStreams.empty()) {
-        ModulePrimary::outListMutex.unlock();
+        Module::outListMutex.unlock();
         return 0;
     }
     auto removeStreams = [&](std::weak_ptr<StreamOut> streamOut) -> bool {
@@ -672,7 +671,7 @@ int32_t StreamOutPrimary::setAggregateSourceMetadata(bool voiceActive) {
                  << " total track count " << track_count_total;
 
     if (track_count_total <= 0) {
-        ModulePrimary::outListMutex.unlock();
+        Module::outListMutex.unlock();
         return 0;
     }
 
@@ -722,7 +721,7 @@ int32_t StreamOutPrimary::setAggregateSourceMetadata(bool voiceActive) {
         pal_set_param(PAL_PARAM_ID_SET_SOURCE_METADATA, (void*)&btSourceMetadata, 0);
     }
 
-    ModulePrimary::outListMutex.unlock();
+    Module::outListMutex.unlock();
     return 0;
 }
 

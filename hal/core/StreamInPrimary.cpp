@@ -10,7 +10,6 @@
 #include <audio_utils/clock.h>
 #include <hardware/audio.h>
 #include <qti-audio-core/Module.h>
-#include <qti-audio-core/ModulePrimary.h>
 #include <qti-audio-core/Parameters.h>
 #include <qti-audio-core/StreamInPrimary.h>
 #include <qti-audio-core/PlatformUtils.h>
@@ -423,11 +422,11 @@ int32_t StreamInPrimary::setAggregateSinkMetadata(bool voiceActive) {
     std::vector<record_track_metadata_t> total_tracks;
     sink_metadata_t btSinkMetadata;
 
-    ModulePrimary::inListMutex.lock();
-    std::vector<std::weak_ptr<StreamIn>>& inStreams = ModulePrimary::getInStreams();
+    Module::inListMutex.lock();
+    std::vector<std::weak_ptr<StreamIn>>& inStreams = Module::getInStreams();
     // Dont send metadata if voice is active
     if (voiceActive || inStreams.empty()) {
-        ModulePrimary::inListMutex.unlock();
+        Module::inListMutex.unlock();
         return 0;
     }
     auto removeStreams = [&](std::weak_ptr<StreamIn> streamIn) -> bool {
@@ -449,7 +448,7 @@ int32_t StreamInPrimary::setAggregateSinkMetadata(bool voiceActive) {
     LOG(VERBOSE) << __func__ << mLogPrefix << " trackCount " << track_count_total <<
                 " IN streams size " << inStreams.size();
     if (track_count_total == 0) {
-        ModulePrimary::inListMutex.unlock();
+        Module::inListMutex.unlock();
         return 0;
     }
 
@@ -470,7 +469,7 @@ int32_t StreamInPrimary::setAggregateSinkMetadata(bool voiceActive) {
 
     btSinkMetadata.tracks = total_tracks.data();
     pal_set_param(PAL_PARAM_ID_SET_SINK_METADATA, (void*)&btSinkMetadata, 0);
-    ModulePrimary::inListMutex.unlock();
+    Module::inListMutex.unlock();
     return 0;
 }
 
