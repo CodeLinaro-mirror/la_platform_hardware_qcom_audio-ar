@@ -120,10 +120,12 @@ ndk::ScopedAStatus StreamInPrimary::setConnectedDevices(
         const std::vector<::aidl::android::media::audio::common::AudioDevice>& devices) {
     mWorker->setIsConnected(!devices.empty());
     mConnectedDevices = devices;
+    std::lock_guard l(mSyncLock);
     return configureConnectedDevices_I();
 }
 
 ndk::ScopedAStatus StreamInPrimary::reconfigureConnectedDevices() {
+    std::lock_guard l(mSyncLock);
     return configureConnectedDevices_I();
 }
 
@@ -209,6 +211,7 @@ ndk::ScopedAStatus StreamInPrimary::createMmapBuffer(MmapBufferDescriptor* desc)
 
 ndk::ScopedAStatus StreamInPrimary::configureMMapStream(MmapBufferDescriptor* desc,
                                                         int32_t* bufferSizeFrames) {
+    std::lock_guard l(mSyncLock);
     if (mTag != Usecase::MMAP_RECORD) {
         LOG(ERROR) << __func__ << mLogPrefix << " cannot call on non-MMAP stream types";
         return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
@@ -327,6 +330,7 @@ void StreamInPrimary::resume() {
 }
 
 ::android::status_t StreamInPrimary::standby() {
+    std::lock_guard l(mSyncLock);
     if (!mPalHandle) {
         LOG(WARNING) << __func__ << mLogPrefix << ": stream is not configured ";
         return ::android::OK;
@@ -342,7 +346,10 @@ void StreamInPrimary::resume() {
 }
 
 ::android::status_t StreamInPrimary::onReadError(const size_t sleepFrameCount) {
-    shutdown_I();
+    {
+        std::lock_guard l(mSyncLock);
+        shutdown_I();
+    }
     if (mTag == Usecase::COMPRESS_CAPTURE) {
         LOG(ERROR) << __func__ << mLogPrefix << ": cannot afford read failure for compress";
         return ::android::UNEXPECTED_NULL;
@@ -467,6 +474,7 @@ void StreamInPrimary::resume() {
 }
 
 void StreamInPrimary::shutdown() {
+    std::lock_guard l(mSyncLock);
     return shutdown_I();
 }
 
@@ -694,6 +702,7 @@ void StreamInPrimary::configure() {
     const auto startTime = std::chrono::steady_clock::now();
     auto attr = mPlatform.getPalStreamAttributes(mMixPortConfig, true);
     LOG(INFO) << __func__ << " : configure : Enter";
+    std::lock_guard l(mSyncLock);
     auto palDevices = mPlatform.configureAndFetchPalDevices(mMixPortConfig, mTag, mConnectedDevices);
     if (!attr) {
         LOG(ERROR) << __func__ << mLogPrefix << " no pal attributes";
