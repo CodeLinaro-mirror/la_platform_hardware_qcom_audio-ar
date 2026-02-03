@@ -11,7 +11,7 @@
 #include <map>
 
 #define CONFIG_FILE_PATH "/vendor/etc/audio_config.xml"
-#define MAX_CONFIG 15
+#define MAX_CONFIG 16
 
 #define FEATURE_DISABLED 0
 #define FEATURE_ENABLED 1
@@ -68,6 +68,12 @@
 #define THERMAL_DELTA_STEP_MIN 1
 #define THERMAL_DELTA_STEP_DEFAULT 1
 
+// Unit is MS 
+#define MEDIA_INACTIVITY_MAX 300
+#define MEDIA_INACTIVITY_MIN 0
+#define MEDIA_INACTIVITY_DEFAULT 300
+
+
 #define EV_ESE_FEATURE_STR "ESE-EV_Feature"
 #define R_ANC_FEATURE_STR "R-ANC_Feature"
 #define OUTPUT_INFO_STR "Output_information"
@@ -83,6 +89,7 @@
 #define THERMAL_ATTACK_TIME_STR "ThermalAttackTime"
 #define THERMAL_RELEASE_TIME_STR "ThermalReleaseTime"
 #define THERMAL_DELTA_STEP_STR "ThermalDeltaStep"
+#define MEDIA_INACTIVITY_STR "MediaInactivity"
 
 #define TYPE_INT "int"
 
@@ -105,6 +112,7 @@ typedef enum
     AUDIO_CONFIG_THERMAL_ATTACK_TIME,
     AUDIO_CONFIG_THERMAL_RELEASE_TIME,
     AUDIO_CONFIG_THERMAL_DELTA_STEP,
+    AUDIO_CONFIG_MEDIA_INACTIVITY,
 
     // Add new Items above this
     AUDIO_CONFIG_MAX,
@@ -137,6 +145,7 @@ const std::map<std::string,AudioConfigType> ConfigkeyMap =
     {THERMAL_ATTACK_TIME_STR,AUDIO_CONFIG_THERMAL_ATTACK_TIME},
     {THERMAL_RELEASE_TIME_STR,AUDIO_CONFIG_THERMAL_RELEASE_TIME},
     {THERMAL_DELTA_STEP_STR,AUDIO_CONFIG_THERMAL_DELTA_STEP},
+    {MEDIA_INACTIVITY_STR,AUDIO_CONFIG_MEDIA_INACTIVITY},
 };
 
 class AudioConfigManager {

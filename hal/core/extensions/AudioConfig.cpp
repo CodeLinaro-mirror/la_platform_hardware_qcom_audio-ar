@@ -48,7 +48,8 @@ AudioConfigData AudioConfigManager::sgLoadDefaultconfig[MAX_CONFIG] = {
     {THERMAL_PERIODICITY_STR,TYPE_INT,THERMAL_PERIODICITY_MIN,THERMAL_PERIODICITY_MAX,THERMAL_PERIODICITY_DEFAULT},
     {THERMAL_ATTACK_TIME_STR,TYPE_INT,THERMAL_ATTACK_TIME_MIN,THERMAL_ATTACK_TIME_MAX,THERMAL_ATTACK_TIME_DEFAULT},
     {THERMAL_RELEASE_TIME_STR,TYPE_INT,THERMAL_RELEASE_TIME_MIN,THERMAL_RELEASE_TIME_MAX,THERMAL_RELEASE_TIME_DEFAULT},
-    {THERMAL_DELTA_STEP_STR,TYPE_INT,THERMAL_DELTA_STEP_MIN,THERMAL_DELTA_STEP_MAX,THERMAL_DELTA_STEP_DEFAULT}
+    {THERMAL_DELTA_STEP_STR,TYPE_INT,THERMAL_DELTA_STEP_MIN,THERMAL_DELTA_STEP_MAX,THERMAL_DELTA_STEP_DEFAULT},
+    {MEDIA_INACTIVITY_STR,TYPE_INT,MEDIA_INACTIVITY_MIN,MEDIA_INACTIVITY_MAX,MEDIA_INACTIVITY_DEFAULT}
 };
 
 
@@ -183,6 +184,7 @@ void AudioConfigManager::readConfigHUB()
     LOG(DEBUG) << __func__ <<"Thermal Attack Time is " <<audioFeature.thermal_attack_time();
     LOG(DEBUG) << __func__ <<"Thermal Release Time is " <<audioFeature.thermal_release_time();
     LOG(DEBUG) << __func__ <<"Thermal Delta Step is " <<audioFeature.thermal_delta_step();
+    LOG(DEBUG) << __func__ <<"Media Inactivity Timeout is " <<audioFeature.media_inactivity_timeout();
 
     int configValue = 0;
     bool configValuevalid = false;
@@ -240,6 +242,10 @@ void AudioConfigManager::readConfigHUB()
             break;
         case AUDIO_CONFIG_THERMAL_DELTA_STEP:
             configValue = audioFeature.thermal_delta_step();
+            configValuevalid = true;
+            break;
+        case AUDIO_CONFIG_MEDIA_INACTIVITY:
+            configValue = audioFeature.media_inactivity_timeout();
             configValuevalid = true;
             break;
         default:

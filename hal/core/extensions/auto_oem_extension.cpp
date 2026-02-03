@@ -754,17 +754,25 @@ extern "C" __attribute__((visibility("default")))int oem_init(void)
     ::qti::audio::oem::config::AudioConfigData ambConfigData;
     ::qti::audio::oem::config::AudioConfigManager::getInstance().getAudioConfigValue(AUDIO_CONFIG_DEFAULT_AMBIANCE,&ambConfigData);
     std::string ambianceString = std::to_string(ambConfigData.defaultValue);
-    LOG(VERBOSE) << "String " << s << " Integer " << ambConfigData.defaultValue;
+    LOG(VERBOSE) << "String " << ambianceString << " Integer " << ambConfigData.defaultValue;
     property_set("persist.vendor.default_ambiance",ambianceString.c_str());
 
     // Set Property for default AGC state
     ::qti::audio::oem::config::AudioConfigData agcConfigData;
     ::qti::audio::oem::config::AudioConfigManager::getInstance().getAudioConfigValue(AUDIO_CONFIG_DEFAULT_AGC_STATE,&agcConfigData);
     std::string agcS = std::to_string(agcConfigData.defaultValue);
-    LOG(VERBOSE) << "String " << s << " Integer " << agcConfigData.defaultValue;
+    LOG(VERBOSE) << "String " << agcS << " Integer " << agcConfigData.defaultValue;
     property_set("persist.vendor.default_agc",agcS.c_str());
     //Called Here Explicitly to create object of AudioCalibManager
     ::qti::audio::oem::calib::AudioCalibManager::getInstance();
+
+    // Set Property for default Media Inacitivity state
+    ::qti::audio::oem::config::AudioConfigData MediaInactivity;
+    ::qti::audio::oem::config::AudioConfigManager::getInstance().getAudioConfigValue(AUDIO_CONFIG_MEDIA_INACTIVITY,&MediaInactivity);
+    std::string MediaInactivityS = std::to_string(MediaInactivity.defaultValue);
+    LOG(VERBOSE) << "String " << MediaInactivityS << " Integer " << MediaInactivity.defaultValue;
+    property_set("persist.vendor.media_inactivitytimeout",MediaInactivityS.c_str());
+
 
     return retValue;
 
