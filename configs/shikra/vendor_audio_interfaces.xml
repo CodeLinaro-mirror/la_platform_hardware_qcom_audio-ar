@@ -18,14 +18,10 @@
             method="registerService" mandatory="true"/>
     <library name = "paleventnotifierservice" libraryName="libpaleventnotifier.so"
             method="registerPalNotifierService" mandatory="false"/>
-    <library name = "listenSoundModel" libraryName="liblistensoundmodelaidl.so"
-            method="registerService" mandatory="false"/>
     <library name = "audioeffecthal" libraryName="libaudioeffecthal.qti.so"
             method="registerService" mandatory="true"/>
     <library name = "sthal" libraryName="libsoundtriggerhal.qti.so"
             method="createISoundTriggerFactory" mandatory="true" />
     <library name="btaudio_sw" libraryName="android.hardware.bluetooth.audio_sw.so"
             method="registerIModuleBluetoothSWQti" mandatory="false" />
-    <library name = "asr" libraryName="libqasr.so"
-            method="registerService" mandatory="false" />
 </libraries>
