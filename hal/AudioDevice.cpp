@@ -72,6 +72,14 @@ bool AudioDevice::mic_characteristics_available = false;
 
 card_status_t AudioDevice::sndCardState = CARD_STATUS_ONLINE;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+void achat_reset_acquire_on_ssr_down(void);
+#ifdef __cplusplus
+}
+#endif
+
 struct audio_string_to_enum {
     const char* name;
     unsigned int value;
@@ -647,6 +655,10 @@ static int adev_pal_global_callback(uint32_t event_id, uint32_t *event_data,
         AudioDevice::sndCardState = (card_status_t)*event_data;
         AHAL_DBG("sound card status changed %d sndCardState %d",
               *event_data, AudioDevice::sndCardState);
+        if (*event_data == 0) {
+            AHAL_DBG("PAL_SND_CARD_STATE: DOWN -> resetting TX Acquire to 0");
+            achat_reset_acquire_on_ssr_down();
+        }
         break;
     default :
        AHAL_ERR("Invalid event id:%d", event_id);
