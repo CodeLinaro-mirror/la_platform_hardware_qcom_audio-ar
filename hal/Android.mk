@@ -73,7 +73,8 @@ LOCAL_SHARED_LIBRARIES := \
     libhidlbase \
     libprocessgroup \
     libutils \
-    libar-pal
+    libar-pal \
+    libbtachatpal
 
 ifeq ($(strip $(AUDIO_FEATURE_ENABLED_PAL_HIDL)),true)
   LOCAL_SHARED_LIBRARIES += \
