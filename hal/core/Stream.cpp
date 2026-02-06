@@ -28,7 +28,6 @@
 #include <android/binder_ibinder_platform.h>
 #include <pthread.h>
 #include <qti-audio-core/Module.h>
-#include <qti-audio-core/ModulePrimary.h>
 #include <qti-audio-core/Stream.h>
 #include <qti-audio-core/Utils.h>
 #include <utils/SystemClock.h>
@@ -1187,17 +1186,17 @@ ndk::ScopedAStatus StreamCommonImpl::removeEffect(
 }
 
 ndk::ScopedAStatus StreamCommonImpl::close() {
-    ModulePrimary::outListMutex.lock();
+    Module::outListMutex.lock();
     HAL_LOGD;
     if (!isClosed()) {
         stopAndJoinWorker();
         onClose();
         mWorker->setClosed();
-        ModulePrimary::outListMutex.unlock();
+        Module::outListMutex.unlock();
         return ndk::ScopedAStatus::ok();
     } else {
         HAL_LOGE << "stream was already closed";
-        ModulePrimary::outListMutex.unlock();
+        Module::outListMutex.unlock();
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
     }
 }
