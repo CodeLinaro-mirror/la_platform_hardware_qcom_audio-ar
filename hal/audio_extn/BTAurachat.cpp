@@ -319,6 +319,16 @@ bool isAuraChatActive(std::shared_ptr<AudioDevice> adev __unused)
     return achatParams.is_achat_running;
 }
 
+void achat_reset_acquire_on_ssr_down(void)
+{
+    if (achatParams.is_tx_acquire_enabled) {
+        AHAL_DBG("SSR-DOWN: Clearing applied TX Acquire (1) to re-apply after SSR");
+    } else {
+        AHAL_DBG("SSR-DOWN: TX Acquire already 0; no change");
+    }
+    achatParams.is_tx_acquire_enabled = false;
+}
+
 int achat_tx_acquire_enable(std::shared_ptr<AudioDevice> adev, bool state)
 {
     int rc = 0;
@@ -393,6 +403,8 @@ void achat_set_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *p
             if (achatParams.is_tx_acquire_enabled) {
                 AHAL_DBG("TX acquire is enabled, disabling it now for Tx Stop");
                 achat_tx_acquire_enable(adev, false);
+                // Add 10ms delay after disabling TX acquire to allow the DSP packetizer to process
+                usleep(10000);
             }
             achatStopTx();
         }
