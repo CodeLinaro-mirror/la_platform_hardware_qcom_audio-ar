@@ -834,7 +834,10 @@ void StreamInPrimary::configure() {
     if (mPlatform.getMicMuteStatus() && !(mPlatform.getTranslationRecordState())) {
         setStreamMicMute(true);
     }
-
+    if (attr->type == PAL_STREAM_VOIP_TX && mPlatform.getTranslationRecordState()) {
+        // stream started after the mute state was already updated : mostly to handle audioserver restart cases.
+        setStreamMicMute(mPlatform.getTranslationTxMuteState());
+    }
     const auto palStartApiEndTime = std::chrono::steady_clock::now();
 
     if (!mEffectsApplied)
