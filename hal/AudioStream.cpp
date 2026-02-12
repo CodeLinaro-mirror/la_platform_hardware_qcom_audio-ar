@@ -28,7 +28,7 @@
  *
  * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
  *
- * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -406,13 +406,23 @@ static int astream_out_mmap_noirq_stop(const struct audio_stream_out *stream)
         return -EINVAL;
     }
 
+    AHAL_DBG("Enter\n");
+
     astream_out = adevice->OutGetStream((audio_stream_t*)stream);
     if (!astream_out) {
         AHAL_ERR("unable to get audio OutStream");
         return -EINVAL;
     }
 
-    return astream_out->Stop();
+    // Reset mmap buffer to avoid rendering stale data
+    int ret = astream_out->ResetMmapBuffer();
+    if (ret != 0) {
+        AHAL_ERR("Reset Mmap buffer failed (%d), falling back to stream stop", ret);
+        return astream_out->Stop();
+    }
+
+    AHAL_DBG("Exit\n");
+    return 0;
 }
 
 static int astream_out_create_mmap_buffer(const struct audio_stream_out *stream,
@@ -2151,6 +2161,20 @@ int StreamOutPrimary::FillHalFnPtrs() {
     stream_.get()->get_recommended_latency_modes = astream_get_recommended_latency_modes;
     stream_.get()->set_latency_mode_callback = astream_set_latency_mode_callback;
 #endif
+    return ret;
+}
+
+int StreamOutPrimary::ResetMmapBuffer()
+{
+    AHAL_DBG("Enter\n");
+
+    if (!pal_stream_handle_) {
+        AHAL_ERR("pal_stream_handle_ is null\n");
+        return -EINVAL;
+    }
+
+    int ret = pal_stream_reset_mmap_buf(pal_stream_handle_);
+    AHAL_DBG("Exit: ret=%d\n", ret);
     return ret;
 }
 

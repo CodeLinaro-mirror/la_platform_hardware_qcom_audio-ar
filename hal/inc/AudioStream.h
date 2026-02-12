@@ -28,7 +28,7 @@
  *
  * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
  *
- * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -628,6 +628,7 @@ public:
     static std::mutex sourceMetadata_mutex_;
     std::thread mmap_start_thread_;
     int mmap_start_ret_;
+    int ResetMmapBuffer();
 
     // [offload playback speed
     int getPlaybackRateParameters(audio_playback_rate_t *playbackRate);
