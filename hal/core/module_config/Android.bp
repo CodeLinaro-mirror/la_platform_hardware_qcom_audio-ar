@@ -6,7 +6,6 @@ cc_library_static {
         "ModuleConfig.cpp",
     ],
     shared_libs: [
-        "libaudioaidlcommon",
         "libbase",
         "libcutils",
         "liblog",

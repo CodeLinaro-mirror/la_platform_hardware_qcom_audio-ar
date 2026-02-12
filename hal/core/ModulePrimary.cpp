@@ -23,7 +23,6 @@
 #include <vector>
 
 #define LOG_TAG "AHAL_ModulePrimary_QTI"
-#include <Utils.h>
 #include <android-base/logging.h>
 #include <cutils/str_parms.h>
 
@@ -56,12 +55,8 @@ using aidl::android::media::audio::common::MicrophoneInfo;
 using aidl::android::media::audio::common::Boolean;
 using aidl::android::media::audio::common::AudioDeviceAddress;
 
-using ::aidl::android::hardware::audio::common::getFrameSizeInBytes;
-using ::aidl::android::hardware::audio::common::isBitPositionFlagSet;
-using ::aidl::android::hardware::audio::common::isValidAudioMode;
 using ::aidl::android::hardware::audio::common::SinkMetadata;
 using ::aidl::android::hardware::audio::common::SourceMetadata;
-using ::aidl::android::hardware::audio::common::getChannelCount;
 using ::aidl::android::hardware::audio::core::AudioPatch;
 using ::aidl::android::hardware::audio::core::AudioRoute;
 using ::aidl::android::hardware::audio::core::IStreamIn;

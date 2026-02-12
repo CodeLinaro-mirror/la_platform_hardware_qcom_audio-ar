@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
 #define LOG_TAG "AHAL_Utils_QTI"
 
-#include <aidl/android/media/audio/common/AudioInputFlags.h>
-#include <aidl/android/media/audio/common/AudioOutputFlags.h>
 #include <android-base/logging.h>
 #include <audio_utils/format.h>
 #include <qti-audio-core/Utils.h>

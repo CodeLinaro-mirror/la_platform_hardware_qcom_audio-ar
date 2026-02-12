@@ -33,7 +33,6 @@ LOCAL_SHARED_LIBRARIES := \
     libstagefright_foundation \
     $(LATEST_ANDROID_MEDIA_AUDIO_COMMON_TYPES) \
     $(LATEST_ANDROID_HARDWARE_AUDIO_CORE) \
-    libaudioaidlcommon \
     qti-audio-types-aidl-V1-ndk \
     libaudioplatformconverter.qti \
     libar-pal
