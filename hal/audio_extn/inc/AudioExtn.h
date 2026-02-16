@@ -26,8 +26,8 @@
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -143,7 +143,7 @@ class CompressAAC {
 
     constexpr static int32_t kAacLcMonoMaxSupportedBitRate = 192000;
     constexpr static int32_t kAacLcStereoMaxSupportedBitRate = 384000;
-    constexpr static int32_t kHeAacMonoMaxSupportedBitRate = 192000;
+    constexpr static int32_t kHeAacMonoMaxSupportedBitRate = 128000;
     constexpr static int32_t kHeAacStereoMaxSupportedBitRate = 192000;
     constexpr static int32_t kHeAacPstereoMaxSupportedBitRate = 192000;
 
