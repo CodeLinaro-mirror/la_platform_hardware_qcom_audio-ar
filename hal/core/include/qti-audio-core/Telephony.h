@@ -116,6 +116,7 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
     void setCRSVolumeFromIndex(const int index);
     void updateVoiceVolume();
     void setMicMute(const bool muted);
+    void setTranslationTxMute(const bool muted);
     void updateCalls();
     bool isAnyCallActive();
     bool isVoipActive();

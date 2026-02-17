@@ -1177,6 +1177,10 @@ void StreamOutPrimary::configure() {
         }
     }
 
+    if (mTag == Usecase::VOIP_PLAYBACK && mPalHandle) {
+            mPlatform.setVoipRxStreamHandle(mPalHandle);
+    }
+
     if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK) {
         // Must be before pal stream start
         std::get<CompressPlayback>(mExt).setAndConfigureCodecInfo(mPalHandle);

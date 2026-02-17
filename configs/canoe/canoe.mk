@@ -276,6 +276,10 @@ endif
 PRODUCT_PROPERTY_OVERRIDES += \
    ro.audio.flinger_standbytime_ms=2000
 
+# Enable the spatial audio for target
+PRODUCT_PROPERTY_OVERRIDES += \
+   ro.audio.spatializer_enabled=true
+
 # override usecase validator to true, needed for BT gaming usecases
 PRODUCT_PROPERTY_OVERRIDES += \
    ro.audio.usecase_validator_enabled=true

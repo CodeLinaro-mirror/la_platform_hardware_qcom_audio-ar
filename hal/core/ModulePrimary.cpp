@@ -204,6 +204,11 @@ ndk::ScopedAStatus ModulePrimary::setMicMute(bool in_mute) {
          getActiveInputMixPortConfigIds(getConfig().portConfigs)) {
              mStreams.setStreamMicMute(inputMixPortConfigId, in_mute);
     }
+
+    if(mPlatform.getCallTranslationState()) {
+        LOG(DEBUG) << __func__ << ": update translation tx stream based on mute action.";
+        mTelephony->setTranslationTxMute(in_mute);
+    }
     return ndk::ScopedAStatus::ok();
 }
 
