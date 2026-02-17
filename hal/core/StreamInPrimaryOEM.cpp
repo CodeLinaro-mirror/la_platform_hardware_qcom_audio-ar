@@ -632,6 +632,7 @@ void StreamInPrimaryOEM::shutdown_I() {
         mAudExt.mHalExtension->set_cp_type(INVALID);
     }
     bECNR_Enable = false;
+    mScd_file_path_index_ul = INVALID_PATH;
     property_set("vendor.audio.ecnr.scd.ul", "");
 
 
