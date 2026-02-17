@@ -55,6 +55,12 @@ endif
 #----------------------------------------------------------------------
 # audio specific
 #----------------------------------------------------------------------
+
+# C2 compilation is disabled by default.
+# for target specific enablement, set it to true in the target specific .mk file.
+TARGET_USES_VENDOR_C2_AUDIO_HAL := false
+$(warning "C2 audio compilation disabled by default")
+
 TARGET_USES_AOSP := false
 TARGET_USES_AOSP_FOR_AUDIO := false
 
