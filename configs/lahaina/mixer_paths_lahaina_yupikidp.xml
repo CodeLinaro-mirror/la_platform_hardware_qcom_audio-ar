@@ -963,6 +963,7 @@
         <ctl name="VA_AIF1_CAP Mixer DEC0" value="1"/>
         <ctl name="VA DEC0 MUX" value="MSM_DMIC"/>
         <ctl name="VA DMIC MUX0" value="DMIC3"/>
+        <ctl name="ADC3_MIXER Switch" value="1"/>
     </path>
     <path name="va-mic-mono-lpi">
         <ctl name="LPI Enable" value="1"/>
@@ -976,6 +977,8 @@
         <ctl name="VA DEC1 MUX" value="MSM_DMIC"/>
         <ctl name="VA DMIC MUX0" value="DMIC3"/>
         <ctl name="VA DMIC MUX1" value="DMIC0"/>
+        <ctl name="ADC3_MIXER Switch" value="1"/>
+        <ctl name="ADC1_MIXER Switch" value="1"/>
     </path>
     <path name="va-mic-dmic-lpi">
         <ctl name="LPI Enable" value="1"/>
