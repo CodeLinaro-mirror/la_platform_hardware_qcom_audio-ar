@@ -549,12 +549,20 @@ std::optional<struct HdmiParameters> Platform::getHdmiParameters(
                    << device.toString();
         return std::nullopt;
     }
-    pal_device_id_t deviceId = PAL_DEVICE_OUT_AUX_DIGITAL;
+
     LOG(DEBUG) << __func__ << " controller " << controller << " stream " << stream;
-    if (stream) {
-        deviceId = PAL_DEVICE_OUT_AUX_DIGITAL_1;
-        LOG(DEBUG) << __func__ << " override palDevice with PAL_DEVICE_OUT_AUX_DIGITAL_1";
+    pal_device_id_t deviceId = PAL_DEVICE_NONE;
+
+    if (controller == 0) {
+        deviceId = PAL_DEVICE_OUT_AUX_DIGITAL;
+        if (stream) {
+            deviceId = PAL_DEVICE_OUT_AUX_DIGITAL_1;
+            LOG(DEBUG) << __func__ << " override palDevice with PAL_DEVICE_OUT_AUX_DIGITAL_1";
+        }
+    } else if (controller == 1) {
+        deviceId = PAL_DEVICE_OUT_HDMI;
     }
+
     struct HdmiParameters hdmiParam = {
             .controller = controller, .stream = stream, .deviceId = deviceId};
     return hdmiParam;
