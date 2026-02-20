@@ -122,7 +122,7 @@ std::shared_ptr<::aidl::alliance::hardware::automotive::audiocontrol::internal::
 #define Vol_to_mdB(X) ((X == 0.0) ? (MIN_VOLUME_VALUE_MB) : lrint(2000 * log10f(X)))
 #endif
 
-std::vector<float> qti::audio::core::MuteConfig::getVol = {-3600.0f, -3600.0f};
+std::vector<float> qti::audio::core::MuteConfig::getVol = {0.6f, 0.6f};
 
 std::mutex ModulePrimary::outListMutex;
 std::mutex ModulePrimary::inListMutex;
@@ -1245,6 +1245,18 @@ void MuteConfig::set_mute_config_for_address(char* address, bool muted, float vo
 #endif
                     LOG(DEBUG)<<"volume set :"<<vol[0];
                } else {
+                    volume = getVol[0];
+#ifdef ENABLE_QCOM_AMPERE_AUDIO
+                    (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(stream))->getStreamVolume(&getVol);
+#else
+                    (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(stream))->getHwVolume(&getVol);
+#endif
+                    std::vector<float> vol;
+                    LOG(DEBUG)<<"gain is:"<<volume;
+                    int channel=getVol.size(),i;
+                    for (i=0;i<channel;i++)
+                        vol.push_back(volume);
+                    LOG(DEBUG)<<"gain is:"<<::android::internal::ToString(vol);
 #ifdef ENABLE_QCOM_AMPERE_AUDIO
                     (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(stream))->setStreamVolume(getVol);
 #else
