@@ -12,6 +12,7 @@
 #include <hardware/audio.h>
 #include <qti-audio-core/StreamMmapBase.h>
 
+#include <qti-audio-core/PlatformUtils.h>
 #include <qti-audio/PlatformConverter.h>
 
 using aidl::android::hardware::audio::common::AudioOffloadMetadata;
@@ -48,16 +49,17 @@ StreamMmapBase::StreamMmapBase(StreamContext* context, const Metadata& metadata,
       mMixPortConfig(getContext().getMixPortConfig()),
       mIsInput(input) {
     std::ostringstream os;
-    os << " : usecase: " << mTagName;
-    os << ", mix port config id:" << mMixPortConfig.id;
-    os << ", IoHandle:" << mMixPortConfig.ext.get<AudioPortExt::Tag::mix>().handle << " ";
+    os << "[id:" << mMixPortConfig.id;
+    os << ",io:" << mMixPortConfig.ext.get<AudioPortExt::Tag::mix>().handle << "]";
+    os << ": usecase: " << mTagName << " ";
     mLogPrefix = os.str();
-    LOG(DEBUG) << __func__ << mLogPrefix;
+
+    LOG(DEBUG) << __func__ << mLogPrefix << " created " << mMixPortConfig.toString();
 }
 
 StreamMmapBase::~StreamMmapBase() {
     cleanupWorker();
-    LOG(DEBUG) << __func__ << mLogPrefix;
+    LOG(DEBUG) << __func__ << mLogPrefix << "destroyed";
 }
 
 ndk::ScopedAStatus StreamMmapBase::getVendorParameters(const std::vector<std::string>& in_ids,
@@ -319,6 +321,7 @@ ndk::ScopedAStatus StreamMmapBase::configureMMapStream(
     auto palDevices = mPlatform.configureAndFetchPalDevices(mMixPortConfig, mTag, mConnectedDevices,
                                                             true /*dummyDevice*/);
 
+    LOG(DEBUG) << __func__ << mLogPrefix << "pal_stream_open with " << toString(*attr.get());
     if (int32_t ret = ::pal_stream_open(
                 attr.get(), palDevices.size(), palDevices.data(), 0, nullptr, nullptr /*cbfun*/,
                 reinterpret_cast<uint64_t>(this) /*cookie*/, &(this->mPalHandle));
@@ -427,10 +430,11 @@ StreamInMmap::StreamInMmap(StreamContext&& context, const SinkMetadata& sinkMeta
 ndk::ScopedAStatus StreamInMmap::configureMMapStream(
         ::aidl::android::hardware::audio::core::MmapBufferDescriptor* desc,
         int32_t* bufferSizeFrames) {
-    auto status = StreamMmapBase::configureMMapStream(desc, bufferSizeFrames);
+    auto ret = StreamMmapBase::configureMMapStream(desc, bufferSizeFrames);
+    if (!ret.isOk()) {
+        return ret;
+    }
     setStreamMicMute(mPlatform.getMicMuteStatus());
-    LOG(INFO) << __func__ << mLogPrefix << ": stream is configured with " << mConnectedDevices;
-
     return ndk::ScopedAStatus::ok();
 }
 
@@ -461,10 +465,11 @@ ndk::ScopedAStatus StreamOutMmap::configureMMapStream(
         ::aidl::android::hardware::audio::core::MmapBufferDescriptor* desc,
         int32_t* bufferSizeFrames) {
     setBluetoothMetadata();
-    auto status = StreamMmapBase::configureMMapStream(desc, bufferSizeFrames);
+    auto ret = StreamMmapBase::configureMMapStream(desc, bufferSizeFrames);
+    if (!ret.isOk()) {
+        return ret;
+    }
     setHwVolume(mVolumes);
-    LOG(INFO) << __func__ << mLogPrefix << ": stream is configured with " << mConnectedDevices;
-
     return ndk::ScopedAStatus::ok();
 }
 
@@ -519,6 +524,15 @@ ndk::ScopedAStatus StreamOutMmap::setHwVolume(const std::vector<float>& in_chann
 
     LOG(DEBUG) << __func__ << mLogPrefix << ::android::internal::ToString(mVolumes);
     return ndk::ScopedAStatus::ok();
+}
+
+bool StreamOutMmap::supportsPlaybackRate() const {
+    return mPlatform.supportsPlaybackRate(mTag);
+}
+
+ndk::ScopedAStatus StreamOutMmap::setPlaybackRateImpl(
+        const ::aidl::android::media::audio::common::AudioPlaybackRate& rate) {
+    return toBinderStatus(mPlatform.setPlaybackRate(mPalHandle, mTag, rate));
 }
 
 }  // namespace qti::audio::core

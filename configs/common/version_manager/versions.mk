@@ -1,0 +1,92 @@
+ifeq ($(AUDIO_USE_STUB_HAL), true)
+    CORE_HAL_AIDL_VERSION := 4
+    EFFECT_HAL_AIDL_VERSION := $(CORE_HAL_AIDL_VERSION)
+    $(warning stub mode audiohal: CORE_HAL_AIDL_VERSION $(CORE_HAL_AIDL_VERSION))
+else
+
+ifeq ($(strip $(CORE_HAL_AIDL_VERSION)),)
+  $(error "audio: CORE_HAL_AIDL_VERSION can't be empty in non-stub mode")
+endif
+endif
+
+$(call soong_config_set, qti_audio_hal, core_aidl_hal_version, v$(CORE_HAL_AIDL_VERSION))
+
+# check dependencies @ hardware/interfaces/audio/aidl/Android.bp
+
+#use same version for effect and core, unless above Android.bp says otherwise.
+EFFECT_HAL_AIDL_VERSION := $(CORE_HAL_AIDL_VERSION)
+ANDROID_HARDWARE_COMMON_VERSION := 2
+ANDROID_HARDWARE_COMMON_FMQ_VERSION := 1
+
+ifeq ($(CORE_HAL_AIDL_VERSION), 3)
+
+ANDROID_MEDIA_AUDIO_COMMON_TYPES_VERSION := 4
+ANDROID_HARDWARE_AUDIO_CORE_SOUNDDOSE_VERSION := 3
+
+else ifeq ($(CORE_HAL_AIDL_VERSION), 4)
+
+ANDROID_MEDIA_AUDIO_COMMON_TYPES_VERSION := 5
+ANDROID_HARDWARE_AUDIO_CORE_SOUNDDOSE_VERSION := 4
+
+endif
+
+# Add dependency libs
+# Must be aligned with Android.bp present in same directory
+CURRENT_ANDROID_AUDIO_CORE := android.hardware.audio.core-V$(CORE_HAL_AIDL_VERSION)-ndk
+CURRENT_ANDROID_HARDWARE_AUDIO_EFFECT := android.hardware.audio.effect-V$(EFFECT_HAL_AIDL_VERSION)-ndk
+CURRENT_ANDROID_MEDIA_AUDIO_COMMON_TYPES := android.media.audio.common.types-V$(ANDROID_MEDIA_AUDIO_COMMON_TYPES_VERSION)-ndk
+CURRENT_ANDROID_HARDWARE_AUDIO_CORE_SOUNDDOSE := android.hardware.audio.core.sounddose-V$(ANDROID_HARDWARE_AUDIO_CORE_SOUNDDOSE_VERSION)-ndk
+CURRENT_ANDROID_HARDWARE_COMMON := android.hardware.common-V$(ANDROID_HARDWARE_COMMON_VERSION)-ndk
+CURRENT_ANDROID_HARDWARE_COMMON_FMQ := android.hardware.common.fmq-V$(ANDROID_HARDWARE_COMMON_FMQ_VERSION)-ndk
+
+# Must be aligned with Android.bp
+# cflag format -DAUDIO_CORE_VERSION=N , -DAUDIO_EFFECT_VERSION=M,
+# set c_flags
+CFLAGS_AUDIO_CORE                    := -DAUDIO_CORE_VERSION=$(CORE_HAL_AIDL_VERSION)
+CFLAGS_AUDIO_EFFECT                  := -DAUDIO_EFFECT_VERSION=$(EFFECT_HAL_AIDL_VERSION)
+CFLAGS_MEDIA_AUDIO_COMMON_TYPES      := -DMEDIA_AUDIO_COMMON_TYPES_VERSION=$(ANDROID_MEDIA_AUDIO_COMMON_TYPES_VERSION)
+CFLAGS_SOUND_DOSE                    := -DSOUND_DOSE_VERSION=$(ANDROID_HARDWARE_AUDIO_CORE_SOUNDDOSE_VERSION)
+CFLAGS_HW_COMMON                     := -DHARDWARE_COMMON_VERSION=$(ANDROID_HARDWARE_COMMON_VERSION)
+CFLAGS_HW_COMMON_FMQ                 := -DHARDWARE_COMMON_FMQ_VERSION=$(ANDROID_HARDWARE_COMMON_FMQ_VERSION)
+
+AHAL_DEFAULT_AIDL_INTERFACE_DEPENDENCIES := \
+    $(CURRENT_ANDROID_AUDIO_CORE) \
+    $(CURRENT_ANDROID_HARDWARE_COMMON) \
+    $(CURRENT_ANDROID_MEDIA_AUDIO_COMMON_TYPES)
+
+# to have similar to cc_defaults in make files
+EFFECTS_DEFAULTS_SHARED_LIBRARIES := \
+    $(CURRENT_ANDROID_HARDWARE_AUDIO_EFFECT) \
+    $(CURRENT_ANDROID_HARDWARE_COMMON) \
+    $(CURRENT_ANDROID_MEDIA_AUDIO_COMMON_TYPES) \
+    $(CURRENT_ANDROID_HARDWARE_COMMON_FMQ) \
+    libbase \
+    libbinder_ndk \
+    libcutils \
+    libfmq \
+    libutils
+
+EFFECTS_DEFAULTS_HEADERS_LIBRARIES := \
+    libaudioeffectsaidlqti_headers \
+    libaudio_system_headers \
+    libsystem_headers \
+    libaudioutils_headers
+
+ALL_HAL_DEPS := \
+    $(AHAL_DEFAULT_AIDL_INTERFACE_DEPENDENCIES) \
+    $(CURRENT_ANDROID_HARDWARE_AUDIO_EFFECT) \
+    $(CURRENT_ANDROID_HARDWARE_AUDIO_CORE_SOUNDDOSE) \
+    $(CURRENT_ANDROID_HARDWARE_COMMON_FMQ)
+
+ALL_HAL_DEP_C_FLAGS := \
+    $(CFLAGS_AUDIO_CORE) \
+    $(CFLAGS_AUDIO_EFFECT) \
+    $(CFLAGS_AUDIO_COMMON) \
+    $(CFLAGS_SOUND_DOSE) \
+    $(CFLAGS_HW_COMMON) \
+    $(CFLAGS_HW_COMMON_FMQ) \
+
+$(warning audiohal: CORE_HAL_AIDL_VERSION: $(CORE_HAL_AIDL_VERSION))
+$(warning audiohal: EFFECT_HAL_AIDL_VERSION: $(EFFECT_HAL_AIDL_VERSION))
+$(warning audiohal: dependencies libs: $(ALL_HAL_DEPS))
+$(warning audiohal: c_flags: $(ALL_HAL_DEP_C_FLAGS))

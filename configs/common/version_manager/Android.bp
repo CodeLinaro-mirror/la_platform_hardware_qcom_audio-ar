@@ -1,0 +1,73 @@
+soong_config_string_variable {
+    name: "core_aidl_hal_version",
+    values: [
+        "v3",
+        "v4",
+    ],
+}
+
+soong_config_module_type {
+    name: "qti_audio_versioned_cc_defaults",
+    module_type: "cc_defaults",
+    config_namespace: "qti_audio_hal",
+    variables: ["core_aidl_hal_version"],
+    properties: [
+        "shared_libs",
+        "cflags",
+    ],
+}
+
+cc_defaults {
+    name: "current_android_hardware_audio_core",
+    defaults: ["audiohal_aidl_audio_core_defaults"],
+    vendor: true,
+}
+
+cc_defaults {
+    name: "current_android_media_audio_common_types",
+    defaults: ["audiohal_aidl_audio_common_types_defaults"],
+    vendor: true,
+}
+
+qti_audio_versioned_cc_defaults {
+    name: "audiohal_aidl_audio_core_defaults",
+    soong_config_variables: {
+        core_aidl_hal_version: {
+            v3: {
+                shared_libs: [
+                    "android.hardware.audio.core-V3-ndk",
+                ],
+
+                cflags: ["-DAUDIO_CORE_VERSION=3"],
+            },
+            v4: {
+                shared_libs: [
+                    "android.hardware.audio.core-V4-ndk",
+                ],
+                cflags: ["-DAUDIO_CORE_VERSION=4"],
+            },
+        },
+    },
+}
+
+qti_audio_versioned_cc_defaults {
+    name: "audiohal_aidl_audio_common_types_defaults",
+    soong_config_variables: {
+        core_aidl_hal_version: {
+            v3: {
+                shared_libs: [
+                    "android.media.audio.common.types-V4-ndk",
+                ],
+                cflags: ["-DMEDIA_AUDIO_COMMON_TYPES_VERSION=4"],
+
+            },
+            v4: {
+                shared_libs: [
+                    "android.media.audio.common.types-V5-ndk",
+                ],
+                cflags: ["-DMEDIA_AUDIO_COMMON_TYPES_VERSION=5"],
+            },
+        },
+    },
+}
+

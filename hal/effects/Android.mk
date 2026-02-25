@@ -46,7 +46,7 @@ LOCAL_SRC_FILES:= \
         EffectMain.cpp
 
 LOCAL_STATIC_LIBRARIES := libaudioeffecthal_base_impl_static
-LOCAL_VINTF_FRAGMENTS := audioeffectservice_qti.xml
+LOCAL_VINTF_FRAGMENTS := vintf/$(EFFECT_HAL_AIDL_VERSION)/audioeffectservice_qti.xml
 
 LOCAL_SHARED_LIBRARIES:= \
     $(EFFECTS_DEFAULTS_SHARED_LIBRARIES) \

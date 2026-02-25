@@ -383,23 +383,6 @@ std::vector<pal_device> Platform::convertToPalDevices(
     return palDevices;
 }
 
-std::vector<pal_device> Platform::getDummyPalDevices(const AudioPortConfig& mixPortConfig) const {
-    struct pal_device dummyDevice = {};
-
-    dummyDevice.config.sample_rate = Platform::kDefaultOutputSampleRate;
-    dummyDevice.config.bit_width = Platform::kDefaultPCMBidWidth;
-    dummyDevice.config.aud_fmt_id = Platform::kDefaultPalPCMFormat;
-    dummyDevice.config.ch_info.channels = 2;
-
-    if (isInputMixPortConfig(mixPortConfig)) {
-        dummyDevice.id = PAL_DEVICE_IN_DUMMY;
-    } else {
-        dummyDevice.id = PAL_DEVICE_OUT_DUMMY;
-    }
-
-    return {dummyDevice};
-}
-
 /**
  * API is common for both Output and input streams
  */
@@ -408,7 +391,7 @@ std::vector<pal_device> Platform::configureAndFetchPalDevices(
         const std::vector<AudioDevice>& devices, const bool dummyDevice) const {
     if (devices.empty()) {
         if (dummyDevice) {
-            return getDummyPalDevices(mixPortConfig);
+            return {getDefaultDummyDevice(isInputMixPortConfig(mixPortConfig))};
         } else {
             LOG(ERROR) << __func__ << " the set devices is empty";
             return {};
@@ -922,21 +905,26 @@ bool Platform::setVendorParameters(
     return true;
 }
 
+void Platform::reconfigureA2DP() noexcept {
+    pal_param_bta2dp_t param {.reconfig = true};
+    if (auto ret = ::pal_set_param(PAL_PARAM_ID_BT_A2DP_RECONFIG, reinterpret_cast<void*>(&param),
+                                   sizeof(pal_param_bta2dp_t));
+        ret != 0) {
+        LOG(ERROR) << __func__ << ": BT A2DP reconfig failed";
+        return;
+    }
+    LOG(VERBOSE) << __func__ << ": BT A2DP reconfigured";
+}
+
 bool Platform::setBluetoothParameters(const char* kvpairs) {
+    if (mIsScoManagedbyAudio) {
+        return true;
+    }
     struct str_parms* parms = NULL;
     int ret = 0, val = 0;
     char value[256];
     LOG(VERBOSE) << __func__ << "kvpairs " << kvpairs;
     parms = str_parms_create_str(kvpairs);
-    ret = str_parms_get_str(parms, AUDIO_PARAMETER_RECONFIG_A2DP, value, sizeof(value));
-    if (ret >= 0) {
-        pal_param_bta2dp_t param_bt_a2dp;
-        param_bt_a2dp.reconfig = true;
-
-        LOG(VERBOSE) << __func__ << " BT A2DP Reconfig command received";
-        ret = pal_set_param(PAL_PARAM_ID_BT_A2DP_RECONFIG, (void*)&param_bt_a2dp,
-                            sizeof(pal_param_bta2dp_t));
-    }
     ret = str_parms_get_str(parms, "A2dpSuspended", value, sizeof(value));
     if (ret >= 0) {
         pal_param_bta2dp_t param_bt_a2dp;
@@ -1312,7 +1300,7 @@ PlaybackRateStatus Platform::setPlaybackRate(
         pal_stream_handle_t* handle, const Usecase& tag,
         const ::aidl::android::media::audio::common::AudioPlaybackRate& playbackRate) {
 
-    if (!usecaseSupportsOffloadSpeed(tag)) {
+    if (!supportsPlaybackRate(tag)) {
         return PlaybackRateStatus::UNSUPPORTED;
     }
 
@@ -1636,6 +1624,33 @@ std::vector<MicrophoneDynamicInfo> Platform::getMicrophoneDynamicInfo(
     return result;
 }
 
+bool Platform::isScoManagedByAudio() const noexcept {
+    return mIsScoManagedbyAudio;
+}
+
+void Platform::onInitBluetoothPrep() {
+    /** BT HFP offload sync with BTHost; managed by system property and owned by BT */
+    const std::string kIsHFPOffloadSyncProp = "bluetooth.sco.managed_by_audio";
+    mIsScoManagedbyAudio = ::android::base::GetBoolProperty(kIsHFPOffloadSyncProp, false);
+    LOG(INFO) << __func__ << " :SCO is managed by Audio: " << mIsScoManagedbyAudio;
+    if (!mIsScoManagedbyAudio) {
+       if (int32_t ret = ::pal_set_param(PAL_PARAM_ID_DISABLE_HFP_SYNC, nullptr, 0); ret) {
+           LOG(ERROR) << __func__ << ": PAL_PARAM_ID_DISABLE_BT_HFP_SYNC failed";
+       }
+    }
+}
+
+void Platform::onInitSuccess() {
+    {
+        mOffloadSpeedSupported =
+                ::android::base::GetBoolProperty("vendor.audio.offload.playspeed", true);
+        MicrophoneInfoParser micInfoParser;
+        mMicrophoneInfo = micInfoParser.getMicrophoneInfo();
+        mMicrophoneDynamicInfoMap = micInfoParser.getMicrophoneDynamicInfoMap();
+    }
+    onInitBluetoothPrep();
+}
+
 Platform::Platform() {
     initUsecaseOpMap();
     if (int32_t ret = pal_init(); ret) {
@@ -1651,10 +1666,8 @@ Platform::Platform() {
     }
     mSndCardStatus = CARD_STATUS_ONLINE;
     LOG(VERBOSE) << __func__ << " pal register global callback successful";
-    mOffloadSpeedSupported = property_get_bool("vendor.audio.offload.playspeed", true);
-    MicrophoneInfoParser micInfoParser;
-    mMicrophoneInfo = micInfoParser.getMicrophoneInfo();
-    mMicrophoneDynamicInfoMap = micInfoParser.getMicrophoneDynamicInfoMap();
+
+    onInitSuccess();
 }
 
 // static

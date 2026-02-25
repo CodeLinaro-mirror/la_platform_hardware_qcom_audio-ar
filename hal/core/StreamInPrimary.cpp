@@ -10,9 +10,9 @@
 #include <audio_utils/clock.h>
 #include <hardware/audio.h>
 #include <qti-audio-core/Module.h>
-#include <qti-audio-core/ModulePrimary.h>
 #include <qti-audio-core/Parameters.h>
 #include <qti-audio-core/StreamInPrimary.h>
+#include <qti-audio-core/PlatformUtils.h>
 #include <system/audio.h>
 
 #include <cmath>
@@ -73,24 +73,27 @@ StreamInPrimary::StreamInPrimary(StreamContext&& context, const SinkMetadata& si
         mExt.emplace<HotwordRecord>();
     }
 
+    std::ostringstream os;
+    os << "[id:" << mMixPortConfig.id;
+    os << ",io:" << mMixPortConfig.ext.get<AudioPortExt::Tag::mix>().handle <<"]";
+    os << ": usecase: " << mTagName << " ";
+    mLogPrefix = os.str();
+
+
     /**
      * In HIDL after open input stream there is subsequent call to
      *  update metadata, in AIDL its not present , so doing here.
      */
     updateMetadata(sinkMetadata);
 
-    std::ostringstream os;
-    os << " : usecase: " << mTagName;
-    os << ", mix port config id:" << mMixPortConfig.id;
-    os << ", IoHandle:" << mMixPortConfig.ext.get<AudioPortExt::Tag::mix>().handle << " ";
-    mLogPrefix = os.str();
 
-    LOG(DEBUG) << __func__ << mLogPrefix;
+
+    LOG(DEBUG) << __func__ << mLogPrefix <<" created " << mMixPortConfig.toString();
 }
 
 StreamInPrimary::~StreamInPrimary() {
     cleanupWorker();
-    LOG(DEBUG) << __func__ << mLogPrefix;
+    LOG(DEBUG) << __func__ << mLogPrefix << "destroyed";
 }
 
 ndk::ScopedAStatus StreamInPrimary::getActiveMicrophones(
@@ -160,13 +163,7 @@ ndk::ScopedAStatus StreamInPrimary::configureConnectedDevices_I() {
         }
     }
 
-    auto devicesString = [](std::string prev, const auto& device) {
-        return std::move(prev) + ';' + device.toString();
-    };
-
-    LOG(DEBUG) << __func__ << mLogPrefix << " stream is connected to devices:"
-               << std::accumulate(mConnectedDevices.cbegin(), mConnectedDevices.cend(),
-                                  std::string(""), devicesString);
+    LOG(DEBUG) << __func__ << mLogPrefix << " connected to: " << mConnectedDevices;
 
     return ndk::ScopedAStatus::ok();
 }
@@ -425,11 +422,11 @@ int32_t StreamInPrimary::setAggregateSinkMetadata(bool voiceActive) {
     std::vector<record_track_metadata_t> total_tracks;
     sink_metadata_t btSinkMetadata;
 
-    ModulePrimary::inListMutex.lock();
-    std::vector<std::weak_ptr<StreamIn>>& inStreams = ModulePrimary::getInStreams();
+    Module::inListMutex.lock();
+    std::vector<std::weak_ptr<StreamIn>>& inStreams = Module::getInStreams();
     // Dont send metadata if voice is active
     if (voiceActive || inStreams.empty()) {
-        ModulePrimary::inListMutex.unlock();
+        Module::inListMutex.unlock();
         return 0;
     }
     auto removeStreams = [&](std::weak_ptr<StreamIn> streamIn) -> bool {
@@ -451,7 +448,7 @@ int32_t StreamInPrimary::setAggregateSinkMetadata(bool voiceActive) {
     LOG(VERBOSE) << __func__ << mLogPrefix << " trackCount " << track_count_total <<
                 " IN streams size " << inStreams.size();
     if (track_count_total == 0) {
-        ModulePrimary::inListMutex.unlock();
+        Module::inListMutex.unlock();
         return 0;
     }
 
@@ -472,7 +469,7 @@ int32_t StreamInPrimary::setAggregateSinkMetadata(bool voiceActive) {
 
     btSinkMetadata.tracks = total_tracks.data();
     pal_set_param(PAL_PARAM_ID_SET_SINK_METADATA, (void*)&btSinkMetadata, 0);
-    ModulePrimary::inListMutex.unlock();
+    Module::inListMutex.unlock();
     return 0;
 }
 
@@ -658,6 +655,7 @@ void StreamInPrimary::configure() {
     pal_stream_callback palFn = nullptr;
 
     const auto palOpenApiStartTime = std::chrono::steady_clock::now();
+    LOG(DEBUG) << __func__ << mLogPrefix << "pal_stream_open with " << toString(*attr.get());
     if (int32_t ret = ::pal_stream_open(attr.get(), palDevices.size(), palDevices.data(), 0,
                                         nullptr, palFn, cookie, &(mPalHandle));
         ret) {

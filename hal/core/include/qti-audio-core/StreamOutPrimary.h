@@ -67,11 +67,6 @@ class StreamOutPrimary : public StreamOut,
     ndk::ScopedAStatus getHwVolume(std::vector<float>* _aidl_return) override;
     ndk::ScopedAStatus setHwVolume(const std::vector<float>& in_channelVolumes) override;
 
-    ndk::ScopedAStatus getPlaybackRateParameters(
-            ::aidl::android::media::audio::common::AudioPlaybackRate* _aidl_return) override;
-    ndk::ScopedAStatus setPlaybackRateParameters(
-            const ::aidl::android::media::audio::common::AudioPlaybackRate& in_playbackRate)
-            override;
     // Methods called IModule
     ndk::ScopedAStatus setConnectedDevices(
             const std::vector<::aidl::android::media::audio::common::AudioDevice>& devices)
@@ -158,6 +153,11 @@ class StreamOutPrimary : public StreamOut,
 
     // optional buffer format converter, if stream input and output formats are different
     std::optional<std::unique_ptr<BufferFormatConverter>> mBufferFormatConverter;
+
+  protected:
+    bool supportsPlaybackRate() const override;
+    ndk::ScopedAStatus setPlaybackRateImpl(
+            const ::aidl::android::media::audio::common::AudioPlaybackRate& rate) override;
 };
 
 } // namespace qti::audio::core

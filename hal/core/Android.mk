@@ -24,7 +24,6 @@ LOCAL_SRC_FILES := \
     CoreService.cpp \
     Bluetooth.cpp \
     Module.cpp \
-    ModulePrimary.cpp \
     SoundDose.cpp \
     StreamWorker.cpp \
     Stream.cpp \
@@ -61,8 +60,8 @@ LOCAL_WHOLE_STATIC_LIBRARIES := \
 
 LOCAL_SHARED_LIBRARIES := \
     $(AHAL_DEFAULT_AIDL_INTERFACE_DEPENDENCIES) \
-    $(LATEST_ANDROID_HARDWARE_AUDIO_EFFECT) \
-    $(LATEST_ANDROID_HARWARE_AUDIO_CORE_SOUNDDOSE) \
+    $(CURRENT_ANDROID_HARDWARE_AUDIO_EFFECT) \
+    $(CURRENT_ANDROID_HARDWARE_AUDIO_CORE_SOUNDDOSE) \
     qti-audio-types-aidl-V1-ndk \
     libbase \
     libbinder_ndk \

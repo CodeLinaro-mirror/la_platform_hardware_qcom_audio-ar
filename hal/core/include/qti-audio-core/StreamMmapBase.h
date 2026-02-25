@@ -141,6 +141,11 @@ class StreamOutMmap final : public StreamOut, public StreamMmapBase {
     ndk::ScopedAStatus getHwVolume(std::vector<float>* _aidl_return) override;
     ndk::ScopedAStatus setHwVolume(const std::vector<float>& in_channelVolumes) override;
 
+  protected:
+    bool supportsPlaybackRate() const override;
+    ndk::ScopedAStatus setPlaybackRateImpl(
+            const ::aidl::android::media::audio::common::AudioPlaybackRate& rate) override;
+
   private:
     std::vector<float> mVolumes{};
     void onClose() override { defaultOnClose(); }
