@@ -679,7 +679,7 @@ int32_t MmapUsecaseBase::stop() {
 // [MmapUsecaseBase End]
 // [MMapPlayback Start]
 size_t MMapPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
-    return kPeriodDurationMs * getSampleRate(mixPortConfig).value() / 1000;
+    return kPeriodDurationMs * DEFAULT_SAMPLE_RATE / 1000;
 }
 
 // [MMapPlayback End]
@@ -1205,7 +1205,7 @@ size_t UltraFastRecord::getFrameCount(const AudioPortConfig& mixPortConfig) {
 // [MMapRecord Start]
 
 size_t MMapRecord::getFrameCount(const AudioPortConfig& mixPortConfig) {
-    return kCaptureDurationMs * getSampleRate(mixPortConfig).value() / 1000;
+    return kCaptureDurationMs * DEFAULT_SAMPLE_RATE / 1000;
 }
 
 // [MMapRecord End]
