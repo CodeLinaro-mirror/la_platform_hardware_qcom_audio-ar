@@ -39,6 +39,14 @@ const static std::string kVoiceHDVoice{"hd_voice"};
 const static std::string kVoiceIsCRsSupported{"isCRSsupported"};
 const static std::string kVoiceCRSCall{"crs_call"};
 const static std::string kVoiceCRSVolume{"CRS_volume"};
+/** kVoiceCRSDevice : Use this parameter to set the device config to
+* AHAL for CRS call.
+**/
+const static std::string kVoiceCRSDevice{"crs_output_device"};
+/** kVoiceIsCRsDeviceSupported : Use this parameter to check if AHAL
+* can support device config from Telecom.
+**/
+const static std::string kVoiceIsCRsDeviceSupported{"isCRSDeviceSupported"};
 /** kVoiceTranslationRxMute : helps to set the Voice/VoIP Rx Volume
 * to mute when the param is set to enabled during the
 * voice call translation usecase running.

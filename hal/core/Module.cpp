@@ -2070,6 +2070,7 @@ void Module::onSetTelephonyParameters(const std::vector<VendorParameter>& parame
     bool isDeviceMuted = false;
     std::string muteDirection{""};
     bool isDeviceMuteUpdate = false;
+    int deviceType = 0;
 
     for (const auto& p : parameters) {
         std::string paramValue{};
@@ -2092,6 +2093,9 @@ void Module::onSetTelephonyParameters(const std::vector<VendorParameter>& parame
             isSetUpdate = true;
         } else if (Parameters::kVoiceCRSVolume == p.id) {
             mTelephony->setCRSVolumeFromIndex(getInt64FromString(paramValue));
+        } else if (Parameters::kVoiceCRSDevice == p.id) {
+            deviceType = getInt64FromString(paramValue);
+            mTelephony->setCrsDeviceFromParameters(deviceType);
         } else if (Parameters::kVolumeBoost == p.id) {
             const bool enable = paramValue == "on" ? true : false;
             mTelephony->updateVolumeBoost(enable);
@@ -2286,6 +2290,8 @@ Module::SetParameterToFeatureMap Module::fillSetParameterToFeatureMap() {
                                  {Parameters::kVoiceVSID, Feature::TELEPHONY},
                                  {Parameters::kVoiceCRSCall, Feature::TELEPHONY},
                                  {Parameters::kVoiceCRSVolume, Feature::TELEPHONY},
+                                 {Parameters::kVoiceCRSDevice, Feature::TELEPHONY},
+                                 {Parameters::kVoiceIsCRsDeviceSupported, Feature::TELEPHONY},
                                  {Parameters::kVolumeBoost, Feature::TELEPHONY},
                                  {Parameters::kVoiceSlowTalk, Feature::TELEPHONY},
                                  {Parameters::kVoiceHDVoice, Feature::TELEPHONY},
@@ -2468,6 +2474,13 @@ std::vector<VendorParameter> Module::onGetTelephonyParameters(const std::vector<
             parcel.value = mTelephony->isCrsCallSupported() ? "1" : "0";
             setParameter(parcel, param);
             results.push_back(param);
+        } else if (id == Parameters::kVoiceIsCRsDeviceSupported) {
+            VendorParameter param;
+            param.id = id;
+            VString parcel;
+            parcel.value = mTelephony->isCrsCallDeviceSupported() ? "1" : "0";
+            setParameter(parcel, param);
+            results.push_back(param);
         }
     }
     return results;
@@ -2547,6 +2560,7 @@ Module::GetParameterToFeatureMap Module::fillGetParameterToFeatureMap() {
                                  {Parameters::kHdrSamplingRate, Feature::HDR},
                                  {Parameters::kFacing, Feature::HDR},
                                  {Parameters::kVoiceIsCRsSupported, Feature::TELEPHONY},
+                                 {Parameters::kVoiceIsCRsDeviceSupported, Feature::TELEPHONY},
                                  {Parameters::kA2dpSuspended, Feature::BLUETOOTH},
                                  {Parameters::kCanOpenProxy, Feature::WFD},
                                  {Parameters::kWfdProxyRecordActive, Feature::WFD},

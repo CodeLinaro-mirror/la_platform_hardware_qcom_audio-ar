@@ -74,6 +74,7 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
     call_translation_config* rx_call_translation_conf;
     float mCRSVolume = 0.4f; //default CRS call volume
     bool mIsCRSStarted{false};
+    bool mIsCRSDeviceSupported{false};
     VSID mCRSVSID{VSID::VSID_1};
     constexpr static size_t KCodecBackendDefaultBitWidth = 16;
     const static ::aidl::android::media::audio::common::AudioDevice kDefaultRxDevice;
@@ -113,7 +114,9 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
     void updateDeviceMute(const bool isMute, const std::string& muteDirection);
 
     bool isCrsCallSupported();
+    bool isCrsCallDeviceSupported();
     void setCRSVolumeFromIndex(const int index);
+    void setCrsDeviceFromParameters(const int deviceType);
     void updateVoiceVolume();
     void setMicMute(const bool muted);
     void setTranslationTxMute(const bool muted);
@@ -175,6 +178,7 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
     void updateDevices();
     void updateTtyMode();
     void updateCrsDevice();
+    void startCrsCall();
     void startCrsLoopback();
     void stopCrsLoopback();
     void triggerHACinVoipPlayback();
@@ -207,7 +211,8 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
     bool mIsSlowTalkEnabled{false};
     bool mIsHDVoiceEnabled{false};
     bool mIsDeviceMuted{false};
-    bool hasValidPlaybackStream{false};
+    bool mHasConcurrentPlayback{false};
+    bool mIsCrsDeviceReady{false};
     bool mIsVoiceStarted{false};
     bool mIsVoipStarted{false};
     bool mIsBTSCOEnabled{false};

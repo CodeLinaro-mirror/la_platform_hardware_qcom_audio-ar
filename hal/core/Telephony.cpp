@@ -49,6 +49,18 @@ const AudioDevice Telephony::kDefaultCRSRxDevice =
 constexpr auto RxDeviceIndex = 0u;
 constexpr auto TxDeviceIndex = 1u;
 
+enum {
+    TYPE_BUILTIN_EARPIECE = 1,
+    TYPE_BUILTIN_SPEAKER,
+    TYPE_WIRED_HEADSET,
+    TYPE_WIRED_HEADPHONES,
+    TYPE_LINE_ANALOG,
+    TYPE_LINE_DIGITAL,
+    TYPE_BLUETOOTH_SCO,
+    TYPE_USB_HEADSET = 22,
+    TYPE_BLE_HEADSET = 26,
+};
+
 Telephony::Telephony() {
     mVoiceSession.session[VSID1_VOICE_SESSION].CallUpdate.mVSID = VSID::VSID_1;
     mVoiceSession.session[VSID1_VOICE_SESSION].state.current_ = CallState::IN_ACTIVE;
@@ -113,25 +125,8 @@ ndk::ScopedAStatus Telephony::switchAudioMode(AudioMode newAudioMode) {
         // safe to stop now
         VoiceStop();
     } else if (newAudioMode == AudioMode::RINGTONE && mSetUpdates.mIsCrsCall) {
-        if (!mIsCRSStarted && !isAnyCallActive()) {
-            getPlaybackStreamDevices();
-            updateCrsDevice();
-            auto palDevices = mPlatform.convertToPalDevices({mRxDevice, mTxDevice});
-            if ((palDevices[0].id == PAL_DEVICE_OUT_BLUETOOTH_BLE) &&
-                (palDevices[1].id == PAL_DEVICE_IN_BLUETOOTH_BLE)) {
-                updateVoiceMetadataForBT(true);
-            }
-            status = startCall();
-            if (!status.isOk()) {
-                LOG(ERROR) << __func__ << ": start crs call failed";
-            } else {
-                if (mRxDevice.type.type != AudioDeviceType::OUT_SPEAKER) {
-                   startCrsLoopback();
-                }
-                mIsCRSStarted = true;
-                mCRSVSID = mSetUpdates.mVSID;
-                LOG(DEBUG) << __func__ << " start CRS call";
-            }
+        if (!mIsCRSDeviceSupported) {
+            startCrsCall();
         }
     } else if (newAudioMode == AudioMode::CALL_SCREEN) {
         // if CALL_SCREEN mode set, then start call screen and update proxy device.
@@ -150,6 +145,111 @@ ndk::ScopedAStatus Telephony::switchAudioMode(AudioMode newAudioMode) {
     mAudioMode = newAudioMode;
     LOG(DEBUG) << __func__ << ": switching to AudioMode:" << toString(mAudioMode);
     return ndk::ScopedAStatus::ok();
+}
+
+void Telephony::setCrsDeviceFromParameters(const int deviceType) {
+
+    auto prevPalDevices =  mPlatform.convertToPalDevices({mRxDevice});
+    mIsCrsDeviceReady = false;
+
+    if (!mSetUpdates.mIsCrsCall) {
+        goto exit;
+    }
+
+    switch (deviceType) {
+        case TYPE_BUILTIN_EARPIECE:
+            mRxDevice = AudioDevice{.type.type = AudioDeviceType::OUT_SPEAKER_EARPIECE};
+            break;
+        case TYPE_BUILTIN_SPEAKER:
+            mRxDevice = AudioDevice{.type.type = AudioDeviceType::OUT_SPEAKER};
+            break;
+        case TYPE_WIRED_HEADSET:
+            mRxDevice = AudioDevice{.type.type = AudioDeviceType::OUT_HEADSET,
+                          .type.connection = AudioDeviceDescription::CONNECTION_ANALOG};
+            break;
+        case TYPE_WIRED_HEADPHONES:
+            mRxDevice = AudioDevice{.type.type = AudioDeviceType::OUT_HEADPHONE,
+                          .type.connection = AudioDeviceDescription::CONNECTION_ANALOG};
+            break;
+        case TYPE_BLUETOOTH_SCO:
+            if (mIsBTSCOEnabled) {
+                mRxDevice = AudioDevice{.type.type = AudioDeviceType::OUT_HEADSET,
+                                .type.connection = AudioDeviceDescription::CONNECTION_BT_SCO};
+            }
+            break;
+        case TYPE_BLE_HEADSET:
+            for (auto it = mExternalDevices.begin(); it < mExternalDevices.end(); it++) {
+                 if (it->type.connection == AudioDeviceDescription::CONNECTION_BT_LE &&
+                     it->type.type == AudioDeviceType::OUT_HEADSET) {
+                     mRxDevice = AudioDevice{.type.type = AudioDeviceType::OUT_HEADSET,
+                                     .type.connection = AudioDeviceDescription::CONNECTION_BT_LE};
+                 }
+            }
+            break;
+        case TYPE_USB_HEADSET:
+            for (auto it = mExternalDevices.begin(); it < mExternalDevices.end(); it++) {
+                 if (it->type.connection == AudioDeviceDescription::CONNECTION_USB &&
+                     it->type.type == AudioDeviceType::OUT_HEADSET) {
+                     mRxDevice = AudioDevice{.type.type = AudioDeviceType::OUT_HEADSET,
+                                    .type.connection = AudioDeviceDescription::CONNECTION_USB,
+                                   .address = it->address};
+                 }
+            }
+            if (!isUsbDevice(mRxDevice)) {
+                 mRxDevice = kDefaultCRSRxDevice;
+            }
+            break;
+        default:
+            LOG(ERROR) << __func__ << ": not supported device";
+            goto exit;
+     }
+     mIsCrsDeviceReady = true;
+     if (mIsCRSStarted) {
+         auto palDevices =  mPlatform.convertToPalDevices({mRxDevice});
+         if (prevPalDevices[0].id != palDevices[0].id ) {
+             mTxDevice = getMatchingTxDevice(mRxDevice);
+             updateDevices();
+         }
+     } else {
+         mTxDevice = getMatchingTxDevice(mRxDevice);
+         reconfigure(mSetUpdates);
+     }
+
+exit:
+     LOG(DEBUG) << __func__ << ": Exit";
+}
+
+void Telephony::startCrsCall() {
+    if (!mSetUpdates.mIsCrsCall || isAnyCallActive()) {
+        return;
+    }
+   // Check device readiness if device support is enabled
+    if (mIsCRSDeviceSupported && !mIsCrsDeviceReady) {
+        LOG(ERROR) << __func__ << ": CRS device is not ready";
+        return;
+    }
+
+    auto status = ndk::ScopedAStatus::ok();
+    if (!mIsCRSStarted) {
+        getPlaybackStreamDevices();
+        updateCrsDevice();
+        auto palDevices = mPlatform.convertToPalDevices({mRxDevice, mTxDevice});
+        if ((palDevices[0].id == PAL_DEVICE_OUT_BLUETOOTH_BLE) &&
+           (palDevices[1].id == PAL_DEVICE_IN_BLUETOOTH_BLE)) {
+             updateVoiceMetadataForBT(true);
+        }
+        status = startCall();
+        if (!status.isOk()) {
+            LOG(ERROR) << __func__ << ": start crs call failed";
+        } else {
+            if (mRxDevice.type.type != AudioDeviceType::OUT_SPEAKER) {
+                startCrsLoopback();
+            }
+            mIsCRSStarted = true;
+            mCRSVSID = mSetUpdates.mVSID;
+            LOG(DEBUG) << __func__ << " start CRS call";
+        }
+    }
 }
 
 ndk::ScopedAStatus Telephony::setTelecomConfig(const TelecomConfig& in_config,
@@ -214,6 +314,12 @@ void Telephony::setTranslationTxMute(const bool muted) {
             return;
         }
     }
+}
+
+bool Telephony::isCrsCallDeviceSupported() {
+    std::scoped_lock lock{mLock};
+    mIsCRSDeviceSupported = true;
+    return mIsCRSDeviceSupported;
 }
 
 bool Telephony::isCrsCallSupported() {
@@ -508,7 +614,11 @@ void Telephony::onPlaybackStreamDevices(const std::vector<AudioDevice>& playback
         LOG(VERBOSE) << __func__ << ": voice call exist";
         return;
     }
-    if (hasValidPlaybackStream && playbackStreamDevices.size() == 1) { // combo devices unsupported.
+    if (mIsCRSDeviceSupported) {
+       return;
+    }
+
+    if (mHasConcurrentPlayback && playbackStreamDevices.size() == 1) { // combo devices unsupported.
         if (isValidDevice(playbackStreamDevices[0])) {
             mPlaybackStreamDevices = playbackStreamDevices;
             mRxDevice = playbackStreamDevices[0]; // expected to have 1 device.
@@ -527,6 +637,10 @@ void Telephony::onBluetoothScoEvent(const bool& enable) {
     std::scoped_lock lock{mLock};
 
     mIsBTSCOEnabled = enable;
+    if (mIsCRSDeviceSupported) {
+        return;
+    }
+
     if (enable) {
         mRxDevice = AudioDevice{.type.type = AudioDeviceType::OUT_DEVICE,
                                 .type.connection = AudioDeviceDescription::CONNECTION_BT_SCO};
@@ -560,10 +674,16 @@ void Telephony::onBluetoothScoEvent(const bool& enable) {
 
 void Telephony::updateCrsDevice() {
     LOG(VERBOSE) << __func__ << ": Enter";
-    if (hasValidPlaybackStream) {
+    if (mHasConcurrentPlayback) {
         return;
     }
-
+    if (mIsCRSDeviceSupported) {
+        if (mRxDevice.type.type == AudioDeviceType::OUT_SPEAKER_EARPIECE) {
+            mRxDevice = kDefaultCRSRxDevice;
+            mTxDevice = getMatchingTxDevice(mRxDevice);
+        }
+        return;
+    }
     if (CRSPluginDevices.empty()) {
         if (mRxDevice.type.type == AudioDeviceType::OUT_SPEAKER_EARPIECE) {
             mRxDevice = kDefaultCRSRxDevice;
@@ -681,28 +801,10 @@ void Telephony::reconfigure(const SetUpdates& newUpdates) {
     if (newUpdates.mIsCrsCall) {
         mSetUpdates.mIsCrsCall = newUpdates.mIsCrsCall;
         mSetUpdates.mVSID = newUpdates.mVSID;
-        if (!mIsCRSStarted && !isAnyCallActive() &&
-            mAudioMode == AudioMode::RINGTONE) {
-             getPlaybackStreamDevices();
-             updateCrsDevice();
-             palDevices = mPlatform.convertToPalDevices({mRxDevice, mTxDevice});
-             if ((palDevices[0].id == PAL_DEVICE_OUT_BLUETOOTH_BLE) &&
-                 (palDevices[1].id == PAL_DEVICE_IN_BLUETOOTH_BLE)) {
-                 updateVoiceMetadataForBT(true);
-             }
-             status = startCall();
-             if (!status.isOk()) {
-                 LOG(ERROR) << __func__ << ": start crs call failed";
-             } else {
-                 if (mRxDevice.type.type != AudioDeviceType::OUT_SPEAKER) {
-                     startCrsLoopback();
-                 }
-                 mIsCRSStarted  = true;
-                 mCRSVSID = newUpdates.mVSID;
-                 LOG(DEBUG) << __func__ << ": start CRS call";
-             }
-             return;
-         }
+        if (mAudioMode == AudioMode::RINGTONE && !mIsCRSStarted) {
+            startCrsCall();
+            return;
+        }
     } else {
          if (mIsCRSStarted && mCRSVSID == newUpdates.mVSID) {
              status = stopCall();
@@ -714,6 +816,7 @@ void Telephony::reconfigure(const SetUpdates& newUpdates) {
                  }
                  mSetUpdates.mIsCrsCall = newUpdates.mIsCrsCall;
                  mIsCRSStarted  = false;
+                 mIsCrsDeviceReady = false;
                  LOG(DEBUG) << __func__ << ": stop CRS call";
              }
          }
@@ -925,7 +1028,11 @@ void Telephony::triggerHACinVoipPlayback() {
 }
 
 void Telephony::getPlaybackStreamDevices() {
-    if (hasValidPlaybackStream) {
+    if (mIsCRSDeviceSupported) {
+        return;
+    }
+
+    if (mHasConcurrentPlayback) {
         mRxDevice = mPlaybackStreamDevices[0];
         mTxDevice = getMatchingTxDevice(mRxDevice);
         if (isBluetoothDevice(mRxDevice)) {
@@ -937,10 +1044,15 @@ void Telephony::getPlaybackStreamDevices() {
 void Telephony::onPlaybackStart(const std::vector<AudioDevice>& playbackStreamDevices) {
     std::scoped_lock lock{mLock};
 
-    if (playbackStreamDevices.size() == 1 &&
+    if (mIsCRSDeviceSupported) {
+        if (mIsCRSStarted) {
+            mHasConcurrentPlayback = true;
+            updateDevices();
+        }
+    } else if (playbackStreamDevices.size() == 1 &&
         isValidDevice(playbackStreamDevices[0])) {
         mPlaybackStreamDevices = playbackStreamDevices;
-        hasValidPlaybackStream = true;
+        mHasConcurrentPlayback = true;
         if (mIsCRSStarted) {
             mRxDevice = playbackStreamDevices[0];
             mTxDevice = getMatchingTxDevice(mRxDevice);
@@ -952,11 +1064,18 @@ void Telephony::onPlaybackStart(const std::vector<AudioDevice>& playbackStreamDe
 
 void Telephony::onPlaybackClose() {
     std::scoped_lock lock{mLock};
-    if (hasValidPlaybackStream) {
-        hasValidPlaybackStream = false;
-        if (mIsCRSStarted) {
-            LOG(INFO) << __func__ << ": playback conc status stop for CRS call";
+
+    if (mIsCRSDeviceSupported) {
+        mHasConcurrentPlayback = false;
+        if (mIsCRSStarted)
             updateDevices();
+    } else {
+        if (mHasConcurrentPlayback) {
+            mHasConcurrentPlayback = false;
+            if (mIsCRSStarted) {
+                LOG(INFO) << __func__ << ": playback conc status stop for CRS call";
+                updateDevices();
+            }
         }
     }
 }
@@ -1072,7 +1191,7 @@ ndk::ScopedAStatus Telephony::startCall() {
 
 void Telephony::startCrsLoopback() {
     LOG(DEBUG) << __func__ << ": Enter";
-    if (hasValidPlaybackStream) {
+    if (mHasConcurrentPlayback) {
         LOG(VERBOSE) << __func__ << ": block loopback start";
         return;
     }
