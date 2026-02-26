@@ -58,6 +58,22 @@ PRODUCT_PACKAGES += fai__4.8.21_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.2.0_
 PRODUCT_PACKAGES += fai__8.0.2_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.2.0_enpuv7.pmd
 PRODUCT_PACKAGES += fai__8.0.3_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.2.0_enpuv7.pmd
 PRODUCT_PACKAGES += fai__3.0.0_0.0__eai_7.2.0_enpuv7.pmd
+PRODUCT_PACKAGES += fai__2.9.0_1.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.4.0_enpuv7.pmd
+PRODUCT_PACKAGES += fai__2.9.2_1.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.4.0_enpuv7.pmd
+PRODUCT_PACKAGES += fai__2.7.2_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.4.0_enpuv7.pmd
+PRODUCT_PACKAGES += fai__4.8.4_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.4.0_enpuv7.pmd
+PRODUCT_PACKAGES += fai__4.8.21_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.4.0_enpuv7.pmd
+PRODUCT_PACKAGES += fai__8.0.2_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.4.0_enpuv7.pmd
+PRODUCT_PACKAGES += fai__8.0.3_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.4.0_enpuv7.pmd
+PRODUCT_PACKAGES += fai__3.0.0_0.0__eai_7.4.0_enpuv7.pmd
+PRODUCT_PACKAGES += fai__2.9.0_1.2__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.4.0_enpuv7.pmd
+PRODUCT_PACKAGES += fai__2.9.2_1.2__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.4.0_enpuv7.pmd
+PRODUCT_PACKAGES += fai__2.7.2_0.2__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.4.0_enpuv7.pmd
+PRODUCT_PACKAGES += fai__4.8.4_0.2__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.4.0_enpuv7.pmd
+PRODUCT_PACKAGES += fai__4.8.21_0.2__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.4.0_enpuv7.pmd
+PRODUCT_PACKAGES += fai__4.8.14_0.2__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.4.0_enpuv7.pmd
+PRODUCT_PACKAGES += fai__8.0.2_0.2__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.4.0_enpuv7.pmd
+PRODUCT_PACKAGES += fai__8.0.3_0.2__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.4.0_enpuv7.pmd
 
 # Adding WNR Model File
 PRODUCT_PACKAGES += wind_filter__1.0__48k__2ch__16b__eai_5.5.eai
