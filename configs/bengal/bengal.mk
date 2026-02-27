@@ -181,6 +181,10 @@ PRODUCT_PACKAGES += IDP_qti_optimized_workspaceFileXml.qwsp
 endif
 PRODUCT_PACKAGES += QRD_acdb_cal.acdb
 PRODUCT_PACKAGES += QRD_workspaceFileXml.qwsp
+ifeq ($(TARGET_HAS_QTI_OPTIMIZATIONS), true)
+PRODUCT_PACKAGES += QRD_qti_optimized_acdb_cal.acdb
+PRODUCT_PACKAGES += QRD_qti_optimized_workspaceFileXml.qwsp
+endif
 PRODUCT_PACKAGES += IDP_scuba_acdb_cal.acdb
 PRODUCT_PACKAGES += IDP_scuba_workspaceFileXml.qwsp
 ifeq ($(TARGET_HAS_QTI_OPTIMIZATIONS), true)
