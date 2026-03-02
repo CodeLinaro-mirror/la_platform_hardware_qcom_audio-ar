@@ -289,9 +289,31 @@ ndk::ScopedAStatus StreamOutPrimary::configureMMapStream(int32_t* fd, int64_t* b
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
     }
     attr->type = PAL_STREAM_ULTRA_LOW_LATENCY;
-       auto palDevices = mPlatform.configureAndFetchPalDevices(mMixPortConfig, mTag, mConnectedDevices,
+    std::string mmapBusAddr;
+    for (const auto& device : mConnectedDevices) {
+        if (device.address.getTag() == AudioDeviceAddress::Tag::id) {
+            const std::string& addr = device.address.get<AudioDeviceAddress::Tag::id>();
+            if (addr.find("BUS") != std::string::npos) {
+                mmapBusAddr = addr;
+                break;
+            }
+        }
+    }
+
+    attr->bus_addr = nullptr;
+    if (!mmapBusAddr.empty()) {
+        attr->bus_addr = strdup(mmapBusAddr.c_str());
+        LOG(DEBUG) << __func__ << mLogPrefix << " bus_addr set successfully";
+    } else {
+        LOG(WARNING) << __func__ << mLogPrefix << " No bus address found, bus_addr will be NULL!";
+    }
+    auto palDevices = mPlatform.configureAndFetchPalDevices(mMixPortConfig, mTag, mConnectedDevices,
                                                             true /*dummyDevice*/);
-	   if (!palDevices.size()) {
+    if (!palDevices.size()) {
+        if (attr->bus_addr) {
+            free(attr->bus_addr);
+            attr->bus_addr = nullptr;
+        }
         LOG(ERROR) << __func__ << mLogPrefix << " no connected devices on stream";
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
     }
@@ -301,6 +323,10 @@ ndk::ScopedAStatus StreamOutPrimary::configureMMapStream(int32_t* fd, int64_t* b
     if (int32_t ret = ::pal_stream_open(attr.get(), palDevices.size(), palDevices.data(), 0,
                                         nullptr, palFn, cookie, &(this->mPalHandle));
         ret) {
+        if (attr->bus_addr) {
+            free(attr->bus_addr);
+            attr->bus_addr = nullptr;
+        }
         LOG(ERROR) << __func__ << mLogPrefix << " pal stream open failed, ret:" << std::to_string(ret);
         mPalHandle = nullptr;
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
@@ -316,6 +342,10 @@ ndk::ScopedAStatus StreamOutPrimary::configureMMapStream(int32_t* fd, int64_t* b
     if (int32_t ret =
                 ::pal_stream_set_buffer_size(this->mPalHandle, nullptr, palBufferConfig.get());
         ret) {
+        if (attr->bus_addr) {
+            free(attr->bus_addr);
+            attr->bus_addr = nullptr;
+        }
         LOG(ERROR) << __func__ << mLogPrefix
                    << " pal_stream_set_buffer_size failed!!! ret:" << std::to_string(ret);
         ::pal_stream_close(mPalHandle);
@@ -330,6 +360,10 @@ ndk::ScopedAStatus StreamOutPrimary::configureMMapStream(int32_t* fd, int64_t* b
     int32_t ret = std::get<MMapPlayback>(mExt).createMMapBuffer(frameSize, fd, burstSizeFrames,
                                                                 flags, bufferSizeFrames);
     if (ret != 0) {
+        if (attr->bus_addr) {
+            free(attr->bus_addr);
+            attr->bus_addr = nullptr;
+        }
         LOG(ERROR) << __func__ << mLogPrefix << " create MMap buffer failed!";
         ::pal_stream_close(mPalHandle);
         mPalHandle = nullptr;

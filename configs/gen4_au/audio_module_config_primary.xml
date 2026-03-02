@@ -193,7 +193,7 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <mixPort name="raw_out" role="source" flags="FAST RAW">
             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
-        <mixPort name="mmap_no_irq_out" role="source" flags="DIRECT MMAP_NOIRQ">
+        <mixPort name="mmap_no_irq_out" role="source" flags="DIRECT MMAP_NOIRQ" maxOpenStreamCount="7" maxActiveStreamCount="7">
             <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
         <mixPort name="echo_ref" role="sink">
