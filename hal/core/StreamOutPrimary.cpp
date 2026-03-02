@@ -710,8 +710,19 @@ int32_t StreamOutPrimary::setAggregateSourceMetadata(bool voiceActive) {
         }
     }
 
+    auto getCombinedMetadata = [&]() {
+        std::ostringstream oss;
+        oss << " track count:" << btSourceMetadata.track_count;
+        for (size_t i = 0; i < btSourceMetadata.track_count; i++) {
+            oss << " { Usage:" << btSourceMetadata.tracks[i].usage
+                << ", content_type:" << btSourceMetadata.tracks[i].content_type << " } ";
+        }
+        return oss.str();
+    };
+
     if (btSourceMetadata.track_count > 0) {
         btSourceMetadata.tracks = total_tracks.data();
+        LOG(VERBOSE) << __func__ << mLogPrefix << ": combined : " << getCombinedMetadata();
         pal_set_param(PAL_PARAM_ID_SET_SOURCE_METADATA, (void*)&btSourceMetadata, 0);
     }
 

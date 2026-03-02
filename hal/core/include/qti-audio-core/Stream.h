@@ -713,9 +713,7 @@ class StreamIn : virtual public StreamCommonInterface,
         return getStreamCommonCommon(_aidl_return);
     }
     ndk::ScopedAStatus updateMetadata(const ::aidl::android::hardware::audio::common::SinkMetadata&
-                                              in_sinkMetadata) override {
-        return updateMetadataCommon(in_sinkMetadata);
-    }
+                                              in_sinkMetadata) override;
     ndk::ScopedAStatus getActiveMicrophones(
             std::vector<::aidl::android::media::audio::common::MicrophoneDynamicInfo>* _aidl_return)
             override;
@@ -758,10 +756,7 @@ class StreamOut : virtual public StreamCommonInterface,
         return getStreamCommonCommon(_aidl_return);
     }
     ndk::ScopedAStatus updateMetadata(
-            const ::aidl::android::hardware::audio::common::SourceMetadata& in_sourceMetadata)
-            override {
-        return updateMetadataCommon(in_sourceMetadata);
-    }
+            const ::aidl::android::hardware::audio::common::SourceMetadata& in_sourceMetadata) override;
     ndk::ScopedAStatus updateOffloadMetadata(
             const ::aidl::android::hardware::audio::common::AudioOffloadMetadata&
                     in_offloadMetadata) override;
