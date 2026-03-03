@@ -15,15 +15,14 @@
  */
 
 /*
- * ​​​​​Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
 #include <vector>
 
 #define LOG_TAG "AHAL_ModuleStub_QTI"
-#include <Utils.h>
 #include <android-base/logging.h>
 
 #include <qti-audio-core/Bluetooth.h>
@@ -37,9 +36,6 @@ using aidl::android::media::audio::common::AudioPort;
 using aidl::android::media::audio::common::AudioPortConfig;
 using aidl::android::media::audio::common::MicrophoneInfo;
 
-using ::aidl::android::hardware::audio::common::getFrameSizeInBytes;
-using ::aidl::android::hardware::audio::common::isBitPositionFlagSet;
-using ::aidl::android::hardware::audio::common::isValidAudioMode;
 using ::aidl::android::hardware::audio::common::SinkMetadata;
 using ::aidl::android::hardware::audio::common::SourceMetadata;
 

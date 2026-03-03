@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
 #define LOG_TAG "AHAL_VoiceProcessingQti"
 
 #include "VoiceProcessing.h"
-#include <Utils.h>
+
 #include <android-base/logging.h>
 
 using aidl::android::hardware::audio::effect::Descriptor;

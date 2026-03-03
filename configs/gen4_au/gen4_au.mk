@@ -112,9 +112,9 @@ AUDIO_FEATURE_ENABLED_AUDIO_CONTROL_HAL := true
 AUDIO_FEATURE_ENABLED_AUDIO_PARSERS := true
 
 #enable qcom parsers for WMA/APE/FLAC/ALAC
-# disable 3GP qcom parser
+# disable 3GP qcom parser for APV CTS TCs
 PRODUCT_PROPERTY_OVERRIDES += \
-vendor.mm.target.enable.qcom_parser=655632
+vendor.mm.target.enable.qcom_parser=655376
 
 
 ifneq ($(ENABLE_HYP),true)
@@ -186,6 +186,11 @@ PRODUCT_COPY_FILES += \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/bluetooth_with_le_audio_policy_configuration_7_0.xml:$(TARGET_COPY_OUT_VENDOR)/etc/bluetooth_audio_policy_configuration.xml \
     $(TOPDIR)frameworks/native/data/etc/android.hardware.audio.pro.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.pro.xml \
     $(TOPDIR)frameworks/native/data/etc/android.hardware.audio.low_latency.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.low_latency.xml
+# blocklist files
+PRODUCT_COPY_FILES += \
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/modules.audio.ar.blocklist:$(TARGET_COPY_OUT_VENDOR_DLKM)/lib/modules/modules.audio.ar.blocklist \
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/modules.audio.audiolite.blocklist:$(TARGET_COPY_OUT_VENDOR_DLKM)/lib/modules/modules.audio.audiolite.blocklist \
+    vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/modules.audio.legacy.blocklist:$(TARGET_COPY_OUT_VENDOR_DLKM)/lib/modules/modules.audio.legacy.blocklist
 
 # push both value-added and pure xml files for runtime selection in AHAL
 # Dont push value-added xml for gen5
@@ -242,7 +247,7 @@ PRODUCT_COPY_FILES += \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/mixer_paths_sa8255_adp_star.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_sa8255_adp_star.xml
 endif
 
-ifneq (,$(filter $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), gen4_au))
+ifneq (,$(filter $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), gen4_au, gen4_gvm))
 PRODUCT_COPY_FILES += \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/modules.audio.ar.blocklist:$(TARGET_COPY_OUT_VENDOR_DLKM)/lib/modules/modules.audio.ar.blocklist \
     vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/modules.audio.legacy.blocklist:$(TARGET_COPY_OUT_VENDOR_DLKM)/lib/modules/modules.audio.legacy.blocklist
@@ -261,7 +266,7 @@ PRODUCT_COPY_FILES += \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/default_volume_tables.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/default_volume_tables.xml
 endif
 
-ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)$(TARGET_BOARD_DERIVATIVE_SUFFIX), gen4_gvm)
+ifneq ( ,$(filter $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)$(TARGET_BOARD_DERIVATIVE_SUFFIX), gen4_gvm gen4_gvm_sgt gen4_gvm_cmu))
 PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/pal/configs/gen4_au/plugin_manager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/plugin_manager.xml \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/vendor_audio_interfaces.xml:$(TARGET_COPY_OUT_VENDOR)/etc/vendor_audio_interfaces.xml

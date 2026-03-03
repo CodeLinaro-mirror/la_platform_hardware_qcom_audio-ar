@@ -12,7 +12,6 @@ EFFECTS_DEFAULTS_SHARED_LIBRARIES := \
     $(LATEST_ANDROID_HARDWARE_COMMON) \
     $(LATEST_ANDROID_MEDIA_AUDIO_COMMON_TYPES) \
     $(LATEST_ANDROID_HARDWARE_COMMON_FMQ) \
-    libaudioaidlcommon \
     libbase \
     libbinder_ndk \
     libcutils \

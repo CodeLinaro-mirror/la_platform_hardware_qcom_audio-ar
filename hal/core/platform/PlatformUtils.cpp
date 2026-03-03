@@ -1,12 +1,11 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
 #define LOG_NDEBUG 0
 #define LOG_TAG "AHAL_PlatformUtils_QTI"
 
-#include <Utils.h>
 #include <android-base/logging.h>
 #include <qti-audio-core/Platform.h>
 #include <qti-audio-core/PlatformUtils.h>
@@ -17,7 +16,6 @@
 #include <set>
 #include <vector>
 
-using ::aidl::android::hardware::audio::common::getChannelCount;
 using ::aidl::android::media::audio::common::AudioChannelLayout;
 using ::aidl::android::media::audio::common::AudioFormatDescription;
 using ::aidl::android::media::audio::common::AudioFormatType;
@@ -86,15 +84,6 @@ const AudioChannelCountToMaskMap& getSupportedChannelIndexLayoutMap() {
 }
 
 #undef MAKE_INDEX_MASK
-
-// Assuming that M is a map whose keys' type is K and values' type is V,
-// return the corresponding value of the given key from the map or default
-// value if the key is not found.
-template <typename M, typename K, typename V>
-static auto findValueOrDefault(const M& m, const K& key, V defaultValue) {
-    auto it = m.find(key);
-    return it == m.end() ? defaultValue : it->second;
-}
 
 AudioChannelLayout getChannelLayoutMaskFromChannelCount(unsigned int channelCount, int isInput) {
     return findValueOrDefault(

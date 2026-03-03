@@ -15,12 +15,11 @@
  */
 
 /*
- * Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
-#include <Utils.h>
 #include <aidl/android/media/audio/common/AudioChannelLayout.h>
 #include <aidl/android/media/audio/common/AudioDeviceType.h>
 #include <aidl/android/media/audio/common/AudioFormatDescription.h>
@@ -43,7 +42,6 @@
 
 #include <qti-audio-core/ModuleConfig.h>
 
-using ::aidl::android::hardware::audio::common::makeBitPositionFlagMask;
 using ::aidl::android::hardware::audio::core::AudioPatch;
 using ::aidl::android::hardware::audio::core::AudioRoute;
 using ::aidl::android::media::audio::common::AudioChannelLayout;
