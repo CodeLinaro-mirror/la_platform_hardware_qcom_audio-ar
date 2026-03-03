@@ -910,6 +910,8 @@ ModulePrimary::SetParameterToFeatureMap ModulePrimary::fillSetParameterToFeature
                                  {Parameters::kInCallMusic, Feature::GENERIC},
                                  {Parameters::kTranslateRecord, Feature::GENERIC},
                                  {Parameters::kUHQA, Feature::GENERIC},
+                                 {Parameters::kVoice_Assistant_Zone, Feature::GENERIC},
+                                 {Parameters::kInput_Mic_Zone, Feature::GENERIC},
                                  {Parameters::kFbspCfgWaitTime, Feature::FTM},
                                  {Parameters::kFbspFTMWaitTime, Feature::FTM},
                                  {Parameters::kFbspValiWaitTime, Feature::FTM},
