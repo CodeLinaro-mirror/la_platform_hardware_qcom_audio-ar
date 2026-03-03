@@ -160,8 +160,7 @@ ndk::ScopedAStatus BluetoothLe::isEnabled(bool* _aidl_return) {
 
 ndk::ScopedAStatus BluetoothLe::setEnabled(bool in_enabled) {
     mEnabled = in_enabled;
-    mEnabled == true ? mPlatform.setBluetoothParameters("LeAudioSuspended=false")
-                     : mPlatform.setBluetoothParameters("LeAudioSuspended=true");
+    mPlatform.doBleSuspend(!mEnabled);
     LOG(DEBUG) << __func__ << ": " << mEnabled;
     return ndk::ScopedAStatus::ok();
 }

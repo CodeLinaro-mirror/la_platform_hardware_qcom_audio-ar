@@ -916,8 +916,46 @@ void Platform::reconfigureA2DP() noexcept {
     LOG(VERBOSE) << __func__ << ": BT A2DP reconfigured";
 }
 
+void Platform::doBleSuspend(const bool suspend) noexcept {
+    /* Todo remove reconfig mutex after making reconfig callback sync with Module binder thread */
+    std::lock_guard l(AudioExtension::reconfig_wait_mutex_);
+    pal_param_bta2dp_t param_bt_a2dp;
+    param_bt_a2dp.is_suspend_setparam = true;
+
+    if (suspend) {
+        param_bt_a2dp.a2dp_suspended = true;
+        param_bt_a2dp.a2dp_capture_suspended = true;
+    } else {
+        param_bt_a2dp.a2dp_suspended = false;
+        param_bt_a2dp.a2dp_capture_suspended = false;
+    }
+    param_bt_a2dp.is_in_call = (mCallMode != AUDIO_MODE_NORMAL);
+
+    auto doSetParam = [&](uint32_t paramId) -> bool {
+        if (auto ret = pal_set_param(paramId, reinterpret_cast<void*>(&param_bt_a2dp),
+                                     sizeof(param_bt_a2dp));
+            ret != 0) {
+            LOG(ERROR) << " doBleSuspend :" << "pal_set_param failed for param id:" << paramId;
+            return false;
+        }
+        return true;
+    };
+
+    param_bt_a2dp.dev_id = PAL_DEVICE_OUT_BLUETOOTH_BLE;
+    auto isOk = doSetParam(PAL_PARAM_ID_BT_A2DP_SUSPENDED);
+
+    param_bt_a2dp.dev_id = PAL_DEVICE_IN_BLUETOOTH_BLE;
+    isOk = isOk && doSetParam(PAL_PARAM_ID_BT_A2DP_CAPTURE_SUSPENDED);
+
+    param_bt_a2dp.dev_id = PAL_DEVICE_OUT_BLUETOOTH_BLE_BROADCAST;
+    isOk = isOk && doSetParam(PAL_PARAM_ID_BT_A2DP_SUSPENDED);
+
+    LOG_IF(INFO, isOk) << __func__ << ": BLE status: " << (suspend ? "suspended" : "resumed");
+}
+
 bool Platform::setBluetoothParameters(const char* kvpairs) {
     if (mIsScoManagedbyAudio) {
+        LOG(INFO) << __func__ << ": sco managed by audio: hence ignored ";
         return true;
     }
     struct str_parms* parms = NULL;
@@ -1189,35 +1227,6 @@ bool Platform::setBluetoothParameters(const char* kvpairs) {
         LOG(VERBOSE) << __func__ << " BT A2DP Capture Suspended " << value << "command received";
         std::unique_lock<std::mutex> guard(AudioExtension::reconfig_wait_mutex_);
         ret = pal_set_param(PAL_PARAM_ID_BT_A2DP_CAPTURE_SUSPENDED, (void*)&param_bt_a2dp,
-                            sizeof(pal_param_bta2dp_t));
-    }
-    ret = str_parms_get_str(parms, "LeAudioSuspended", value, sizeof(value));
-    if (ret >= 0) {
-        pal_param_bta2dp_t param_bt_a2dp;
-        param_bt_a2dp.is_suspend_setparam = true;
-
-        if (strcmp(value, "true") == 0) {
-            param_bt_a2dp.a2dp_suspended = true;
-            param_bt_a2dp.a2dp_capture_suspended = true;
-        } else {
-            param_bt_a2dp.a2dp_suspended = false;
-            param_bt_a2dp.a2dp_capture_suspended = false;
-        }
-
-        param_bt_a2dp.is_in_call = (mCallMode != AUDIO_MODE_NORMAL);
-
-        LOG(INFO) << __func__ << " BT LEA Suspended = ," << value << " command received";
-        // Synchronize the suspend/resume calls from setparams and reconfig_cb
-        std::unique_lock<std::mutex> guard(AudioExtension::reconfig_wait_mutex_);
-        param_bt_a2dp.dev_id = PAL_DEVICE_OUT_BLUETOOTH_BLE;
-        ret = pal_set_param(PAL_PARAM_ID_BT_A2DP_SUSPENDED, (void*)&param_bt_a2dp,
-                            sizeof(pal_param_bta2dp_t));
-
-        param_bt_a2dp.dev_id = PAL_DEVICE_IN_BLUETOOTH_BLE;
-        ret = pal_set_param(PAL_PARAM_ID_BT_A2DP_CAPTURE_SUSPENDED, (void*)&param_bt_a2dp,
-                            sizeof(pal_param_bta2dp_t));
-        param_bt_a2dp.dev_id = PAL_DEVICE_OUT_BLUETOOTH_BLE_BROADCAST;
-        ret = pal_set_param(PAL_PARAM_ID_BT_A2DP_SUSPENDED, (void*)&param_bt_a2dp,
                             sizeof(pal_param_bta2dp_t));
     }
     if (parms)
