@@ -183,7 +183,9 @@ ndk::ScopedAStatus Telephony::setTelecomConfig(const TelecomConfig& in_config,
          * remove the telephony lock before handling the streams.
          * unlocking the telephony is necessary because the stream already have telephony instance.
          */
-
+        if(isAnyCallActive()) {
+            updateDevices();
+        }
         lock.unlock();
         triggerHACinVoipPlayback();
         lock.lock();
