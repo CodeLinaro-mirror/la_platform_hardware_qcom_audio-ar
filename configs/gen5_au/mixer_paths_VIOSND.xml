@@ -3215,4 +3215,7 @@
     <path name="call-proxy-in">
     </path>
 
+    <path name="dummy-dev">
+    </path>
+
 </mixer>
