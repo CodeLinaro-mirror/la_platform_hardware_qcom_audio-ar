@@ -62,6 +62,7 @@ PRODUCT_PACKAGES += fai__3.0.0_0.0__eai_7.2.0_enpuv7.pmd
 # Adding WNR Model File
 PRODUCT_PACKAGES += wind_filter__1.0__48k__2ch__16b__eai_5.5.eai
 PRODUCT_PACKAGES += wind_filter__1.0__48k__2ch__16b__eai_5.8.eai
+PRODUCT_PACKAGES += wind_filter__1.0__48k__2ch__16b__eai_7.4.eai
 
 # Audio configuration xml's related to Hawi
 QCV_FAMILY_SKUS := art
