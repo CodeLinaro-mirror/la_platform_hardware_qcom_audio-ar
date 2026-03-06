@@ -132,7 +132,7 @@ endif
 endif
 endif
 
-ifneq (,$(filter U UpsideDownCake 14 V VanillaIceCream 15 W Baklava 16, $(PLATFORM_VERSION)))
+ifneq (,$(filter U UpsideDownCake 14 V VanillaIceCream 15 W Baklava 16 CinnamonBun 17, $(PLATFORM_VERSION)))
 AUDIO_FEATURE_ENABLED_HAL_V7 := true
 PRODUCT_PACKAGES += libarpowerpolicy
 PRODUCT_ODM_PROPERTIES += \
