@@ -143,5 +143,40 @@ LOCAL_SHARED_LIBRARIES := \
     libutils \
 
 LOCAL_STATIC_LIBRARIES := libhealthhalutils
+include $(BUILD_SHARED_LIBRARY)
 
+#-------------------------------------------
+#            Build BT Aurachat LIB
+#-------------------------------------------
+include $(CLEAR_VARS)
+
+LOCAL_MODULE := libbtachatpal
+LOCAL_VENDOR_MODULE := true
+
+
+LOCAL_SRC_FILES:= BTAurachat.cpp
+
+LOCAL_CFLAGS += \
+    -Wall \
+    -Werror \
+    -Wno-unused-function \
+    -Wno-unused-variable
+
+LOCAL_SHARED_LIBRARIES := \
+    libcutils \
+    libdl \
+    libexpat \
+    liblog \
+    libar-pal
+
+LOCAL_C_INCLUDES := \
+    vendor/qcom/opensource/pal \
+    vendor/qcom/opensource/audio-hal/primary-hal/hal \
+    vendor/qcom/opensource/audio-hal/primary-hal/hal/audio_extn \
+    external/expat/lib \
+    system/media/audio_utils/include \
+    $(call include-path-for, audio-route) \
+
+LOCAL_HEADER_LIBRARIES += libhardware_headers
+LOCAL_HEADER_LIBRARIES += libsystem_headers
 include $(BUILD_SHARED_LIBRARY)
