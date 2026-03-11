@@ -193,8 +193,10 @@ void open_stream() {
 // Close the Dummy Stream
 void close_stream()
 {
-    if (gsp_palHandle)
+    if (gsp_palHandle) {
         pal_stream_close(gsp_palHandle);
+        gsp_palHandle = NULL;
+    }
 }
 
 // Helper to subscribe to VHal notifications

@@ -140,13 +140,22 @@ std::map<int32_t, int32_t>& AudioVolume::getVolumeCurve(int index)
 
 }
 
-int32_t AudioVolume::getNearestAttenuation(float value,int volumeCurveIndex)
+int32_t AudioVolume::getNearestAttenuation(float value, int volumeCurveIndex)
 {
     const std::map<int32_t,int32_t>& mapReference = getVolumeCurve(volumeCurveIndex);
+    int minIndex = mapReference.begin()->first;
+    int maxIndex = mapReference.rbegin()->first;
 
-    // First get index
-    int range = mapReference.rbegin()->first - mapReference.begin()->first;
-    int index = value * range + mapReference.begin()->first;
+    // First get index (rounded on closest integer)
+    int range = maxIndex - minIndex;
+    int index = static_cast<int>(std::round(value * range)) + minIndex;
+    LOG(DEBUG)  << __func__ << " value: " << value << ", index: " << value * range + minIndex
+            << ", rounded index: " << index << ", clamped index: "
+            << std::clamp(minIndex, index, maxIndex);
+
+    // Clamp index to prevent out of bounds
+    index = std::clamp(minIndex, index, maxIndex);
+
     // Get attenuation
     auto it = mapReference.lower_bound(index);
     if (it == mapReference.begin()) {
