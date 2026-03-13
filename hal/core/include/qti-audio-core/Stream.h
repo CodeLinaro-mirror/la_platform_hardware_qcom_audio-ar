@@ -15,15 +15,15 @@
  */
 
 /*
- * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
 #pragma once
 
-#include <StreamWorker.h>
-#include <Utils.h>
+
+
 #include <aidl/android/hardware/audio/common/SinkMetadata.h>
 #include <aidl/android/hardware/audio/common/SourceMetadata.h>
 #include <aidl/android/hardware/audio/core/BnStreamCommon.h>
@@ -50,10 +50,10 @@
 #include <optional>
 #include <variant>
 
-#include <Utils.h>
 #include <qti-audio-core/ChildInterface.h>
 #include <qti-audio-core/Platform.h>
 #include <qti-audio-core/Utils.h>
+#include <qti-audio-core/StreamWorker.h>
 
 #define DEEP_BUFFER_PLATFORM_CAPTURE_DELAY (40*1000LL)
 #define LOW_LATENCY_PLATFORM_CAPTURE_DELAY (40*1000LL)
@@ -247,7 +247,7 @@ struct DriverInterface {
     virtual void shutdown() { return;}
 };
 
-class StreamWorkerCommonLogic : public ::android::hardware::audio::common::StreamLogic {
+class StreamWorkerCommonLogic : public StreamLogic {
   public:
     bool isClosed() const {
         return static_cast<int32_t>(mState.load()) == StreamContext::STATE_CLOSED;
@@ -337,8 +337,8 @@ struct StreamWorkerInterface {
 
 template <class WorkerLogic>
 class StreamWorkerImpl : public StreamWorkerInterface,
-                         public ::android::hardware::audio::common::StreamWorker<WorkerLogic> {
-    using WorkerImpl = ::android::hardware::audio::common::StreamWorker<WorkerLogic>;
+                         public StreamWorker<WorkerLogic> {
+    using WorkerImpl = StreamWorker<WorkerLogic>;
 
   public:
     StreamWorkerImpl(StreamContext* context, DriverInterface* driver)

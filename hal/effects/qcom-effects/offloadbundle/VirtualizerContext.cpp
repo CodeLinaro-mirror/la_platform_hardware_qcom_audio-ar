@@ -1,12 +1,10 @@
 /*
-
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
 #define LOG_TAG "AHAL_Effect_VirtualizerQti"
 
-#include <Utils.h>
 #include <cstddef>
 
 #include "OffloadBundleContext.h"
@@ -129,7 +127,7 @@ RetCode VirtualizerContext::setForcedDevice(const AudioDeviceDescription& device
 std::vector<Virtualizer::ChannelAngle> VirtualizerContext::getSpeakerAngles(
         const Virtualizer::SpeakerAnglesPayload payload) {
     std::vector<Virtualizer::ChannelAngle> angles;
-    auto channels = ::aidl::android::hardware::audio::common::getChannelCount(payload.layout);
+    auto channels = getChannelCount(payload.layout);
     RETURN_VALUE_IF(!isConfigSupported(channels, payload.device), angles, "unsupportedConfig");
 
     if (channels == 1) {

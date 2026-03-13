@@ -20,10 +20,6 @@ using ::aidl::android::media::audio::common::AudioInputFlags;
 using ::aidl::android::media::audio::common::AudioOutputFlags;
 using ::aidl::android::media::audio::common::AudioSource;
 using ::aidl::android::media::audio::common::AudioStreamType;
-using ::aidl::android::hardware::audio::common::isBitPositionFlagSet;
-using ::aidl::android::hardware::audio::common::getChannelCount;
-using ::aidl::android::hardware::audio::common::getFrameSizeInBytes;
-using ::aidl::android::hardware::audio::common::getPcmSampleSizeInBytes;
 using ::aidl::android::media::audio::common::AudioPortConfig;
 using ::aidl::android::media::audio::common::AudioPortExt;
 using ::aidl::android::media::audio::common::AudioPortMixExtUseCase;
@@ -679,7 +675,7 @@ int32_t MmapUsecaseBase::stop() {
 // [MmapUsecaseBase End]
 // [MMapPlayback Start]
 size_t MMapPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
-    return kPeriodDurationMs * getSampleRate(mixPortConfig).value() / 1000;
+    return kPeriodDurationMs * DEFAULT_SAMPLE_RATE / 1000;
 }
 
 // [MMapPlayback End]
@@ -1205,7 +1201,7 @@ size_t UltraFastRecord::getFrameCount(const AudioPortConfig& mixPortConfig) {
 // [MMapRecord Start]
 
 size_t MMapRecord::getFrameCount(const AudioPortConfig& mixPortConfig) {
-    return kCaptureDurationMs * getSampleRate(mixPortConfig).value() / 1000;
+    return kCaptureDurationMs * DEFAULT_SAMPLE_RATE / 1000;
 }
 
 // [MMapRecord End]
@@ -1400,8 +1396,7 @@ void CompressCapture::setAACDSPBitRate() {
 }
 
 int32_t CompressCapture::getAACMinBitrateValue() {
-    const auto channelCount =
-            ::aidl::android::hardware::audio::common::getChannelCount(mChannelLayout);
+    const auto channelCount = getChannelCount(mChannelLayout);
     if (mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_LC ||
         mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_ADTS_LC) {
         if (channelCount == 1) {
@@ -1428,8 +1423,7 @@ int32_t CompressCapture::getAACMinBitrateValue() {
 }
 
 int32_t CompressCapture::getAACMaxBitrateValue() {
-    const auto channelCount =
-            ::aidl::android::hardware::audio::common::getChannelCount(mChannelLayout);
+    const auto channelCount = getChannelCount(mChannelLayout);
     if (mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_LC ||
         mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_ADTS_LC) {
         if (channelCount == 1) {
