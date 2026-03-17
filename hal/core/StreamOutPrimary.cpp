@@ -155,11 +155,12 @@ ndk::ScopedAStatus StreamOutPrimary::setConnectedDevices(
         const std::vector<::aidl::android::media::audio::common::AudioDevice>& devices) {
     mWorker->setIsConnected(!devices.empty());
     mConnectedDevices = devices;
-
+    std::lock_guard l(mSyncLock);
     return configureConnectedDevices_I();
 }
 
 ndk::ScopedAStatus StreamOutPrimary::reconfigureConnectedDevices() {
+    std::lock_guard l(mSyncLock);
     return configureConnectedDevices_I();
 }
 
@@ -214,6 +215,7 @@ ndk::ScopedAStatus StreamOutPrimary::createMmapBuffer(MmapBufferDescriptor* desc
 
 ndk::ScopedAStatus StreamOutPrimary::configureMMapStream(MmapBufferDescriptor* desc,
                                                          int32_t* bufferSizeFrames) {
+    std::lock_guard l(mSyncLock);
     if (mTag != Usecase::MMAP_PLAYBACK) {
         LOG(ERROR) << __func__ << mLogPrefix << " cannot call on non-MMAP stream types";
         return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
@@ -415,11 +417,11 @@ void StreamOutPrimary::resume() {
 }
 
 ::android::status_t StreamOutPrimary::standby() {
+    std::lock_guard l(mSyncLock);
     if (!mPalHandle) {
         LOG(WARNING) << __func__ << mLogPrefix << ": stream is not configured ";
         return ::android::OK;
     }
-
     shutdown_I();
     LOG(DEBUG) << __func__ << mLogPrefix;
     return ::android::OK;
@@ -616,6 +618,7 @@ void StreamOutPrimary::resume() {
 }
 
 void StreamOutPrimary::shutdown() {
+    std::lock_guard l(mSyncLock);
     shutdown_I();
 }
 
@@ -952,7 +955,10 @@ size_t StreamOutPrimary::getPlatformDelay() const noexcept {
 }
 
 ::android::status_t StreamOutPrimary::onWriteError(const size_t sleepFrameCount, size_t* const consumedFrameCount) {
-    shutdown_I();
+    {
+        std::lock_guard l(mSyncLock);
+        shutdown_I();
+    }
     if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK) {
         // return error for offload, so that FW sends data again
         LOG(ERROR) << __func__ << mLogPrefix << ": cannot afford write failure";
@@ -978,6 +984,7 @@ void StreamOutPrimary::configure() {
     }
 
     const auto startTime = std::chrono::steady_clock::now();
+    std::lock_guard l(mSyncLock);
     std::unique_ptr<pal_channel_info> palNonHapticChannelInfo;
     std::unique_ptr<pal_channel_info> palHapticChannelInfo;
     AudioChannelLayout channelLayout;
