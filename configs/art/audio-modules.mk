@@ -115,6 +115,7 @@ AUDIO_MODULES += ftm_test_config_art-qrd-qmp-snd-card
 AUDIO_MODULES += ftm_test_config_pebble-mtp-wcd9378-snd-card
 AUDIO_MODULES += ftm_test_config_pebble-mtp-qmp-snd-card
 AUDIO_MODULES += ftm_test_config_pebble-qrd-snd-card
+AUDIO_MODULES += ftm_test_config_pebble-mtp-snd-card
 
 AUDIO_MODULES += audioadsprpcd
 AUDIO_MODULES += MTP_acdb_cal.acdb
@@ -137,6 +138,8 @@ AUDIO_MODULES += QRD_pebble_acdb_cal.acdb
 AUDIO_MODULES += QRD_pebble_workspaceFileXml.qwsp
 AUDIO_MODULES += CDP_pebble_acdb_cal.acdb
 AUDIO_MODULES += CDP_pebble_workspaceFileXml.qwsp
+AUDIO_MODULES += MTP_pebble_acdb_cal.acdb
+AUDIO_MODULES += MTP_pebble_workspaceFileXml.qwsp
 AUDIO_MODULES += ffv__6.1.3_0.1__eai_5.6.0_enpu_v6.pmd
 AUDIO_MODULES += ffv__7.0.1_0.1__eai_5.6_enpu_v6.pmd
 AUDIO_MODULES += ffv__7.0.1_0.2__eai_5.6_enpu_v6.pmd
