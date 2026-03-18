@@ -1,4 +1,8 @@
-LATEST_ANDROID_HARDWARE_AUDIO_EFFECT := android.hardware.audio.effect-V3-ndk
+ifeq ($(PLATFORM_VERSION),CinnamonBun)
+    LATEST_ANDROID_HARDWARE_AUDIO_EFFECT := android.hardware.audio.effect-V4-ndk
+else
+    LATEST_ANDROID_HARDWARE_AUDIO_EFFECT := android.hardware.audio.effect-V3-ndk
+endif
 LATEST_ANDROID_HARDWARE_COMMON := android.hardware.common-V2-ndk
 LATEST_ANDROID_HARDWARE_AUDIO_COMMON := android.hardware.audio.common-V4-ndk
 LATEST_ANDROID_HARDWARE_AUDIO_CORE := android.hardware.audio.core-V3-ndk
