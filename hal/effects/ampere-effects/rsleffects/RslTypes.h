@@ -96,8 +96,9 @@ static const Descriptor kSteadyVolumeDescriptor = {
                         .name = kSteadyVolumeEffectName,
                         .implementor = "Qualcomm Technologies Inc."}
 };
-#define MIN_BMT_VALUE -9
-#define MAX_BMT_VALUE  9
+#define BMT_FACTOR 100
+#define MIN_BMT_VALUE -9 * BMT_FACTOR
+#define MAX_BMT_VALUE  9 * BMT_FACTOR
 const std::vector<Equalizer::Preset> kPresets = {};
 const std::vector<Range::EqualizerRange> kEqRanges = {
         MAKE_RANGE(Equalizer, preset, 0, 0),
