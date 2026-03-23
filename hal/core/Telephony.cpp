@@ -1036,6 +1036,14 @@ ndk::ScopedAStatus Telephony::startCall() {
                 sizeof(palDevices[0].custom_config.custom_key));
         LOG(VERBOSE) << __func__ << "setting custom key as " << palDevices[0].custom_config.custom_key;
     }
+
+    if (palDevices[RxDeviceIndex].id == PAL_DEVICE_NONE) {
+        palDevices[RxDeviceIndex] = getDefaultDummyDevice(false);
+    }
+    if (palDevices[TxDeviceIndex].id == PAL_DEVICE_NONE) {
+        palDevices[TxDeviceIndex] = getDefaultDummyDevice(true);
+    }
+
     if (mSetUpdates.mIsCrsCall) {
         strlcpy(palDevices[0].custom_config.custom_key, "crsCall",
                 sizeof(palDevices[0].custom_config.custom_key));
