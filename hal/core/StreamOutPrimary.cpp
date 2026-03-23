@@ -1149,6 +1149,9 @@ void StreamOutPrimary::shutdown_I() {
             telephony->onPlaybackClose();
         }
     }
+    if (mTag == Usecase::VOIP_PLAYBACK && mPalHandle != nullptr) {
+        mPlatform.setVoipRxStreamHandle(nullptr);
+    }
 
     mIsPaused = false;
     mPalHandle = nullptr;

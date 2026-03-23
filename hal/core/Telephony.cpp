@@ -139,7 +139,6 @@ ndk::ScopedAStatus Telephony::switchAudioMode(AudioMode newAudioMode) {
     }
     if (newAudioMode != AudioMode::IN_COMMUNICATION && mIsVoipStarted == true) {
         mIsVoipStarted = false;
-        mPlatform.setVoipRxStreamHandle(nullptr);
     }
 
     mAudioMode = newAudioMode;
@@ -223,10 +222,18 @@ void Telephony::startCrsCall() {
     if (!mSetUpdates.mIsCrsCall || isAnyCallActive()) {
         return;
     }
-   // Check device readiness if device support is enabled
-    if (mIsCRSDeviceSupported && !mIsCrsDeviceReady) {
-        LOG(ERROR) << __func__ << ": CRS device is not ready";
-        return;
+    // Check device readiness if device support is enabled
+    if (mIsCRSDeviceSupported) {
+        if (!mIsCrsDeviceReady) {
+            LOG(ERROR) << __func__ << ": CRS device is not ready";
+            return;
+        }
+        // check VoIP call stream concurrence
+        pal_stream_handle_t* voipRxHandle = mPlatform.getVoipRxStreamHandle();
+        if (voipRxHandle != nullptr) {
+            mHasConcurrentPlayback = true;
+        }
+        LOG(VERBOSE) << __func__ << ": voip concurrent = " << mHasConcurrentPlayback;
     }
 
     auto status = ndk::ScopedAStatus::ok();
