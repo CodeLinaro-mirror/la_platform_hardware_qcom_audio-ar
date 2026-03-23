@@ -361,6 +361,10 @@ vendor.qc2audio.suspend.enabled=true
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.qc2audio.per_frame.flac.dec.enabled=true
 
+#Enable ats thread enable
+PRODUCT_PROPERTY_OVERRIDES += \
+persist.vendor.audio.atsthread.enable=true
+
 
 ifneq ($(GENERIC_ODM_IMAGE),true)
 $(warning "Enabling codec2.0 SW only for non-generic odm build variant")
