@@ -110,6 +110,8 @@ AUDIO_MODULES += ftm_test_config_hamoa-x1e80100-crd-wsa884x-snd-card
 AUDIO_MODULES += audioadsprpcd
 AUDIO_MODULES += CRD_hamoa_x1e80100_wsa884x_acdb_cal.acdb
 AUDIO_MODULES += CRD_hamoa_x1e80100_wsa884x_workspaceFileXml.qwsp
+AUDIO_MODULES += QCP_hamoa_x1e80100_wsa884x_acdb_cal.acdb
+AUDIO_MODULES += QCP_hamoa_x1e80100_wsa884x_workspaceFileXml.qwsp
 
 AUDIO_MODULES += hk01b_relu_eAI_5.6_eNPU_V6_adsp_i.pmd
 AUDIO_MODULES += click.pcm
