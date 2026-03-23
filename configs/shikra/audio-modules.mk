@@ -18,10 +18,13 @@ AUDIO_AGM += libagmmixer
 AUDIO_AGM += agmcompressplay
 AUDIO_AGM += libagm_mixer_plugin
 AUDIO_AGM += libagm_pcm_plugin
-AUDIO_AGM += libagm_compress_plugin
+AUDIO_AGM += libtinycompress_module_agm
 AUDIO_AGM += agmcompresscap
 AUDIO_AGM += agmvoiceui
 AUDIO_AGM += agmhostless
+AUDIO_AGM += libagm_mixer_plugin_native
+AUDIO_AGM += libagm_pcm_plugin_native
+AUDIO_AGM += libtinycompress_module_agm_native
 
 #PAL Module
 AUDIO_PAL := libar-pal
@@ -77,10 +80,12 @@ AUDIO_TEST := mcs_test
 AUDIO_TEST += ar_util_in_test_example
 AUDIO_MODULES := ftm_test_config
 AUDIO_MODULES += ftm_test_config_shikra-dsp-snd-card
+AUDIO_MODULES += ftm_test_config_shikra-cpu-snd-card
 
-AUDIO_MODULES += audioadsprpcd
 AUDIO_MODULES += shikra_dsp_acdb_cal.acdb
 AUDIO_MODULES += shikra_dsp_workspaceFileXml.qwsp
+AUDIO_MODULES += shikra_cpu_acdb_cal.acdb
+AUDIO_MODULES += shikra_cpu_workspaceFileXml.qwsp
 
 AUDIO_MODULES += $(AUDIO_AGM)
 AUDIO_MODULES += $(AUDIO_PAL)
