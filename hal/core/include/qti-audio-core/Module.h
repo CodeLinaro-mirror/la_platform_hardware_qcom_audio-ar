@@ -156,9 +156,12 @@ class Module final : public ::aidl::android::hardware::audio::core::BnModule,
     ndk::ScopedAStatus getAAudioMixerBurstCount(int32_t* _aidl_return) final;
     ndk::ScopedAStatus getAAudioHardwareBurstMinUsec(int32_t* _aidl_return) final;
 
+#if AUDIO_CORE_VERSION >= 4
     ndk::ScopedAStatus getFlushFromFrameSupport(
             const ::aidl::android::media::audio::common::AudioPortConfig& in_config,
             ::aidl::android::media::audio::common::FlushFromFrameSupport* _aidl_return) final;
+#endif
+
     binder_status_t dump(int fd, const char** args, uint32_t numArgs) final;
     // #################### end of overriding APIs from IModule ####################
 

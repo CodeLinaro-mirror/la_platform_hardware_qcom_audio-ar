@@ -16,7 +16,12 @@ LOCAL_MODULE:= libaudioeffecthal_base_impl_static
 LOCAL_VENDOR_MODULE := true
 LOCAL_MODULE_OWNER := qti
 
-LOCAL_C_FLAGS += -Werror -Wall -Wextra -Wthread-safety
+LOCAL_C_FLAGS := \
+            -Werror \
+            -Wall \
+            -Wextra \
+            -Wthread-safety \
+            $(ALL_HAL_DEP_C_FLAGS)
 
 LOCAL_SRC_FILES:= \
         EffectThread.cpp \
