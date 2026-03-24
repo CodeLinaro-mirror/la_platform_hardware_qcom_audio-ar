@@ -119,8 +119,8 @@ int BassBoostContext::getBassBoostStrength(){
     return 0;
 }
 RetCode BassBoostContext::setBassBoostStrength(int strength){
-    LOG(DEBUG) << __func__ << " strength not supported by AWX module Do Nothing " << strength;
-    return RetCode::SUCCESS;
+    LOG(DEBUG) << __func__ << " strength not supported by AWX module, Do Nothing " << strength;
+    return RetCode::ERROR_ILLEGAL_PARAMETER;
 }
 int BassBoostContext::getBassBoost(){
     LOG(DEBUG) << "Enter " << __func__;
