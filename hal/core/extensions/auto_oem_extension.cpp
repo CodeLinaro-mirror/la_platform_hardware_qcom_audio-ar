@@ -171,8 +171,10 @@ void open_stream() {
         LOG(DEBUG) << __func__ << " Opening Dummy Stream handle";
         ret = pal_stream_open(&stream_dl_attr, 1, &devices[0], 0, NULL, NULL, 0, &gsp_palHandle);
 
-        if(ret)
+        if(ret) {
             LOG(ERROR) << " Stream open Failed " << __func__;
+            return;
+        }
 
         DL_buffer_size= 512*16*ch_info.channels;
         DL_stream_buffer = realloc(DL_stream_buffer, DL_buffer_size);
@@ -184,6 +186,7 @@ void open_stream() {
 
         if(ret) {
             LOG(ERROR) << " Stream start Failed " << __func__;
+            pal_stream_close(gsp_palHandle);
             gsp_palHandle = NULL ;
         }
     }
