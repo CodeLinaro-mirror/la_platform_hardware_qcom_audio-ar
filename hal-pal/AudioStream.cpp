@@ -3927,10 +3927,16 @@ uint32_t StreamInPrimary::GetBufferSize() {
                     config_.format);
     } else if (streamAttributes_.type == PAL_STREAM_DEEP_BUFFER ||
                streamAttributes_.type == PAL_STREAM_VOICE_CALL_RECORD) {
-        return (config_.sample_rate * AUDIO_CAPTURE_PERIOD_DURATION_MSEC/ 1000) *
-            audio_bytes_per_frame(
+
+         uint32_t buff_sz = ((config_.sample_rate * AUDIO_CAPTURE_PERIOD_DURATION_MSEC)/ 1000);
+         uint32_t bytes_per_period_sample =   audio_bytes_per_frame(
                     audio_channel_count_from_in_mask(config_.channel_mask),
                     config_.format);
+
+          buff_sz *= bytes_per_period_sample;
+
+          buff_sz = nearest_multiple(buff_sz, lcm(32, bytes_per_period_sample));
+          return buff_sz;
     } else if (streamAttributes_.type == PAL_STREAM_PROXY) {
         if (isDeviceAvailable(PAL_DEVICE_IN_TELEPHONY_RX)) {
             audio_stream_in* stream_in;
