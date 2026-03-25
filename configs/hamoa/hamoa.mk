@@ -144,9 +144,6 @@ vendor.audio.flac.sw.decoder.24bit=true
 #Enable mspp by default
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.mspp.enable=true
-#split a2dp DSP supported encoder list
-PRODUCT_PROPERTY_OVERRIDES += \
-persist.vendor.bt.a2dp_offload_cap=sbc-aptx-aptxtws-aptxhd-aac-ldac
 
 # A2DP offload support
 PRODUCT_PROPERTY_OVERRIDES += \

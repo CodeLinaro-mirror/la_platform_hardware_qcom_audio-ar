@@ -27,11 +27,6 @@ SOONG_CONFIG_qtiaudio_hy00 := false
 SOONG_CONFIG_qtiaudio_hy11 := false
 SOONG_CONFIG_qtiaudio_hy22 := false
 
-ifeq (,$(wildcard $(QCPATH)/mm-audio-noship))
-    SOONG_CONFIG_qtiaudio_var11 := true
-    SOONG_CONFIG_qtiaudio_hy11 := true
-endif
-
 ifeq (,$(wildcard $(QCPATH)/mm-audio))
     SOONG_CONFIG_qtiaudio_var22 := true
     SOONG_CONFIG_qtiaudio_hy22 := true

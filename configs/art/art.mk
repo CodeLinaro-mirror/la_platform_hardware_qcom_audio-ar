@@ -66,6 +66,7 @@ PRODUCT_COPY_FILES += \
     $(CONFIG_HAL_SRC_DIR)/audio_effects_config.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects_config.xml \
     $(CONFIG_HAL_SRC_DIR)/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/microphone_characteristics.xml \
     $(CONFIG_PAL_SRC_DIR)/card-defs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/card-defs.xml \
+    $(CONFIG_PAL_SRC_DIR)/card-defs-native.xml:$(TARGET_COPY_OUT_VENDOR)/etc/card-defs-native.xml \
     $(CONFIG_PAL_SRC_DIR)/mixer_paths_art_mtp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_art_mtp.xml \
     $(CONFIG_PAL_SRC_DIR)/mixer_paths_art_mtp_qmp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_art_mtp_qmp.xml \
     $(CONFIG_PAL_SRC_DIR)/mixer_paths_art_cdp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_art_cdp.xml \
@@ -246,6 +247,9 @@ vendor.audio.feature.dmabuf.cma.memory.enable=false
 
 AUDIO_FEATURE_ENABLED_GKI := true
 BUILD_AUDIO_TECHPACK_SOURCE := true
+
+AUDIO_FEATURE_EAI_VERSION_MAIN := 7
+AUDIO_FEATURE_EAI_VERSION_MINOR := 4
 
 include vendor/qcom/opensource/audio-hal/primary-hal/configs/art/audio-properties.mk
 
