@@ -104,6 +104,56 @@ $(foreach DEVICE_SKU, $(QCV_FAMILY_SKUS), \
     $(CONFIG_HAL_SRC_DIR)/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/sku_$(DEVICE_SKU)_qssi/audio_policy_configuration.xml)
 endif
 
+# Audio configuration xml's related to ravelin
+QCV_FAMILY_SKUS := bourtzi
+DEVICE_SKU := bourtzi
+UV_WRAPPER2 := false
+
+CONFIG_PAL_SRC_DIR := vendor/qcom/opensource//pal/configs/qcom/mobile/chora
+CONFIG_HAL_SRC_DIR := vendor/qcom/opensource/audio-hal/primary-hal/configs/chora
+CONFIG_SKU_OUT_DIR := $(TARGET_COPY_OUT_VENDOR)/etc/audio/sku_$(DEVICE_SKU)
+
+PRODUCT_COPY_FILES += \
+        $(CONFIG_HAL_SRC_DIR)/audio_effects.conf:$(CONFIG_SKU_OUT_DIR)/audio_effects.conf \
+        $(CONFIG_HAL_SRC_DIR)/audio_effects.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects.xml \
+        $(CONFIG_HAL_SRC_DIR)/audio_effects_config.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects_config.xml \
+        $(CONFIG_HAL_SRC_DIR)/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/microphone_characteristics.xml \
+        $(CONFIG_PAL_SRC_DIR)/card-defs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/card-defs.xml \
+        $(CONFIG_PAL_SRC_DIR)/mixer_paths_bourtzi_qrd.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_bourtzi_qrd.xml \
+        $(CONFIG_PAL_SRC_DIR)/mixer_paths_bourtzi_cdp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_bourtzi_cdp.xml \
+        $(CONFIG_PAL_SRC_DIR)/mixer_paths_bourtzi_mtp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_bourtzi_mtp.xml \
+        $(CONFIG_PAL_SRC_DIR)/mixer_paths_bourtzi_atp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_bourtzi_atp.xml \
+        $(CONFIG_PAL_SRC_DIR)/mixer_paths_bourtzi_mtp_wcn6450.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_bourtzi_mtp_wcn6450.xml \
+        $(CONFIG_PAL_SRC_DIR)/mixer_paths_bourtzi_qrd_wcn6450.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_bourtzi_qrd_wcn6450.xml \
+	$(CONFIG_PAL_SRC_DIR)/resourcemanager_bourtzi_cdp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_bourtzi_cdp.xml \
+        $(CONFIG_PAL_SRC_DIR)/resourcemanager_bourtzi_qrd.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_bourtzi_qrd.xml \
+        $(CONFIG_PAL_SRC_DIR)/resourcemanager_bourtzi_atp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_bourtzi_atp.xml \
+	$(CONFIG_PAL_SRC_DIR)/resourcemanager_bourtzi_mtp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_bourtzi_mtp.xml \
+	$(CONFIG_PAL_SRC_DIR)/resourcemanager_bourtzi_mtp_wcn6450.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_bourtzi_mtp_wcn6450.xml \
+	$(CONFIG_PAL_SRC_DIR)/resourcemanager_bourtzi_qrd_wcn6450.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_bourtzi_qrd_wcn6450.xml \
+	$(CONFIG_PAL_SRC_DIR)/usecaseKvManager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usecaseKvManager.xml \
+        $(CONFIG_PAL_SRC_DIR)/plugin_manager.xml:$(CONFIG_SKU_OUT_DIR)/plugin_manager.xml \
+        frameworks/native/data/etc/android.hardware.sensor.dynamic.head_tracker.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/sku_$(DEVICE_SKU)/android.hardware.sensor.dynamic.head_tracker.xml
+# Copy AudioEffects config
+PRODUCT_COPY_FILES += \
+    hardware/interfaces/audio/aidl/default/audio_effects_config.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects_config_stub.xml
+
+# Copy Quasar config
+PRODUCT_COPY_FILES += \
+    $(CONFIG_HAL_SRC_DIR)/quasar_config.xml:$(CONFIG_SKU_OUT_DIR)/quasar_config.xml
+#We dont support spatial audio for Clarence  quasar need nt be copied, but not sure
+
+#XML Audio configuration files
+ifneq ($(TARGET_USES_AOSP_FOR_AUDIO), true)
+PRODUCT_COPY_FILES += \
+    $(CONFIG_HAL_SRC_DIR)/audio_policy_configuration.xml:$(CONFIG_SKU_OUT_DIR)/audio_policy_configuration.xml
+
+#Audio configuration xml's common to chora family
+PRODUCT_COPY_FILES += \
+$(foreach DEVICE_SKU, $(QCV_FAMILY_SKUS), \
+    $(CONFIG_HAL_SRC_DIR)/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/sku_$(DEVICE_SKU)_qssi/audio_policy_configuration.xml)
+endif
+
 # Audio configuration xml's related to Kaanapali
 QCV_FAMILY_SKUS := chora
 DEVICE_SKU := chora
