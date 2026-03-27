@@ -12,6 +12,8 @@ endif
 ifneq ($(AUDIO_USE_STUB_HAL), true)
 TARGET_USES_AOSP_FOR_AUDIO := false
 
+TARGET_USES_VENDOR_C2_AUDIO_HAL := true
+$(warning "C2 audio compilation enabled")
 
 ifneq ($(TARGET_USES_AOSP_FOR_AUDIO), true)
 USE_CUSTOM_AUDIO_POLICY := 1
@@ -200,10 +202,22 @@ PRODUCT_COPY_FILES += \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_bengal_scubaqrd.xml:$(TARGET_COPY_OUT_VENDOR)/etc/resourcemanager_bengal_scubaqrd.xml \
     $(CONFIG_PAL_SRC_DIR)/usecaseKvManager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usecaseKvManager.xml \
     $(CONFIG_PAL_SRC_DIR)/usecaseKvManager_arrax.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usecaseKvManager_arrax.xml \
-    vendor/qcom/opensource/audio-hal/primary-hal/configs/common/media_codecs_vendor_audio.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_vendor_audio.xml \
     frameworks/native/data/etc/android.hardware.audio.pro.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.pro.xml \
     frameworks/native/data/etc/android.hardware.audio.low_latency.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.low_latency.xml \
     frameworks/native/data/etc/android.hardware.sensor.dynamic.head_tracker.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.sensor.dynamic.head_tracker.xml
+
+ifeq ($(TARGET_USES_VENDOR_C2_AUDIO_HAL), true)
+PRODUCT_COPY_FILES +=  \
+    vendor/qcom/opensource/audio-hal/primary-hal/configs/common/media_codecs_vendor_audio.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_vendor_audio.xml
+
+#==================================================================================================
+# Export TARGET_USES_VENDOR_C2_AUDIO_HAL to Soong via SOONG_CONFIG
+#==================================================================================================
+SOONG_CONFIG_NAMESPACES += qti_c2audio
+SOONG_CONFIG_qti_c2audio += target_uses_vendor_c2_audio_hal
+SOONG_CONFIG_qti_c2audio_target_uses_vendor_c2_audio_hal := true
+endif
+
 # Copy AudioEffects config
 PRODUCT_COPY_FILES += \
     hardware/interfaces/audio/aidl/default/audio_effects_config.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects_config_stub.xml
