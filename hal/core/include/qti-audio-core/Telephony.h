@@ -124,6 +124,7 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
     uint32_t* stringToUint32Array(const std::string& str, size_t* size);
     void updateCallTranslationConfigs(const std::string& str);
     void updateCallTranslationParam(pal_call_translation_direction direction);
+    void updateVoiceNsRxConfigMode(const bool enable);
 
     // The following below API are both aimed to solve routing on telephony
     /**
@@ -186,6 +187,7 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
             const ::aidl::android::media::audio::common::AudioDevice & rxDevice);
     bool isValidDevice(const ::aidl::android::media::audio::common::AudioDevice & rxDevice);
     bool isUsbDeviceConnected(const ::aidl::android::media::audio::common::AudioDevice & rxDevice);
+    void configureVoiceNsRxConfigMode();
 
   protected:
     // Gaurd all the public APIs
@@ -211,6 +213,7 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
     bool mIsVoiceStarted{false};
     bool mIsVoipStarted{false};
     bool mIsBTSCOEnabled{false};
+    bool mIsBypassVoiceNsRxCfg{false};
     std::string mMuteDirection{""};
 
     std::vector<::aidl::android::media::audio::common::AudioDevice> mExternalDevices;

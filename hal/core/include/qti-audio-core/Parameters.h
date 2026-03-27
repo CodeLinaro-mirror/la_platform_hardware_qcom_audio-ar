@@ -53,7 +53,10 @@ const static std::string kVoiceTranslationTxMute{"voice_translation_tx_mute"};
 * ASR, TTS and NMT modules for the Voice Call Translation graph.
 **/
 const static std::string kTranslationConfig{"translation_config"};
-
+/** kVoiceNsRxConfig : Use this parameter to set the config to
+* Fluence NN NS module for enbale or disable the module during call.
+**/
+const static std::string kVoiceNsRxConfig{"voice_ns_rx_config"};
 
 // WFD
 const static std::string kCanOpenProxy{"can_open_proxy"};
