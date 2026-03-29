@@ -254,7 +254,7 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <!-- start of sink DEVICE PORT -->
         <devicePort tagName="Media Bus" role="sink" attached="true" defaultDevice="true" deviceType="OUT_BUS" address="BUS00_MEDIA">
             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
-            <profile samplingRates="44000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+            <profile samplingRates="44100" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
             <gains>
                 <gain name="gain_1" mode="JOINT"
                       minValueMB="-6000"
