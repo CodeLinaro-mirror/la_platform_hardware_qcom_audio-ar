@@ -266,12 +266,16 @@ class AutoOemExtension : public AudioExtensionBase {
     void audio_extn_autooem_set_parameters(struct str_parms* params);
     int audio_extn_autooem_get_parameters(const std::string&);
     void audio_extn_autooem_set_streamType(pal_stream_type_t params);
+    void audio_extn_autooem_remove_streamType(pal_stream_type_t params);
+    bool audio_extn_autooem_is_stream_list_empty();
 
   private:
   oem_set_parameters_t oem_set_parameters;
   oem_get_parameters_t oem_get_parameters;
   streamInfo_t streamInfo;
   oem_init_t oem_init;
+  std::vector<pal_stream_type_t> gOemActiveStreams;
+  std::mutex gOemStreamMutex;
 };
 
 #ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
