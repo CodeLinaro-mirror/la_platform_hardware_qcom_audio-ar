@@ -599,6 +599,10 @@ ndk::ScopedAStatus Module::openInputStream(const OpenInputStreamArguments& in_ar
                                            OpenInputStreamReturn* _aidl_return) {
     LOG(DEBUG) << __func__ << ": port config id " << in_args.portConfigId << ", buffer size "
                << in_args.bufferSizeFrames << " frames";
+    if(!isValidSinkMetadata(in_args.sinkMetadata)) {
+        LOG(ERROR) << __func__ << ": invalid metadata " << in_args.sinkMetadata.toString();
+        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
+    }
     AudioPort* port = nullptr;
     RETURN_STATUS_IF_ERROR(findPortIdForNewStream(in_args.portConfigId, &port));
     if (port->flags.getTag() != AudioIoFlags::Tag::input) {
@@ -641,6 +645,10 @@ ndk::ScopedAStatus Module::openOutputStream(const OpenOutputStreamArguments& in_
     LOG(DEBUG) << __func__ << ": port config id " << in_args.portConfigId << ", has offload info? "
                << (in_args.offloadInfo.has_value()) << ", buffer size " << in_args.bufferSizeFrames
                << " frames";
+    if(!isValidSourceMetadata(in_args.sourceMetadata)) {
+        LOG(ERROR) << __func__ << ": invalid metadata " << in_args.sourceMetadata.toString();
+        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
+    }
     AudioPort* port = nullptr;
     RETURN_STATUS_IF_ERROR(findPortIdForNewStream(in_args.portConfigId, &port));
     if (port->flags.getTag() != AudioIoFlags::Tag::output) {

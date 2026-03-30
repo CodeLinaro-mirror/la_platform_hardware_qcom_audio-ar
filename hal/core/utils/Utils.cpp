@@ -5,6 +5,8 @@
 
 #define LOG_TAG "AHAL_Utils_QTI"
 
+#include <regex>
+
 #include <android-base/logging.h>
 #include <audio_utils/format.h>
 #include <qti-audio-core/Utils.h>
@@ -22,7 +24,10 @@ using ::aidl::android::media::audio::common::AudioPortExt;
 using ::aidl::android::media::audio::common::AudioSource;
 using ::aidl::android::media::audio::common::AudioPortMixExtUseCase;
 using ::aidl::android::media::audio::common::AudioChannelLayout;
-
+using aidl::android::hardware::audio::common::SourceMetadata;
+using aidl::android::hardware::audio::common::SinkMetadata;
+using aidl::android::hardware::audio::common::PlaybackTrackMetadata;
+using aidl::android::hardware::audio::common::RecordTrackMetadata;
 using ::aidl::android::hardware::audio::core::VendorParameter;
 
 using ::aidl::qti::audio::core::VString;
@@ -404,6 +409,51 @@ size_t getChannelCount(const AudioChannelLayout& layout, int32_t mask) noexcept 
 #endif
     }
     return 0;
+}
+
+constexpr bool isValidAudioMimeType(std::string_view mimeType) noexcept {
+    constexpr std::string_view audioPrefix = "audio/";
+    return mimeType.starts_with(audioPrefix) && mimeType.size() > audioPrefix.size();
+}
+
+bool isValidMetadataVendorExtension(const std::string& tag) noexcept {
+    static const std::regex vendorExtension("VX_[A-Z0-9]{3,}_[_A-Z0-9]+");
+    return std::regex_match(tag.begin(), tag.end(), vendorExtension);
+}
+
+bool isValidRecordTrackMetadataTag(const std::string& tag) noexcept {
+    const std::string kQCOMVendorPrefix = "VX_QCOM";
+    return tag.starts_with(kQCOMVendorPrefix);
+}
+
+bool isValidRecordTrackMetadata(const RecordTrackMetadata& recordTrackMetadata) noexcept {
+    return std::ranges::all_of(recordTrackMetadata.tags, isValidMetadataVendorExtension);
+}
+
+bool isValidSinkMetadata(const SinkMetadata& sinkMetadata) noexcept {
+    return std::ranges::all_of(sinkMetadata.tracks, isValidRecordTrackMetadata);
+}
+
+bool isValidPlaybackTrackMetadataTag(const std::string& tag) noexcept {
+    const std::string kQCOMVendorPrefix = "VX_QCOM";
+    return tag.starts_with(kQCOMVendorPrefix);
+}
+
+bool isValidPlaybackTrackMetadata(const PlaybackTrackMetadata& playbackTrackMetadata) noexcept {
+#if AUDIO_CORE_VERSION >= 4
+    const bool isOk =
+            (playbackTrackMetadata.codecProvenance)
+                    ? (playbackTrackMetadata.codecProvenance.value().empty() ||
+                       isValidAudioMimeType(playbackTrackMetadata.codecProvenance.value()))
+                    : true;
+#else
+    const bool isOk = true;
+#endif
+    return isOk && std::ranges::all_of(playbackTrackMetadata.tags, isValidMetadataVendorExtension);
+}
+
+bool isValidSourceMetadata(const SourceMetadata& sourceMetadata) noexcept {
+    return std::ranges::all_of(sourceMetadata.tracks, isValidPlaybackTrackMetadata);
 }
 
 } // namespace qti::audio::core
