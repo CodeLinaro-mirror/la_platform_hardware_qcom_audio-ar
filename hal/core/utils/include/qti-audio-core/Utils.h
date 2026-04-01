@@ -466,4 +466,7 @@ bool isValidSourceMetadata(
 bool isValidSinkMetadata(
         const aidl::android::hardware::audio::common::SinkMetadata& sinkMetadata) noexcept;
 
+bool isNoneDevice(const ::aidl::android::media::audio::common::AudioDevice&) noexcept;
+bool hasNoneDevice(const std::vector<::aidl::android::media::audio::common::AudioDevice>&) noexcept;
+
 } // namespace qti::audio::core

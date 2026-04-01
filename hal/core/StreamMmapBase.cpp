@@ -321,8 +321,7 @@ ndk::ScopedAStatus StreamMmapBase::configureMMapStream(
     }
     attr->type = PAL_STREAM_ULTRA_LOW_LATENCY;
     attr->flags = static_cast<pal_stream_flags_t>(PAL_STREAM_FLAG_MMAP_NO_IRQ);
-    auto palDevices = mPlatform.configureAndFetchPalDevices(mMixPortConfig, mTag, mConnectedDevices,
-                                                            true /*dummyDevice*/);
+    auto palDevices = mPlatform.configureAndFetchPalDevices(mMixPortConfig, mTag, mConnectedDevices);
 
     LOG(DEBUG) << __func__ << mLogPrefix << "pal_stream_open with " << toString(*attr.get());
     if (int32_t ret = ::pal_stream_open(

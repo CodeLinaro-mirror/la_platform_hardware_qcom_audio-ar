@@ -456,4 +456,12 @@ bool isValidSourceMetadata(const SourceMetadata& sourceMetadata) noexcept {
     return std::ranges::all_of(sourceMetadata.tracks, isValidPlaybackTrackMetadata);
 }
 
+bool isNoneDevice(const AudioDevice& d) noexcept {
+    return d.type.type == AudioDeviceType::NONE;
+}
+
+bool hasNoneDevice(const std::vector<AudioDevice>& devices) noexcept {
+    return std::ranges::any_of(devices, isNoneDevice);
+}
+
 } // namespace qti::audio::core

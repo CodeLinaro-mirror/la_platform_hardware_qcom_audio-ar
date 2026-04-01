@@ -388,14 +388,9 @@ std::vector<pal_device> Platform::convertToPalDevices(
  */
 std::vector<pal_device> Platform::configureAndFetchPalDevices(
         const AudioPortConfig& mixPortConfig, const Usecase& tag,
-        const std::vector<AudioDevice>& devices, const bool dummyDevice) const {
-    if (devices.empty()) {
-        if (dummyDevice) {
-            return {getDefaultDummyDevice(isInputMixPortConfig(mixPortConfig))};
-        } else {
-            LOG(ERROR) << __func__ << " the set devices is empty";
-            return {};
-        }
+        const std::vector<AudioDevice>& devices) const {
+    if (devices.empty() || hasNoneDevice(devices)) {
+        return {getDefaultDummyDevice(isInputMixPortConfig(mixPortConfig))};
     }
     auto palDevices = convertToPalDevices(devices);
 
@@ -405,9 +400,8 @@ std::vector<pal_device> Platform::configureAndFetchPalDevices(
 }
 
 int32_t Platform::setDevice(pal_stream_handle_t* handle, const AudioPortConfig& mixPortConfig,
-                            const Usecase& tag, const std::vector<AudioDevice>& devices,
-                            const bool dummyDevice) const {
-    auto palDevice = configureAndFetchPalDevices(mixPortConfig, tag, devices, dummyDevice);
+                            const Usecase& tag, const std::vector<AudioDevice>& devices) const {
+    auto palDevice = configureAndFetchPalDevices(mixPortConfig, tag, devices);
     return ::pal_stream_set_device(handle, palDevice.size(), palDevice.data());
 }
 
