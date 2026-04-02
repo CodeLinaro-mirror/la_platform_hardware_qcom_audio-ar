@@ -189,6 +189,11 @@ PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen5_au/modules.audio.legacy.blocklist:$(TARGET_COPY_OUT_VENDOR_DLKM)/lib/modules/modules.audio.legacy.blocklist
 endif # ends ENABLE_HYP
 
+ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)$(TARGET_BOARD_DERIVATIVE_SUFFIX), gen5_gvm)
+PRODUCT_COPY_FILES += \
+     $(TOPDIR)vendor/qcom/opensource/pal/configs/gen5_au/plugin_manager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/plugin_manager.xml
+endif # configuration files for gen5_gvm
+
 #Audio HAL version
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.hal.maj.version=3
