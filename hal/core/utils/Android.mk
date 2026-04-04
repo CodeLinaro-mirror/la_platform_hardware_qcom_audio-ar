@@ -35,6 +35,7 @@ LOCAL_CFLAGS := \
     -Wall \
     -Wextra \
     -Werror \
-    -Wthread-safety
+    -Wthread-safety \
+    $(ALL_HAL_DEP_C_FLAGS)
 
 include $(BUILD_STATIC_LIBRARY)

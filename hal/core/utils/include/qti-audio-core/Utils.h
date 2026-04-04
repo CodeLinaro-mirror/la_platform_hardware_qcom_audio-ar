@@ -344,28 +344,9 @@ constexpr size_t getPcmSampleSizeInBytes(::aidl::android::media::audio::common::
     return 0;
 }
 
-constexpr size_t getChannelCount(
+size_t getChannelCount(
         const ::aidl::android::media::audio::common::AudioChannelLayout& layout,
-        int32_t mask = std::numeric_limits<int32_t>::max()) {
-    using Tag = ::aidl::android::media::audio::common::AudioChannelLayout::Tag;
-    switch (layout.getTag()) {
-        case Tag::none:
-            return 0;
-        case Tag::invalid:
-            return 0;
-        case Tag::indexMask:
-            return __builtin_popcount(layout.get<Tag::indexMask>() & mask);
-        case Tag::layoutMask:
-            return __builtin_popcount(layout.get<Tag::layoutMask>() & mask);
-        case Tag::voiceMask:
-            return __builtin_popcount(layout.get<Tag::voiceMask>() & mask);
-        case Tag::acnMask:
-            return layout.get<Tag::acnMask>() &
-                   ::aidl::android::media::audio::common::AudioChannelLayout::
-                           ACN_CHANNEL_COUNT_BIT_MASK;
-    }
-    return 0;
-}
+        int32_t mask = std::numeric_limits<int32_t>::max()) noexcept;
 
 constexpr size_t getFrameSizeInBytes(
         const ::aidl::android::media::audio::common::AudioFormatDescription& format,

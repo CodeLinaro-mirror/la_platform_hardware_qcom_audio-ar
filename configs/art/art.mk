@@ -1,8 +1,6 @@
 # Business Application definition
 BA_NAME := mobile
 
-# Must for each product to set proper AIDL version
-CORE_HAL_AIDL_VERSION := 4
 
 # Audio product definitions
 include vendor/qcom/opensource/audio-hal/primary-hal/configs/art/audio-modules.mk

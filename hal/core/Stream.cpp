@@ -332,9 +332,14 @@ StreamInWorkerLogic::Status StreamInWorkerLogic::cycle() {
                 populateReplyWrongState(&reply, command);
             }
             break;
-        case Tag::flushFromFrame:
+
+#if AUDIO_CORE_VERSION >= 4
+        case Tag::flushFromFrame: {
             populateReplyUnsupportedCommand(&reply, command);
             break;
+        }
+#endif
+
     }
     reply.state = mState;
 
@@ -799,10 +804,14 @@ StreamOutWorkerLogic::Status StreamOutAsyncWorkerLogic::cycle() {
                 break;
             }
         } break;
+
+#if AUDIO_CORE_VERSION >= 4
         case Tag::flushFromFrame: {
             populateReplyUnsupportedCommand(&reply, command);
             break;
         }
+#endif
+
     }
     reply.state = mState;
 
@@ -1019,10 +1028,13 @@ StreamOutWorkerLogic::Status StreamOutWorkerLogic::cycle() {
                 populateReplyWrongState(&reply, command);
             }
         } break;
+
+#if AUDIO_CORE_VERSION >= 4
         case Tag::flushFromFrame: {
             populateReplyUnsupportedCommand(&reply, command);
             break;
         }
+#endif
     }
     reply.state = mState;
 

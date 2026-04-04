@@ -1,13 +1,10 @@
-ifeq ($(AUDIO_USE_STUB_HAL), true)
-    CORE_HAL_AIDL_VERSION := 4
-    EFFECT_HAL_AIDL_VERSION := $(CORE_HAL_AIDL_VERSION)
-    $(warning stub mode audiohal: CORE_HAL_AIDL_VERSION $(CORE_HAL_AIDL_VERSION))
-else
 
+# check for CORE_HAL_AIDL_VERSION existence
 ifeq ($(strip $(CORE_HAL_AIDL_VERSION)),)
   $(error "audio: CORE_HAL_AIDL_VERSION can't be empty in non-stub mode")
 endif
-endif
+
+EFFECT_HAL_AIDL_VERSION := $(CORE_HAL_AIDL_VERSION)
 
 $(call soong_config_set, qti_audio_hal, core_aidl_hal_version, v$(CORE_HAL_AIDL_VERSION))
 
@@ -81,7 +78,7 @@ ALL_HAL_DEPS := \
 ALL_HAL_DEP_C_FLAGS := \
     $(CFLAGS_AUDIO_CORE) \
     $(CFLAGS_AUDIO_EFFECT) \
-    $(CFLAGS_AUDIO_COMMON) \
+    $(CFLAGS_MEDIA_AUDIO_COMMON_TYPES) \
     $(CFLAGS_SOUND_DOSE) \
     $(CFLAGS_HW_COMMON) \
     $(CFLAGS_HW_COMMON_FMQ) \

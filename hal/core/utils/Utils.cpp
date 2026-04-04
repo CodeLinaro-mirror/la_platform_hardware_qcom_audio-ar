@@ -21,6 +21,7 @@ using ::aidl::android::media::audio::common::AudioOutputFlags;
 using ::aidl::android::media::audio::common::AudioPortExt;
 using ::aidl::android::media::audio::common::AudioSource;
 using ::aidl::android::media::audio::common::AudioPortMixExtUseCase;
+using ::aidl::android::media::audio::common::AudioChannelLayout;
 
 using ::aidl::android::hardware::audio::core::VendorParameter;
 
@@ -382,6 +383,27 @@ std::string makeParamValue(bool const& isTrue) noexcept {
     uuid.node.insert(uuid.node.end(), {(uint8_t)tmp[4], (uint8_t)tmp[5], (uint8_t)tmp[6],
                                        (uint8_t)tmp[7], (uint8_t)tmp[8], (uint8_t)tmp[9]});
     return uuid;
+}
+
+size_t getChannelCount(const AudioChannelLayout& layout, int32_t mask) noexcept {
+    using Tag = AudioChannelLayout::Tag;
+    switch (layout.getTag()) {
+        case Tag::none:
+            return 0;
+        case Tag::invalid:
+            return 0;
+        case Tag::indexMask:
+            return __builtin_popcount(layout.get<Tag::indexMask>() & mask);
+        case Tag::layoutMask:
+            return __builtin_popcount(layout.get<Tag::layoutMask>() & mask);
+        case Tag::voiceMask:
+            return __builtin_popcount(layout.get<Tag::voiceMask>() & mask);
+#if MEDIA_AUDIO_COMMON_TYPES_VERSION >= 5
+        case Tag::acnMask:
+            return layout.get<Tag::acnMask>() & AudioChannelLayout::ACN_CHANNEL_COUNT_BIT_MASK;
+#endif
+    }
+    return 0;
 }
 
 } // namespace qti::audio::core

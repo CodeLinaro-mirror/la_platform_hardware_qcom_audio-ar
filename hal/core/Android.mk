@@ -15,7 +15,8 @@ LOCAL_CFLAGS := \
     -Wall \
     -Wextra \
     -Werror \
-    -Wthread-safety
+    -Wthread-safety \
+    $(ALL_HAL_DEP_C_FLAGS)
 
 # check default core HAL library VINTF Fragments
 #LOCAL_VINTF_FRAGMENTS := manifest_audiocoreservices_qti.xml

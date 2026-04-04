@@ -67,7 +67,11 @@ using aidl::android::media::audio::common::AudioPortConfig;
 using aidl::android::media::audio::common::AudioPortExt;
 using aidl::android::media::audio::common::AudioProfile;
 using aidl::android::media::audio::common::Boolean;
+
+#if AUDIO_CORE_VERSION >= 4
 using aidl::android::media::audio::common::FlushFromFrameSupport;
+#endif
+
 using aidl::android::media::audio::common::Int;
 using aidl::android::media::audio::common::MicrophoneInfo;
 using aidl::android::media::audio::common::PcmType;
@@ -77,6 +81,7 @@ using ::aidl::android::hardware::audio::common::SourceMetadata;
 
 using ::aidl::android::hardware::audio::core::AudioPatch;
 using ::aidl::android::hardware::audio::core::AudioRoute;
+using ::aidl::android::hardware::audio::core::IModule;
 using ::aidl::android::hardware::audio::core::IBluetooth;
 using ::aidl::android::hardware::audio::core::IBluetoothA2dp;
 using ::aidl::android::hardware::audio::core::IBluetoothLe;
@@ -154,6 +159,8 @@ std::vector<AudioProfile> getStandard16And24BitPcmAudioProfiles() {
 }  // namespace
 
 Module::Module() {
+    static_assert(IModule::version == 3 || IModule::version == 4,
+                  "only 3 and 4 versions are supported");
     populateConnectedProfiles();
     mPlatform.registerPlatformGlobalCallBack(static_cast<PlatformGlobalCallback*>(this));
     mOffloadSpeedSupported = mPlatform.platformSupportsOffloadSpeed();
@@ -1306,11 +1313,13 @@ ndk::ScopedAStatus Module::getAAudioHardwareBurstMinUsec(int32_t* _aidl_return) 
     return ndk::ScopedAStatus::ok();
 }
 
+#if AUDIO_CORE_VERSION >= 4
 ndk::ScopedAStatus Module::getFlushFromFrameSupport(const AudioPortConfig& in_config __unused,
                                                     FlushFromFrameSupport* _aidl_return __unused) {
     LOG(VERBOSE) << __func__ << ": do nothing and return unsupported operation";
     return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
 }
+#endif
 
 binder_status_t Module::dump(int fd, const char** args, uint32_t numArgs) {
     if (fd <= 0) {
