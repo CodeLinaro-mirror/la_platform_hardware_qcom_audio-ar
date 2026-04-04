@@ -10,7 +10,10 @@
 #include <android-base/logging.h>
 #include <audio_utils/clock.h>
 #include <hardware/audio.h>
+#include <qti-audio-core/Module.h>
 #include <qti-audio-core/StreamMmapBase.h>
+#include <qti-audio-core/StreamInPrimary.h>
+#include <qti-audio-core/StreamOutPrimary.h>
 
 #include <qti-audio-core/PlatformUtils.h>
 #include <qti-audio/PlatformConverter.h>
@@ -454,6 +457,83 @@ void StreamInMmap::setStreamMicMute(const bool muted) {
     }
 }
 
+int32_t StreamInMmap::setAggregateSinkMetadata(bool voiceActive) {
+        ssize_t track_count_total = 0;
+
+    std::vector<record_track_metadata_t> total_tracks;
+    sink_metadata_t btSinkMetadata;
+
+    Module::inListMutex.lock();
+    std::vector<std::weak_ptr<StreamIn>>& inStreams = Module::getInStreams();
+    // Dont send metadata if voice is active
+    if (voiceActive || inStreams.empty()) {
+        Module::inListMutex.unlock();
+        return 0;
+    }
+    auto removeStreams = [&](std::weak_ptr<StreamIn> streamIn) -> bool {
+        if (!streamIn.lock()) return true;
+        return streamIn.lock()->isClosed();
+    };
+
+    inStreams.erase(std::remove_if(inStreams.begin(), inStreams.end(), removeStreams),
+                    inStreams.end());
+
+    for (auto it = inStreams.begin(); it < inStreams.end(); it++) {
+        if (it->lock() && !it->lock()->isClosed()) {
+            ::aidl::android::hardware::audio::common::SinkMetadata sinkMetadata;
+            it->lock()->getMetadata(sinkMetadata);
+            track_count_total += sinkMetadata.tracks.size();
+        } else {
+        }
+    }
+    LOG(VERBOSE) << __func__ << mLogPrefix << " trackCount " << track_count_total <<
+                " IN streams size " << inStreams.size();
+    if (track_count_total == 0) {
+        Module::inListMutex.unlock();
+        return 0;
+    }
+
+    total_tracks.resize(track_count_total);
+    btSinkMetadata.track_count = track_count_total;
+    btSinkMetadata.tracks = total_tracks.data();
+
+    for (auto it = inStreams.begin(); it != inStreams.end(); it++) {
+        ::aidl::android::hardware::audio::common::SinkMetadata sinkMetadata;
+        if (it->lock()) {
+            it->lock()->getMetadata(sinkMetadata);
+            for (auto& item : sinkMetadata.tracks) {
+                btSinkMetadata.tracks->source = static_cast<audio_source_t>(item.source);
+                ++btSinkMetadata.tracks;
+            }
+        }
+    }
+
+    btSinkMetadata.tracks = total_tracks.data();
+    pal_set_param(PAL_PARAM_ID_SET_SINK_METADATA, (void*)&btSinkMetadata, 0);
+    Module::inListMutex.unlock();
+    return 0;
+}
+
+ndk::ScopedAStatus StreamInMmap::updateMetadataCommon(const Metadata& metadata){
+    if (!isClosed()) {
+        if (metadata.index() != mMetadata.index()) {
+            LOG(FATAL) << __func__ << mLogPrefix << ": changing metadata variant is not allowed";
+        }
+        StreamInPrimary::sinkMetadata_mutex_.lock();
+        mMetadata = metadata;
+        StreamInPrimary::sinkMetadata_mutex_.unlock();
+    }
+    int callState = mPlatform.getCallState();
+    int callMode = mPlatform.getCallMode();
+    bool voiceActive = ((callState == 2) || (callMode == 2));
+
+    StreamInPrimary::sinkMetadata_mutex_.lock();
+    setAggregateSinkMetadata(voiceActive);
+    StreamInPrimary::sinkMetadata_mutex_.unlock();
+    LOG(DEBUG) << __func__ << mLogPrefix;
+    return ndk::ScopedAStatus::ok();
+}
+
 StreamOutMmap::StreamOutMmap(StreamContext&& context, const SourceMetadata& sourceMetadata,
                              const std::optional<AudioOffloadInfo>& offloadInfo)
     : StreamOut(std::move(context), offloadInfo),
@@ -533,6 +613,125 @@ bool StreamOutMmap::supportsPlaybackRate() const {
 ndk::ScopedAStatus StreamOutMmap::setPlaybackRateImpl(
         const ::aidl::android::media::audio::common::AudioPlaybackRate& rate) {
     return toBinderStatus(mPlatform.setPlaybackRate(mPalHandle, mTag, rate));
+}
+
+int32_t StreamOutMmap::setAggregateSourceMetadata(bool voiceActive) {
+    ssize_t track_count_total = 0;
+
+    std::vector<playback_track_metadata_t> total_tracks;
+    source_metadata_t btSourceMetadata;
+
+    Module::outListMutex.lock();
+    std::vector<std::weak_ptr<StreamOut>>& outStreams = Module::getOutStreams();
+    if (voiceActive || outStreams.empty()) {
+        Module::outListMutex.unlock();
+        return 0;
+    }
+    auto removeStreams = [&](std::weak_ptr<StreamOut> streamOut) -> bool {
+        if (!streamOut.lock()) return true;
+        return streamOut.lock()->isClosed();
+    };
+    outStreams.erase(std::remove_if(outStreams.begin(), outStreams.end(), removeStreams),
+                     outStreams.end());
+
+    LOG(VERBOSE) << __func__ << mLogPrefix << " out streams not empty size is " << outStreams.size();
+
+    for (auto it = outStreams.begin(); it < outStreams.end(); it++) {
+        if (it->lock() && !it->lock()->isClosed()) {
+            ::aidl::android::hardware::audio::common::SourceMetadata srcMetadata;
+            it->lock()->getMetadata(srcMetadata);
+            track_count_total += srcMetadata.tracks.size();
+        } else {
+        }
+    }
+    LOG(VERBOSE) << __func__ << mLogPrefix << " out streams size after deleting : " << outStreams.size()
+                 << " total track count " << track_count_total;
+
+    if (track_count_total <= 0) {
+        Module::outListMutex.unlock();
+        return 0;
+    }
+
+    total_tracks.resize(track_count_total);
+    btSourceMetadata.track_count = track_count_total;
+    btSourceMetadata.tracks = total_tracks.data();
+
+    int32_t totalTracks = 0;
+    for (auto it = outStreams.begin(); it != outStreams.end(); it++) {
+        ::aidl::android::hardware::audio::common::SourceMetadata srcMetadata;
+        if (it->lock()) {
+            it->lock()->getMetadata(srcMetadata);
+            for (auto& item : srcMetadata.tracks) {
+                // check tracks size in this stream metadata not to exceed total count
+                if (totalTracks >= track_count_total) {
+                    LOG(WARNING) << __func__ << mLogPrefix << ": mismatch in total tracks for metadata allocation";
+                    break;
+                }
+
+                /* currently after cs call ends, we are getting metadata as
+                * usage voice and content speech, this is causing BT to again
+                * open call session, so added below check to send metadata of
+                * voice only if call is active, else discard it
+                */
+
+                if (!voiceActive && (mPlatform.getCallMode() != 3) &&
+                    (AUDIO_USAGE_VOICE_COMMUNICATION == static_cast<audio_usage_t>(item.usage)) &&
+                    (AUDIO_CONTENT_TYPE_SPEECH ==
+                     static_cast<audio_content_type_t>(item.contentType))) {
+                    btSourceMetadata.track_count--;
+                } else {
+                    btSourceMetadata.tracks->usage = static_cast<audio_usage_t>(item.usage);
+                    btSourceMetadata.tracks->content_type =
+                            static_cast<audio_content_type_t>(item.contentType);
+                    LOG(VERBOSE) << __func__ << mLogPrefix << " source metadata usage is "
+                                 << btSourceMetadata.tracks->usage << " content is "
+                                 << btSourceMetadata.tracks->content_type;
+                   ++btSourceMetadata.tracks;
+                }
+                ++totalTracks;
+            }
+        }
+    }
+
+    auto getCombinedMetadata = [&]() {
+        std::ostringstream oss;
+        oss << " track count:" << btSourceMetadata.track_count;
+        for (size_t i = 0; i < btSourceMetadata.track_count; i++) {
+            oss << " { Usage:" << btSourceMetadata.tracks[i].usage
+                << ", content_type:" << btSourceMetadata.tracks[i].content_type << " } ";
+        }
+        return oss.str();
+    };
+
+    if (btSourceMetadata.track_count > 0) {
+        btSourceMetadata.tracks = total_tracks.data();
+        LOG(VERBOSE) << __func__ << mLogPrefix << ": combined : " << getCombinedMetadata();
+        pal_set_param(PAL_PARAM_ID_SET_SOURCE_METADATA, (void*)&btSourceMetadata, 0);
+    }
+
+    Module::outListMutex.unlock();
+    return 0;
+}
+
+ndk::ScopedAStatus StreamOutMmap::updateMetadataCommon(const Metadata& metadata){
+        if (isClosed()) {
+        LOG(ERROR) << __func__ << mLogPrefix << ": stream was closed";
+        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
+    }
+
+    if (metadata.index() != mMetadata.index()) {
+        LOG(FATAL) << __func__ << mLogPrefix << ": changing metadata variant is not allowed";
+    }
+    StreamOutPrimary::sourceMetadata_mutex_.lock();
+    mMetadata = metadata;
+    int callState = mPlatform.getCallState();
+    int callMode = mPlatform.getCallMode();
+    bool voiceActive = ((callState == 2) || (callMode == 2));
+
+    setAggregateSourceMetadata(voiceActive);
+    StreamOutPrimary::sourceMetadata_mutex_.unlock();
+
+    return ndk::ScopedAStatus::ok();
 }
 
 }  // namespace qti::audio::core

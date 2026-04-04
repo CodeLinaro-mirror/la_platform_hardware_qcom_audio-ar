@@ -1252,6 +1252,17 @@ void StreamCommonImpl::stopWorker() {
     }
     mWorkerStopIssued = true;
 }
+ndk::ScopedAStatus StreamOut::updateMetadata(
+        const ::aidl::android::hardware::audio::common::SourceMetadata& in_sourceMetadata) {
+    HAL_LOGV << ": source metadata pinged: " << in_sourceMetadata.toString();
+    return updateMetadataCommon(in_sourceMetadata);
+}
+
+ndk::ScopedAStatus StreamIn::updateMetadata(
+        const ::aidl::android::hardware::audio::common::SinkMetadata& in_sinkMetadata) {
+    HAL_LOGV << ": sink metadata pinged: " << in_sinkMetadata.toString();
+    return updateMetadataCommon(in_sinkMetadata);
+}
 
 ndk::ScopedAStatus StreamCommonImpl::updateMetadataCommon(const Metadata& metadata) {
     HAL_LOGV;

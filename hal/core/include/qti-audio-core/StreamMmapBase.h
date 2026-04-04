@@ -121,6 +121,9 @@ class StreamInMmap final : public StreamIn, public StreamMmapBase {
     ndk::ScopedAStatus configureMMapStream(
             ::aidl::android::hardware::audio::core::MmapBufferDescriptor* desc,
             int32_t* bufferSizeFrames) override;
+    ndk::ScopedAStatus updateMetadataCommon(const Metadata& metadata) override;
+    int32_t setAggregateSinkMetadata(bool voiceActive) override;
+
     void setStreamMicMute(const bool muted) override;
 
   private:
@@ -140,6 +143,8 @@ class StreamOutMmap final : public StreamOut, public StreamMmapBase {
             int32_t* bufferSizeFrames) override;
     ndk::ScopedAStatus getHwVolume(std::vector<float>* _aidl_return) override;
     ndk::ScopedAStatus setHwVolume(const std::vector<float>& in_channelVolumes) override;
+    ndk::ScopedAStatus updateMetadataCommon(const Metadata& metadata) override;
+    int32_t setAggregateSourceMetadata(bool voiceActive) override;
 
   protected:
     bool supportsPlaybackRate() const override;

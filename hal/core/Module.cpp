@@ -1825,8 +1825,12 @@ ndk::ScopedAStatus Module::createInputStream(StreamContext&& context,
                                              const std::vector<MicrophoneInfo>& microphones,
                                              std::shared_ptr<StreamIn>* result) {
     if (context.isMmap()) {
-        return createStreamInstance<StreamInMmap>(result, std::move(context), sinkMetadata,
+        auto status = createStreamInstance<StreamInMmap>(result, std::move(context), sinkMetadata,
                                                   microphones);
+        Module::inListMutex.lock();
+        Module::updateStreamInList(*result);
+        Module::inListMutex.unlock();
+        return status;
     }
 
     createStreamInstance<StreamInPrimary>(result, std::move(context), sinkMetadata, microphones);
@@ -1851,8 +1855,12 @@ ndk::ScopedAStatus Module::createOutputStream(StreamContext&& context,
     }
 
     if (context.isMmap()) {
-        return createStreamInstance<StreamOutMmap>(result, std::move(context), sourceMetadata,
+        auto status = createStreamInstance<StreamOutMmap>(result, std::move(context), sourceMetadata,
                                                    offloadInfo);
+        Module::outListMutex.lock();
+        Module::updateStreamOutList(*result);
+        Module::outListMutex.unlock();
+        return status;
     }
 
     createStreamInstance<StreamOutPrimary>(result, std::move(context), sourceMetadata, offloadInfo);
