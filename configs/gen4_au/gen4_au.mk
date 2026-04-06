@@ -238,6 +238,13 @@ else
 PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_policy_configuration_7_0.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_configuration.xml
 endif
+
+ifeq ($(TARGET_USES_AR),true)
+# AudioReach (gen4_gvm_gy)
+PRODUCT_COPY_FILES += \
+    $(TOPDIR)vendor/qcom/opensource/pal/configs/gen4_au/plugin_manager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/plugin_manager.xml
+endif
+
 endif # ends TARGET_GVMGH_SPECIFIC, false
 endif # ends ENABLE_HYP
 
