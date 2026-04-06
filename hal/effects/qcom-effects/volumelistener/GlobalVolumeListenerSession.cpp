@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -15,11 +15,12 @@
 namespace aidl::qti::effects {
 
 GlobalConfigs::GlobalConfigs() {
-    initGainMappings();
     mHeadsetCalEnabled = property_get_bool("vendor.audio.volume.headset.gain.depcal", false);
+    mInitialized = false;
 }
 
 void GlobalConfigs::initGainMappings() {
+    if (mInitialized) return;
     size_t payloadSize = 0;
     pal_param_gain_lvl_map_t gainLevelMap;
     gainLevelMap.mapping_tbl = mGainMappingTable;
@@ -52,6 +53,7 @@ void GlobalConfigs::initGainMappings() {
         LOG(DEBUG) << "Using default volume table";
     }
     printVolumeTable();
+    mInitialized = true;
 }
 
 void GlobalConfigs::printVolumeTable() {
@@ -63,8 +65,8 @@ void GlobalConfigs::printVolumeTable() {
 
 GlobalVolumeListenerSession::GlobalVolumeListenerSession() {
     LOG(VERBOSE) << __func__ << "Global Session created";
-    mTotalVolumeSteps = mConfig.getVolumeCalSteps();
-    mGainTable = mConfig.getGainTable();
+    mTotalVolumeSteps = 0;
+    mGainTable = nullptr;
 }
 
 std::shared_ptr<VolumeListenerContext> GlobalVolumeListenerSession::createSession(
@@ -72,6 +74,12 @@ std::shared_ptr<VolumeListenerContext> GlobalVolumeListenerSession::createSessio
     int sessionId = common.session;
     LOG(VERBOSE) << __func__ << type << " with sessionId " << sessionId;
     std::lock_guard lg(mSessionMutex);
+
+    if (!mConfig.isInitialized()) {
+        mConfig.initGainMappings();
+        mTotalVolumeSteps = mConfig.getVolumeCalSteps();
+        mGainTable = mConfig.getGainTable();
+    }
 
     auto context = std::make_shared<VolumeListenerContext>(common, type, processData);
     RETURN_VALUE_IF(!context, nullptr, "failedToCreateContext");
