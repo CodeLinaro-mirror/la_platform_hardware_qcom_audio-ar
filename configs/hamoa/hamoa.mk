@@ -53,6 +53,9 @@ PRODUCT_COPY_FILES += \
     $(CONFIG_PAL_SRC_DIR)/mixer_paths_hamoa_x1e80100_crd_wsa884x.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_hamoa_x1e80100_crd_wsa884x.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_hamoa_x1e80100_crd_wsa884x.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_hamoa_x1e80100_crd_wsa884x.xml \
     $(CONFIG_PAL_SRC_DIR)/mcs_defs_hamoa_x1e80100_crd_wsa884x.xml:$(CONFIG_SKU_OUT_DIR)/mcs_defs_hamoa_x1e80100_crd_wsa884x.xml \
+    $(CONFIG_PAL_SRC_DIR)/mixer_paths_hamoa_x1e80100_qcp_wsa884x.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_hamoa_x1e80100_qcp_wsa884x.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_hamoa_x1e80100_qcp_wsa884x.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_hamoa_x1e80100_qcp_wsa884x.xml \
+    $(CONFIG_PAL_SRC_DIR)/mcs_defs_hamoa_x1e80100_qcp_wsa884x.xml:$(CONFIG_SKU_OUT_DIR)/mcs_defs_hamoa_x1e80100_qcp_wsa884x.xml \
     $(CONFIG_PAL_SRC_DIR)/usecaseKvManager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usecaseKvManager.xml \
     $(CONFIG_PAL_SRC_DIR)/Hapticsconfig.xml:$(TARGET_COPY_OUT_VENDOR)/etc/Hapticsconfig.xml \
     $(CONFIG_PAL_SRC_DIR)/plugin_manager.xml:$(CONFIG_SKU_OUT_DIR)/plugin_manager.xml \
