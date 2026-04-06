@@ -680,7 +680,24 @@ class StreamCommonImpl : virtual public StreamCommonInterface, virtual public Dr
     ChildInterface<StreamCommonDelegator> mCommon;
     ConnectedDevices mConnectedDevices;
 
-    private:
+    /**
+     * Synchronizes the following:
+     * - IModule::* binder calls
+     * - IStream[Common|In|Out]::* binder calls
+     * - StreamWorker FMQ thread
+     *
+     * This synchronization is only needed when these threads compete for shared
+     * resources, such as devices connected to the stream. It is a good example
+     * of a potential race condition.
+     *
+     * Example:
+     * When A2DP suspension is triggered by the BT host via reconfiguration,
+     * a new stream may still be created for the BT A2DP device because it
+     * appears available from the framework’s point of view.
+     */
+    std::mutex mSyncLock;
+
+  private:
     std::atomic<bool> mWorkerStopIssued = false;
 };
 

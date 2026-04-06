@@ -192,8 +192,12 @@ PRODUCT_COPY_FILES += \
     $(CONFIG_HAL_SRC_DIR)/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/microphone_characteristics.xml \
     $(CONFIG_HAL_SRC_DIR)/mixer_paths_bengal_idp.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_bengal_idp.xml \
     $(CONFIG_HAL_SRC_DIR)/mixer_paths_bengal_qrd.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_bengal_qrd.xml \
+    $(CONFIG_HAL_SRC_DIR)/mixer_paths_bengal_scubaidp.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_bengal_scubaidp.xml \
+    $(CONFIG_HAL_SRC_DIR)/mixer_paths_bengal_scubaqrd.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_bengal_scubaqrd.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_bengal_idp.xml:$(TARGET_COPY_OUT_VENDOR)/etc/resourcemanager_bengal_idp.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_bengal_qrd.xml:$(TARGET_COPY_OUT_VENDOR)/etc/resourcemanager_bengal_qrd.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_bengal_scubaidp.xml:$(TARGET_COPY_OUT_VENDOR)/etc/resourcemanager_bengal_scubaidp.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_bengal_scubaqrd.xml:$(TARGET_COPY_OUT_VENDOR)/etc/resourcemanager_bengal_scubaqrd.xml \
     $(CONFIG_PAL_SRC_DIR)/usecaseKvManager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usecaseKvManager.xml \
     $(CONFIG_PAL_SRC_DIR)/usecaseKvManager_arrax.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usecaseKvManager_arrax.xml \
     vendor/qcom/opensource/audio-hal/primary-hal/configs/common/media_codecs_vendor_audio.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_vendor_audio.xml \
