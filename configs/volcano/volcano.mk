@@ -173,7 +173,8 @@ PRODUCT_COPY_FILES += \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_volcano_mtp_wsa883x_wcd939x_sku1.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_volcano_mtp_wsa883x_wcd939x_sku1.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_volcano_cdp_wsa883x_wcd939x_sku1.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_volcano_cdp_wsa883x_wcd939x_sku1.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_volcano_qrd_sku1.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_volcano_qrd_sku1.xml \
-	$(CONFIG_PAL_SRC_DIR)/usecaseKvManager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usecaseKvManager.xml \
+    $(CONFIG_PAL_SRC_DIR)/usecaseKvManager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usecaseKvManager.xml \
+    vendor/qcom/opensource/agm/plugins/tinyalsa/test/backend_conf.xml:$(TARGET_COPY_OUT_VENDOR)/etc/backend_conf.xml \
     vendor/qcom/opensource/audio-hal/primary-hal/configs/common/media_codecs_vendor_audio.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_vendor_audio.xml \
     frameworks/native/data/etc/android.hardware.audio.pro.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.pro.xml \
     frameworks/native/data/etc/android.hardware.audio.low_latency.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.low_latency.xml \
