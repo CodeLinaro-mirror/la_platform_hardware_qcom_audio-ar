@@ -4,6 +4,8 @@
  */
 
  #define LOG_TAG "ASRC_Extension"
+#include <android-base/logging.h>
+#include <cutils/str_parms.h>
 #include <errno.h>
 #include <log/log.h>
 #include <stdlib.h>
