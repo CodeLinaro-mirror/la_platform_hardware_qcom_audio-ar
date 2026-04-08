@@ -37,6 +37,7 @@ AUDIO_PAL += libhfp_pal
 AUDIO_PAL += lib_default_plugin_controls
 AUDIO_PAL += lib_default_set_param_plugin_controls
 AUDIO_PAL += libautohal_pal
+AUDIO_PAL += lib_asrc
 #PAL Service
 AUDIO_PAL += libpalclient
 AUDIO_PAL += libpalipcservice
