@@ -188,7 +188,7 @@ void StreamInPrimaryOEM::shutdown() {
                 readAt.tv_nsec = palBuffer.ts->tv_nsec;
                 free(palBuffer.ts);
             }
-            LOG(DEBUG) << "hw timestamp sec: " << readAt.tv_sec << "  nsec: " << readAt.tv_nsec;
+            LOG(VERBOSE) << "hw timestamp sec: " << readAt.tv_sec << "  nsec: " << readAt.tv_nsec;
 #endif
 #ifdef ECNR_HAL_SRC_CP
             if (bytesRead < 0)
