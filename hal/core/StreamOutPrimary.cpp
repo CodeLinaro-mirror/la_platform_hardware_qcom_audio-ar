@@ -790,12 +790,13 @@ size_t StreamOutPrimary::getPlatformDelay() const noexcept {
 }
 
 ::android::status_t StreamOutPrimary::onWriteError(const size_t sleepFrameCount, size_t* const consumedFrameCount) {
-    shutdown_I();
     if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK) {
         // return error for offload, so that FW sends data again
         LOG(ERROR) << __func__ << mLogPrefix << ": cannot afford write failure";
         *consumedFrameCount = 0;
         return ::android::DEAD_OBJECT;
+    } else {
+        shutdown_I();
     }
     auto& sampleRate = mMixPortConfig.sampleRate.value().value;
     if (sampleRate == 0) {
