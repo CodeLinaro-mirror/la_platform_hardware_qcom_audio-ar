@@ -35,7 +35,7 @@
         <type>int</type>
 		<min>-9000</min>
 		<max>0</max>
-        <defaultvalue>-3300</defaultvalue>
+        <defaultvalue>-3100</defaultvalue>
     </config>
 	<config>
         <name>Fader</name>
