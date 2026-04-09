@@ -130,15 +130,15 @@ class Platform {
      * @param mixPortConfig mixportconfig for which devices are requested
      * @param tag usecase tag
      * @param setDevices vector of devices for which pal devices are requested
-     * @param dummyDevice setDevices can be empty, in that case if client needs
-     * dummy device in form of PAL_DEVICE_[IN/OUT]_DUMMY
+     * @return corresponding PAL devices with configuration.
+     * if `setDevices` are empty or has NONE device, return DUMMY device.
      */
 
     std::vector<pal_device> configureAndFetchPalDevices(
             const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig,
             const Usecase& tag,
-            const std::vector<::aidl::android::media::audio::common::AudioDevice>& setDevices,
-            const bool dummyDevice = false) const;
+            const std::vector<::aidl::android::media::audio::common::AudioDevice>& setDevices)
+            const;
 
     /*
      * @breif sets the device to PAL for given PAL handle
@@ -147,16 +147,15 @@ class Platform {
      * @param mixPortConfig mixportconfig for which devices are requested
      * @param tag usecase tag
      * @param setDevices vector of devices for which pal devices are requested
-     * @param dummyDevice setDevices can be empty, in that case if client needs
-     * dummy device in form of PAL_DEVICE_[IN/OUT]_DUMMY
+     * @return corresponding PAL devices with configuration.
+     * if `setDevices` are empty or has NONE device, return DUMMY device.
      */
 
-    int32_t setDevice(
-            pal_stream_handle_t* handle,
-            const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig,
-            const Usecase& tag,
-            const std::vector<::aidl::android::media::audio::common::AudioDevice>& setDevices,
-            const bool dummyDevice = false) const;
+    int32_t setDevice(pal_stream_handle_t* handle,
+                      const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig,
+                      const Usecase& tag,
+                      const std::vector<::aidl::android::media::audio::common::AudioDevice>&
+                              setDevices) const;
 
     /*
     * @breif In order to get stream position in the DSP pipeline

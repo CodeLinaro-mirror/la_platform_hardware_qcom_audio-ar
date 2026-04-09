@@ -1255,12 +1255,20 @@ void StreamCommonImpl::stopWorker() {
 ndk::ScopedAStatus StreamOut::updateMetadata(
         const ::aidl::android::hardware::audio::common::SourceMetadata& in_sourceMetadata) {
     HAL_LOGV << ": source metadata pinged: " << in_sourceMetadata.toString();
+    if(!isValidSourceMetadata(in_sourceMetadata)) {
+        HAL_LOGE << ": invalid metadata: " << in_sourceMetadata.toString();
+        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
+    }
     return updateMetadataCommon(in_sourceMetadata);
 }
 
 ndk::ScopedAStatus StreamIn::updateMetadata(
         const ::aidl::android::hardware::audio::common::SinkMetadata& in_sinkMetadata) {
     HAL_LOGV << ": sink metadata pinged: " << in_sinkMetadata.toString();
+    if(!isValidSinkMetadata(in_sinkMetadata)) {
+        HAL_LOGE << ": invalid metadata: " << in_sinkMetadata.toString();
+        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
+    }
     return updateMetadataCommon(in_sinkMetadata);
 }
 

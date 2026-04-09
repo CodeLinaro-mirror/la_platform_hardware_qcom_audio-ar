@@ -23,6 +23,8 @@
 #pragma once
 
 #include <aidl/android/hardware/audio/core/VendorParameter.h>
+#include <aidl/android/hardware/audio/common/SourceMetadata.h>
+#include <aidl/android/hardware/audio/common/SinkMetadata.h>
 #include <aidl/android/hardware/audio/effect/Descriptor.h>
 #include <aidl/android/media/audio/common/AudioDevice.h>
 #include <aidl/android/media/audio/common/AudioInputFlags.h>
@@ -451,5 +453,20 @@ constexpr bool isValidAudioMode(::aidl::android::media::audio::common::AudioMode
 }
 
 ::aidl::android::media::audio::common::AudioUuid stringToUuid(const char* str);
+
+bool isValidPlaybackTrackMetadataTag(const std::string& tag) noexcept;
+bool isValidRecordTrackMetadataTag(const std::string& tag) noexcept;
+bool isValidPlaybackTrackMetadata(
+        const aidl::android::hardware::audio::common::PlaybackTrackMetadata&
+                playbackTrackMetadata) noexcept;
+bool isValidRecordTrackMetadata(const aidl::android::hardware::audio::common::RecordTrackMetadata&
+                                        recordTrackMetadata) noexcept;
+bool isValidSourceMetadata(
+        const aidl::android::hardware::audio::common::SourceMetadata& sourceMetadata) noexcept;
+bool isValidSinkMetadata(
+        const aidl::android::hardware::audio::common::SinkMetadata& sinkMetadata) noexcept;
+
+bool isNoneDevice(const ::aidl::android::media::audio::common::AudioDevice&) noexcept;
+bool hasNoneDevice(const std::vector<::aidl::android::media::audio::common::AudioDevice>&) noexcept;
 
 } // namespace qti::audio::core
