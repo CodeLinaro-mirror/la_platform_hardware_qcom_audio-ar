@@ -291,6 +291,12 @@ int BMTContext::getEqualizerPreset() const
 RetCode BMTContext::setEqualizerPreset(const std::size_t presetIdx)
 {
     LOG(WARNING) << __func__ << " Unsupported param by AWX module";
+    // presetIdx = 0 is valid — accept it even if AWX module doesn't use/support it.
+    if (presetIdx != 0) {
+        LOG(ERROR) << "Preset " << presetIdx
+                   << " out of supported range (0..0)";
+        return RetCode::ERROR_ILLEGAL_PARAMETER;
+    }
     mPresetIndex = presetIdx;
     return RetCode::SUCCESS;
 }

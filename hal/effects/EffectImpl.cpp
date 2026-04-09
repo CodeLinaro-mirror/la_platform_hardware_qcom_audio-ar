@@ -73,7 +73,13 @@ ndk::ScopedAStatus EffectImpl::open(const Parameter::Common& common,
             mVersion >= kReopenSupportedVersion ? kEventFlagDataMqNotEmpty : kEventFlagNotEmpty;
 
     if (specific.has_value()) {
-        RETURN_IF_ASTATUS_NOT_OK(setParameterSpecific(specific.value()), "setSpecParamErr");
+        // Do NOT validate strength here — ignore it so open() always succeeds
+        ndk::ScopedAStatus status = setParameterSpecific(specific.value());
+        if (!status.isOk()) {
+            LOG(DEBUG) << "Ignoring setParameterSpecific() failure during open(): "
+                       << status.getMessage();
+            // DO NOT return error here
+        }
     }
 
     mState = State::IDLE;
