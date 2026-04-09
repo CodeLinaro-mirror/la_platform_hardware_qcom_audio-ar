@@ -1,5 +1,9 @@
 # Business Application definition
 BA_NAME := compute
+
+#HAL AIDL Version
+CORE_HAL_AIDL_VERSION := 4
+
 # Audio product definitions
 include vendor/qcom/opensource/audio-hal/primary-hal/configs/hamoa/audio-modules.mk
 PRODUCT_PACKAGES += $(AUDIO_MODULES)
