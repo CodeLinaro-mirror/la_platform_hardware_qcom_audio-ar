@@ -564,6 +564,7 @@ HalECNRExtension::HalECNRExtension() {
         int i_scd_type = SCD_TYPE_INVALID;
         char scd_file_name[128];
         char scd_file_path[256];
+        char dnn_file_name[128];
         int32_t tuning_mode = property_get_int32(TUNE_MODE_PROP, 0);
         if (NULL == pECNR_ProcessData )
         {
@@ -598,17 +599,17 @@ HalECNRExtension::HalECNRExtension() {
             }
             if (scd_file_name_table_2nd[i_scd_type] != NULL) {
                 if (strlen(hw_variant) == 0) {
-                    snprintf(scd_file_name, sizeof(scd_file_name), "%s%s", scd_file_name_table_2nd[i_scd_type], ".scd");
+                    snprintf(dnn_file_name, sizeof(dnn_file_name), "%s%s", scd_file_name_table_2nd[i_scd_type], ".scd");
                 }
                 else {
-                    snprintf(scd_file_name, sizeof(scd_file_name), "%s_%s%s", scd_file_name_table_2nd[i_scd_type], hw_variant, ".scd");
+                    snprintf(dnn_file_name, sizeof(dnn_file_name), "%s_%s%s", scd_file_name_table_2nd[i_scd_type], hw_variant, ".scd");
                 }
             }
 
             if (tuning_mode) {
                 if (scd_file_name_table[i_scd_type] != NULL) {
                     snprintf(scd_file_path, sizeof(scd_file_path), "%s%s", SCD_PATH, scd_file_name);
-                    LOG(DEBUG) << __func__ << " scd_file_path: " << scd_file_path;
+                    LOG(DEBUG) << __func__ << " scd_file_path: " << scd_file_path << " scd_file_name: " << scd_file_name;
                     ret = audio_extn_fillSCDbuffer(scd_file_path, &(pECNR_ProcessData->scd_buffer[0]), &(pECNR_ProcessData->scd_buffer_size[0]), dir, SSE);
                     if(ret) {
                         LOG(ERROR) << __func__ << " Invalid scd path";
@@ -620,8 +621,10 @@ HalECNRExtension::HalECNRExtension() {
                     }
                 }
                 if (scd_file_name_table_2nd[i_scd_type] != NULL) {
-                    snprintf(scd_file_path, sizeof(scd_file_path), "%s%s", SCD_PATH, scd_file_name);
-                    LOG(DEBUG) << __func__ << " DNN scd_file_path: " << scd_file_path;
+                    // reset the variable before use
+                    memset(scd_file_path, 0, sizeof(scd_file_path));
+                    snprintf(scd_file_path, sizeof(scd_file_path), "%s%s", SCD_PATH, dnn_file_name);
+                    LOG(DEBUG) << __func__ << " DNN scd_file_path: " << scd_file_path << " dnn_file_name: " << dnn_file_name;
                     ret = audio_extn_fillSCDbuffer(scd_file_path, &(pECNR_ProcessData->scd_buffer[1]), &(pECNR_ProcessData->scd_buffer_size[1]), dir, DNN);
                     if(ret) {
                         LOG(ERROR) << __func__ << " Invalid scd path for DNN";
@@ -634,7 +637,6 @@ HalECNRExtension::HalECNRExtension() {
                     LOG(ERROR) << __func__ << " current_file_path is Null ret = " << ret;
                     return ret;
                 } else if (*current_file_path == INVALID_PATH) {
-                    ret = 0, rc = 0;
                     if (scd_file_name_table[i_scd_type] != NULL) {
                         snprintf(scd_file_path, sizeof(scd_file_path), "%s", retCalibPath.c_str());
                         LOG(DEBUG) << __func__ << " scd_file_path: " << scd_file_path;
@@ -656,14 +658,18 @@ HalECNRExtension::HalECNRExtension() {
                     } else {
                         LOG(WARNING) << __func__ << " CALIB failed for one/both files, fallback to TUNING";
                         ret = 0, rc = 0;
+                        // reset the variable before use
+                        memset(scd_file_path, 0, sizeof(scd_file_path));
                         if (scd_file_name_table[i_scd_type] != NULL) {
                             snprintf(scd_file_path, sizeof(scd_file_path), "%s%s", SCD_PATH, scd_file_name);
-                            LOG(DEBUG) << __func__ << " scd_file_path: " << scd_file_path;
+                            LOG(DEBUG) << __func__ << " scd_file_path: " << scd_file_path << " scd_file_name: " << scd_file_name;
                             ret = audio_extn_fillSCDbuffer(scd_file_path, &(pECNR_ProcessData->scd_buffer[0]), &(pECNR_ProcessData->scd_buffer_size[0]), dir, SSE);
                         }
                         if (scd_file_name_table_2nd[i_scd_type] != NULL) {
-                            snprintf(scd_file_path, sizeof(scd_file_path), "%s%s", SCD_PATH, scd_file_name);
-                            LOG(DEBUG) << __func__ << " DNN scd_file_path: " << scd_file_path;
+                            // reset the variable before use
+                            memset(scd_file_path, 0, sizeof(scd_file_path));
+                            snprintf(scd_file_path, sizeof(scd_file_path), "%s%s", SCD_PATH, dnn_file_name);
+                            LOG(DEBUG) << __func__ << " DNN scd_file_path: " << scd_file_path << " dnn_file_name: " << dnn_file_name;
                             rc = audio_extn_fillSCDbuffer(scd_file_path, &(pECNR_ProcessData->scd_buffer[1]), &(pECNR_ProcessData->scd_buffer_size[1]), dir, DNN);
                         }
                         if (!ret && !rc) {
@@ -671,14 +677,18 @@ HalECNRExtension::HalECNRExtension() {
                         } else {
                             LOG(WARNING) << __func__ << " TUNING failed for one/both files, fallback to DEFAULT";
                             ret = 0, rc = 0;
+                            // reset the variable before use
+                            memset(scd_file_path, 0, sizeof(scd_file_path));
                             if (scd_file_name_table[i_scd_type] != NULL) {
                                 snprintf(scd_file_path, sizeof(scd_file_path), "%s%s", SCD_PATH_BK, scd_file_name);
-                                LOG(DEBUG) << __func__ << " scd_file_path: " << scd_file_path;
+                                LOG(DEBUG) << __func__ << " scd_file_path: " << scd_file_path << " scd_file_name: " << scd_file_name;
                                 ret = audio_extn_fillSCDbuffer(scd_file_path, &(pECNR_ProcessData->scd_buffer[0]), &(pECNR_ProcessData->scd_buffer_size[0]), dir, SSE);
                             }
                             if (scd_file_name_table_2nd[i_scd_type] != NULL) {
-                                snprintf(scd_file_path, sizeof(scd_file_path), "%s%s", SCD_PATH_BK, scd_file_name);
-                                LOG(DEBUG) << __func__ << " DNN scd_file_path: " << scd_file_path;
+                                // reset the variable before use
+                                memset(scd_file_path, 0, sizeof(scd_file_path));
+                                snprintf(scd_file_path, sizeof(scd_file_path), "%s%s", SCD_PATH_BK, dnn_file_name);
+                                LOG(DEBUG) << __func__ << " DNN scd_file_path: " << scd_file_path << " dnn_file_name: " << dnn_file_name;
                                 rc = audio_extn_fillSCDbuffer(scd_file_path, &(pECNR_ProcessData->scd_buffer[1]), &(pECNR_ProcessData->scd_buffer_size[1]), dir, DNN);
                             }
                             if (!ret && !rc) {
@@ -695,12 +705,18 @@ HalECNRExtension::HalECNRExtension() {
                     }
                 } else if (*current_file_path == TUNING_PATH) {
                     ret = 0, rc = 0;
+                    // reset the variable before use
+                    memset(scd_file_path, 0, sizeof(scd_file_path));
                     if (scd_file_name_table[i_scd_type] != NULL) {
                         snprintf(scd_file_path, sizeof(scd_file_path), "%s%s", SCD_PATH, scd_file_name);
+                        LOG(DEBUG) << __func__ << " scd_file_path: " << scd_file_path << " scd_file_name: " << scd_file_name;
                         ret = audio_extn_fillSCDbuffer(scd_file_path, &(pECNR_ProcessData->scd_buffer[0]), &(pECNR_ProcessData->scd_buffer_size[0]), dir, SSE);
                     }
                     if (scd_file_name_table_2nd[i_scd_type] != NULL) {
-                        snprintf(scd_file_path, sizeof(scd_file_path), "%s%s", SCD_PATH, scd_file_name);
+                        // reset the variable before use
+                        memset(scd_file_path, 0, sizeof(scd_file_path));
+                        snprintf(scd_file_path, sizeof(scd_file_path), "%s%s", SCD_PATH, dnn_file_name);
+                        LOG(DEBUG) << __func__ << " DNN scd_file_path: " << scd_file_path << " dnn_file_name: " << dnn_file_name;
                         rc = audio_extn_fillSCDbuffer(scd_file_path, &(pECNR_ProcessData->scd_buffer[1]), &(pECNR_ProcessData->scd_buffer_size[1]), dir, DNN);
                     }
                     if (ret && rc) {
@@ -713,11 +729,17 @@ HalECNRExtension::HalECNRExtension() {
                     }
                 } else {
                     if (scd_file_name_table[i_scd_type] != NULL) {
+                        // reset the variable before use
+                        memset(scd_file_path, 0, sizeof(scd_file_path));
                         snprintf(scd_file_path, sizeof(scd_file_path), "%s%s", SCD_PATH_BK, scd_file_name);
+                        LOG(DEBUG) << __func__ << " scd_file_path: " << scd_file_path << " scd_file_name: " << scd_file_name;
                         ret = audio_extn_fillSCDbuffer(scd_file_path, &(pECNR_ProcessData->scd_buffer[0]), &(pECNR_ProcessData->scd_buffer_size[0]), dir, SSE);
                     }
                     if (scd_file_name_table_2nd[i_scd_type] != NULL) {
-                        snprintf(scd_file_path, sizeof(scd_file_path), "%s%s", SCD_PATH_BK, scd_file_name);
+                        // reset the variable before use
+                        memset(scd_file_path, 0, sizeof(scd_file_path));
+                        snprintf(scd_file_path, sizeof(scd_file_path), "%s%s", SCD_PATH_BK, dnn_file_name);
+                        LOG(DEBUG) << __func__ << " DNN scd_file_path: " << scd_file_path << " dnn_file_name: " << dnn_file_name;
                         ret = audio_extn_fillSCDbuffer(scd_file_path, &(pECNR_ProcessData->scd_buffer[1]), &(pECNR_ProcessData->scd_buffer_size[1]), dir, DNN);
                     }
                     if (ret && rc) {

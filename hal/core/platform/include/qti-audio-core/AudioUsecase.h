@@ -225,7 +225,7 @@ class DeepBufferPlayback : public UsecaseConfig<DeepBufferPlayback> {
 
 class LowLatencyPlayback : public UsecaseConfig<LowLatencyPlayback> {
   public:
-    constexpr static size_t kPeriodCount = 2;
+    constexpr static size_t kPeriodCount = 8;
     constexpr static size_t kPlatformDelayMs = 13;
     constexpr static size_t kPeriodDurationMs = 4;
     constexpr static size_t kPeriodSize = kPeriodDurationMs * DEFAULT_SAMPLE_RATE /1000;
