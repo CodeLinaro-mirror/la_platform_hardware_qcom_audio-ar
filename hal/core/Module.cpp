@@ -2155,6 +2155,9 @@ void Module::onSetTelephonyParameters(const std::vector<VendorParameter>& parame
             }
         } else if (Parameters::kTranslationConfig == p.id) {
             mTelephony->CallTranslationManager(paramValue);
+        } else if (Parameters::kVoiceNsRxConfig == p.id) {
+            const bool bypass = paramValue == "true" ? true : false;
+            mTelephony->updateVoiceNsRxConfigMode(bypass);
         }
     }
 

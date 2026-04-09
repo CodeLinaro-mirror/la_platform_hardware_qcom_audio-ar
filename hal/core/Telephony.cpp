@@ -1017,6 +1017,31 @@ void Telephony::configureDeviceMute() {
     }
 }
 
+void Telephony::updateVoiceNsRxConfigMode(const bool enable) {
+    std::scoped_lock lock{mLock};
+    mIsBypassVoiceNsRxCfg = enable;
+    LOG(INFO) << __func__ << ": bypass state: " << mIsBypassVoiceNsRxCfg;
+    configureVoiceNsRxConfigMode();
+}
+
+void Telephony::configureVoiceNsRxConfigMode() {
+    if (mPalHandle == nullptr) {
+        LOG(ERROR) << __func__ << ": invalid pal handle";
+        return;
+    }
+    auto byteSize = sizeof(pal_param_payload) + sizeof(bool);
+    auto bytes = std::make_unique<uint8_t[]>(byteSize);
+    auto palParamPayload = reinterpret_cast<pal_param_payload*>(bytes.get());
+    palParamPayload->payload_size = sizeof(bool);
+    palParamPayload->payload[0] = mIsBypassVoiceNsRxCfg;
+    if (int32_t ret =
+                ::pal_stream_set_param(mPalHandle, PAL_PARAM_ID_VOICE_NS_RX_CFG, palParamPayload);
+        ret) {
+        LOG(ERROR) << __func__ << ": failed to set PAL_PARAM_ID_VOICE_NS_RX_CFG";
+        return;
+    }
+}
+
 void Telephony::setVoipPlaybackStream(std::weak_ptr<StreamCommonInterface> voipStream) {
     std::scoped_lock lock{mLock};
     mVoipStreamWptr = voipStream;
