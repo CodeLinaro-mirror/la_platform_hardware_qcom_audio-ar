@@ -1530,10 +1530,20 @@ void StreamOutPrimary::shutdown_I() {
 
     if (karaoke) mAudExt.mKarokeExtension->karaoke_stop();
     mPalHandleMutex.lock();
+
     if (mPalHandle != nullptr) {
-        if (getAddress() == MEDIA_BUS)
-        {
-            mAudExt.mAutoOemExtension->audio_extn_autooem_set_streamType(PAL_STREAM_INVALID);
+        if (getAddress() == MEDIA_BUS) {
+            //Get PAL stream type of THIS stream before closing
+            auto attr = mPlatform.getPalStreamAttributes(mMixPortConfig, false);
+            if (attr) {
+                // Remove exactly THIS stream from OEM vector
+                mAudExt.mAutoOemExtension->audio_extn_autooem_remove_streamType(attr->type);
+                // Only MEDIA is allowed to drive INVALID state
+                if (mAudExt.mAutoOemExtension->audio_extn_autooem_is_stream_list_empty()) {
+                    mAudExt.mAutoOemExtension->audio_extn_autooem_set_streamType(
+                            PAL_STREAM_INVALID);
+                }
+            }
         }
         enableOffloadEffects(false);
 #ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS

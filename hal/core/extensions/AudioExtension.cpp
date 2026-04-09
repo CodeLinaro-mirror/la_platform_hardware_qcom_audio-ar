@@ -784,7 +784,6 @@ AutoOemExtension::AutoOemExtension():AudioExtensionBase(kAutoOemLibrary, isExten
             }
             streamInfo = NULL;
         }
-
         if (!(oem_init = (oem_init_t)dlsym(mHandle, "oem_init")))
         {
             LOG(ERROR) << __func__ << "dlsym failed";
@@ -849,16 +848,56 @@ void AutoOemExtension::audio_extn_autooem_set_parameters(struct str_parms* param
     }
 }
 
-void AutoOemExtension::audio_extn_autooem_set_streamType(pal_stream_type_t params)
+void AutoOemExtension::audio_extn_autooem_set_streamType(pal_stream_type_t type)
 {
     LOG(INFO) << __func__ << ": Enter";
-    if (streamInfo)
+    std::lock_guard<std::mutex> lock(gOemStreamMutex);
+    if (type != PAL_STREAM_INVALID)
     {
-        LOG(INFO) << __func__ << ": oem get streamType available ";
-        if (mHandle != nullptr) {
-          streamInfo(params);
+        // STREAM START → add to vector
+        gOemActiveStreams.push_back(type);
+        LOG(INFO) << __func__ << ": Added stream = " << type;
+    }
+    else
+    {
+        LOG(ERROR) << __func__ << ": ERROR — INVALID should NOT be passed for removal!";
+        return;
+    }
+    // Compute active stream: LAST in the list
+    pal_stream_type_t active = PAL_STREAM_INVALID;
+    if (!gOemActiveStreams.empty())
+        active = gOemActiveStreams.back();
+    // Send active stream to OEM
+    if (streamInfo && mHandle != nullptr)
+        streamInfo(active);
+    LOG(INFO) << __func__ << ": Active stream = " << active;
+}
+
+void AutoOemExtension::audio_extn_autooem_remove_streamType(pal_stream_type_t type)
+{
+    LOG(INFO) << __func__ << ": Removing stream = " << type;
+    std::lock_guard<std::mutex> lock(gOemStreamMutex);
+    for (auto it = gOemActiveStreams.begin(); it != gOemActiveStreams.end(); ++it)
+    {
+        if (*it == type)
+        {
+            gOemActiveStreams.erase(it);
+            break;
         }
     }
+    pal_stream_type_t active = PAL_STREAM_INVALID;
+    if (!gOemActiveStreams.empty())
+        active = gOemActiveStreams.back();
+    LOG(INFO) << __func__ << ": Active after remove = " << active;
+
+    if (streamInfo && mHandle != nullptr)
+        streamInfo(active);
+}
+
+bool AutoOemExtension::audio_extn_autooem_is_stream_list_empty()
+{
+    std::lock_guard<std::mutex> lock(gOemStreamMutex);
+    return gOemActiveStreams.empty();
 }
 
 #ifdef ENABLE_QCOM_HAL_AUDIO_FOCUS
