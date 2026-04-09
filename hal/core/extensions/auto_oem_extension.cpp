@@ -88,6 +88,8 @@
 
 #define FADER_BALANCE_MIN_INPUT -1.0f
 #define FADER_BALANCE_MAX_INPUT 1.0f
+#define POWER_POLICY_ENABLE 1U
+#define POWER_POLICY_DISABLE 0U
 
 #define FADER_BALANCE_SCALE 5.0f
 
@@ -307,7 +309,7 @@ void update_sdvc(param_type2_t *params) {
             pal_param->param_size = sizeof(param_type2_t);
             pal_param->data = (void *)params;
             LOG(VERBOSE) << __func__ << ": Successfully created pal_param";
-            if (gs_powerpolicy) {
+            if (POWER_POLICY_ENABLE == gs_powerpolicy) {
                 if (gsp_palHandle == NULL) {
                     open_stream();
                 }
@@ -363,12 +365,12 @@ void set_powerpolicy(struct str_parms *parms)
 
         // Power Policy is enabled
         if (result) {
-            gs_powerpolicy = 1U;
+            gs_powerpolicy = POWER_POLICY_ENABLE;
             // Open Graph and gsp_palHandle
             open_stream();
         } else {
             // Close Graph and update gsp_palHandle to NULL
-            gs_powerpolicy = 0U;
+            gs_powerpolicy = POWER_POLICY_DISABLE;
             close_stream();
         }
     }
@@ -488,7 +490,7 @@ void update_fan_speed_pal_param(param_type2_t *params) {
             pal_param->data = (void *)params;
             LOG(DEBUG) << __func__ << ": Successfully created pal_param";
 
-            if (gs_powerpolicy) {
+            if (POWER_POLICY_ENABLE == gs_powerpolicy) {
                 if (gsp_palHandle == NULL) {
                     open_stream();
                 }
@@ -531,7 +533,7 @@ void update_vehicle_speed_pal_param(param_type2_t *params) {
             pal_param->param_size = sizeof(param_type2_t);
             pal_param->data = (void *)params;
             LOG(VERBOSE) << __func__ << ": Successfully created pal_param";
-            if (gs_powerpolicy) {
+            if (POWER_POLICY_ENABLE == gs_powerpolicy) {
                 if (gsp_palHandle == NULL) {
                     open_stream();
                 }
