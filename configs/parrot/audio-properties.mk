@@ -13,10 +13,6 @@ vendor.audio.hdr.spf.record.enable=false
 AUDIO_HAL_PROP += \
 vendor.audio.hdr.record.enable=false
 
-#STUB HAL enabled
-AUDIO_HAL_PROP += \
-vendor.audio.hal.stubmode=1
-
 #compress offload
 AUDIO_HAL_PROP += \
 vendor.audio.offload.buffer.size.kb=32
