@@ -2328,6 +2328,7 @@ Module::SetParameterToFeatureMap Module::fillSetParameterToFeatureMap() {
                                  {Parameters::kVoiceTranslationRxMute, Feature::TELEPHONY},
                                  {Parameters::kVoiceTranslationTxMute, Feature::TELEPHONY},
                                  {Parameters::kTranslationConfig, Feature::TELEPHONY},
+                                 {Parameters::kVoiceNsRxConfig, Feature::TELEPHONY},
                                  {Parameters::kInCallMusic, Feature::GENERIC},
                                  {Parameters::kTranslateRecord, Feature::GENERIC},
                                  {Parameters::kUHQA, Feature::GENERIC},
