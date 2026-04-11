@@ -56,6 +56,48 @@ PRODUCT_PACKAGES += fai__3.0.0_0.0__eai_3.18_adsp.pmd
 PRODUCT_PACKAGES += wind_filter__1.0__48k__2ch__16b__eai_5.5.eai
 PRODUCT_PACKAGES += wind_filter__1.0__48k__2ch__16b__eai_5.8.eai
 
+# Audio configuration xml's related to ravelin
+QCV_FAMILY_SKUS := ravelin
+DEVICE_SKU := ravelin
+UV_WRAPPER2 := false
+
+CONFIG_PAL_SRC_DIR := vendor/qcom/opensource//pal/configs/qcom/mobile/chora
+CONFIG_HAL_SRC_DIR := vendor/qcom/opensource/audio-hal/primary-hal/configs/chora
+CONFIG_SKU_OUT_DIR := $(TARGET_COPY_OUT_VENDOR)/etc/audio/sku_$(DEVICE_SKU)
+
+PRODUCT_COPY_FILES += \
+        $(CONFIG_HAL_SRC_DIR)/audio_effects.conf:$(CONFIG_SKU_OUT_DIR)/audio_effects.conf \
+        $(CONFIG_HAL_SRC_DIR)/audio_effects.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects.xml \
+        $(CONFIG_HAL_SRC_DIR)/audio_effects_config.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects_config.xml \
+        $(CONFIG_HAL_SRC_DIR)/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/microphone_characteristics.xml \
+        $(CONFIG_PAL_SRC_DIR)/card-defs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/card-defs.xml \
+        $(CONFIG_PAL_SRC_DIR)/mixer_paths_ravelin_qrd.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_ravelin_qrd.xml \
+        $(CONFIG_PAL_SRC_DIR)/mixer_paths_ravelin_idp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_ravelin_idp.xml \
+        $(CONFIG_PAL_SRC_DIR)/resourcemanager_ravelin_idp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_ravelin_idp.xml \
+        $(CONFIG_PAL_SRC_DIR)/resourcemanager_ravelin_qrd.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_ravelin_qrd.xml \
+        $(CONFIG_PAL_SRC_DIR)/usecaseKvManager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usecaseKvManager.xml \
+        $(CONFIG_PAL_SRC_DIR)/plugin_manager.xml:$(CONFIG_SKU_OUT_DIR)/plugin_manager.xml \
+        frameworks/native/data/etc/android.hardware.sensor.dynamic.head_tracker.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/sku_$(DEVICE_SKU)/android.hardware.sensor.dynamic.head_tracker.xml
+# Copy AudioEffects config
+PRODUCT_COPY_FILES += \
+    hardware/interfaces/audio/aidl/default/audio_effects_config.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects_config_stub.xml
+
+# Copy Quasar config
+PRODUCT_COPY_FILES += \
+    $(CONFIG_HAL_SRC_DIR)/quasar_config.xml:$(CONFIG_SKU_OUT_DIR)/quasar_config.xml
+#We dont support spatial audio for Clarence  quasar need nt be copied, but not sure
+
+#XML Audio configuration files
+ifneq ($(TARGET_USES_AOSP_FOR_AUDIO), true)
+PRODUCT_COPY_FILES += \
+    $(CONFIG_HAL_SRC_DIR)/audio_policy_configuration.xml:$(CONFIG_SKU_OUT_DIR)/audio_policy_configuration.xml
+
+#Audio configuration xml's common to chora family
+PRODUCT_COPY_FILES += \
+$(foreach DEVICE_SKU, $(QCV_FAMILY_SKUS), \
+    $(CONFIG_HAL_SRC_DIR)/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/sku_$(DEVICE_SKU)_qssi/audio_policy_configuration.xml)
+endif
+
 # Audio configuration xml's related to Kaanapali
 QCV_FAMILY_SKUS := chora
 DEVICE_SKU := chora
@@ -208,7 +250,11 @@ PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.hw.aac.encoder=false
 #ADM Buffering size in ms
 PRODUCT_PROPERTY_OVERRIDES += \
+<<<<<<< HEAD
 vendor.audio.adm.buffering.ms=4
+=======
+vendor.audio.adm.buffering.ms=3
+>>>>>>> 3560909cb170cbe7c7a05f7aa5ead0250de3e4f1
 
 #enable headset calibration
 PRODUCT_PROPERTY_OVERRIDES += \

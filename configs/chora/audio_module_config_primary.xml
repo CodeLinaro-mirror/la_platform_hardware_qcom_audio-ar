@@ -15,7 +15,7 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <mixPort name="raw_out" role="source" flags="FAST RAW">
             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
-        <mixPort name="deep_buffer_out" role="source" flags="DEEP_BUFFER">
+        <mixPort name="deep_buffer_out" role="source" flags="DEEP_BUFFER" recommendedMuteDurationMs="300">
             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="FIXED_Q_8_24" />
             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_24_BIT" />
