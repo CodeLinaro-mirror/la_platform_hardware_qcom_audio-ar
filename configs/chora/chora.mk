@@ -51,6 +51,12 @@ PRODUCT_PACKAGES += fai__4.14.0_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_3.18_a
 PRODUCT_PACKAGES += fai__4.5.1_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_3.18_adsp.pmd
 PRODUCT_PACKAGES += fai__4.6.3_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_3.18_adsp.pmd
 PRODUCT_PACKAGES += fai__3.0.0_0.0__eai_3.18_adsp.pmd
+PRODUCT_PACKAGES += fai__2.3.0_0.1__3.0.0_0.0__eai_1.10.pmd
+PRODUCT_PACKAGES += fai__2.3.0_0.1__3.0.0_0.0__eai_1.36_enpu2_comp.pmd
+PRODUCT_PACKAGES += fai__2.0.0_0.1__3.0.0_0.0__eai_1.36_enpu2.pmd
+PRODUCT_PACKAGES += fai__2.7.2_0.0__3.0.0_0.0__eai_1.36_enpu2.pmd
+PRODUCT_PACKAGES += fai__2.7.20_0.0__3.0.0_0.0__eai_1.36_enpu2.pmd
+PRODUCT_PACKAGES += fai__3.0.0_0.0__eai_1.36_enpu2.pmd
 
 # Adding WNR Model File
 PRODUCT_PACKAGES += wind_filter__1.0__48k__2ch__16b__eai_5.5.eai
@@ -250,11 +256,7 @@ PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.hw.aac.encoder=false
 #ADM Buffering size in ms
 PRODUCT_PROPERTY_OVERRIDES += \
-<<<<<<< HEAD
 vendor.audio.adm.buffering.ms=4
-=======
-vendor.audio.adm.buffering.ms=3
->>>>>>> 3560909cb170cbe7c7a05f7aa5ead0250de3e4f1
 
 #enable headset calibration
 PRODUCT_PROPERTY_OVERRIDES += \
