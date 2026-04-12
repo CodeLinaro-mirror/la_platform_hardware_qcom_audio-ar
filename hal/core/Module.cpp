@@ -2066,6 +2066,12 @@ void Module::onSetGenericParameters(const std::vector<VendorParameter>& params) 
                       << std::hex << usecaseMask << std::dec;
             mPlatform.setUvVoiceCueStatusConfig(usecaseMask);
             updateVoiceCueStatus(usecaseMask);
+            mTelephony->updateVoiceCue(usecaseMask);
+            if (usecaseMask & UV_FLUENCE_VOIP_BIT) {
+                mPlatform.setVoiceCueOnVoipEnable(true);
+            } else {
+                mPlatform.setVoiceCueOnVoipEnable(false);
+            }
         } else if (Parameters::kUvVoiceCueBytes == param.id) {
             updateVoiceCueBytes(std::move(paramValue));
         }

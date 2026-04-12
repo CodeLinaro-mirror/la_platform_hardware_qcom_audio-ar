@@ -942,6 +942,16 @@ void Telephony::updateDeviceMute(const bool isMute, const std::string& muteDirec
     configureDeviceMute();
 }
 
+void Telephony:: updateVoiceCue(uint32_t usecaseMask) {
+    std::scoped_lock lock{mLock};
+    if (usecaseMask & UV_FLUENCE_TELEPHONY_BIT) {
+        mIsVoiceCueEnabled = true;
+    } else {
+        mIsVoiceCueEnabled = false;
+    }
+    LOG(INFO) << __func__ << ": is enabled: " << mIsVoiceCueEnabled;
+}
+
 void Telephony::configureVolumeBoost() {
     if (mPalHandle == nullptr) {
         LOG(ERROR) << __func__ << ": invalid pal handle";
@@ -1200,6 +1210,11 @@ ndk::ScopedAStatus Telephony::startCall() {
                 sizeof(palDevices[0].custom_config.custom_key));
         LOG(VERBOSE) << __func__ << "setting custom key as " << palDevices[0].custom_config.custom_key;
     }
+    if (mIsVoiceCueEnabled) {
+        strlcpy(palDevices[1].custom_config.custom_key, "voicecue",
+                sizeof(palDevices[1].custom_config.custom_key));
+        LOG(VERBOSE) << __func__ << "setting custom key as " << palDevices[1].custom_config.custom_key;
+     }
 
     if (int32_t ret = ::pal_stream_open(
                 attributes.get(), numDevices, reinterpret_cast<pal_device*>(palDevices.data()), 0,
@@ -1282,6 +1297,11 @@ ndk::ScopedAStatus Telephony::stopCall() {
         strlcpy(palDevices[0].custom_config.custom_key, "",
                 sizeof(palDevices[0].custom_config.custom_key));
         LOG(VERBOSE) << __func__ << "setting custom key as ", palDevices[0].custom_config.custom_key;
+    }
+    if (mIsVoiceCueEnabled) {
+        strlcpy(palDevices[1].custom_config.custom_key, "",
+                sizeof(palDevices[1].custom_config.custom_key));
+        LOG(VERBOSE) << __func__ << "setting custom key as " << palDevices[1].custom_config.custom_key;
     }
     if (int32_t ret = pal_stream_stop(mPalHandle); ret) {
         LOG(ERROR) << __func__ << ": pal stream stop failed !!" << ret;
@@ -1628,6 +1648,11 @@ void Telephony::updateDevices() {
     } else {
         strlcpy(palDevices[0].custom_config.custom_key, "",
                 sizeof(palDevices[0].custom_config.custom_key));
+    }
+    if (mIsVoiceCueEnabled) {
+        strlcpy(palDevices[1].custom_config.custom_key, "voicecue",
+                sizeof(palDevices[1].custom_config.custom_key));
+        LOG(VERBOSE) << __func__ << "setting custom key as " << palDevices[1].custom_config.custom_key;
     }
 
     if (mSetUpdates.mIsCrsCall) {

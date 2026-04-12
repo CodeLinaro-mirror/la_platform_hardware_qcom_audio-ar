@@ -301,6 +301,12 @@ class Platform {
     bool isUvVoiceCueUsecaseEnabled(uint32_t usecaseBit) const noexcept {
         return (mUvVoiceCueUsecaseMask & usecaseBit) != 0;
     }
+    void setVoiceCueOnVoipEnable(bool enable) noexcept {
+        mIsVoiceCueOnVoipEnabled = enable;
+    }
+    bool getVoiceCueOnVoipEnable() const noexcept {
+        return mIsVoiceCueOnVoipEnabled;
+    }
 
     void setHACEnabled(const bool& enable) noexcept { mIsHACEnabled = enable; }
 
@@ -439,6 +445,7 @@ class Platform {
     bool mWNREnabled{false};
     bool mANREnabled{false};
     bool mInverted{false};
+    bool mIsVoiceCueOnVoipEnabled{false};
     std::string mOrientation{""};
     std::string mFacing{""};
 
