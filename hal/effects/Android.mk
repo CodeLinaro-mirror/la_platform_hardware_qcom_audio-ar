@@ -4,6 +4,8 @@ LOCAL_PATH:= $(call my-dir)
 
 # Build Header library to expose effect headers
 include $(CLEAR_VARS)
+
+LOCAL_CFLAGS   += -fstack-protector-strong -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2
 LOCAL_MODULE := libaudioeffectsaidlqti_headers
 LOCAL_EXPORT_C_INCLUDE_DIRS := $(LOCAL_PATH)/include
 LOCAL_VENDOR_MODULE := true
