@@ -1357,6 +1357,7 @@ void Telephony::updateCallTranslationConfigs(const std::string& str) {
     } else {
         LOG(INFO) << __func__ << "Call Translation not set as enabled";
         mPlatform.setCallTranslationState(false);
+        free(uint32Array);
         return;
     }
     call_translation_config* config;
