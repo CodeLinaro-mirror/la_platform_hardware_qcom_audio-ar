@@ -291,6 +291,23 @@ class Platform {
     void setCallTranslationState(const bool state) noexcept { mIsCallTranslationEnabled = state; }
     bool getCallTranslationState() noexcept { return mIsCallTranslationEnabled; }
 
+    // Set and Get Value Functions for UV Audio Cue config from APK.
+    void setUvVoiceCueStatusConfig(uint32_t usecaseMask) noexcept {
+        mUvVoiceCueUsecaseMask = usecaseMask;
+    }
+    uint32_t getUvVoiceCueStatusConfig() const noexcept {
+        return mUvVoiceCueUsecaseMask;
+    }
+    bool isUvVoiceCueUsecaseEnabled(uint32_t usecaseBit) const noexcept {
+        return (mUvVoiceCueUsecaseMask & usecaseBit) != 0;
+    }
+    void setVoiceCueOnVoipEnable(bool enable) noexcept {
+        mIsVoiceCueOnVoipEnabled = enable;
+    }
+    bool getVoiceCueOnVoipEnable() const noexcept {
+        return mIsVoiceCueOnVoipEnabled;
+    }
+
     void setHACEnabled(const bool& enable) noexcept { mIsHACEnabled = enable; }
 
     bool isHACEnabled() const noexcept { return mIsHACEnabled; }
@@ -420,7 +437,7 @@ class Platform {
             ::aidl::android::hardware::audio::core::IModule::ScreenRotation::DEG_0};
     bool mOffloadSpeedSupported = false;
     bool mMicMuted = false;
-
+    uint32_t mUvVoiceCueUsecaseMask = 0;
     /* HDR */
     bool mHDREnabled{false};
     int32_t mHDRSampleRate{0};
@@ -428,6 +445,7 @@ class Platform {
     bool mWNREnabled{false};
     bool mANREnabled{false};
     bool mInverted{false};
+    bool mIsVoiceCueOnVoipEnabled{false};
     std::string mOrientation{""};
     std::string mFacing{""};
 

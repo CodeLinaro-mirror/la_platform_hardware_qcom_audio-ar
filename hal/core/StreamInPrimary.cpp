@@ -152,6 +152,11 @@ ndk::ScopedAStatus StreamInPrimary::configureConnectedDevices_I() {
                 mPlatform.configurePalDevicesCustomKey(connectedPalDevices, "dual-mic");
             }
         }
+    } else if (mTag == Usecase::VOIP_RECORD) {
+        if (mPlatform.getVoiceCueOnVoipEnable()) {
+            mPlatform.configurePalDevicesCustomKey(connectedPalDevices, "voicecue");
+            LOG(INFO) << __func__ << ": setting custom key as voicecue";
+        }
     }
 
     if (this->mPalHandle != nullptr && connectedPalDevices.size() > 0) {
@@ -608,7 +613,11 @@ void StreamInPrimary::configure() {
     } else if (mTag == Usecase::COMPRESS_CAPTURE) {
         attr->type = PAL_STREAM_COMPRESSED;
     } else if (mTag == Usecase::VOIP_RECORD) {
-        attr->type = PAL_STREAM_VOIP_TX;
+       attr->type = PAL_STREAM_VOIP_TX;
+       if (mPlatform.getVoiceCueOnVoipEnable()) {
+           mPlatform.configurePalDevicesCustomKey(palDevices, "voicecue");
+           LOG(INFO) << __func__ << ": setting custom key as voicecue";
+        }
     } else if (mTag == Usecase::VOICE_CALL_RECORD) {
         attr->type = PAL_STREAM_VOICE_CALL_RECORD;
         attr->info.voice_rec_info.record_direction =

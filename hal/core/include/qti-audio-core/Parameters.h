@@ -65,6 +65,19 @@ const static std::string kTranslationConfig{"translation_config"};
 * Fluence NN NS module for enbale or disable the module during call.
 **/
 const static std::string kVoiceNsRxConfig{"voice_ns_rx_config"};
+// FFECNS/FNN-UV
+/** kUvVoiceCueEnable : Use this parameter to enable or disable
+ * the User-Verification (UV) audio cue feature across usecases
+ * such as Audio Record, SVA , Voice and VoIP usecases. When enabled, the
+ * associated UV audio cue bytes (model/profile) are applied.
+ **/
+const static std::string kUvVoiceCueEnable{"uv_voice_cue_enable"};
+/** kUvVoiceCueBytes : Use this parameter to provide the UV
+ * audio cue/model data as a comma-separated list of values.
+ * The HAL converts this string into a byte array and
+ * forwards to configure the UV audio cue processing.
+ **/
+const static std::string kUvVoiceCueBytes{"uv_voice_cue_bytes"};
 
 // WFD
 const static std::string kCanOpenProxy{"can_open_proxy"};

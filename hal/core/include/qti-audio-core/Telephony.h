@@ -112,6 +112,7 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
     void updateSlowTalk(const bool enable);
     void updateHDVoice(const bool enable);
     void updateDeviceMute(const bool isMute, const std::string& muteDirection);
+    void updateVoiceCue(uint32_t usecaseMask);
 
     bool isCrsCallSupported();
     bool isCrsCallDeviceSupported();
@@ -219,6 +220,7 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
     bool mIsVoipStarted{false};
     bool mIsBTSCOEnabled{false};
     bool mIsBypassVoiceNsRxCfg{false};
+    bool mIsVoiceCueEnabled{false};
     std::string mMuteDirection{""};
 
     std::vector<::aidl::android::media::audio::common::AudioDevice> mExternalDevices;

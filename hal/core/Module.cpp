@@ -46,6 +46,9 @@
 #include <qti-audio-core/StreamOutPrimary.h>
 #include <qti-audio-core/Telephony.h>
 #include <qti-audio-core/Utils.h>
+#include <fstream>
+#include <sstream>
+#include <memory>
 
 using aidl::android::hardware::audio::common::SinkMetadata;
 using aidl::android::hardware::audio::common::SourceMetadata;
@@ -2051,6 +2054,26 @@ void Module::onSetGenericParameters(const std::vector<VendorParameter>& params) 
             const auto isOn = getBoolFromString(paramValue);
             mPlatform.setTranslationRecordState(isOn);
             LOG(INFO) << __func__ << ": PCM Record FFECNS for Translation:" << isOn;
+        } else if (Parameters::kUvVoiceCueEnable == param.id) {
+            uint32_t usecaseMask = 0;
+            if (!parseUvVoiceCueStatusConfig(paramValue, &usecaseMask)) {
+                LOG(ERROR) << __func__ << ": failed to parse "
+                           << Parameters::kUvVoiceCueEnable
+                           << " value: " << paramValue;
+                continue;
+            }
+            LOG(INFO) << __func__ << ": UV config received, usecase_mask=0x"
+                      << std::hex << usecaseMask << std::dec;
+            mPlatform.setUvVoiceCueStatusConfig(usecaseMask);
+            updateVoiceCueStatus(usecaseMask);
+            mTelephony->updateVoiceCue(usecaseMask);
+            if (usecaseMask & UV_FLUENCE_VOIP_BIT) {
+                mPlatform.setVoiceCueOnVoipEnable(true);
+            } else {
+                mPlatform.setVoiceCueOnVoipEnable(false);
+            }
+        } else if (Parameters::kUvVoiceCueBytes == param.id) {
+            updateVoiceCueBytes(std::move(paramValue));
         }
     }
 }
@@ -2091,7 +2114,6 @@ void Module::onSetTelephonyParameters(const std::vector<VendorParameter>& parame
 
     Telephony::SetUpdates setUpdates{};
     bool isSetUpdate = false;
-
     bool isDeviceMuted = false;
     std::string muteDirection{""};
     bool isDeviceMuteUpdate = false;
@@ -2302,7 +2324,114 @@ void Module::setVoipRxMute(bool state) {
         }
     }
 }
+void Module::updateVoiceCueBytes(const std::string&& byteData) {
+    int32_t ret = -1;
+    size_t dataSize = 0;
+    uint8_t *ptr = nullptr;
+    LOG(DEBUG) << __func__ << ": Enter";
+    ptr = stringToUint8Array(std::move(byteData), &dataSize);
+    if(ptr == nullptr || dataSize == 0) {
+        LOG(ERROR) << __func__ << ": not able to get valid data from string" << ret;
+        return;
+    }
+    size_t byteSize = sizeof(pal_param_payload) + dataSize;
+    std::unique_ptr<uint8_t[]> bytes = std::make_unique<uint8_t[]>(byteSize);
+    pal_param_payload *palParamPayload = reinterpret_cast<pal_param_payload*>(bytes.get());
+    palParamPayload->payload_size = dataSize;
+    memcpy(palParamPayload->payload, ptr, dataSize);
+    free(ptr);
+    ret = ::pal_set_param(PAL_PARAM_ID_UV_VOICE_CUE_DATA_BYTE,
+                          (void*)palParamPayload,
+                          byteSize);
+    if (ret != 0) {
+        LOG(ERROR) << __func__ << ": failed to set PAL_PARAM_ID_UV_VOICE_CUE_DATA_BYTE" << ret;
+    }
+    LOG(DEBUG) << __func__ << ": Exit";
+    return;
+}
+void Module::updateVoiceCueStatus(uint32_t usecaseMask) {
+    int32_t ret = -1;
+    uv_fluence_config_t uvConfig{};
 
+    uvConfig.usecase_mask = usecaseMask;
+    uvConfig.voice_cue_param = nullptr;
+    uvConfig.param_size = 0;
+
+    size_t byteSize = sizeof(pal_param_payload) + sizeof(uv_fluence_config_t);
+    std::unique_ptr<uint8_t[]> bytes = std::make_unique<uint8_t[]>(byteSize);
+    pal_param_payload *palParamPayload = reinterpret_cast<pal_param_payload*>(bytes.get());
+    palParamPayload->payload_size = sizeof(uv_fluence_config_t);
+
+    std::memcpy(palParamPayload->payload, &uvConfig, sizeof(uv_fluence_config_t));
+    LOG(DEBUG) << __func__ << ": Enter, usecase_mask=0x"
+               << std::hex << uvConfig.usecase_mask << std::dec;
+    ret = ::pal_set_param(PAL_PARAM_ID_UV_VOICE_CUE_ENABLE,
+                          palParamPayload,
+                          palParamPayload->payload_size);
+    if (ret) {
+        LOG(ERROR) << __func__ << ": failed to set PAL_PARAM_ID_UV_VOICE_CUE_ENABLE "
+                   << ret;
+    }
+    LOG(DEBUG) << __func__ << ": Exit";
+}
+uint8_t* Module::stringToUint8Array(const std::string&& str, size_t* size) {
+    std::istringstream iss(str);
+    std::vector<uint8_t> cache;
+    std::string token;
+
+    while (std::getline(iss, token, ',')) {
+        int value = std::stoi(token);
+        cache.push_back(static_cast<uint8_t>(value));
+    }
+
+    size_t dataSize = cache.size();
+    uint8_t* resArray = (uint8_t *) calloc(1, dataSize);
+    std::copy(cache.begin(), cache.end(), resArray);
+
+    if (size != nullptr) {
+      *size = dataSize;
+    }
+    return resArray;
+}
+bool Module::parseUvVoiceCueStatusConfig(const std::string& value,
+                                   uint32_t* usecaseMask) {
+    if (!usecaseMask) {
+        return false;
+    }
+    *usecaseMask = 0;
+    std::stringstream ss(value);
+    std::string token;
+
+    while (std::getline(ss, token, ',')) {
+        size_t pos = token.find(':');
+        if (pos == std::string::npos) {
+            LOG(ERROR) << __func__ << ": invalid token: " << token;
+            return false;
+        }
+        std::string key = token.substr(0, pos);
+        std::string boolStr = token.substr(pos + 1);
+        if (boolStr == "false") {
+            continue;
+        }
+        if (boolStr != "true") {
+            LOG(ERROR) << __func__ << ": invalid bool value: " << boolStr;
+            return false;
+        }
+        if (key == "audio") {
+            *usecaseMask |= UV_FLUENCE_AUDIO_BIT;
+        } else if (key == "voice") {
+            *usecaseMask |= UV_FLUENCE_TELEPHONY_BIT;
+        } else if (key == "voip") {
+            *usecaseMask |= UV_FLUENCE_VOIP_BIT;
+        } else if (key == "sva") {
+            *usecaseMask |= UV_FLUENCE_SVA_BIT;
+        } else {
+            LOG(ERROR) << __func__ << ": unknown key: " << key;
+            return false;
+        }
+    }
+    return true;
+}
 // static
 Module::SetParameterToFeatureMap Module::fillSetParameterToFeatureMap() {
     SetParameterToFeatureMap map{{Parameters::kHdrRecord, Feature::HDR},
@@ -2329,6 +2458,8 @@ Module::SetParameterToFeatureMap Module::fillSetParameterToFeatureMap() {
                                  {Parameters::kVoiceTranslationTxMute, Feature::TELEPHONY},
                                  {Parameters::kTranslationConfig, Feature::TELEPHONY},
                                  {Parameters::kVoiceNsRxConfig, Feature::TELEPHONY},
+                                 {Parameters::kUvVoiceCueEnable, Feature::GENERIC},
+                                 {Parameters::kUvVoiceCueBytes, Feature::GENERIC},
                                  {Parameters::kInCallMusic, Feature::GENERIC},
                                  {Parameters::kTranslateRecord, Feature::GENERIC},
                                  {Parameters::kUHQA, Feature::GENERIC},
