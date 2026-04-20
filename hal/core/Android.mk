@@ -18,6 +18,10 @@ LOCAL_CFLAGS := \
     -Wthread-safety \
     $(ALL_HAL_DEP_C_FLAGS)
 
+LOCAL_CPPFLAGS := \
+    -Wreorder \
+    -Werror=reorder
+
 # check default core HAL library VINTF Fragments
 #LOCAL_VINTF_FRAGMENTS := manifest_audiocoreservices_qti.xml
 

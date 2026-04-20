@@ -11,6 +11,8 @@ LOCAL_EXPORT_C_INCLUDE_DIRS   := $(LOCAL_PATH)/include
 
 LOCAL_CFLAGS := -Wall -Wextra -Werror -Wthread-safety
 
+LOCAL_CPPFLAGS := -Wreorder -Werror=reorder
+
 LOCAL_SRC_FILES := \
     AudioExtension.cpp
 
@@ -59,7 +61,7 @@ LOCAL_CFLAGS += \
     -Wno-unused-function \
     -Wno-unused-variable
 
-LOCAL_CPPFLAGS += -fexceptions
+LOCAL_CPPFLAGS += -fexceptions -Wreorder -Werror=reorder
 
 LOCAL_SHARED_LIBRARIES := \
     libaudioroute \
@@ -98,6 +100,8 @@ LOCAL_CFLAGS += \
     -Werror \
     -Wno-unused-function \
     -Wno-unused-variable
+
+LOCAL_CPPFLAGS := -Wreorder -Werror=reorder
 
 LOCAL_SHARED_LIBRARIES := \
     libaudioroute \
@@ -138,6 +142,8 @@ LOCAL_CFLAGS := \
     -Werror \
     -Wno-unused-function \
     -Wno-unused-variable
+
+LOCAL_CPPFLAGS := -Wreorder -Werror=reorder
 
 LOCAL_SHARED_LIBRARIES := \
     android.hardware.health@1.0 \

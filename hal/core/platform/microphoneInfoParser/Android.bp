@@ -29,4 +29,8 @@ cc_library_static {
         "-Werror",
         "-Wthread-safety",
     ],
+    cppflags: [
+        "-Wreorder",
+        "-Werror=reorder",
+    ],
 }
