@@ -5,7 +5,7 @@
 # =============================================================================
 
 # Define the build flag
-CODEC2_AUDIO_ENABLEMENT ?= true
+CODEC2_AUDIO_ENABLEMENT ?= false
 
 ifeq ($(strip $(CODEC2_AUDIO_ENABLEMENT)),true)
 
