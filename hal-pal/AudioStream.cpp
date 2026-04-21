@@ -892,6 +892,12 @@ static ssize_t in_read(struct audio_stream_in *stream, void *buffer,
     std::shared_ptr<StreamInPrimary> astream_in;
 
     if (adevice) {
+        if (adevice->is_arpowerpolicy_enabled) {
+            if (POWER_POLICY_STATUS_OFFLINE == adevice->in_power_policy) {
+            AHAL_INFO("adevice->input_power offline, try again %s", __func__);
+            return -EINVAL;
+            }
+        }
         astream_in = adevice->InGetStream((audio_stream_t*)stream);
     } else {
         AHAL_ERR("unable to get audio device");
@@ -3995,6 +4001,7 @@ ssize_t StreamInPrimary::onReadError(size_t bytes) {
     // standby streams upon read failures and sleep for buffer duration.
     AHAL_ERR("read failed");
     Standby();
+
     uint32_t byteWidth = streamAttributes_.in_media_config.bit_width / 8;
     uint32_t sampleRate = streamAttributes_.in_media_config.sample_rate;
     uint32_t channelCount = streamAttributes_.in_media_config.ch_info.channels;
@@ -4032,6 +4039,7 @@ ssize_t StreamInPrimary::read(const void *buffer, size_t bytes) {
     AHAL_VERBOSE("Bytes:(%zu)", bytes);
 
     stream_mutex_.lock();
+
     if (!pal_stream_handle_) {
         AutoPerfLock perfLock;
         ret = Open();
