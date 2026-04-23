@@ -14,7 +14,7 @@ include $(BUILD_HEADER_LIBRARY)
 include $(CLEAR_VARS)
 
 ifeq ($(call is-board-platform-in-list,$(LOCAL_AUDIO_SERVICE_64)), true)
-ifneq ($(TARGET_BOARD_SUFFIX), _32go)
+ifeq ($(filter _32go _wear32,$(TARGET_BOARD_SUFFIX)),)
 LOCAL_MODULE       := android.hardware.audio.service_64.rc
 else
 LOCAL_MODULE       := android.hardware.audio.service.rc

@@ -71,7 +71,7 @@ AUDIO_MODULES += ftm_test_config
 AUDIO_MODULES += ftm_test_config_pitti-qrd-snd-card
 AUDIO_MODULES += audioadsprpcd
 
-ifeq ($(TARGET_BOARD_SUFFIX), _32go)
+ifneq ($(filter _32go _wear32,$(TARGET_BOARD_SUFFIX)),)
 AUDIO_MODULES += android.hardware.audio.service
 else
 AUDIO_MODULES += android.hardware.audio.service_64
@@ -139,7 +139,7 @@ AUDIO_MODULES += $(AUDIO_PAL)
 AUDIO_MODULES += $(AUDIO_C2)
 AUDIO_MODULES += $(AUDIO_TEST)
 
-ifeq ($(TARGET_BOARD_SUFFIX), _32go)
+ifneq ($(filter _32go _wear32,$(TARGET_BOARD_SUFFIX)),)
 AUDIO_MODULES += \
     android.hardware.audio@2.0-service
 else
