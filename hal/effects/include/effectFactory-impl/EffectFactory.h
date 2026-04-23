@@ -15,8 +15,8 @@
  */
 
 /*
- * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -109,6 +109,8 @@ class Factory : public BnFactory {
 
     std::map<aidl::android::media::audio::common::AudioUuid /* implUUID */, DlEntry> mEffectLibMap
             GUARDED_BY(mMutex);
+    std::map<aidl::android::media::audio::common::AudioUuid, std::string> mUuidToLibPath
+            GUARDED_BY(mMutex);
 
     typedef std::pair<aidl::android::media::audio::common::AudioUuid, ndk::SpAIBinder> EffectEntry;
     std::map<std::weak_ptr<IEffect>, EffectEntry, std::owner_less<>> mEffectMap GUARDED_BY(mMutex);
@@ -130,6 +132,8 @@ class Factory : public BnFactory {
     void loadEffectLibs();
     /* Get effect_dl_interface_s from library handle */
     void getDlSyms_l(DlEntry& entry) REQUIRES(mMutex);
+    void closeLibraryIfNoInstance_l(const ::aidl::android::media::audio::common::AudioUuid& uuid)
+            REQUIRES(mMutex);
 };
 
 } // namespace aidl::qti::effects

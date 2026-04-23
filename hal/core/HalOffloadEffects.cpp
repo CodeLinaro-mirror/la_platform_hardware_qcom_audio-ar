@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -12,8 +12,7 @@
 namespace qti::audio::core {
 
 HalOffloadEffects::HalOffloadEffects() {
-    loadLibrary(kOffloadPostProcBundlePath);
-    loadLibrary(kOffloadVisualizerPath);
+    mLoaded.store(false, std::memory_order_relaxed);
 }
 
 void HalOffloadEffects::loadLibrary(std::string path) {
@@ -31,8 +30,7 @@ void HalOffloadEffects::loadLibrary(std::string path) {
         return;
     }
 
-    // std::unique_ptr<struct OffloadEffectLibIntf> effectIntf;
-    auto effectIntf = new OffloadEffectLibIntf{nullptr, nullptr};
+    auto effectIntf = std::make_unique<OffloadEffectLibIntf>(OffloadEffectLibIntf{nullptr, nullptr});
     effectIntf->mStartEffect = (StartEffectFptr)dlsym(libHandle.get(), "startEffect");
     if (!effectIntf->mStartEffect) {
         LOG(ERROR) << "startEffect is missing in " << path << dlerror();
@@ -44,19 +42,54 @@ void HalOffloadEffects::loadLibrary(std::string path) {
         return;
     }
     LOG(DEBUG) << "found post proc library" << path;
-    mEffects.emplace_back(std::make_pair(std::move(libHandle),
-                                         std::unique_ptr<struct OffloadEffectLibIntf>(effectIntf)));
+    mEffects.emplace_back(std::make_pair(std::move(libHandle), std::move(effectIntf)));
+}
+
+bool HalOffloadEffects::ensureLoaded() {
+    // Single-check version: always guard initialization with mutex.
+    std::lock_guard<std::mutex> _l(mLoadMutex);
+    if (mLoaded.load(std::memory_order_acquire)) return true;
+
+    loadLibrary(kOffloadPostProcBundlePath);
+    loadLibrary(kOffloadVisualizerPath);
+
+    if (mEffects.empty()) {
+        LOG(ERROR) << __func__ << ": no offload effect libraries loaded";
+        return false;
+    }
+
+    mLoaded.store(true, std::memory_order_release);
+    return true;
 }
 
 void HalOffloadEffects::startEffect(int ioHandle, pal_stream_handle_t *palHandle) {
+    if (!ensureLoaded()) {
+        LOG(WARNING) << __func__ << ": effects not loaded, skip start";
+        return;
+    }
+
     for (const auto &effect : mEffects) {
         effect.second->mStartEffect(ioHandle, palHandle);
     }
 }
 
 void HalOffloadEffects::stopEffect(int ioHandle) {
-    for (const auto &effect : mEffects) {
-        effect.second->mStopEffect(ioHandle);
+    std::vector<StopEffectFptr> stopFns;
+    {
+        std::lock_guard<std::mutex> _l(mLoadMutex);
+        if (!mLoaded.load(std::memory_order_acquire) || mEffects.empty()) {
+            LOG(WARNING) << __func__ << ": effects not loaded, skip stop";
+            return;
+        }
+
+        stopFns.reserve(mEffects.size());
+        for (const auto &effect : mEffects) {
+            stopFns.push_back(effect.second->mStopEffect);
+        }
+    }
+
+    for (const auto &stopFn : stopFns) {
+        stopFn(ioHandle);
     }
 }
 
