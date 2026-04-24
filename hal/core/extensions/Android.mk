@@ -1,5 +1,7 @@
 LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
+
+LOCAL_CFLAGS   += -fstack-protector-strong -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2
 LOCAL_MODULE            := libaudiocore.extension
 LOCAL_VENDOR_MODULE     := true
 LOCAL_C_INCLUDES            := $(LOCAL_PATH)/include \
