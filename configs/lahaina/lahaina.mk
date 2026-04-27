@@ -139,6 +139,8 @@ PRODUCT_PACKAGES += $(AUDIO_HAL_TEST_APPS)
 
 PRODUCT_PACKAGES += IDP_acdb_cal.acdb
 PRODUCT_PACKAGES += IDP_workspaceFileXml.qwsp
+PRODUCT_PACKAGES += RB3_acdb_cal.acdb
+PRODUCT_PACKAGES += RB3_workspaceFileXml.qwsp
 PRODUCT_PACKAGES += QRD_acdb_cal.acdb
 PRODUCT_PACKAGES += QRD_workspaceFileXml.qwsp
 PRODUCT_PACKAGES += IDP_lahaina_yupik_acdb_cal.acdb
