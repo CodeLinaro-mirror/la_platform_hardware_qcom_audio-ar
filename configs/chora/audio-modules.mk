@@ -108,6 +108,14 @@ AUDIO_TEST += ar_util_in_test_example
 AUDIO_MODULES := ftm_test_config
 AUDIO_MODULES += ftm_test_config_chora-mtp-qmp-snd-card
 AUDIO_MODULES += ftm_test_config_chora-qrd-snd-card
+AUDIO_MODULES += ftm_test_config_ravelin-idp-snd-card
+AUDIO_MODULES += ftm_test_config_ravelin-qrd-snd-card
+AUDIO_MODULES += ftm_test_config_bourtzi-atp-snd-card
+AUDIO_MODULES += ftm_test_config_bourtzi-cdp-snd-card
+AUDIO_MODULES += ftm_test_config_bourtzi-mtp-snd-card
+AUDIO_MODULES += ftm_test_config_bourtzi-mtp-wcn6450-snd-card
+AUDIO_MODULES += ftm_test_config_bourtzi-qrd-snd-card
+AUDIO_MODULES += ftm_test_config_bourtzi-qrd-wcn6450-snd-card
 
 AUDIO_MODULES += audioadsprpcd
 AUDIO_MODULES += MTP_acdb_cal.acdb
