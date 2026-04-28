@@ -87,6 +87,8 @@ AUDIO_PAL += libdev_usb
 #HFP
 AUDIO_PAL += libdev_hfpuplink
 AUDIO_PAL += libdev_hfpdownlink
+#EAVB
+AUDIO_PAL += libdev_eavb
 
 AUDIO_ACDB := workspaceFileXml.qwsp
 AUDIO_ACDB += acdb_cal.acdb

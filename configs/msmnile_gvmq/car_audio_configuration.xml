@@ -73,6 +73,9 @@
             <inputDevices>
                 <inputDevice address="BUS04_INPUT"/>
             </inputDevices>
+            <inputDevices>
+                <inputDevice address="BUS24_INPUT_EAVB"/>
+            </inputDevices>
             <displays>
                 <display port="0"/>
             </displays>
