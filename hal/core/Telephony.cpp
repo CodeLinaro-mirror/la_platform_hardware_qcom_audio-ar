@@ -171,10 +171,8 @@ void Telephony::setCrsDeviceFromParameters(const int deviceType) {
                           .type.connection = AudioDeviceDescription::CONNECTION_ANALOG};
             break;
         case TYPE_BLUETOOTH_SCO:
-            if (mIsBTSCOEnabled) {
-                mRxDevice = AudioDevice{.type.type = AudioDeviceType::OUT_HEADSET,
-                                .type.connection = AudioDeviceDescription::CONNECTION_BT_SCO};
-            }
+            mRxDevice = AudioDevice{.type.type = AudioDeviceType::OUT_HEADSET,
+                          .type.connection = AudioDeviceDescription::CONNECTION_BT_SCO};
             break;
         case TYPE_BLE_HEADSET:
             for (auto it = mExternalDevices.begin(); it < mExternalDevices.end(); it++) {
