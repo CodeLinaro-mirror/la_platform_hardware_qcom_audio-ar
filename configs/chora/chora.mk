@@ -82,6 +82,8 @@ PRODUCT_COPY_FILES += \
         $(CONFIG_PAL_SRC_DIR)/resourcemanager_ravelin_idp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_ravelin_idp.xml \
         $(CONFIG_PAL_SRC_DIR)/resourcemanager_ravelin_qrd.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_ravelin_qrd.xml \
         $(CONFIG_PAL_SRC_DIR)/usecaseKvManager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usecaseKvManager.xml \
+        $(CONFIG_PAL_SRC_DIR)/usecaseKvManager_ravelin.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usecaseKvManager_ravelin.xml \
+        $(CONFIG_PAL_SRC_DIR)/usecaseKvManager_bourtzi.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usecaseKvManager_bourtzi.xml \
         $(CONFIG_PAL_SRC_DIR)/plugin_manager.xml:$(CONFIG_SKU_OUT_DIR)/plugin_manager.xml \
         frameworks/native/data/etc/android.hardware.sensor.dynamic.head_tracker.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/sku_$(DEVICE_SKU)/android.hardware.sensor.dynamic.head_tracker.xml
 # Copy AudioEffects config
