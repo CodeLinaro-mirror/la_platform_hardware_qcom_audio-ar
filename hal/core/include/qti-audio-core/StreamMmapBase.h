@@ -7,6 +7,7 @@
 
 #include <aidl/android/hardware/audio/core/MmapBufferDescriptor.h>
 #include <qti-audio-core/AudioUsecase.h>
+#include <qti-audio-core/HalOffloadEffects.h>
 #include <qti-audio-core/Stream.h>
 
 namespace qti::audio::core {
@@ -85,6 +86,7 @@ class StreamMmapBase : public StreamCommonImpl {
     ::android::status_t burstZero();
     ::android::status_t startMMAP();
     ::android::status_t stopMMAP();
+    void cacheCurrentPosition();
 
     bool mIsInput;
     const Usecase mTag;
@@ -145,6 +147,13 @@ class StreamOutMmap final : public StreamOut, public StreamMmapBase {
     ndk::ScopedAStatus setHwVolume(const std::vector<float>& in_channelVolumes) override;
     ndk::ScopedAStatus updateMetadataCommon(const Metadata& metadata) override;
     int32_t setAggregateSourceMetadata(bool voiceActive) override;
+    ndk::ScopedAStatus addEffect(
+            const std::shared_ptr<::aidl::android::hardware::audio::effect::IEffect>& in_effect)
+            override;
+    ndk::ScopedAStatus removeEffect(
+            const std::shared_ptr<::aidl::android::hardware::audio::effect::IEffect>& in_effect)
+            override;
+    ::android::status_t standby() override;
 
   protected:
     bool supportsPlaybackRate() const override;
@@ -153,6 +162,8 @@ class StreamOutMmap final : public StreamOut, public StreamMmapBase {
 
   private:
     std::vector<float> mVolumes{};
+    HalOffloadEffects& mHalEffects{HalOffloadEffects::getInstance()};
+    void enableOffloadEffects(bool enable);
     void onClose() override { defaultOnClose(); }
     void setBluetoothMetadata();
 };

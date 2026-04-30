@@ -292,6 +292,11 @@ bool hasOutputCompressOffloadFlag(const AudioIoFlags& ioFlags) noexcept {
     return false;
 }
 
+bool hasOutputCompressOffloadFlag(const AudioPortConfig& portConfig) noexcept {
+    if (!portConfig.flags.has_value()) return false;
+    return hasOutputCompressOffloadFlag(portConfig.flags.value());
+}
+
 bool hasInputHotwordFlag(const AudioIoFlags& ioFlags) noexcept {
     if (ioFlags.getTag() == AudioIoFlags::Tag::input) {
         constexpr auto hotwordFlag =

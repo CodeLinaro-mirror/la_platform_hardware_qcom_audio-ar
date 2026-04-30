@@ -16,6 +16,7 @@
 #include <qti-audio-core/StreamOutPrimary.h>
 
 #include <qti-audio-core/PlatformUtils.h>
+#include <qti-audio-core/Utils.h>
 #include <qti-audio/PlatformConverter.h>
 
 using aidl::android::hardware::audio::common::AudioOffloadMetadata;
@@ -116,6 +117,7 @@ bool StreamMmapBase::isValid() {
 ndk::ScopedAStatus StreamMmapBase::fillDescriptor(MmapBufferDescriptor* desc) {
     if (!isValid()) {
         LOG(ERROR) << __func__ << mLogPrefix << " mmap desc invalid ";
+        CHECK(1 == 0) << "how is this possible; debug";
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
     }
     desc->sharedMemory.fd = mMmapBufferDesc.sharedMemory.fd.dup();
@@ -203,13 +205,27 @@ struct BufferConfig StreamMmapBase::getBufferConfig() {
     return stopMMAP();
 }
 
+void StreamMmapBase::cacheCurrentPosition() {
+    if (!mPalHandle || !mIsStarted) {
+        return;
+    }
+    struct pal_mmap_position pal_mmap_pos;
+    if (int32_t ret = pal_stream_get_mmap_position(mPalHandle, &pal_mmap_pos); ret == 0) {
+        mFramesInSession = pal_mmap_pos.position_frames;
+        LOG(DEBUG) << __func__ << mLogPrefix << ": cached position " << mFramesInSession;
+    } else {
+        LOG(WARNING) << __func__ << mLogPrefix << ": failed to cache position, ret:" << ret;
+    }
+}
+
 ::android::status_t StreamMmapBase::standby() {
     LOG(DEBUG) << __func__ << mLogPrefix;
     if (mPalHandle != nullptr) {
-        ::pal_stream_stop(mPalHandle);
+        stopMMAP();
         ::pal_stream_close(mPalHandle);
         mPalHandle = nullptr;
         mFramesAtSessionStart += roundUpToBufferBoundary(mFramesInSession, mBufferSizeInFrames);
+        mFramesInSession = 0;
         LOG(DEBUG) << __func__ << mLogPrefix << ": position rounded to " << mFramesAtSessionStart
                    << " for bufferCapacity " << mBufferSizeInFrames;
         mMmapBufferDesc.sharedMemory.fd.set(-1);  // reset shared mem fd
@@ -234,41 +250,16 @@ struct BufferConfig StreamMmapBase::getBufferConfig() {
 
 ::android::status_t StreamMmapBase::refinePosition(
         ::aidl::android::hardware::audio::core::StreamDescriptor::Reply* reply) {
-    static const StreamDescriptor::Position kUnknownPosition = {
-            .frames = StreamDescriptor::Position::UNKNOWN,
-            .timeNs = StreamDescriptor::Position::UNKNOWN};
+    cacheCurrentPosition();
+    reply->observable.timeNs = reply->hardware.timeNs = ::android::uptimeNanos();
 
-    if (!mPalHandle) {
-        LOG(ERROR) << __func__ << mLogPrefix << ": pal stream handle is null";
-        reply->observable = reply->hardware = kUnknownPosition;
-        return 0;
-    }
-    if (!mIsStarted) {
-        LOG(ERROR) << __func__ << mLogPrefix << ": stream not started, position unknown";
-        reply->observable = reply->hardware = kUnknownPosition;
-        return 0;
-    }
-    struct pal_mmap_position pal_mmap_pos;
-    if (int32_t ret = pal_stream_get_mmap_position(mPalHandle, &pal_mmap_pos); ret) {
-        LOG(ERROR) << __func__ << mLogPrefix << ": error from pal_stream_get_mmap_position";
-        return ret;
-    }
-
-    reply->observable.timeNs = reply->hardware.timeNs = pal_mmap_pos.time_nanoseconds;
-
-    mFramesInSession = pal_mmap_pos.position_frames;
-
+    int64_t totalDelayFrames = getLatencyMs() * mMixPortConfig.sampleRate.value().value / 1000;
     reply->hardware.frames = mFramesAtSessionStart + mFramesInSession;
-
-    int64_t totalDelayFrames = 0;
-    totalDelayFrames = getLatencyMs() * mMixPortConfig.sampleRate.value().value / 1000;
     reply->observable.frames = (reply->hardware.frames > totalDelayFrames)
                                        ? (reply->hardware.frames - totalDelayFrames)
                                        : 0;
-
     LOG(VERBOSE) << __func__ << mLogPrefix << ": hw_frames:" << reply->hardware.frames
-                 << " obs_frames " << reply->observable.frames
-                 << ", hw_timeNs:" << reply->hardware.timeNs << " mFramesAtSessionStart "
+                 << " obs_frames " << reply->observable.frames << " mFramesAtSessionStart "
                  << mFramesAtSessionStart;
     return 0;
 }
@@ -321,6 +312,9 @@ ndk::ScopedAStatus StreamMmapBase::configureMMapStream(
     }
     attr->type = PAL_STREAM_ULTRA_LOW_LATENCY;
     attr->flags = static_cast<pal_stream_flags_t>(PAL_STREAM_FLAG_MMAP_NO_IRQ);
+    if (hasOutputCompressOffloadFlag(mMixPortConfig)) {
+        attr->flags = static_cast<pal_stream_flags_t>(attr->flags | PAL_STREAM_FLAG_OFFLOAD);
+    }
     auto palDevices = mPlatform.configureAndFetchPalDevices(mMixPortConfig, mTag, mConnectedDevices);
 
     LOG(DEBUG) << __func__ << mLogPrefix << "pal_stream_open with " << toString(*attr.get());
@@ -412,6 +406,8 @@ ndk::ScopedAStatus StreamMmapBase::createMmapBuffer(
         LOG(VERBOSE) << __func__ << mLogPrefix << ": MMAP already stopped";
         return 0;
     }
+
+    cacheCurrentPosition();
 
     if (int32_t ret = ::pal_stream_stop(mPalHandle); ret) {
         LOG(ERROR) << __func__ << mLogPrefix << " pal stream stop failed, ret:" << ret;
@@ -548,7 +544,11 @@ ndk::ScopedAStatus StreamOutMmap::configureMMapStream(
     if (!ret.isOk()) {
         return ret;
     }
-    setHwVolume(mVolumes);
+    enableOffloadEffects(true);
+    if (int32_t ret = mPlatform.setVolume(mPalHandle, mVolumes); ret) {
+        LOG(ERROR) << __func__ << mLogPrefix << " failed to set volume";
+        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
+    }
     return ndk::ScopedAStatus::ok();
 }
 
@@ -606,7 +606,7 @@ ndk::ScopedAStatus StreamOutMmap::setHwVolume(const std::vector<float>& in_chann
 }
 
 bool StreamOutMmap::supportsPlaybackRate() const {
-    return mPlatform.supportsPlaybackRate(mTag);
+    return mPlatform.platformSupportsOffloadSpeed() && hasOutputCompressOffloadFlag(mMixPortConfig);
 }
 
 ndk::ScopedAStatus StreamOutMmap::setPlaybackRateImpl(
@@ -710,6 +710,43 @@ int32_t StreamOutMmap::setAggregateSourceMetadata(bool voiceActive) {
 
     Module::outListMutex.unlock();
     return 0;
+}
+
+::android::status_t StreamOutMmap::standby() {
+    enableOffloadEffects(false);
+    return StreamMmapBase::standby();
+}
+
+ndk::ScopedAStatus StreamOutMmap::addEffect(
+        const std::shared_ptr<::aidl::android::hardware::audio::effect::IEffect>& in_effect) {
+    if (in_effect == nullptr) {
+        LOG(VERBOSE) << __func__ << mLogPrefix << ": null effect";
+    } else {
+        LOG(VERBOSE) << __func__ << mLogPrefix << ": effect Binder" << in_effect->asBinder().get();
+    }
+    return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
+}
+
+ndk::ScopedAStatus StreamOutMmap::removeEffect(
+        const std::shared_ptr<::aidl::android::hardware::audio::effect::IEffect>& in_effect) {
+    if (in_effect == nullptr) {
+        LOG(VERBOSE) << __func__ << mLogPrefix << ": null effect";
+    } else {
+        LOG(VERBOSE) << __func__ << mLogPrefix << ": effect Binder" << in_effect->asBinder().get();
+    }
+    return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
+}
+
+void StreamOutMmap::enableOffloadEffects(bool enable) {
+    if (hasOutputCompressOffloadFlag(mMixPortConfig)) {
+        auto& ioHandle = mMixPortConfig.ext.get<AudioPortExt::Tag::mix>().handle;
+        if (enable) {
+            mHalEffects.startEffect(ioHandle, mPalHandle);
+            LOG(VERBOSE) << __func__ << mLogPrefix;
+        } else {
+            mHalEffects.stopEffect(ioHandle);
+        }
+    }
 }
 
 ndk::ScopedAStatus StreamOutMmap::updateMetadataCommon(const Metadata& metadata){
