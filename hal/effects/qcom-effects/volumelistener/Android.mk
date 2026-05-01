@@ -14,6 +14,10 @@ LOCAL_CFLAGS            := -v \
                         -Wthread-safety \
                         $(ALL_HAL_DEP_C_FLAGS)
 
+LOCAL_CPPFLAGS          := \
+                        -Wreorder \
+                        -Werror=reorder
+
 LOCAL_SRC_FILES:= \
         VolumeListener.cpp \
         VolumeListenerContext.cpp \

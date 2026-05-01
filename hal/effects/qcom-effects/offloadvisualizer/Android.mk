@@ -7,11 +7,15 @@ LOCAL_VENDOR_MODULE := true
 LOCAL_MODULE_RELATIVE_PATH := soundfx
 LOCAL_MODULE_OWNER := qti
 
-LOCAL_C_FLAGS := \
+LOCAL_CFLAGS := \
             -Werror \
             -Wall \
             -Wextra \
             $(ALL_HAL_DEP_C_FLAGS)
+
+LOCAL_CPPFLAGS := \
+            -Wreorder \
+            -Werror=reorder
 
 LOCAL_SRC_FILES:= \
         VisualizerOffload.cpp \
