@@ -11,6 +11,7 @@
 #include <system/audio_config.h>
 #include <tinyxml2.h>
 #include <unistd.h>
+#include <functional>
 
 using namespace tinyxml2;
 
