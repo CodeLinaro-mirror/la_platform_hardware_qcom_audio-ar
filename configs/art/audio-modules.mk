@@ -90,21 +90,7 @@ AUDIO_PAL += libdev_ultrasound
 AUDIO_PAL += libdev_usb
 
 # C2 Audio
-AUDIO_C2 := libqc2audio_base
-AUDIO_C2 += libqc2audio_utils
-AUDIO_C2 += libqc2audio_platform
-AUDIO_C2 += libqc2audio_core
-AUDIO_C2 += libqc2audio_basecodec
-AUDIO_C2 += libqc2audio_hooks
-AUDIO_C2 += libqc2audio_swaudiocodec
-AUDIO_C2 += libqc2audio_hwaudiocodec
-AUDIO_C2 += vendor.qti.media.c2audio@1.0-service
-AUDIO_C2 += libEvrcSwCodec
-AUDIO_C2 += libQcelp13SwCodec
-AUDIO_C2 += c2audio.vendor.base-arm.policy
-AUDIO_C2 += c2audio.vendor.ext-arm.policy
-AUDIO_C2 += c2audio.vendor.base-arm64.policy
-AUDIO_C2 += c2audio.vendor.ext-arm64.policy
+include vendor/qcom/opensource/audio-hal/primary-hal/configs/art/codec2_config.mk
 
 AUDIO_TEST := mcs_test
 AUDIO_TEST += ar_util_in_test_example

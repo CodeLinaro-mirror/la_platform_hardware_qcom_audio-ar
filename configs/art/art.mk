@@ -158,12 +158,6 @@ PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/bluetooth_qti_hearing_aid_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/bluetooth_qti_hearing_aid_audio_policy_configuration.xml
 
 PRODUCT_COPY_FILES += \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/codec2/media_codecs_c2_audio.xml:vendor/etc/media_codecs_c2_audio.xml \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/codec2/service/1.0/c2audio.vendor.base-arm.policy:vendor/etc/seccomp_policy/c2audio.vendor.base-arm.policy \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/codec2/service/1.0/c2audio.vendor.base-arm64.policy:vendor/etc/seccomp_policy/c2audio.vendor.base-arm64.policy \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/codec2/service/1.0/c2audio.vendor.ext-arm.policy:vendor/etc/seccomp_policy/c2audio.vendor.ext-arm.policy \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/codec2/service/1.0/c2audio.vendor.ext-arm64.policy:vendor/etc/seccomp_policy/c2audio.vendor.ext-arm64.policy
-PRODUCT_COPY_FILES += \
     $(CONFIG_HAL_SRC_DIR)/vendor_audio_interfaces.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/vendor_audio_interfaces.xml
 
 # Audio configuration xml's related to Maili
@@ -294,32 +288,11 @@ vendor.audio.adm.buffering.ms=3
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.volume.headset.gain.depcal=true
 
-#enable c2 based encoders/decoders as default NT decoders/encoders
-PRODUCT_PROPERTY_OVERRIDES += \
-vendor.audio.c2.preferred=true
-
-#Enable dmaBuf heap usage by C2 components
-PRODUCT_PROPERTY_OVERRIDES += \
-debug.c2.use_dmabufheaps=1
-
-#Enable C2 suspend
-PRODUCT_PROPERTY_OVERRIDES += \
-vendor.qc2audio.suspend.enabled=true
-
-#Enable qc2 audio sw flac frame decode
-PRODUCT_PROPERTY_OVERRIDES += \
-vendor.qc2audio.per_frame.flac.dec.enabled=true
-
 #Enable ats thread enable
 PRODUCT_PROPERTY_OVERRIDES += \
 persist.vendor.audio.atsthread.enable=true
 
 
-ifneq ($(GENERIC_ODM_IMAGE),true)
-$(warning "Enabling codec2.0 SW only for non-generic odm build variant")
-#Rank OMX SW codecs lower than OMX HW codecs
-PRODUCT_PROPERTY_OVERRIDES += debug.stagefright.omx_default_rank=0
-endif
 endif
 #enable keytone FR
 PRODUCT_PROPERTY_OVERRIDES += \
