@@ -75,6 +75,8 @@ PRODUCT_PACKAGES += fai__8.0.3_0.2__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.4.0_e
 PRODUCT_PACKAGES += fai__15.20.1_1.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.4.0_enpuv7.pmd
 PRODUCT_PACKAGES += fai__15.20.2_1.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.4.0_enpuv7.pmd
 PRODUCT_PACKAGES += fai__20.21.4_1.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.4.0_enpuv7.pmd
+PRODUCT_PACKAGES += ffecns_base_model.pmd
+PRODUCT_PACKAGES += ffecns_uv_model.pmd
 
 # Adding WNR Model File
 PRODUCT_PACKAGES += wind_filter__1.0__48k__2ch__16b__eai_5.5.eai
