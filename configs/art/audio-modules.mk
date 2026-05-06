@@ -175,6 +175,7 @@ AUDIO_MODULES += sva_plugin
 AUDIO_MODULES += libvui_utils
 AUDIO_MODULES += libqasr
 AUDIO_MODULES += qasr_vintf.xml
+AUDIO_MODULES += libadm
 
 AUDIO_MODULES += $(AUDIO_AGM)
 AUDIO_MODULES += $(AUDIO_PAL)
