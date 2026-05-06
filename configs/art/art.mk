@@ -318,5 +318,6 @@ BUILD_AUDIO_TECHPACK_SOURCE := true
 AUDIO_FEATURE_EAI_VERSION_MAIN := 7
 AUDIO_FEATURE_EAI_VERSION_MINOR := 4
 
-include vendor/qcom/opensource/audio-hal/primary-hal/configs/art/audio-properties.mk
-
+include vendor/qcom/opensource/audio-hal/primary-hal/configs/$(TARGET_BOARD_PLATFORM)/audio-properties.mk
+# C2 Audio
+include vendor/qcom/opensource/audio-hal/primary-hal/configs/$(TARGET_BOARD_PLATFORM)/codec2_config.mk
