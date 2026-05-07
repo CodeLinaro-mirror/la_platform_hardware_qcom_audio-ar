@@ -567,6 +567,9 @@ void Telephony::onExternalDeviceConnectionChanged(const AudioDevice& extDevice,
     } else {
         std::erase(mExternalDevices, extDevice);
     }
+    if (mIsCRSDeviceSupported) {
+        return;
+    }
     if (isBluetoothSCODevice(extDevice) || isBluetoothA2dpDevice(extDevice) ||
         isBluetoothLEBroadcastDevice(extDevice)) {
         LOG(VERBOSE) << __func__ << ": sco/a2dp/ble broadcast no change";
