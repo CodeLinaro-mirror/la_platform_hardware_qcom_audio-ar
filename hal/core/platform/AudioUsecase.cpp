@@ -461,7 +461,7 @@ auto getIntValueFromVString = [](
 *
 */
 size_t LowLatencyPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
-    ssize_t kPeriodSize = LowLatencyPlayback::kPeriodDurationMs * (mixPortConfig.sampleRate.value().value) /1000;
+    ssize_t kPeriodSize = LowLatencyPlayback::kPeriodDurationMs * DEFAULT_SAMPLE_RATE / 1000;
     LOG(DEBUG) << "Period Size" << kPeriodSize;
     return kPeriodSize;
 }
