@@ -29,6 +29,7 @@ BUILD_AUDIO_TECHPACK_SOURCE := true
 AUDIO_FEATURE_ENABLED_MCS := true
 AUDIO_FEATURE_ARE_ON_APPS := true
 AUDIO_FEATURE_ARE_ON_MDSP := true
+TARGET_DISABLE_PAL_BT := true
 
 ifneq ($(strip $(TARGET_USES_RRO)), true)
 #Audio Specific device overlays
