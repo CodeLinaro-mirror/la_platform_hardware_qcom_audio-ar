@@ -1,4 +1,4 @@
-ifeq ($(PLATFORM_VERSION),CinnamonBun)
+ifneq ($(filter 17 CinnamonBun,$(PLATFORM_VERSION)),)
     LATEST_ANDROID_HARDWARE_AUDIO_EFFECT := android.hardware.audio.effect-V4-ndk
 else
     LATEST_ANDROID_HARDWARE_AUDIO_EFFECT := android.hardware.audio.effect-V3-ndk
