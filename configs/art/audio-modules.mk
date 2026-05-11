@@ -89,9 +89,6 @@ AUDIO_PAL += libdev_speaker_mic
 AUDIO_PAL += libdev_ultrasound
 AUDIO_PAL += libdev_usb
 
-# C2 Audio
-include vendor/qcom/opensource/audio-hal/primary-hal/configs/art/codec2_config.mk
-
 AUDIO_TEST := mcs_test
 AUDIO_TEST += ar_util_in_test_example
 AUDIO_MODULES := ftm_test_config

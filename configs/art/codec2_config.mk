@@ -9,6 +9,8 @@ CODEC2_AUDIO_ENABLEMENT ?= false
 
 ifeq ($(strip $(CODEC2_AUDIO_ENABLEMENT)),true)
 
+$(warning Codec2 Audio enabled)
+
 # --- Codec2 Packages ---
 AUDIO_C2 := libqc2audio_base
 AUDIO_C2 += libqc2audio_utils
@@ -28,11 +30,11 @@ AUDIO_C2 += c2audio.vendor.ext-arm64.policy
 
 # --- Codec2 Config Files ---
 PRODUCT_COPY_FILES += \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/art/codec2/media_codecs_c2_audio.xml:vendor/etc/media_codecs_c2_audio.xml \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/art/codec2/service/1.0/c2audio.vendor.base-arm.policy:vendor/etc/seccomp_policy/c2audio.vendor.base-arm.policy \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/art/codec2/service/1.0/c2audio.vendor.base-arm64.policy:vendor/etc/seccomp_policy/c2audio.vendor.base-arm64.policy \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/art/codec2/service/1.0/c2audio.vendor.ext-arm.policy:vendor/etc/seccomp_policy/c2audio.vendor.ext-arm.policy \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/art/codec2/service/1.0/c2audio.vendor.ext-arm64.policy:vendor/etc/seccomp_policy/c2audio.vendor.ext-arm64.policy
+    $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/$(TARGET_BOARD_PLATFORM)/codec2/media_codecs_c2_audio.xml:vendor/etc/media_codecs_c2_audio.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/$(TARGET_BOARD_PLATFORM)/codec2/service/1.0/c2audio.vendor.base-arm.policy:vendor/etc/seccomp_policy/c2audio.vendor.base-arm.policy \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/$(TARGET_BOARD_PLATFORM)/codec2/service/1.0/c2audio.vendor.base-arm64.policy:vendor/etc/seccomp_policy/c2audio.vendor.base-arm64.policy \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/$(TARGET_BOARD_PLATFORM)/codec2/service/1.0/c2audio.vendor.ext-arm.policy:vendor/etc/seccomp_policy/c2audio.vendor.ext-arm.policy \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/$(TARGET_BOARD_PLATFORM)/codec2/service/1.0/c2audio.vendor.ext-arm64.policy:vendor/etc/seccomp_policy/c2audio.vendor.ext-arm64.policy
 
 # --- Codec2 System Properties ---
 # enable c2 based encoders/decoders as default NT decoders/encoders
@@ -56,5 +58,9 @@ $(warning "Enabling codec2.0 SW only for non-generic odm build variant")
 # Rank OMX SW codecs lower than OMX HW codecs
 PRODUCT_PROPERTY_OVERRIDES += debug.stagefright.omx_default_rank=0
 endif
+
+else
+
+$(warning Codec2 Audio disabled)
 
 endif # CODEC2_AUDIO_ENABLEMENT
