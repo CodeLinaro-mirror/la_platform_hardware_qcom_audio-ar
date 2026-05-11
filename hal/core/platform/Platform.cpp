@@ -1428,6 +1428,24 @@ void Platform::setHdrOnPalDevice(pal_device* palDeviceIn) {
 
 }
 
+int Platform::setAudioZoomFactor(pal_stream_handle_t* mPalHandle, float const& audioZoomFactor) {
+    int ret = 0;
+    mAudioZoomFactor = audioZoomFactor;
+    auto byteSize = sizeof(pal_param_payload) + sizeof(float);
+    auto bytes = std::make_unique<uint8_t[]>(byteSize);
+    auto palParamPayload = reinterpret_cast<pal_param_payload*>(bytes.get());
+    palParamPayload->payload_size = sizeof(float);
+    auto zoomPtr = reinterpret_cast<float*>(bytes.get() + sizeof(pal_param_payload));
+    *zoomPtr = audioZoomFactor;
+    LOG(DEBUG) << __func__ << ": zoom factor = " << *zoomPtr;
+    if (ret = ::pal_stream_set_param(
+                mPalHandle, PAL_PARAM_ID_AUDIO_ZOOM_FACTOR, palParamPayload);
+        ret) {
+        LOG(ERROR) << __func__ << ": failed to set PAL_PARAM_ID_AUDIO_ZOOM_FACTOR, ret=" << ret;
+    }
+    return ret;
+}
+
 void Platform::configurePalDevices(
         const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig,
         std::vector<pal_device>& palDevices) {
@@ -1456,6 +1474,15 @@ void Platform::configurePalDevices(
         (isHdrArmEnable) || (isHdrSpfEnable && (isSourceCamCorder || isMic))) {
         std::for_each(palDevices.begin(), palDevices.end(),
                       [&](auto& palDevice) { this->setHdrOnPalDevice(&palDevice); });
+    }
+
+    const bool audioZoomEnabled = isAudioZoomEnabled();
+    LOG(DEBUG) << __func__ << ": audioZoomEnabled=" << audioZoomEnabled
+               << " isSourceCamCorder=" << isSourceCamCorder;
+    if (audioZoomEnabled && isSourceCamCorder) {
+        std::for_each(palDevices.begin(), palDevices.end(), [&](auto& palDevice) {
+            setPalDeviceCustomKey(palDevice, "audio-record-zoom-on");
+        });
     }
 }
 

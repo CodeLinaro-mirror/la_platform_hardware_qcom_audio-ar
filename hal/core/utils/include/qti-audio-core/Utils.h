@@ -280,6 +280,11 @@ auto findById(std::vector<T>& v, int32_t id) {
     return std::find_if(v.begin(), v.end(), [&](const auto& e) { return e.id == id; });
 }
 
+template <typename T>
+auto findById(const std::vector<T>& v, int32_t id) {
+    return std::find_if(v.begin(), v.end(), [&](const auto& e) { return e.id == id; });
+}
+
 // Return elements from the vector that have specified ids, also
 // optionally return which ids were not found.
 template <typename T>

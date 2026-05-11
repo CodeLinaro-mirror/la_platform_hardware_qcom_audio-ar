@@ -211,6 +211,7 @@ class Module final : public ::aidl::android::hardware::audio::core::BnModule,
         FTM,  // Factory Test Mode
         AUDIOEXTENSION,
         HAPTICS,
+        AUDIOZOOM,
     };
 
     // For set parameters
@@ -259,6 +260,9 @@ class Module final : public ::aidl::android::hardware::audio::core::BnModule,
     // SetHandler For HDR
     void onSetHDRParameters(
             const std::vector<::aidl::android::hardware::audio::core::VendorParameter>&);
+    // SetHandler For AudioZoom
+    void onSetAudioZoomParameters(
+            const std::vector<::aidl::android::hardware::audio::core::VendorParameter>&);
     // SetHandler For Telephony
     void onSetTelephonyParameters(
             const std::vector<::aidl::android::hardware::audio::core::VendorParameter>&);
@@ -276,6 +280,9 @@ class Module final : public ::aidl::android::hardware::audio::core::BnModule,
             const std::vector<std::string>&);
     // GetHandler for HDR
     std::vector<::aidl::android::hardware::audio::core::VendorParameter> onGetHDRParameters(
+            const std::vector<std::string>&);
+    // GetHandler for AudioZoom
+    std::vector<::aidl::android::hardware::audio::core::VendorParameter> onGetAudioZoomParameters(
             const std::vector<std::string>&);
     // GetHandler for Telephony
     std::vector<::aidl::android::hardware::audio::core::VendorParameter> onGetTelephonyParameters(

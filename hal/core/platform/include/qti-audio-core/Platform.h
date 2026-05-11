@@ -222,6 +222,13 @@ class Platform {
     bool isHDREnabled() const { return mHDREnabled; }
     void setHDREnabled(bool const& enable) { mHDREnabled = enable; }
 
+    bool isAudioZoomEnabled() const { return mAudioZoomEnabled; }
+    void setAudioZoomEnabled(bool const& enable) { mAudioZoomEnabled = enable; }
+
+    int32_t getAudioZoomFactor() const { return mAudioZoomFactor; }
+
+    int setAudioZoomFactor(pal_stream_handle_t* mPalHandle, float const& audioZoomFactor);
+
     int32_t getHDRSampleRate() const { return mHDRSampleRate; }
 
     void setHDRSampleRate(int32_t const& sampleRate) { mHDRSampleRate = sampleRate; }
@@ -450,6 +457,10 @@ class Platform {
     bool mIsVoiceCueOnVoipEnabled{false};
     std::string mOrientation{""};
     std::string mFacing{""};
+
+    /* Audio Zoom */
+    bool mAudioZoomEnabled{false};
+    float mAudioZoomFactor{1.0};
 
     /* HAC enablement*/
     bool mIsHACEnabled{false};

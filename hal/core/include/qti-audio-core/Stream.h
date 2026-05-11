@@ -510,6 +510,7 @@ struct StreamCommonInterface {
             ::aidl::android::hardware::audio::core::MmapBufferDescriptor* desc) = 0;
 
     virtual void setStreamMicMute(const bool muted) = 0;
+    virtual void setAudioZoomFactor(float const& factor) = 0;
 };
 
 // This is equivalent to automatically generated 'IStreamCommonDelegator' but uses
@@ -639,6 +640,7 @@ class StreamCommonImpl : virtual public StreamCommonInterface, virtual public Dr
             const std::vector<::aidl::android::media::audio::common::AudioDevice>& devices)
             override;
     void setStreamMicMute(const bool muted) override;
+    void setAudioZoomFactor(float const& factor) override;
 
     ndk::ScopedAStatus configureMMapStream(
             ::aidl::android::hardware::audio::core::MmapBufferDescriptor* desc,
@@ -845,6 +847,11 @@ class StreamWrapper {
         return;
     }
 
+    void setAudioZoomFactor(float const& factor) {
+        auto s = mStream.lock();
+        if (s) s->setAudioZoomFactor(factor);
+    }
+
     ndk::ScopedAStatus configureMMapStream(
             ::aidl::android::hardware::audio::core::MmapBufferDescriptor* desc,
             int32_t* bufferSizeFrames) {
@@ -885,6 +892,11 @@ class Streams {
             return it->second.setStreamMicMute(muted);
         }
         return;
+    }
+    void setAudioZoomFactor(int32_t portConfigId, float const& factor) {
+        if (auto it = mStreams.find(portConfigId); it != mStreams.end()) {
+            it->second.setAudioZoomFactor(factor);
+        }
     }
     std::string toString() const {
         std::ostringstream os;

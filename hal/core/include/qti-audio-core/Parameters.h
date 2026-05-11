@@ -26,6 +26,30 @@ const static std::string kOrientation{"orientation"};
 const static std::string kInverted{"inverted"};
 const static std::string kFacing{"facing"};
 
+/**
+ * Audio Zoom parameters for camcorder recording.
+ *
+ * kAudioZoom ("audio_zoom_on"):
+ *   Enables or disables audio zoom on the active input stream.
+ *   Applied only when the audio source is CAMCORDER.
+ *   Possible values:
+ *     "true"  - enable audio zoom; sets the PAL device custom key to
+ *               "audio-record-zoom-on" so the DSP uses the zoom topology.
+ *     "false" - disable audio zoom; reverts to the default recording topology.
+ *   Persistence: the state is held in Platform::mAudioZoomEnabled for the
+ *   lifetime of the HAL session and re-applied on every configurePalDevices()
+ *   call while enabled.
+ *
+ * kAudioZoomFactor ("zoom_factor"):
+ *   Sets the zoom strength as a floating-point multiplier.
+ *   Sent to the DSP via PAL_PARAM_ID_AUDIO_ZOOM_FACTOR on every active
+ *   input stream.
+ *   Possible values: any positive float (e.g. 1.0 = no zoom, 2.0 = 2x zoom).
+ *   Persistence: the last value is cached in Platform::mAudioZoomFactor and
+ *   can be retrieved via the corresponding get-parameter path.
+ */
+const static std::string kAudioZoom{"audio_zoom_on"};
+const static std::string kAudioZoomFactor{"zoom_factor"};
 
 // voice
 const static std::string kVoiceCallState{"call_state"};
