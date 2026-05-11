@@ -168,6 +168,9 @@ bool hasOutputDeepBufferFlag(const ::aidl::android::media::audio::common::AudioI
 bool hasOutputCompressOffloadFlag(
         const ::aidl::android::media::audio::common::AudioIoFlags&) noexcept;
 
+bool hasOutputCompressOffloadFlag(
+        const ::aidl::android::media::audio::common::AudioPortConfig&) noexcept;
+
 bool hasInputHotwordFlag(const ::aidl::android::media::audio::common::AudioIoFlags&) noexcept;
 
 std::optional<aidl::android::media::audio::common::AudioSource> getAudioSource(

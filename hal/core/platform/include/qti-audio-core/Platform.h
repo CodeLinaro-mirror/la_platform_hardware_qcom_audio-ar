@@ -350,7 +350,9 @@ class Platform {
         return platformSupportsOffloadSpeed() && isOffload(tag);
     }
 
-    bool isOffload(const Usecase& tag) { return tag == Usecase::COMPRESS_OFFLOAD_PLAYBACK; }
+    bool isOffload(const Usecase& tag) {
+        return tag == Usecase::COMPRESS_OFFLOAD_PLAYBACK || tag == Usecase::MMAP_OFFLOAD_PLAYBACK;
+    }
     int setLatencyMode(uint32_t mode, pal_device_id_t dev_id);
     int getRecommendedLatencyModes(
           std::vector<::aidl::android::media::audio::common::AudioLatencyMode>* _aidl_return,

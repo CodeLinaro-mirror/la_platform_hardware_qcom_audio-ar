@@ -661,7 +661,9 @@ ndk::ScopedAStatus Module::openOutputStream(const OpenOutputStreamArguments& in_
     }
     const bool isOffload = isBitPositionFlagSet(port->flags.get<AudioIoFlags::Tag::output>(),
                                                 AudioOutputFlags::COMPRESS_OFFLOAD);
-    if (isOffload && !in_args.offloadInfo.has_value()) {
+    const bool isMmapNoIrq = isBitPositionFlagSet(port->flags.get<AudioIoFlags::Tag::output>(),
+                                                  AudioOutputFlags::MMAP_NOIRQ);
+    if (isOffload && !isMmapNoIrq && !in_args.offloadInfo.has_value()) {
         LOG(ERROR) << __func__ << ": port id " << port->id
                    << " has COMPRESS_OFFLOAD flag set, requires offload info";
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
