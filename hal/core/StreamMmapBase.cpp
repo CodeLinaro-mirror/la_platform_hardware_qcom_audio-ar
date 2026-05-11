@@ -432,7 +432,9 @@ ndk::ScopedAStatus StreamInMmap::configureMMapStream(
     if (!ret.isOk()) {
         return ret;
     }
-    setStreamMicMute(mPlatform.getMicMuteStatus());
+    if (mPlatform.getMicMuteStatus()) {
+        setStreamMicMute(true);
+    }
     return ndk::ScopedAStatus::ok();
 }
 
