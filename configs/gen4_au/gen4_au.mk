@@ -144,7 +144,7 @@ AUDIO_FEATURE_ENABLED_ASRC_EXT = true
 PRODUCT_ODM_PROPERTIES += \
 vendor.audio.feature.asrc.enable=true
 
-ifneq (,$(filter U UpsideDownCake 14 V VanillaIceCream 15 W Baklava 16, $(PLATFORM_VERSION)))
+ifneq (,$(filter U UpsideDownCake 14 V VanillaIceCream 15 W Baklava 16 CinnamonBun 17, $(PLATFORM_VERSION)))
 AUDIO_FEATURE_ENABLED_HAL_V7 := true
 PRODUCT_PACKAGES += libarpowerpolicy
 PRODUCT_ODM_PROPERTIES += \
@@ -229,6 +229,7 @@ PRODUCT_COPY_FILES += \
 # gvm_gy specific configuration files
 ifneq (,$(filter gen4_gvm_gy gen4_gvm_gy_sgt, $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)$(TARGET_BOARD_DERIVATIVE_SUFFIX)))
 PRODUCT_COPY_FILES += \
+    $(TOPDIR)vendor/qcom/opensource/pal/configs/gen4_au/plugin_manager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/plugin_manager.xml \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/vendor_audio_interfaces.xml:$(TARGET_COPY_OUT_VENDOR)/etc/vendor_audio_interfaces.xml \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/mixer_paths_VIOSND.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mixer_paths_VIOSND.xml \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/vendor_audio_interfaces_VIOSND.xml:$(TARGET_COPY_OUT_VENDOR)/etc/vendor_audio_interfaces.xml \

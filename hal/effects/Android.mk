@@ -4,6 +4,8 @@ LOCAL_PATH:= $(call my-dir)
 
 # Build Header library to expose effect headers
 include $(CLEAR_VARS)
+
+LOCAL_CFLAGS   += -fstack-protector-strong -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2
 LOCAL_MODULE := libaudioeffectsaidlqti_headers
 LOCAL_EXPORT_C_INCLUDE_DIRS := $(LOCAL_PATH)/include
 LOCAL_VENDOR_MODULE := true
@@ -26,7 +28,7 @@ LOCAL_SRC_FILES:= \
 LOCAL_SHARED_LIBRARIES:= \
     $(EFFECTS_DEFAULTS_SHARED_LIBRARIES)
 
-ifeq ($(PLATFORM_VERSION),16)
+ifneq ($(filter 16 CinnamonBun,$(PLATFORM_VERSION)),)
      LOCAL_CPPFLAGS += -DENABLE_FOR_VERSION3
 endif
 
@@ -54,6 +56,8 @@ LOCAL_STATIC_LIBRARIES := libaudioeffecthal_base_impl_static
 ifeq ($(PLATFORM_VERSION),16)
     # Android 16 (Baklava) requires updated manifest with audio effects HAL v3
     LOCAL_VINTF_FRAGMENTS := audioeffectservice_qti_16.xml
+else ifeq ($(PLATFORM_VERSION),CinnamonBun)
+    LOCAL_VINTF_FRAGMENTS := audioeffectservice_qti_17.xml
 else
     LOCAL_VINTF_FRAGMENTS := audioeffectservice_qti.xml
 endif
