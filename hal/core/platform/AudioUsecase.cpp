@@ -246,7 +246,9 @@ size_t LowLatencyPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
 // [Deep Buffer Start]
 
 size_t DeepBufferPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
-    return kPeriodDurationMs * getSampleRate(mixPortConfig).value() / 1000;
+    const std::string kPeriodSizeProp = "vendor.audio.deep_buffer.period_size";
+    auto PeriodSize = ::android::base::GetUintProperty<size_t>(kPeriodSizeProp, kPeriodDurationMs);
+    return PeriodSize * getSampleRate(mixPortConfig).value() / 1000;
 }
 
 // [Deep Buffer End]
