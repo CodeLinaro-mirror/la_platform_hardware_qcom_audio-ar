@@ -1,11 +1,12 @@
 /*
- * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
 #pragma once
 
 #include <PalApi.h>
+#include <PalDefs.h>
 #include <aidl/android/hardware/audio/core/VendorParameter.h>
 #include <aidl/android/media/audio/common/AudioPlaybackRate.h>
 #include <aidl/qti/audio/core/VString.h>
@@ -143,5 +144,31 @@ std::unique_ptr<T, CustomDeletor> allocate(int size) {
     T* obj = reinterpret_cast<T*>(calloc(1, size));
     return std::unique_ptr<T, CustomDeletor>{obj, free};
 }
+
+std::string toString(const pal_stream_attributes& attributes);
+
+/**
+ * @brief Converts a PlaybackRateStatus value to an AIDL binder status.
+ *
+ * This function maps the given PlaybackRateStatus to an appropriate
+ * ndk::ScopedAStatus object, which represents the status of an AIDL
+ * transaction. It returns:
+ * - ndk::ScopedAStatus::ok() if the operation was successful.
+ * - ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION) if the
+ *   operation is not supported.
+ * - ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT) for all other
+ *   invalid cases.
+ *
+ * @param ret The PlaybackRateStatus value indicating the result of the operation.
+ * @return A corresponding ndk::ScopedAStatus object representing the binder status.
+ */
+
+ndk::ScopedAStatus toBinderStatus(PlaybackRateStatus ret);
+
+/**
+ * Returns a default dummy device.
+ * If `isInput` is true, returns an output dummy device; otherwise, an input dummy device.
+ */
+pal_device getDefaultDummyDevice(const bool isInput) noexcept;
 
 } // namespace qti::audio::core

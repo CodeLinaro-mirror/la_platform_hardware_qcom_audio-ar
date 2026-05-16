@@ -7,6 +7,7 @@
 
 #include <aidl/android/hardware/audio/core/MmapBufferDescriptor.h>
 #include <qti-audio-core/AudioUsecase.h>
+#include <qti-audio-core/HalOffloadEffects.h>
 #include <qti-audio-core/Stream.h>
 
 namespace qti::audio::core {
@@ -85,6 +86,7 @@ class StreamMmapBase : public StreamCommonImpl {
     ::android::status_t burstZero();
     ::android::status_t startMMAP();
     ::android::status_t stopMMAP();
+    void cacheCurrentPosition();
 
     bool mIsInput;
     const Usecase mTag;
@@ -121,6 +123,9 @@ class StreamInMmap final : public StreamIn, public StreamMmapBase {
     ndk::ScopedAStatus configureMMapStream(
             ::aidl::android::hardware::audio::core::MmapBufferDescriptor* desc,
             int32_t* bufferSizeFrames) override;
+    ndk::ScopedAStatus updateMetadataCommon(const Metadata& metadata) override;
+    int32_t setAggregateSinkMetadata(bool voiceActive) override;
+
     void setStreamMicMute(const bool muted) override;
 
   private:
@@ -140,9 +145,25 @@ class StreamOutMmap final : public StreamOut, public StreamMmapBase {
             int32_t* bufferSizeFrames) override;
     ndk::ScopedAStatus getHwVolume(std::vector<float>* _aidl_return) override;
     ndk::ScopedAStatus setHwVolume(const std::vector<float>& in_channelVolumes) override;
+    ndk::ScopedAStatus updateMetadataCommon(const Metadata& metadata) override;
+    int32_t setAggregateSourceMetadata(bool voiceActive) override;
+    ndk::ScopedAStatus addEffect(
+            const std::shared_ptr<::aidl::android::hardware::audio::effect::IEffect>& in_effect)
+            override;
+    ndk::ScopedAStatus removeEffect(
+            const std::shared_ptr<::aidl::android::hardware::audio::effect::IEffect>& in_effect)
+            override;
+    ::android::status_t standby() override;
+
+  protected:
+    bool supportsPlaybackRate() const override;
+    ndk::ScopedAStatus setPlaybackRateImpl(
+            const ::aidl::android::media::audio::common::AudioPlaybackRate& rate) override;
 
   private:
     std::vector<float> mVolumes{};
+    HalOffloadEffects& mHalEffects{HalOffloadEffects::getInstance()};
+    void enableOffloadEffects(bool enable);
     void onClose() override { defaultOnClose(); }
     void setBluetoothMetadata();
 };

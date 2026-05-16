@@ -74,6 +74,7 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
     call_translation_config* rx_call_translation_conf;
     float mCRSVolume = 0.4f; //default CRS call volume
     bool mIsCRSStarted{false};
+    bool mIsCRSDeviceSupported{false};
     VSID mCRSVSID{VSID::VSID_1};
     constexpr static size_t KCodecBackendDefaultBitWidth = 16;
     const static ::aidl::android::media::audio::common::AudioDevice kDefaultRxDevice;
@@ -111,9 +112,12 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
     void updateSlowTalk(const bool enable);
     void updateHDVoice(const bool enable);
     void updateDeviceMute(const bool isMute, const std::string& muteDirection);
+    void updateVoiceCue(uint32_t usecaseMask);
 
     bool isCrsCallSupported();
+    bool isCrsCallDeviceSupported();
     void setCRSVolumeFromIndex(const int index);
+    void setCrsDeviceFromParameters(const int deviceType);
     void updateVoiceVolume();
     void setMicMute(const bool muted);
     void setTranslationTxMute(const bool muted);
@@ -124,6 +128,7 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
     uint32_t* stringToUint32Array(const std::string& str, size_t* size);
     void updateCallTranslationConfigs(const std::string& str);
     void updateCallTranslationParam(pal_call_translation_direction direction);
+    void updateVoiceNsRxConfigMode(const bool enable);
 
     // The following below API are both aimed to solve routing on telephony
     /**
@@ -175,16 +180,19 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
     void updateDevices();
     void updateTtyMode();
     void updateCrsDevice();
+    void startCrsCall();
     void startCrsLoopback();
     void stopCrsLoopback();
     void triggerHACinVoipPlayback();
     void getPlaybackStreamDevices();
     void startCallTranslation(pal_call_translation_direction direction);
     void stopCallTranslation();
+    void updateBluetoothDevice();
     ::aidl::android::media::audio::common::AudioDevice getMatchingTxDevice(
             const ::aidl::android::media::audio::common::AudioDevice & rxDevice);
     bool isValidDevice(const ::aidl::android::media::audio::common::AudioDevice & rxDevice);
     bool isUsbDeviceConnected(const ::aidl::android::media::audio::common::AudioDevice & rxDevice);
+    void configureVoiceNsRxConfigMode();
 
   protected:
     // Gaurd all the public APIs
@@ -206,9 +214,13 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
     bool mIsSlowTalkEnabled{false};
     bool mIsHDVoiceEnabled{false};
     bool mIsDeviceMuted{false};
-    bool hasValidPlaybackStream{false};
+    bool mHasConcurrentPlayback{false};
+    bool mIsCrsDeviceReady{false};
     bool mIsVoiceStarted{false};
     bool mIsVoipStarted{false};
+    bool mIsBTSCOEnabled{false};
+    bool mIsBypassVoiceNsRxCfg{false};
+    bool mIsVoiceCueEnabled{false};
     std::string mMuteDirection{""};
 
     std::vector<::aidl::android::media::audio::common::AudioDevice> mExternalDevices;

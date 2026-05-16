@@ -1,12 +1,14 @@
 /*
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
 #pragma once
 
+#include <atomic>
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -50,8 +52,12 @@ class HalOffloadEffects {
 #endif
     std::vector<EffectLibInfo> mEffects;
 
+    std::atomic<bool> mLoaded{false};
+    std::mutex mLoadMutex;
+
     HalOffloadEffects();
     void loadLibrary(std::string path);
+    bool ensureLoaded();
 
   public:
     static HalOffloadEffects& getInstance() {

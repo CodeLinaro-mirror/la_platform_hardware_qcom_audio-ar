@@ -9,7 +9,14 @@ LOCAL_MODULE_OWNER := qti
 
 LOCAL_CLANG             := true
 LOCAL_TIDY              := true
-LOCAL_CFLAGS            += -v -Wall -Wthread-safety
+LOCAL_CFLAGS            := -v \
+                        -Wall \
+                        -Wthread-safety \
+                        $(ALL_HAL_DEP_C_FLAGS)
+
+LOCAL_CPPFLAGS          := \
+                        -Wreorder \
+                        -Werror=reorder
 
 LOCAL_SRC_FILES:= \
         VolumeListener.cpp \

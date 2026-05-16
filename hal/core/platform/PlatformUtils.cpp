@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -9,21 +9,21 @@
 #include <android-base/logging.h>
 #include <qti-audio-core/Platform.h>
 #include <qti-audio-core/PlatformUtils.h>
-#include <qti-audio/PlatformConverter.h>
 #include <qti-audio-core/Utils.h>
+#include <qti-audio/PlatformConverter.h>
 #include <system/audio.h>
 
 #include <map>
 #include <set>
 #include <vector>
 
+using ::aidl::android::hardware::audio::core::VendorParameter;
 using ::aidl::android::media::audio::common::AudioChannelLayout;
 using ::aidl::android::media::audio::common::AudioFormatDescription;
 using ::aidl::android::media::audio::common::AudioFormatType;
+using ::aidl::android::media::audio::common::AudioPlaybackRate;
 using ::aidl::android::media::audio::common::AudioProfile;
 using ::aidl::android::media::audio::common::PcmType;
-using ::aidl::android::media::audio::common::AudioPlaybackRate;
-using ::aidl::android::hardware::audio::core::VendorParameter;
 using ::aidl::qti::audio::core::VString;
 
 namespace qti::audio::core {
@@ -270,7 +270,7 @@ bool compare(const pal_device& device1, const pal_device& device2) {
         return false;
     }
 
-    PalAddressTag tag1 = getAddressTag(device2.id);
+    PalAddressTag tag1 = getAddressTag(device1.id);
     PalAddressTag tag2 = getAddressTag(device2.id);
 
     if (tag1 != tag2) {
@@ -296,6 +296,99 @@ bool compare(const pal_device& device1, const pal_device& device2) {
         default:
             return false;
     }
+}
+
+static std::string streamDirectionToString(pal_stream_direction_t direction) {
+    switch (direction) {
+        case PAL_AUDIO_OUTPUT:
+            return "OUTPUT";
+        case PAL_AUDIO_INPUT:
+            return "INPUT";
+        case PAL_AUDIO_INPUT_OUTPUT:
+            return "INPUT_OUTPUT";
+        default:
+            return "UNKNOWN";
+    }
+}
+
+static std::string audioFormatToString(pal_audio_fmt_t fmt) {
+    for (const auto& pair : PalAudioFormatMap) {
+        if (pair.second == fmt) {
+            return pair.first;
+        }
+    }
+    return "UNKNOWN";
+}
+
+static std::string channelInfoToString(const struct pal_channel_info& ch_info) {
+    std::ostringstream oss;
+    oss << "channels=" << ch_info.channels;
+
+    // oss << ", ch_map=[";
+    // for (uint16_t i = 0; i < ch_info.channels && i < PAL_MAX_CHANNELS_SUPPORTED; ++i) {
+    //     if (i > 0) oss << ",";
+    //     oss << static_cast<int>(ch_info.ch_map[i]);
+    // }
+    // oss << "]";
+    return oss.str();
+}
+
+static std::string mediaConfigToString(const struct pal_media_config& config) {
+    std::ostringstream oss;
+    oss << "format=" << audioFormatToString(config.aud_fmt_id)
+        << ", sample_rate=" << config.sample_rate << ", bit_width=" << config.bit_width << ", "
+        << channelInfoToString(config.ch_info);
+    return oss.str();
+}
+
+std::string toString(const pal_stream_attributes& attributes) {
+    std::ostringstream oss;
+
+    std::string streamType = "UNKNOWN";
+    if (streamNameLUT.find(attributes.type) != streamNameLUT.end()) {
+        streamType = streamNameLUT.at(attributes.type);
+    }
+
+    oss << "attributes {" << streamDirectionToString(attributes.direction) << "," << attributes.type
+        << ":" << streamType;
+    //  << ", flags: " << streamFlagsToString(attributes.flags);
+
+    if (attributes.direction & PAL_AUDIO_OUTPUT) {
+        oss << ", out_config {" << mediaConfigToString(attributes.out_media_config) << "}";
+    }
+
+    if (attributes.direction & PAL_AUDIO_INPUT) {
+        oss << ", in_config {" << mediaConfigToString(attributes.in_media_config) << "}";
+    }
+
+    oss << "}";
+    return oss.str();
+}
+
+ndk::ScopedAStatus toBinderStatus(PlaybackRateStatus ret) {
+    switch (ret) {
+        case PlaybackRateStatus::SUCCESS:
+            return ndk::ScopedAStatus::ok();
+        case PlaybackRateStatus::UNSUPPORTED:
+            return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
+        default:
+            return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
+    }
+}
+
+pal_device getDefaultDummyDevice(const bool isInput) noexcept {
+    constexpr std::uint32_t kDummyDefaultOutputSampleRate = 48'000;
+    constexpr std::uint32_t kDummyDefaultPCMBidWidth = 16;
+    constexpr auto kDummyDefaultPalPCMFormat = PAL_AUDIO_FMT_PCM_S16_LE;
+    constexpr std::uint32_t kDummyDefaultChannels = 2;
+
+    pal_device dev{};
+    dev.id = isInput ? PAL_DEVICE_IN_DUMMY : PAL_DEVICE_OUT_DUMMY;
+    dev.config.sample_rate = kDummyDefaultOutputSampleRate;
+    dev.config.bit_width = kDummyDefaultPCMBidWidth;
+    dev.config.aud_fmt_id = kDummyDefaultPalPCMFormat;
+    dev.config.ch_info.channels = kDummyDefaultChannels;
+    return dev;
 }
 
 } // namespace qti::audio::core

@@ -10,8 +10,13 @@
 #include <android-base/logging.h>
 #include <audio_utils/clock.h>
 #include <hardware/audio.h>
+#include <qti-audio-core/Module.h>
 #include <qti-audio-core/StreamMmapBase.h>
+#include <qti-audio-core/StreamInPrimary.h>
+#include <qti-audio-core/StreamOutPrimary.h>
 
+#include <qti-audio-core/PlatformUtils.h>
+#include <qti-audio-core/Utils.h>
 #include <qti-audio/PlatformConverter.h>
 
 using aidl::android::hardware::audio::common::AudioOffloadMetadata;
@@ -48,16 +53,17 @@ StreamMmapBase::StreamMmapBase(StreamContext* context, const Metadata& metadata,
       mMixPortConfig(getContext().getMixPortConfig()),
       mIsInput(input) {
     std::ostringstream os;
-    os << " : usecase: " << mTagName;
-    os << ", mix port config id:" << mMixPortConfig.id;
-    os << ", IoHandle:" << mMixPortConfig.ext.get<AudioPortExt::Tag::mix>().handle << " ";
+    os << "[id:" << mMixPortConfig.id;
+    os << ",io:" << mMixPortConfig.ext.get<AudioPortExt::Tag::mix>().handle << "]";
+    os << ": usecase: " << mTagName << " ";
     mLogPrefix = os.str();
-    LOG(DEBUG) << __func__ << mLogPrefix;
+
+    LOG(DEBUG) << __func__ << mLogPrefix << " created " << mMixPortConfig.toString();
 }
 
 StreamMmapBase::~StreamMmapBase() {
     cleanupWorker();
-    LOG(DEBUG) << __func__ << mLogPrefix;
+    LOG(DEBUG) << __func__ << mLogPrefix << "destroyed";
 }
 
 ndk::ScopedAStatus StreamMmapBase::getVendorParameters(const std::vector<std::string>& in_ids,
@@ -111,6 +117,7 @@ bool StreamMmapBase::isValid() {
 ndk::ScopedAStatus StreamMmapBase::fillDescriptor(MmapBufferDescriptor* desc) {
     if (!isValid()) {
         LOG(ERROR) << __func__ << mLogPrefix << " mmap desc invalid ";
+        CHECK(1 == 0) << "how is this possible; debug";
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
     }
     desc->sharedMemory.fd = mMmapBufferDesc.sharedMemory.fd.dup();
@@ -198,13 +205,27 @@ struct BufferConfig StreamMmapBase::getBufferConfig() {
     return stopMMAP();
 }
 
+void StreamMmapBase::cacheCurrentPosition() {
+    if (!mPalHandle || !mIsStarted) {
+        return;
+    }
+    struct pal_mmap_position pal_mmap_pos;
+    if (int32_t ret = pal_stream_get_mmap_position(mPalHandle, &pal_mmap_pos); ret == 0) {
+        mFramesInSession = pal_mmap_pos.position_frames;
+        LOG(DEBUG) << __func__ << mLogPrefix << ": cached position " << mFramesInSession;
+    } else {
+        LOG(WARNING) << __func__ << mLogPrefix << ": failed to cache position, ret:" << ret;
+    }
+}
+
 ::android::status_t StreamMmapBase::standby() {
     LOG(DEBUG) << __func__ << mLogPrefix;
     if (mPalHandle != nullptr) {
-        ::pal_stream_stop(mPalHandle);
+        stopMMAP();
         ::pal_stream_close(mPalHandle);
         mPalHandle = nullptr;
         mFramesAtSessionStart += roundUpToBufferBoundary(mFramesInSession, mBufferSizeInFrames);
+        mFramesInSession = 0;
         LOG(DEBUG) << __func__ << mLogPrefix << ": position rounded to " << mFramesAtSessionStart
                    << " for bufferCapacity " << mBufferSizeInFrames;
         mMmapBufferDesc.sharedMemory.fd.set(-1);  // reset shared mem fd
@@ -229,41 +250,16 @@ struct BufferConfig StreamMmapBase::getBufferConfig() {
 
 ::android::status_t StreamMmapBase::refinePosition(
         ::aidl::android::hardware::audio::core::StreamDescriptor::Reply* reply) {
-    static const StreamDescriptor::Position kUnknownPosition = {
-            .frames = StreamDescriptor::Position::UNKNOWN,
-            .timeNs = StreamDescriptor::Position::UNKNOWN};
+    cacheCurrentPosition();
+    reply->observable.timeNs = reply->hardware.timeNs = ::android::uptimeNanos();
 
-    if (!mPalHandle) {
-        LOG(ERROR) << __func__ << mLogPrefix << ": pal stream handle is null";
-        reply->observable = reply->hardware = kUnknownPosition;
-        return 0;
-    }
-    if (!mIsStarted) {
-        LOG(ERROR) << __func__ << mLogPrefix << ": stream not started, position unknown";
-        reply->observable = reply->hardware = kUnknownPosition;
-        return 0;
-    }
-    struct pal_mmap_position pal_mmap_pos;
-    if (int32_t ret = pal_stream_get_mmap_position(mPalHandle, &pal_mmap_pos); ret) {
-        LOG(ERROR) << __func__ << mLogPrefix << ": error from pal_stream_get_mmap_position";
-        return ret;
-    }
-
-    reply->observable.timeNs = reply->hardware.timeNs = pal_mmap_pos.time_nanoseconds;
-
-    mFramesInSession = pal_mmap_pos.position_frames;
-
+    int64_t totalDelayFrames = getLatencyMs() * mMixPortConfig.sampleRate.value().value / 1000;
     reply->hardware.frames = mFramesAtSessionStart + mFramesInSession;
-
-    int64_t totalDelayFrames = 0;
-    totalDelayFrames = getLatencyMs() * mMixPortConfig.sampleRate.value().value / 1000;
     reply->observable.frames = (reply->hardware.frames > totalDelayFrames)
                                        ? (reply->hardware.frames - totalDelayFrames)
                                        : 0;
-
     LOG(VERBOSE) << __func__ << mLogPrefix << ": hw_frames:" << reply->hardware.frames
-                 << " obs_frames " << reply->observable.frames
-                 << ", hw_timeNs:" << reply->hardware.timeNs << " mFramesAtSessionStart "
+                 << " obs_frames " << reply->observable.frames << " mFramesAtSessionStart "
                  << mFramesAtSessionStart;
     return 0;
 }
@@ -316,9 +312,12 @@ ndk::ScopedAStatus StreamMmapBase::configureMMapStream(
     }
     attr->type = PAL_STREAM_ULTRA_LOW_LATENCY;
     attr->flags = static_cast<pal_stream_flags_t>(PAL_STREAM_FLAG_MMAP_NO_IRQ);
-    auto palDevices = mPlatform.configureAndFetchPalDevices(mMixPortConfig, mTag, mConnectedDevices,
-                                                            true /*dummyDevice*/);
+    if (hasOutputCompressOffloadFlag(mMixPortConfig)) {
+        attr->flags = static_cast<pal_stream_flags_t>(attr->flags | PAL_STREAM_FLAG_OFFLOAD);
+    }
+    auto palDevices = mPlatform.configureAndFetchPalDevices(mMixPortConfig, mTag, mConnectedDevices);
 
+    LOG(DEBUG) << __func__ << mLogPrefix << "pal_stream_open with " << toString(*attr.get());
     if (int32_t ret = ::pal_stream_open(
                 attr.get(), palDevices.size(), palDevices.data(), 0, nullptr, nullptr /*cbfun*/,
                 reinterpret_cast<uint64_t>(this) /*cookie*/, &(this->mPalHandle));
@@ -408,6 +407,8 @@ ndk::ScopedAStatus StreamMmapBase::createMmapBuffer(
         return 0;
     }
 
+    cacheCurrentPosition();
+
     if (int32_t ret = ::pal_stream_stop(mPalHandle); ret) {
         LOG(ERROR) << __func__ << mLogPrefix << " pal stream stop failed, ret:" << ret;
         return -EINVAL;
@@ -427,10 +428,13 @@ StreamInMmap::StreamInMmap(StreamContext&& context, const SinkMetadata& sinkMeta
 ndk::ScopedAStatus StreamInMmap::configureMMapStream(
         ::aidl::android::hardware::audio::core::MmapBufferDescriptor* desc,
         int32_t* bufferSizeFrames) {
-    auto status = StreamMmapBase::configureMMapStream(desc, bufferSizeFrames);
-    setStreamMicMute(mPlatform.getMicMuteStatus());
-    LOG(INFO) << __func__ << mLogPrefix << ": stream is configured with " << mConnectedDevices;
-
+    auto ret = StreamMmapBase::configureMMapStream(desc, bufferSizeFrames);
+    if (!ret.isOk()) {
+        return ret;
+    }
+    if (mPlatform.getMicMuteStatus()) {
+        setStreamMicMute(true);
+    }
     return ndk::ScopedAStatus::ok();
 }
 
@@ -450,6 +454,83 @@ void StreamInMmap::setStreamMicMute(const bool muted) {
     }
 }
 
+int32_t StreamInMmap::setAggregateSinkMetadata(bool voiceActive) {
+        ssize_t track_count_total = 0;
+
+    std::vector<record_track_metadata_t> total_tracks;
+    sink_metadata_t btSinkMetadata;
+
+    Module::inListMutex.lock();
+    std::vector<std::weak_ptr<StreamIn>>& inStreams = Module::getInStreams();
+    // Dont send metadata if voice is active
+    if (voiceActive || inStreams.empty()) {
+        Module::inListMutex.unlock();
+        return 0;
+    }
+    auto removeStreams = [&](std::weak_ptr<StreamIn> streamIn) -> bool {
+        if (!streamIn.lock()) return true;
+        return streamIn.lock()->isClosed();
+    };
+
+    inStreams.erase(std::remove_if(inStreams.begin(), inStreams.end(), removeStreams),
+                    inStreams.end());
+
+    for (auto it = inStreams.begin(); it < inStreams.end(); it++) {
+        if (it->lock() && !it->lock()->isClosed()) {
+            ::aidl::android::hardware::audio::common::SinkMetadata sinkMetadata;
+            it->lock()->getMetadata(sinkMetadata);
+            track_count_total += sinkMetadata.tracks.size();
+        } else {
+        }
+    }
+    LOG(VERBOSE) << __func__ << mLogPrefix << " trackCount " << track_count_total <<
+                " IN streams size " << inStreams.size();
+    if (track_count_total == 0) {
+        Module::inListMutex.unlock();
+        return 0;
+    }
+
+    total_tracks.resize(track_count_total);
+    btSinkMetadata.track_count = track_count_total;
+    btSinkMetadata.tracks = total_tracks.data();
+
+    for (auto it = inStreams.begin(); it != inStreams.end(); it++) {
+        ::aidl::android::hardware::audio::common::SinkMetadata sinkMetadata;
+        if (it->lock()) {
+            it->lock()->getMetadata(sinkMetadata);
+            for (auto& item : sinkMetadata.tracks) {
+                btSinkMetadata.tracks->source = static_cast<audio_source_t>(item.source);
+                ++btSinkMetadata.tracks;
+            }
+        }
+    }
+
+    btSinkMetadata.tracks = total_tracks.data();
+    pal_set_param(PAL_PARAM_ID_SET_SINK_METADATA, (void*)&btSinkMetadata, 0);
+    Module::inListMutex.unlock();
+    return 0;
+}
+
+ndk::ScopedAStatus StreamInMmap::updateMetadataCommon(const Metadata& metadata){
+    if (!isClosed()) {
+        if (metadata.index() != mMetadata.index()) {
+            LOG(FATAL) << __func__ << mLogPrefix << ": changing metadata variant is not allowed";
+        }
+        StreamInPrimary::sinkMetadata_mutex_.lock();
+        mMetadata = metadata;
+        StreamInPrimary::sinkMetadata_mutex_.unlock();
+    }
+    int callState = mPlatform.getCallState();
+    int callMode = mPlatform.getCallMode();
+    bool voiceActive = ((callState == 2) || (callMode == 2));
+
+    StreamInPrimary::sinkMetadata_mutex_.lock();
+    setAggregateSinkMetadata(voiceActive);
+    StreamInPrimary::sinkMetadata_mutex_.unlock();
+    LOG(DEBUG) << __func__ << mLogPrefix;
+    return ndk::ScopedAStatus::ok();
+}
+
 StreamOutMmap::StreamOutMmap(StreamContext&& context, const SourceMetadata& sourceMetadata,
                              const std::optional<AudioOffloadInfo>& offloadInfo)
     : StreamOut(std::move(context), offloadInfo),
@@ -461,10 +542,15 @@ ndk::ScopedAStatus StreamOutMmap::configureMMapStream(
         ::aidl::android::hardware::audio::core::MmapBufferDescriptor* desc,
         int32_t* bufferSizeFrames) {
     setBluetoothMetadata();
-    auto status = StreamMmapBase::configureMMapStream(desc, bufferSizeFrames);
-    setHwVolume(mVolumes);
-    LOG(INFO) << __func__ << mLogPrefix << ": stream is configured with " << mConnectedDevices;
-
+    auto ret = StreamMmapBase::configureMMapStream(desc, bufferSizeFrames);
+    if (!ret.isOk()) {
+        return ret;
+    }
+    enableOffloadEffects(true);
+    if (int32_t ret = mPlatform.setVolume(mPalHandle, mVolumes); ret) {
+        LOG(ERROR) << __func__ << mLogPrefix << " failed to set volume";
+        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
+    }
     return ndk::ScopedAStatus::ok();
 }
 
@@ -518,6 +604,171 @@ ndk::ScopedAStatus StreamOutMmap::setHwVolume(const std::vector<float>& in_chann
     mVolumes = in_channelVolumes;
 
     LOG(DEBUG) << __func__ << mLogPrefix << ::android::internal::ToString(mVolumes);
+    return ndk::ScopedAStatus::ok();
+}
+
+bool StreamOutMmap::supportsPlaybackRate() const {
+    return mPlatform.platformSupportsOffloadSpeed() && hasOutputCompressOffloadFlag(mMixPortConfig);
+}
+
+ndk::ScopedAStatus StreamOutMmap::setPlaybackRateImpl(
+        const ::aidl::android::media::audio::common::AudioPlaybackRate& rate) {
+    return toBinderStatus(mPlatform.setPlaybackRate(mPalHandle, mTag, rate));
+}
+
+int32_t StreamOutMmap::setAggregateSourceMetadata(bool voiceActive) {
+    ssize_t track_count_total = 0;
+
+    std::vector<playback_track_metadata_t> total_tracks;
+    source_metadata_t btSourceMetadata;
+
+    Module::outListMutex.lock();
+    std::vector<std::weak_ptr<StreamOut>>& outStreams = Module::getOutStreams();
+    if (voiceActive || outStreams.empty()) {
+        Module::outListMutex.unlock();
+        return 0;
+    }
+    auto removeStreams = [&](std::weak_ptr<StreamOut> streamOut) -> bool {
+        if (!streamOut.lock()) return true;
+        return streamOut.lock()->isClosed();
+    };
+    outStreams.erase(std::remove_if(outStreams.begin(), outStreams.end(), removeStreams),
+                     outStreams.end());
+
+    LOG(VERBOSE) << __func__ << mLogPrefix << " out streams not empty size is " << outStreams.size();
+
+    for (auto it = outStreams.begin(); it < outStreams.end(); it++) {
+        if (it->lock() && !it->lock()->isClosed()) {
+            ::aidl::android::hardware::audio::common::SourceMetadata srcMetadata;
+            it->lock()->getMetadata(srcMetadata);
+            track_count_total += srcMetadata.tracks.size();
+        } else {
+        }
+    }
+    LOG(VERBOSE) << __func__ << mLogPrefix << " out streams size after deleting : " << outStreams.size()
+                 << " total track count " << track_count_total;
+
+    if (track_count_total <= 0) {
+        Module::outListMutex.unlock();
+        return 0;
+    }
+
+    total_tracks.resize(track_count_total);
+    btSourceMetadata.track_count = track_count_total;
+    btSourceMetadata.tracks = total_tracks.data();
+
+    int32_t totalTracks = 0;
+    for (auto it = outStreams.begin(); it != outStreams.end(); it++) {
+        ::aidl::android::hardware::audio::common::SourceMetadata srcMetadata;
+        if (it->lock()) {
+            it->lock()->getMetadata(srcMetadata);
+            for (auto& item : srcMetadata.tracks) {
+                // check tracks size in this stream metadata not to exceed total count
+                if (totalTracks >= track_count_total) {
+                    LOG(WARNING) << __func__ << mLogPrefix << ": mismatch in total tracks for metadata allocation";
+                    break;
+                }
+
+                /* currently after cs call ends, we are getting metadata as
+                * usage voice and content speech, this is causing BT to again
+                * open call session, so added below check to send metadata of
+                * voice only if call is active, else discard it
+                */
+
+                if (!voiceActive && (mPlatform.getCallMode() != 3) &&
+                    (AUDIO_USAGE_VOICE_COMMUNICATION == static_cast<audio_usage_t>(item.usage)) &&
+                    (AUDIO_CONTENT_TYPE_SPEECH ==
+                     static_cast<audio_content_type_t>(item.contentType))) {
+                    btSourceMetadata.track_count--;
+                } else {
+                    btSourceMetadata.tracks->usage = static_cast<audio_usage_t>(item.usage);
+                    btSourceMetadata.tracks->content_type =
+                            static_cast<audio_content_type_t>(item.contentType);
+                    LOG(VERBOSE) << __func__ << mLogPrefix << " source metadata usage is "
+                                 << btSourceMetadata.tracks->usage << " content is "
+                                 << btSourceMetadata.tracks->content_type;
+                   ++btSourceMetadata.tracks;
+                }
+                ++totalTracks;
+            }
+        }
+    }
+
+    auto getCombinedMetadata = [&]() {
+        std::ostringstream oss;
+        oss << " track count:" << btSourceMetadata.track_count;
+        for (size_t i = 0; i < btSourceMetadata.track_count; i++) {
+            oss << " { Usage:" << btSourceMetadata.tracks[i].usage
+                << ", content_type:" << btSourceMetadata.tracks[i].content_type << " } ";
+        }
+        return oss.str();
+    };
+
+    if (btSourceMetadata.track_count > 0) {
+        btSourceMetadata.tracks = total_tracks.data();
+        LOG(VERBOSE) << __func__ << mLogPrefix << ": combined : " << getCombinedMetadata();
+        pal_set_param(PAL_PARAM_ID_SET_SOURCE_METADATA, (void*)&btSourceMetadata, 0);
+    }
+
+    Module::outListMutex.unlock();
+    return 0;
+}
+
+::android::status_t StreamOutMmap::standby() {
+    enableOffloadEffects(false);
+    return StreamMmapBase::standby();
+}
+
+ndk::ScopedAStatus StreamOutMmap::addEffect(
+        const std::shared_ptr<::aidl::android::hardware::audio::effect::IEffect>& in_effect) {
+    if (in_effect == nullptr) {
+        LOG(VERBOSE) << __func__ << mLogPrefix << ": null effect";
+    } else {
+        LOG(VERBOSE) << __func__ << mLogPrefix << ": effect Binder" << in_effect->asBinder().get();
+    }
+    return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
+}
+
+ndk::ScopedAStatus StreamOutMmap::removeEffect(
+        const std::shared_ptr<::aidl::android::hardware::audio::effect::IEffect>& in_effect) {
+    if (in_effect == nullptr) {
+        LOG(VERBOSE) << __func__ << mLogPrefix << ": null effect";
+    } else {
+        LOG(VERBOSE) << __func__ << mLogPrefix << ": effect Binder" << in_effect->asBinder().get();
+    }
+    return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
+}
+
+void StreamOutMmap::enableOffloadEffects(bool enable) {
+    if (hasOutputCompressOffloadFlag(mMixPortConfig)) {
+        auto& ioHandle = mMixPortConfig.ext.get<AudioPortExt::Tag::mix>().handle;
+        if (enable) {
+            mHalEffects.startEffect(ioHandle, mPalHandle);
+            LOG(VERBOSE) << __func__ << mLogPrefix;
+        } else {
+            mHalEffects.stopEffect(ioHandle);
+        }
+    }
+}
+
+ndk::ScopedAStatus StreamOutMmap::updateMetadataCommon(const Metadata& metadata){
+        if (isClosed()) {
+        LOG(ERROR) << __func__ << mLogPrefix << ": stream was closed";
+        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
+    }
+
+    if (metadata.index() != mMetadata.index()) {
+        LOG(FATAL) << __func__ << mLogPrefix << ": changing metadata variant is not allowed";
+    }
+    StreamOutPrimary::sourceMetadata_mutex_.lock();
+    mMetadata = metadata;
+    int callState = mPlatform.getCallState();
+    int callMode = mPlatform.getCallMode();
+    bool voiceActive = ((callState == 2) || (callMode == 2));
+
+    setAggregateSourceMetadata(voiceActive);
+    StreamOutPrimary::sourceMetadata_mutex_.unlock();
+
     return ndk::ScopedAStatus::ok();
 }
 

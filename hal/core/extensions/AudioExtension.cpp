@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -31,7 +31,7 @@ bool BatteryListenerExtension::isCharging;
 int32_t AudioExtension::callMode;
 
 AudioExtensionBase::AudioExtensionBase(std::string library, bool enabled)
-    : mLibraryName(library), mEnabled(enabled) {
+    : mEnabled(enabled), mLibraryName(library) {
     LOG(DEBUG) << __func__ << " opening " << mLibraryName.c_str() << " enabled " << enabled;
     if (mEnabled) {
         mHandle = dlopen(mLibraryName.c_str(), RTLD_LAZY);

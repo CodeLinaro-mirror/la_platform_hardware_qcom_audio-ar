@@ -5,6 +5,8 @@
 
 #define LOG_TAG "AHAL_Utils_QTI"
 
+#include <regex>
+
 #include <android-base/logging.h>
 #include <audio_utils/format.h>
 #include <qti-audio-core/Utils.h>
@@ -21,7 +23,11 @@ using ::aidl::android::media::audio::common::AudioOutputFlags;
 using ::aidl::android::media::audio::common::AudioPortExt;
 using ::aidl::android::media::audio::common::AudioSource;
 using ::aidl::android::media::audio::common::AudioPortMixExtUseCase;
-
+using ::aidl::android::media::audio::common::AudioChannelLayout;
+using aidl::android::hardware::audio::common::SourceMetadata;
+using aidl::android::hardware::audio::common::SinkMetadata;
+using aidl::android::hardware::audio::common::PlaybackTrackMetadata;
+using aidl::android::hardware::audio::common::RecordTrackMetadata;
 using ::aidl::android::hardware::audio::core::VendorParameter;
 
 using ::aidl::qti::audio::core::VString;
@@ -286,6 +292,11 @@ bool hasOutputCompressOffloadFlag(const AudioIoFlags& ioFlags) noexcept {
     return false;
 }
 
+bool hasOutputCompressOffloadFlag(const AudioPortConfig& portConfig) noexcept {
+    if (!portConfig.flags.has_value()) return false;
+    return hasOutputCompressOffloadFlag(portConfig.flags.value());
+}
+
 bool hasInputHotwordFlag(const AudioIoFlags& ioFlags) noexcept {
     if (ioFlags.getTag() == AudioIoFlags::Tag::input) {
         constexpr auto hotwordFlag =
@@ -382,6 +393,80 @@ std::string makeParamValue(bool const& isTrue) noexcept {
     uuid.node.insert(uuid.node.end(), {(uint8_t)tmp[4], (uint8_t)tmp[5], (uint8_t)tmp[6],
                                        (uint8_t)tmp[7], (uint8_t)tmp[8], (uint8_t)tmp[9]});
     return uuid;
+}
+
+size_t getChannelCount(const AudioChannelLayout& layout, int32_t mask) noexcept {
+    using Tag = AudioChannelLayout::Tag;
+    switch (layout.getTag()) {
+        case Tag::none:
+            return 0;
+        case Tag::invalid:
+            return 0;
+        case Tag::indexMask:
+            return __builtin_popcount(layout.get<Tag::indexMask>() & mask);
+        case Tag::layoutMask:
+            return __builtin_popcount(layout.get<Tag::layoutMask>() & mask);
+        case Tag::voiceMask:
+            return __builtin_popcount(layout.get<Tag::voiceMask>() & mask);
+#if MEDIA_AUDIO_COMMON_TYPES_VERSION >= 5
+        case Tag::acnMask:
+            return layout.get<Tag::acnMask>() & AudioChannelLayout::ACN_CHANNEL_COUNT_BIT_MASK;
+#endif
+    }
+    return 0;
+}
+
+constexpr bool isValidAudioMimeType(std::string_view mimeType) noexcept {
+    constexpr std::string_view audioPrefix = "audio/";
+    return mimeType.starts_with(audioPrefix) && mimeType.size() > audioPrefix.size();
+}
+
+bool isValidMetadataVendorExtension(const std::string& tag) noexcept {
+    static const std::regex vendorExtension("VX_[A-Z0-9]{3,}_[_A-Z0-9]+");
+    return std::regex_match(tag.begin(), tag.end(), vendorExtension);
+}
+
+bool isValidRecordTrackMetadataTag(const std::string& tag) noexcept {
+    const std::string kQCOMVendorPrefix = "VX_QCOM";
+    return tag.starts_with(kQCOMVendorPrefix);
+}
+
+bool isValidRecordTrackMetadata(const RecordTrackMetadata& recordTrackMetadata) noexcept {
+    return std::ranges::all_of(recordTrackMetadata.tags, isValidMetadataVendorExtension);
+}
+
+bool isValidSinkMetadata(const SinkMetadata& sinkMetadata) noexcept {
+    return std::ranges::all_of(sinkMetadata.tracks, isValidRecordTrackMetadata);
+}
+
+bool isValidPlaybackTrackMetadataTag(const std::string& tag) noexcept {
+    const std::string kQCOMVendorPrefix = "VX_QCOM";
+    return tag.starts_with(kQCOMVendorPrefix);
+}
+
+bool isValidPlaybackTrackMetadata(const PlaybackTrackMetadata& playbackTrackMetadata) noexcept {
+#if AUDIO_CORE_VERSION >= 4
+    const bool isOk =
+            (playbackTrackMetadata.codecProvenance)
+                    ? (playbackTrackMetadata.codecProvenance.value().empty() ||
+                       isValidAudioMimeType(playbackTrackMetadata.codecProvenance.value()))
+                    : true;
+#else
+    const bool isOk = true;
+#endif
+    return isOk && std::ranges::all_of(playbackTrackMetadata.tags, isValidMetadataVendorExtension);
+}
+
+bool isValidSourceMetadata(const SourceMetadata& sourceMetadata) noexcept {
+    return std::ranges::all_of(sourceMetadata.tracks, isValidPlaybackTrackMetadata);
+}
+
+bool isNoneDevice(const AudioDevice& d) noexcept {
+    return d.type.type == AudioDeviceType::NONE;
+}
+
+bool hasNoneDevice(const std::vector<AudioDevice>& devices) noexcept {
+    return std::ranges::any_of(devices, isNoneDevice);
 }
 
 } // namespace qti::audio::core

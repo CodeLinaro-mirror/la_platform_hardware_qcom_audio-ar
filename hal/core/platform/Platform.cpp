@@ -383,36 +383,14 @@ std::vector<pal_device> Platform::convertToPalDevices(
     return palDevices;
 }
 
-std::vector<pal_device> Platform::getDummyPalDevices(const AudioPortConfig& mixPortConfig) const {
-    struct pal_device dummyDevice = {};
-
-    dummyDevice.config.sample_rate = Platform::kDefaultOutputSampleRate;
-    dummyDevice.config.bit_width = Platform::kDefaultPCMBidWidth;
-    dummyDevice.config.aud_fmt_id = Platform::kDefaultPalPCMFormat;
-    dummyDevice.config.ch_info.channels = 2;
-
-    if (isInputMixPortConfig(mixPortConfig)) {
-        dummyDevice.id = PAL_DEVICE_IN_DUMMY;
-    } else {
-        dummyDevice.id = PAL_DEVICE_OUT_DUMMY;
-    }
-
-    return {dummyDevice};
-}
-
 /**
  * API is common for both Output and input streams
  */
 std::vector<pal_device> Platform::configureAndFetchPalDevices(
         const AudioPortConfig& mixPortConfig, const Usecase& tag,
-        const std::vector<AudioDevice>& devices, const bool dummyDevice) const {
-    if (devices.empty()) {
-        if (dummyDevice) {
-            return getDummyPalDevices(mixPortConfig);
-        } else {
-            LOG(ERROR) << __func__ << " the set devices is empty";
-            return {};
-        }
+        const std::vector<AudioDevice>& devices) const {
+    if (devices.empty() || hasNoneDevice(devices)) {
+        return {getDefaultDummyDevice(isInputMixPortConfig(mixPortConfig))};
     }
     auto palDevices = convertToPalDevices(devices);
 
@@ -422,9 +400,8 @@ std::vector<pal_device> Platform::configureAndFetchPalDevices(
 }
 
 int32_t Platform::setDevice(pal_stream_handle_t* handle, const AudioPortConfig& mixPortConfig,
-                            const Usecase& tag, const std::vector<AudioDevice>& devices,
-                            const bool dummyDevice) const {
-    auto palDevice = configureAndFetchPalDevices(mixPortConfig, tag, devices, dummyDevice);
+                            const Usecase& tag, const std::vector<AudioDevice>& devices) const {
+    auto palDevice = configureAndFetchPalDevices(mixPortConfig, tag, devices);
     return ::pal_stream_set_device(handle, palDevice.size(), palDevice.data());
 }
 
@@ -871,20 +848,6 @@ void Platform::updateScreenRotation(const IModule::ScreenRotation in_rotation) n
     mCurrentScreenRotation = in_rotation;
 }
 
-void Platform::setRotation() const noexcept {
-    pal_param_device_rotation_t paramDeviceRotation{};
-    paramDeviceRotation.rotation_type =
-        (mCurrentScreenRotation == IModule::ScreenRotation::DEG_270) ?
-        PAL_SPEAKER_ROTATION_RL : PAL_SPEAKER_ROTATION_LR;
-
-    if (int32_t ret = ::pal_set_param(PAL_PARAM_ID_DEVICE_ROTATION,
-                                      &paramDeviceRotation,
-                                      sizeof(pal_param_device_rotation_t)); ret) {
-        LOG(ERROR) << __func__ << ": PAL_PARAM_ID_DEVICE_ROTATION failed： " << ret;
-        return;
-    }
-}
-
 IModule::ScreenRotation Platform::getCurrentScreenRotation() const noexcept {
     return mCurrentScreenRotation;
 }
@@ -922,21 +885,64 @@ bool Platform::setVendorParameters(
     return true;
 }
 
+void Platform::reconfigureA2DP() noexcept {
+    pal_param_bta2dp_t param {.reconfig = true};
+    if (auto ret = ::pal_set_param(PAL_PARAM_ID_BT_A2DP_RECONFIG, reinterpret_cast<void*>(&param),
+                                   sizeof(pal_param_bta2dp_t));
+        ret != 0) {
+        LOG(ERROR) << __func__ << ": BT A2DP reconfig failed";
+        return;
+    }
+    LOG(VERBOSE) << __func__ << ": BT A2DP reconfigured";
+}
+
+void Platform::doBleSuspend(const bool suspend) noexcept {
+    /* Todo remove reconfig mutex after making reconfig callback sync with Module binder thread */
+    std::lock_guard l(AudioExtension::reconfig_wait_mutex_);
+    pal_param_bta2dp_t param_bt_a2dp;
+    param_bt_a2dp.is_suspend_setparam = true;
+
+    if (suspend) {
+        param_bt_a2dp.a2dp_suspended = true;
+        param_bt_a2dp.a2dp_capture_suspended = true;
+    } else {
+        param_bt_a2dp.a2dp_suspended = false;
+        param_bt_a2dp.a2dp_capture_suspended = false;
+    }
+    param_bt_a2dp.is_in_call = (mCallMode != AUDIO_MODE_NORMAL);
+
+    auto doSetParam = [&](uint32_t paramId) -> bool {
+        if (auto ret = pal_set_param(paramId, reinterpret_cast<void*>(&param_bt_a2dp),
+                                     sizeof(param_bt_a2dp));
+            ret != 0) {
+            LOG(ERROR) << " doBleSuspend :" << "pal_set_param failed for param id:" << paramId;
+            return false;
+        }
+        return true;
+    };
+
+    param_bt_a2dp.dev_id = PAL_DEVICE_OUT_BLUETOOTH_BLE;
+    auto isOk = doSetParam(PAL_PARAM_ID_BT_A2DP_SUSPENDED);
+
+    param_bt_a2dp.dev_id = PAL_DEVICE_IN_BLUETOOTH_BLE;
+    isOk = isOk && doSetParam(PAL_PARAM_ID_BT_A2DP_CAPTURE_SUSPENDED);
+
+    param_bt_a2dp.dev_id = PAL_DEVICE_OUT_BLUETOOTH_BLE_BROADCAST;
+    isOk = isOk && doSetParam(PAL_PARAM_ID_BT_A2DP_SUSPENDED);
+
+    LOG_IF(INFO, isOk) << __func__ << ": BLE status: " << (suspend ? "suspended" : "resumed");
+}
+
 bool Platform::setBluetoothParameters(const char* kvpairs) {
+    if (mIsScoManagedbyAudio) {
+        LOG(INFO) << __func__ << ": sco managed by audio: hence ignored ";
+        return true;
+    }
     struct str_parms* parms = NULL;
     int ret = 0, val = 0;
     char value[256];
     LOG(VERBOSE) << __func__ << "kvpairs " << kvpairs;
     parms = str_parms_create_str(kvpairs);
-    ret = str_parms_get_str(parms, AUDIO_PARAMETER_RECONFIG_A2DP, value, sizeof(value));
-    if (ret >= 0) {
-        pal_param_bta2dp_t param_bt_a2dp;
-        param_bt_a2dp.reconfig = true;
-
-        LOG(VERBOSE) << __func__ << " BT A2DP Reconfig command received";
-        ret = pal_set_param(PAL_PARAM_ID_BT_A2DP_RECONFIG, (void*)&param_bt_a2dp,
-                            sizeof(pal_param_bta2dp_t));
-    }
     ret = str_parms_get_str(parms, "A2dpSuspended", value, sizeof(value));
     if (ret >= 0) {
         pal_param_bta2dp_t param_bt_a2dp;
@@ -1203,35 +1209,6 @@ bool Platform::setBluetoothParameters(const char* kvpairs) {
         ret = pal_set_param(PAL_PARAM_ID_BT_A2DP_CAPTURE_SUSPENDED, (void*)&param_bt_a2dp,
                             sizeof(pal_param_bta2dp_t));
     }
-    ret = str_parms_get_str(parms, "LeAudioSuspended", value, sizeof(value));
-    if (ret >= 0) {
-        pal_param_bta2dp_t param_bt_a2dp;
-        param_bt_a2dp.is_suspend_setparam = true;
-
-        if (strcmp(value, "true") == 0) {
-            param_bt_a2dp.a2dp_suspended = true;
-            param_bt_a2dp.a2dp_capture_suspended = true;
-        } else {
-            param_bt_a2dp.a2dp_suspended = false;
-            param_bt_a2dp.a2dp_capture_suspended = false;
-        }
-
-        param_bt_a2dp.is_in_call = (mCallMode != AUDIO_MODE_NORMAL);
-
-        LOG(INFO) << __func__ << " BT LEA Suspended = ," << value << " command received";
-        // Synchronize the suspend/resume calls from setparams and reconfig_cb
-        std::unique_lock<std::mutex> guard(AudioExtension::reconfig_wait_mutex_);
-        param_bt_a2dp.dev_id = PAL_DEVICE_OUT_BLUETOOTH_BLE;
-        ret = pal_set_param(PAL_PARAM_ID_BT_A2DP_SUSPENDED, (void*)&param_bt_a2dp,
-                            sizeof(pal_param_bta2dp_t));
-
-        param_bt_a2dp.dev_id = PAL_DEVICE_IN_BLUETOOTH_BLE;
-        ret = pal_set_param(PAL_PARAM_ID_BT_A2DP_CAPTURE_SUSPENDED, (void*)&param_bt_a2dp,
-                            sizeof(pal_param_bta2dp_t));
-        param_bt_a2dp.dev_id = PAL_DEVICE_OUT_BLUETOOTH_BLE_BROADCAST;
-        ret = pal_set_param(PAL_PARAM_ID_BT_A2DP_SUSPENDED, (void*)&param_bt_a2dp,
-                            sizeof(pal_param_bta2dp_t));
-    }
     if (parms)
         str_parms_destroy(parms);
     return true;
@@ -1312,7 +1289,7 @@ PlaybackRateStatus Platform::setPlaybackRate(
         pal_stream_handle_t* handle, const Usecase& tag,
         const ::aidl::android::media::audio::common::AudioPlaybackRate& playbackRate) {
 
-    if (!usecaseSupportsOffloadSpeed(tag)) {
+    if (!supportsPlaybackRate(tag)) {
         return PlaybackRateStatus::UNSUPPORTED;
     }
 
@@ -1437,6 +1414,24 @@ void Platform::setHdrOnPalDevice(pal_device* palDeviceIn) {
 
 }
 
+int Platform::setAudioZoomFactor(pal_stream_handle_t* mPalHandle, float const& audioZoomFactor) {
+    int ret = 0;
+    mAudioZoomFactor = audioZoomFactor;
+    auto byteSize = sizeof(pal_param_payload) + sizeof(float);
+    auto bytes = std::make_unique<uint8_t[]>(byteSize);
+    auto palParamPayload = reinterpret_cast<pal_param_payload*>(bytes.get());
+    palParamPayload->payload_size = sizeof(float);
+    auto zoomPtr = reinterpret_cast<float*>(bytes.get() + sizeof(pal_param_payload));
+    *zoomPtr = audioZoomFactor;
+    LOG(DEBUG) << __func__ << ": zoom factor = " << *zoomPtr;
+    if (ret = ::pal_stream_set_param(
+                mPalHandle, PAL_PARAM_ID_AUDIO_ZOOM_FACTOR, palParamPayload);
+        ret) {
+        LOG(ERROR) << __func__ << ": failed to set PAL_PARAM_ID_AUDIO_ZOOM_FACTOR, ret=" << ret;
+    }
+    return ret;
+}
+
 void Platform::configurePalDevices(
         const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig,
         std::vector<pal_device>& palDevices) {
@@ -1465,6 +1460,15 @@ void Platform::configurePalDevices(
         (isHdrArmEnable) || (isHdrSpfEnable && (isSourceCamCorder || isMic))) {
         std::for_each(palDevices.begin(), palDevices.end(),
                       [&](auto& palDevice) { this->setHdrOnPalDevice(&palDevice); });
+    }
+
+    const bool audioZoomEnabled = isAudioZoomEnabled();
+    LOG(DEBUG) << __func__ << ": audioZoomEnabled=" << audioZoomEnabled
+               << " isSourceCamCorder=" << isSourceCamCorder;
+    if (audioZoomEnabled && isSourceCamCorder) {
+        std::for_each(palDevices.begin(), palDevices.end(), [&](auto& palDevice) {
+            setPalDeviceCustomKey(palDevice, "audio-record-zoom-on");
+        });
     }
 }
 
@@ -1636,6 +1640,33 @@ std::vector<MicrophoneDynamicInfo> Platform::getMicrophoneDynamicInfo(
     return result;
 }
 
+bool Platform::isScoManagedByAudio() const noexcept {
+    return mIsScoManagedbyAudio;
+}
+
+void Platform::onInitBluetoothPrep() {
+    /** BT HFP offload sync with BTHost; managed by system property and owned by BT */
+    const std::string kIsHFPOffloadSyncProp = "bluetooth.sco.managed_by_audio";
+    mIsScoManagedbyAudio = ::android::base::GetBoolProperty(kIsHFPOffloadSyncProp, false);
+    LOG(INFO) << __func__ << " :SCO is managed by Audio: " << mIsScoManagedbyAudio;
+    if (!mIsScoManagedbyAudio) {
+       if (int32_t ret = ::pal_set_param(PAL_PARAM_ID_DISABLE_HFP_SYNC, nullptr, 0); ret) {
+           LOG(ERROR) << __func__ << ": PAL_PARAM_ID_DISABLE_BT_HFP_SYNC failed";
+       }
+    }
+}
+
+void Platform::onInitSuccess() {
+    {
+        mOffloadSpeedSupported =
+                ::android::base::GetBoolProperty("vendor.audio.offload.playspeed", true);
+        MicrophoneInfoParser micInfoParser;
+        mMicrophoneInfo = micInfoParser.getMicrophoneInfo();
+        mMicrophoneDynamicInfoMap = micInfoParser.getMicrophoneDynamicInfoMap();
+    }
+    onInitBluetoothPrep();
+}
+
 Platform::Platform() {
     initUsecaseOpMap();
     if (int32_t ret = pal_init(); ret) {
@@ -1651,10 +1682,8 @@ Platform::Platform() {
     }
     mSndCardStatus = CARD_STATUS_ONLINE;
     LOG(VERBOSE) << __func__ << " pal register global callback successful";
-    mOffloadSpeedSupported = property_get_bool("vendor.audio.offload.playspeed", true);
-    MicrophoneInfoParser micInfoParser;
-    mMicrophoneInfo = micInfoParser.getMicrophoneInfo();
-    mMicrophoneDynamicInfoMap = micInfoParser.getMicrophoneDynamicInfoMap();
+
+    onInitSuccess();
 }
 
 // static
