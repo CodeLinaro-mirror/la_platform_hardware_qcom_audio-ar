@@ -1234,6 +1234,9 @@ ndk::ScopedAStatus Telephony::startCall() {
     if (mIsDeviceMuted) {
         configureDeviceMute();
     }
+    if (mIsBypassVoiceNsRxCfg) {
+        configureVoiceNsRxConfigMode();
+    }
     if (mSetUpdates.mIsCrsCall) {
         mPlatform.setStreamMicMute(mPalHandle, true);
         LOG(DEBUG) << __func__ << ": CRS usecase mute TX";
