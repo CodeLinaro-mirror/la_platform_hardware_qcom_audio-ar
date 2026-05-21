@@ -256,6 +256,11 @@ void StreamInPrimary::resume() {
 
 ::android::status_t StreamInPrimary::transfer(void* buffer, size_t frameCount,
                                               size_t* actualFrameCount, int32_t* latencyMs) {
+    if (frameCount == 0) {
+        *actualFrameCount = 0;
+        return ::android::OK;
+    }
+
     int32_t bytesRead = 0;
 
     if (!mPalHandle) {
