@@ -78,8 +78,8 @@ static const Descriptor kEqualizerDesc = {
                    .flags = {.type = Flags::Type::INSERT,
                              .volume = Flags::Volume::CTRL,
                              .hwAcceleratorMode = Flags::HardwareAccelerator::TUNNEL,
-                             .deviceIndication = true,
-                             .offloadIndication = true},
+                             .offloadIndication = true,
+                             .deviceIndication = true},
                    .name = kEqualizerEffectName,
                    .implementor = "Qualcomm Technologies Inc."},
         .capability = kEqualizerCapabilites};
@@ -101,8 +101,8 @@ static const Descriptor kBassBoostDesc = {
                    .flags = {.type = Flags::Type::INSERT,
                              .volume = Flags::Volume::CTRL,
                              .hwAcceleratorMode = Flags::HardwareAccelerator::TUNNEL,
-                             .deviceIndication = true,
-                             .offloadIndication = true},
+                             .offloadIndication = true,
+                             .deviceIndication = true},
                    .name = kBassBoostEffectName,
                    .implementor = "Qualcomm Technologies Inc."},
         .capability = kBassBoostCap};
@@ -122,8 +122,8 @@ static const Descriptor kVirtualizerDesc = {
                    .flags = {.type = Flags::Type::INSERT,
                              .volume = Flags::Volume::CTRL,
                              .hwAcceleratorMode = Flags::HardwareAccelerator::TUNNEL,
-                             .deviceIndication = true,
-                             .offloadIndication = true},
+                             .offloadIndication = true,
+                             .deviceIndication = true},
                    .name = kVirtualizerEffectName,
                    .implementor = "Qualcomm Technologies Inc."},
         .capability = kVirtualizerCap};

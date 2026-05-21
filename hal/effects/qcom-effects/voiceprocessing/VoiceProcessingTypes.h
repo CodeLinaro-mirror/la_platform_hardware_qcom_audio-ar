@@ -28,9 +28,9 @@ static const std::string kNoiseSuppressionEffectName = "ns";
 
 static Flags kVoiceProcessingFlags = {
         .type = Flags::Type::PRE_PROC,
-        .deviceIndication = true,
         .hwAcceleratorMode = Flags::HardwareAccelerator::TUNNEL,
         .offloadIndication = true,
+        .deviceIndication = true,
 };
 
 static const std::vector<Range::AcousticEchoCancelerRange> kAcousticEchoCancelerRanges = {
