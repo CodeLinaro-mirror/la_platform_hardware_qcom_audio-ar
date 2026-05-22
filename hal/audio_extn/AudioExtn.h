@@ -26,8 +26,8 @@
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license: 
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -170,6 +170,10 @@ public:
     int karaoke_start();
     int karaoke_stop();
     int karaoke_close();
+
+    //BT Aurachat
+    static int bt_achat_feature_init(bool is_feature_enabled);
+    static void audio_extn_btachat_set_parameters(std::shared_ptr<AudioDevice> adev, struct str_parms *parms);
 
     /* start kpi optimize perf apis */
     static void audio_extn_kpi_optimize_feature_init(bool is_feature_enabled);

@@ -34,8 +34,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -71,6 +71,14 @@ snd_device_to_mic_map_t AudioDevice::microphone_maps[PAL_MAX_INPUT_DEVICES];
 bool AudioDevice::mic_characteristics_available = false;
 
 card_status_t AudioDevice::sndCardState = CARD_STATUS_ONLINE;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+void achat_reset_acquire_on_ssr_down(void);
+#ifdef __cplusplus
+}
+#endif
 
 struct audio_string_to_enum {
     const char* name;
@@ -647,6 +655,10 @@ static int adev_pal_global_callback(uint32_t event_id, uint32_t *event_data,
         AudioDevice::sndCardState = (card_status_t)*event_data;
         AHAL_DBG("sound card status changed %d sndCardState %d",
               *event_data, AudioDevice::sndCardState);
+        if (*event_data == 0) {
+            AHAL_DBG("PAL_SND_CARD_STATE: DOWN -> resetting TX Acquire to 0");
+            achat_reset_acquire_on_ssr_down();
+        }
         break;
     default :
        AHAL_ERR("Invalid event id:%d", event_id);
@@ -1134,6 +1146,8 @@ int AudioDevice::Init(hw_device_t **device, const hw_module_t *module) {
     AudioExtn::a2dp_source_feature_init(property_get_bool("vendor.audio.feature.a2dp_offload.enable", false));
 
     AudioExtn::audio_extn_fm_init();
+    AudioExtn::bt_achat_feature_init(true);
+
     AudioExtn::audio_extn_kpi_optimize_feature_init(
             property_get_bool("vendor.audio.feature.kpi_optimize.enable", false));
     AudioExtn::battery_listener_feature_init(
