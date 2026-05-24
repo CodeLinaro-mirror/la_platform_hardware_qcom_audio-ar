@@ -66,7 +66,9 @@ LOCAL_CFLAGS += \
     -Wall \
     -Werror \
     -Wno-unused-function \
-    -Wno-unused-variable
+    -Wno-unused-variable \
+    -fstack-protector-strong \
+    -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2
 
 LOCAL_CPPFLAGS += -fexceptions
 
@@ -78,7 +80,6 @@ LOCAL_SHARED_LIBRARIES := \
     libcutils \
     libdl \
     libexpat \
-    liblog \
     libar-pal
 
 LOCAL_C_INCLUDES := \
@@ -110,7 +111,9 @@ LOCAL_CFLAGS += \
     -Wall \
     -Werror \
     -Wno-unused-function \
-    -Wno-unused-variable
+    -Wno-unused-variable \
+    -fstack-protector-strong \
+    -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2
 
 LOCAL_SHARED_LIBRARIES := \
     libaudioroute \
@@ -120,7 +123,6 @@ LOCAL_SHARED_LIBRARIES := \
     libcutils \
     libdl \
     libexpat \
-    liblog \
     libar-pal
 
 LOCAL_C_INCLUDES := \
@@ -150,7 +152,9 @@ LOCAL_CFLAGS += \
     -Wall \
     -Werror \
     -Wno-unused-function \
-    -Wno-unused-variable
+    -Wno-unused-variable \
+    -fstack-protector-strong \
+    -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2
 
 LOCAL_SHARED_LIBRARIES := \
     libaudioroute \
@@ -160,7 +164,6 @@ LOCAL_SHARED_LIBRARIES := \
     libcutils \
     libdl \
     libexpat \
-    liblog \
     libar-pal
 
 LOCAL_C_INCLUDES := \
@@ -189,6 +192,12 @@ LOCAL_VENDOR_MODULE := true
 LOCAL_SRC_FILES:= \
         PowerPolicyClient.cpp \
         power_policy_launcher.cpp
+
+LOCAL_CFLAGS += \
+    -Wall \
+    -Werror \
+    -fstack-protector-strong \
+    -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2
 
 LOCAL_C_INCLUDES := \
         $(LOCAL_PATH)/.. \
@@ -231,7 +240,9 @@ LOCAL_CFLAGS += \
     -Wall \
     -Werror \
     -Wno-unused-function \
-    -Wno-unused-variable
+    -Wno-unused-variable \
+    -fstack-protector-strong \
+    -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2
 
 LOCAL_SHARED_LIBRARIES := \
     libaudioaidlcommon \
