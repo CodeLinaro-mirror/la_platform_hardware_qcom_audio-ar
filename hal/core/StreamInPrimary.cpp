@@ -153,6 +153,7 @@ ndk::ScopedAStatus StreamInPrimary::configureConnectedDevices_I() {
             }
         }
     } else if (mTag == Usecase::VOIP_RECORD) {
+        mPlatform.configurePalDevicesCustomKey(connectedPalDevices, "");
         if (mPlatform.getVoiceCueOnVoipEnable()) {
             mPlatform.configurePalDevicesCustomKey(connectedPalDevices, "voicecue");
             LOG(INFO) << __func__ << ": setting custom key as voicecue";

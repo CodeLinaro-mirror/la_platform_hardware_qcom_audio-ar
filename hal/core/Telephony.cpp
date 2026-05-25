@@ -947,9 +947,16 @@ void Telephony:: updateVoiceCue(uint32_t usecaseMask) {
     std::scoped_lock lock{mLock};
     if (usecaseMask & UV_FLUENCE_TELEPHONY_BIT) {
         mIsVoiceCueEnabled = true;
+        if (mPalHandle != nullptr) {
+            updateDevices();
+        }
+
     } else {
         mIsVoiceCueEnabled = false;
-    }
+        if (mPalHandle != nullptr) {
+            updateDevices();
+        }
+   }
     LOG(INFO) << __func__ << ": is enabled: " << mIsVoiceCueEnabled;
 }
 
@@ -1643,16 +1650,15 @@ void Telephony::updateDevices() {
         }
     }
 
-    //set or remove custom key for hac mode
+    strlcpy(palDevices[0].custom_config.custom_key, "", sizeof(palDevices[0].custom_config.custom_key));
+    //set custom key for hac mode
     if (mTelecomConfig.isHacEnabled.has_value() && mTelecomConfig.isHacEnabled.value().value &&
         palDevices[0].id == PAL_DEVICE_OUT_HANDSET) {
         strlcpy(palDevices[0].custom_config.custom_key, "HAC",
                 sizeof(palDevices[0].custom_config.custom_key));
         LOG(VERBOSE) << __func__ << "setting custom key as " << palDevices[0].custom_config.custom_key;
-    } else {
-        strlcpy(palDevices[0].custom_config.custom_key, "",
-                sizeof(palDevices[0].custom_config.custom_key));
     }
+    //set custom key for voicecue mode
     if (mIsVoiceCueEnabled) {
         strlcpy(palDevices[1].custom_config.custom_key, "voicecue",
                 sizeof(palDevices[1].custom_config.custom_key));

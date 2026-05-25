@@ -250,6 +250,8 @@ class Module final : public ::aidl::android::hardware::audio::core::BnModule,
     uint8_t* stringToUint8Array(const std::string&& str, size_t* size);
     // parse the usecase specific enable/disable state from param recieved by APK
     static bool parseUvVoiceCueStatusConfig(const std::string& value, uint32_t* usecaseMask);
+    // Update voice cue enable/disable from param recieved from APK
+    void reconfigureVoiceCueDevices();
 
     // start of module parameters handling
     bool processSetVendorParameters(
