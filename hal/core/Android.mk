@@ -50,9 +50,13 @@ LOCAL_HEADER_LIBRARIES :=  \
     libmedia_helper_headers \
     libarpal_headers
 
-#Enable Hardware timestamp for Android W, V and U
-ifneq (,$(filter U UpsideDownCake 14 V VanillaIceCream 15 W Baklava 16, $(PLATFORM_VERSION)))
-LOCAL_CPPFLAGS += -DHARDWARE_TIMESTAMP
+#Enable Hardware timestamp for Android U, V and in Android W only for Nord Gen5
+ifneq (,$(filter U UpsideDownCake 14 V VanillaIceCream 15, $(PLATFORM_VERSION)))
+    LOCAL_CPPFLAGS += -DHARDWARE_TIMESTAMP
+else ifneq (,$(filter W Baklava 16, $(PLATFORM_VERSION)))
+    ifneq (,$(filter $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), gen5_gvm gen5_gvm_gy))
+    LOCAL_CPPFLAGS += -DHARDWARE_TIMESTAMP
+    endif
 endif
 
 #    defaults: [
