@@ -10,6 +10,11 @@ AUDIO_USE_STUB_HAL := true
 endif
 endif
 
+ifeq ($(AUDIO_USE_STUB_HAL), true)
+PRODUCT_PROPERTY_OVERRIDES += \
+    vendor.audio.hal.stubmode=1
+endif
+
 ifneq ($(AUDIO_USE_STUB_HAL), true)
 TARGET_USES_AOSP_FOR_AUDIO := false
 
