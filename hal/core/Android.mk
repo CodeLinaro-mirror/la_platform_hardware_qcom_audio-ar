@@ -98,7 +98,6 @@ LOCAL_SHARED_LIBRARIES := \
     $(LATEST_ANDROID_HARDWARE_AUDIO_EFFECT) \
     android.hardware.audio.core.sounddose-V1-ndk \
     libar-pal \
-    libaudioserviceexampleimpl \
     libaudioplatformconverter.qti \
     qti-audio-types-aidl-V1-ndk
 
