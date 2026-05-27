@@ -17,7 +17,13 @@ ifeq ($(PLATFORM_VERSION),16)
     LOCAL_VINTF_FRAGMENTS += manifest_audiocorehal_default_16.xml
 else ifneq (,$(filter 17 CinnamonBun,$(PLATFORM_VERSION)))
     # Android 17 (CinnamonBun) requires updated manifest with audio core HAL v4
-    LOCAL_VINTF_FRAGMENTS += manifest_audiocorehal_default_17.xml
+    ifeq ($(AUDIO_USE_STUB_HAL), true)
+        # Stub-only mode: default.so registers IModule/default → V4
+        LOCAL_VINTF_FRAGMENTS += manifest_audiocorehal_default_17.xml
+    else
+        # QTI mode: qti.so registers IModule/default → exclude it here
+        LOCAL_VINTF_FRAGMENTS += manifest_audiocorehal_default_17_qti.xml
+    endif
 else
     LOCAL_VINTF_FRAGMENTS += manifest_audiocorehal_default.xml
 endif
