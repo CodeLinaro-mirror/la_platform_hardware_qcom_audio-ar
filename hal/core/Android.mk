@@ -25,6 +25,10 @@ LOCAL_CFLAGS += -Wno-writable-strings
 LOCAL_VINTF_FRAGMENTS   := \
     ../../configs/common/manifest_non_qmaa.xml
 
+ifneq (,$(filter 17 CinnamonBun,$(PLATFORM_VERSION)))
+    LOCAL_VINTF_FRAGMENTS += manifest_audiocorehal_qti_17.xml
+endif
+
 LOCAL_SRC_FILES := \
     CoreService.cpp \
     Bluetooth.cpp \
