@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -18,8 +18,6 @@
 #include <system/audio.h>
 
 using aidl::android::hardware::audio::common::AudioOffloadMetadata;
-using aidl::android::hardware::audio::common::getChannelCount;
-using aidl::android::hardware::audio::common::getFrameSizeInBytes;
 using aidl::android::hardware::audio::common::SinkMetadata;
 using aidl::android::hardware::audio::common::SourceMetadata;
 using aidl::android::media::audio::common::AudioDevice;
@@ -32,8 +30,6 @@ using aidl::android::media::audio::common::AudioSource;
 using aidl::android::media::audio::common::MicrophoneDynamicInfo;
 using aidl::android::media::audio::common::MicrophoneInfo;
 
-using ::aidl::android::hardware::audio::common::getChannelCount;
-using ::aidl::android::hardware::audio::common::getFrameSizeInBytes;
 using ::aidl::android::hardware::audio::core::IStreamCallback;
 using ::aidl::android::hardware::audio::core::IStreamCommon;
 using ::aidl::android::hardware::audio::core::StreamDescriptor;
@@ -239,7 +235,7 @@ ndk::ScopedAStatus StreamInPrimary::configureMMapStream(int32_t* fd, int64_t* bu
 
     std::get<MMapRecord>(mExt).setPalHandle(mPalHandle);
 
-    const auto frameSize = ::aidl::android::hardware::audio::common::getFrameSizeInBytes(
+    const auto frameSize = getFrameSizeInBytes(
             mMixPortConfig.format.value(), mMixPortConfig.channelMask.value());
     int32_t ret = std::get<MMapRecord>(mExt).createMMapBuffer(frameSize, fd, burstSizeFrames, flags,
                                                               bufferSizeFrames);
@@ -733,7 +729,8 @@ void StreamInPrimary::updatePalDeviceForBusAddr(struct pal_device* devices, uint
     std::unordered_map<std::string, pal_device_id_t> busAddressMap = {
             {"BUS04_INPUT", PAL_DEVICE_IN_HANDSET_MIC},
             {"BUS09_INPUT_FRONT_PASSENGER", PAL_DEVICE_IN_A2B_MIC},
-            {"BUS17_INPUT_REAR_SEAT", PAL_DEVICE_IN_A2B2_MIC}};
+            {"BUS17_INPUT_REAR_SEAT", PAL_DEVICE_IN_A2B2_MIC},
+            {"BUS24_INPUT_EAVB", PAL_DEVICE_IN_EAVB}};
 
     for (uint32_t devIdx = 0; devIdx < numDevices; devIdx++) {
         auto it = busAddressMap.find(busAddressString);
@@ -778,6 +775,9 @@ void StreamInPrimary::configure() {
         LOG(DEBUG) << __func__ << " : PCM_RECORD usecase" << "Bus Address: " << attr->bus_addr;
         if ((std::strcmp(attr->bus_addr, "BUS04_INPUT") == 0) || (std::strcmp(attr->bus_addr, "BUS09_INPUT_FRONT_PASSENGER") == 0) || (std::strcmp(attr->bus_addr, "BUS17_INPUT_REAR_SEAT") == 0)) {
             attr->type = PAL_STREAM_CAPTURE_BUS;
+        }
+        else if (std::strcmp(attr->bus_addr, "BUS24_INPUT_EAVB") == 0) {
+            attr->type = PAL_STREAM_EAVB_CAPTURE;
         }
         else {
         attr->type = PAL_STREAM_DEEP_BUFFER;

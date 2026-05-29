@@ -23,7 +23,6 @@
 #include <vector>
 
 #define LOG_TAG "AHAL_ModulePrimary_QTI"
-#include <Utils.h>
 #include <android-base/logging.h>
 #include <cutils/str_parms.h>
 
@@ -56,12 +55,8 @@ using aidl::android::media::audio::common::MicrophoneInfo;
 using aidl::android::media::audio::common::Boolean;
 using aidl::android::media::audio::common::AudioDeviceAddress;
 
-using ::aidl::android::hardware::audio::common::getFrameSizeInBytes;
-using ::aidl::android::hardware::audio::common::isBitPositionFlagSet;
-using ::aidl::android::hardware::audio::common::isValidAudioMode;
 using ::aidl::android::hardware::audio::common::SinkMetadata;
 using ::aidl::android::hardware::audio::common::SourceMetadata;
-using ::aidl::android::hardware::audio::common::getChannelCount;
 using ::aidl::android::hardware::audio::core::AudioPatch;
 using ::aidl::android::hardware::audio::core::AudioRoute;
 using ::aidl::android::hardware::audio::core::IStreamIn;
@@ -617,6 +612,16 @@ void ModulePrimary::onSetGenericParameters(const std::vector<VendorParameter>& p
             mPlatform.setTranslationRecordState(isOn);
             LOG(INFO) << __func__ << ": PCM Record FFECNS for Translation:" << isOn;
         }
+        else if (Parameters::kVoice_Assistant_Zone == param.id)
+        {
+            const auto zoneid = static_cast<uint32_t>(getInt64FromString(paramValue));
+            mPlatform.updateVoiceAssistantZone(zoneid);
+        }
+        else if (Parameters::kInput_Mic_Zone == param.id)
+        {
+            const auto zoneid = static_cast<uint32_t>(getInt64FromString(paramValue));
+            mPlatform.updateInputAssistantZone(zoneid);
+        }
     }
 }
 
@@ -905,6 +910,8 @@ ModulePrimary::SetParameterToFeatureMap ModulePrimary::fillSetParameterToFeature
                                  {Parameters::kInCallMusic, Feature::GENERIC},
                                  {Parameters::kTranslateRecord, Feature::GENERIC},
                                  {Parameters::kUHQA, Feature::GENERIC},
+                                 {Parameters::kVoice_Assistant_Zone, Feature::GENERIC},
+                                 {Parameters::kInput_Mic_Zone, Feature::GENERIC},
                                  {Parameters::kFbspCfgWaitTime, Feature::FTM},
                                  {Parameters::kFbspFTMWaitTime, Feature::FTM},
                                  {Parameters::kFbspValiWaitTime, Feature::FTM},

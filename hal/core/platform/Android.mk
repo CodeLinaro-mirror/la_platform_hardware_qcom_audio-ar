@@ -1,6 +1,8 @@
 LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
+
+LOCAL_CFLAGS   += -fstack-protector-strong -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2
 LOCAL_MODULE  := libaudioplatform.qti
 LOCAL_MODULE_OWNER  := qti
 LOCAL_MODULE_TAGS   := optional
@@ -33,7 +35,6 @@ LOCAL_SHARED_LIBRARIES := \
     libstagefright_foundation \
     $(LATEST_ANDROID_MEDIA_AUDIO_COMMON_TYPES) \
     $(LATEST_ANDROID_HARDWARE_AUDIO_CORE) \
-    libaudioaidlcommon \
     qti-audio-types-aidl-V1-ndk \
     libaudioplatformconverter.qti \
     libar-pal

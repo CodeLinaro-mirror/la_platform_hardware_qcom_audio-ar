@@ -1,11 +1,10 @@
 /*
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
 #include <cstddef>
 #define LOG_TAG "BundleContext"
-#include <Utils.h>
 
 #include "OffloadBundleContext.h"
 #include "OffloadBundleTypes.h"

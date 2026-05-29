@@ -1,5 +1,7 @@
 LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
+
+LOCAL_CFLAGS   += -fstack-protector-strong -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2
 LOCAL_MODULE            := libaudiocore.extension
 LOCAL_VENDOR_MODULE     := true
 LOCAL_C_INCLUDES            := $(LOCAL_PATH)/include \
@@ -28,7 +30,6 @@ LOCAL_HEADER_LIBRARIES :=  \
     libarpal_headers
 
 LOCAL_SHARED_LIBRARIES := \
-    libaudioaidlcommon \
     libbase \
     libbinder_ndk \
     libcutils \
@@ -309,6 +310,7 @@ LOCAL_SHARED_LIBRARIES := \
 LOCAL_STATIC_LIBRARIES := libhealthhalutils
 
 include $(BUILD_SHARED_LIBRARY)
+endif
 
 #-------------------------------------------
 #            Build ASRC_LIB
@@ -338,17 +340,21 @@ LOCAL_SHARED_LIBRARIES := \
     libcutils \
     libdl \
     libexpat \
-    liblog \
-    libar-pal
+    libar-pal \
+    qti-audio-types-aidl-V1-ndk \
+    libfmq \
+    $(LATEST_ANDROID_HARDWARE_AUDIO_CORE)
 
 LOCAL_C_INCLUDES := \
     $(TOP)/vendor/qcom/opensource/pal \
-    $(TOP)/vendor/qcom/opensource/audio-hal/primary-hal/hal
+    $(TOP)/vendor/qcom/opensource/audio-hal/primary-hal/hal \
+    $(TOP)/vendor/qcom/opensource/audio-hal-ar/primary-hal/hal \
+    $(TOP)/vendor/qcom/opensource/audio-hal-ar/primary-hal/hal/core/extensions/include \
+    $(TOP)/vendor/qcom/opensource/audio-hal-ar/primary-hal/hal/core/platform/include \
+    $(TOP)/vendor/qcom/opensource/audio-hal-ar/primary-hal/hal/core/utils/include
 
 LOCAL_HEADER_LIBRARIES += libhardware_headers
 LOCAL_HEADER_LIBRARIES += libsystem_headers
 
 include $(BUILD_SHARED_LIBRARY)
 endif # AUDIO_FEATURE_ENABLED_ASRC_EXT
-
-endif

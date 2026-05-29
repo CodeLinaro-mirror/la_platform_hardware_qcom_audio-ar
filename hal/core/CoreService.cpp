@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -16,7 +16,7 @@
 #include <cstdlib>
 #include <ctime>
 
-std::shared_ptr<::qti::audio::core::ModulePrimary> gModuleDefaultQti;
+static std::shared_ptr<aidl::android::hardware::audio::core::IModule> gModuleDefaultQti;
 using namespace ::qti::audio::core;
 auto registerBinderAsService = [](auto &&binder, const std::string &serviceName) {
     AIBinder_setMinSchedulerPolicy(binder.get(), SCHED_NORMAL, ANDROID_PRIORITY_AUDIO);
@@ -28,10 +28,16 @@ auto registerBinderAsService = [](auto &&binder, const std::string &serviceName)
     }
 };
 
+void makeIModuleDefaultQti() {
+    if (gModuleDefaultQti == nullptr) {
+        gModuleDefaultQti = ndk::SharedRefBase::make<::qti::audio::core::ModulePrimary>();
+    }
+}
+
 void registerIModuleDefaultQti() {
-    gModuleDefaultQti = ndk::SharedRefBase::make<::qti::audio::core::ModulePrimary>();
     //start of power policy registration
     AudioExtension::power_policy_feature_init(property_get_bool("vendor.audio.feature.arpowerpolicy.enable", false));
+    makeIModuleDefaultQti();
     const std::string kServiceName =
             std::string(gModuleDefaultQti->descriptor).append("/").append("default");
     registerBinderAsService(gModuleDefaultQti->asBinder(), kServiceName);
@@ -40,4 +46,9 @@ void registerIModuleDefaultQti() {
 extern "C" __attribute__((visibility("default"))) int32_t registerServices() {
     registerIModuleDefaultQti();
     return STATUS_OK;
+}
+
+extern "C" __attribute__((visibility("default"))) void* getIModuleDefaultQti() {
+    makeIModuleDefaultQti();
+    return gModuleDefaultQti.get();
 }

@@ -15,13 +15,12 @@
  */
 
 /*
- * ​​​​​Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
 #define LOG_TAG "AHAL_Telephony_QTI"
-#include <Utils.h>
 #include <android-base/logging.h>
 #include <android/binder_to_string.h>
 #include <hardware/audio.h>
@@ -31,7 +30,6 @@
 #include <qti-audio-core/Utils.h>
 #include <system/audio.h>
 
-using aidl::android::hardware::audio::common::isValidAudioMode;
 using aidl::android::media::audio::common::AudioDevice;
 using aidl::android::media::audio::common::AudioDeviceAddress;
 using aidl::android::media::audio::common::AudioDeviceDescription;
