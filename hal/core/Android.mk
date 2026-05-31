@@ -4,6 +4,8 @@ CURRENT_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
 
+LOCAL_CFLAGS   += -fstack-protector-strong -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2
+
 LOCAL_MODULE            := libaudiocorehal.qti
 LOCAL_VENDOR_MODULE     := true
 LOCAL_MODULE_RELATIVE_PATH := hw
@@ -54,7 +56,7 @@ LOCAL_HEADER_LIBRARIES :=  \
 ifneq (,$(filter U UpsideDownCake 14 V VanillaIceCream 15, $(PLATFORM_VERSION)))
     LOCAL_CPPFLAGS += -DHARDWARE_TIMESTAMP
 else ifneq (,$(filter W Baklava 16 CinnamonBun 17, $(PLATFORM_VERSION)))
-    ifneq (,$(filter $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), gen5_gvm gen5_gvm_gy))
+    ifneq (,$(filter $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)$(TARGET_BOARD_DERIVATIVE_SUFFIX), gen4_gvm_gy gen4_gvm_gy_sgt gen5_gvm gen5_gvm_gy))
     LOCAL_CPPFLAGS += -DHARDWARE_TIMESTAMP
     endif
 endif

@@ -201,6 +201,16 @@ endif
 PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_module_config_primary.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_module_config_primary.xml
 
+#dont push dual bt files for HGY/CMU HYP
+ifneq (,$(filter W Baklava 16, $(PLATFORM_VERSION)))
+ifeq (,$(filter gen4_gvm_gy gen4_gvm_gy_sgt gen4_gvm_cmu, $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)$(TARGET_BOARD_DERIVATIVE_SUFFIX)))
+PRODUCT_COPY_FILES += \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/bluetooth_with_le_qti_audio_policy_configuration_dualbt.xml:$(TARGET_COPY_OUT_VENDOR)/etc/bluetooth_with_le_qti_audio_policy_configuration.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/car_audio_configuration_dualbt.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/car_audio_configuration_dualbt.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/car_audio_configuration_dualbt.xml:$(TARGET_COPY_OUT_VENDOR)/etc/car_audio_configuration_dualbt.xml
+endif
+endif
+
 ifneq (,$(filter gen4_gvm_cmu, $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)$(TARGET_BOARD_DERIVATIVE_SUFFIX)))
 PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/car_audio_configuration_cmu.xml:$(TARGET_COPY_OUT_VENDOR)/etc/car_audio_configuration.xml \
@@ -239,7 +249,6 @@ else
 PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/audio_policy_configuration_7_0.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_configuration.xml
 endif
-
 endif # ends TARGET_GVMGH_SPECIFIC, false
 endif # ends ENABLE_HYP
 
