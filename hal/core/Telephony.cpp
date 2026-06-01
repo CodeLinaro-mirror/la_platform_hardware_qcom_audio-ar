@@ -1231,6 +1231,7 @@ ndk::ScopedAStatus Telephony::startCall() {
         LOG(ERROR) << __func__ << ": pal stream open failed !!" << ret;
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
     }
+    updateVoiceVolume();
     if (int32_t ret = ::pal_stream_start(mPalHandle); ret) {
         LOG(ERROR) << __func__ << ": pal stream start failed !!" << ret;
         pal_stream_close(mPalHandle);
@@ -1240,7 +1241,6 @@ ndk::ScopedAStatus Telephony::startCall() {
     if (mPlatform.getMicMuteStatus()) {
         mPlatform.setStreamMicMute(mPalHandle, true);
     }
-    updateVoiceVolume();
     if (mIsDeviceMuted) {
         configureDeviceMute();
     }
@@ -1693,6 +1693,10 @@ void Telephony::updateDevices() {
     if (mSetUpdates.mIsCrsCall) {
         if (mRxDevice.type.type != AudioDeviceType::OUT_SPEAKER &&
             mRxDevice.type.type != AudioDeviceType::OUT_SPEAKER_EARPIECE) {
+            pal_stream_handle_t* voipRxHandle = mPlatform.getVoipRxStreamHandle();
+            if (voipRxHandle != nullptr) {
+                mHasConcurrentPlayback = true;
+            }
             startCrsLoopback();
         }
     }
