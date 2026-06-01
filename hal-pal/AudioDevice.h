@@ -247,6 +247,7 @@ public:
     void in_set_power_policy(uint8_t enable);
     void out_set_power_policy(uint8_t enable);
     void set_mute_config_for_address(bool muted, char* address);
+    void SetBusPortVolume(const std::string& address, float volume);
 protected:
     AudioDevice() {}
     std::shared_ptr<AudioVoice> VoiceInit();
@@ -257,6 +258,7 @@ protected:
     std::mutex out_list_mutex;
     std::mutex in_list_mutex;
     std::mutex patch_map_mutex;
+    std::map<std::string, float> bus_port_volume_cache_;
     btsco_lc3_cfg_t btsco_lc3_cfg;
     void *offload_effects_lib_;
     offload_effects_start_output fnp_offload_effect_start_output_ = nullptr;

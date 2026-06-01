@@ -508,6 +508,7 @@ public:
     bool sendGaplessMetadata = true;
     int Standby();
     int SetVolume(float left, float right);
+    void SetBusPortVolume(float volume);
     uint64_t GetFramesWritten(struct timespec *timestamp);
     int SetParameters(struct str_parms *parms);
     int Pause();
@@ -567,6 +568,9 @@ protected:
     int FillHalFnPtrs();
     void SetOutputMute(bool muted);
     bool muted_;
+    float bus_port_volume_ = 1.0f;
+    float track_volume_left_  = 1.0f;
+    float track_volume_right_ = 1.0f;
     friend class AudioDevice;
 };
 

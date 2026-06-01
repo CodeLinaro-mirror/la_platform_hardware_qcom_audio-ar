@@ -2164,13 +2164,24 @@ int StreamOutPrimary::SetVolume(float left , float right) {
     AHAL_DBG("Enter: left %f, right %f", left, right);
 
     stream_mutex_.lock();
+    /* Store track volume set by AudioFlinger. In AAOS the effective volume
+     * is track_volume * bus_port_volume — both are independent gain stages.
+     * bus_port_volume_ is set by CarAudioService via adev_set_audio_port_config.
+     * AudioFlinger may send 1.0 (stale APM state) on new stream open which must
+     * not override the bus port gain. */
+    track_volume_left_  = left;
+    track_volume_right_ = right;
+
+    float effectiveLeft  = left  * bus_port_volume_;
+    float effectiveRight = right * bus_port_volume_;
+
     /* free previously cached volume if any */
     if (volume_) {
         free(volume_);
         volume_ = NULL;
     }
 
-    if (left == right) {
+    if (effectiveLeft == effectiveRight) {
         volume_ = (struct pal_volume_data *)malloc(sizeof(struct pal_volume_data)
                     +sizeof(struct pal_channel_vol_kv));
         if (!volume_) {
@@ -2180,7 +2191,7 @@ int StreamOutPrimary::SetVolume(float left , float right) {
         }
         volume_->no_of_volpair = 1;
         volume_->volume_pair[0].channel_mask = 0x03;
-        volume_->volume_pair[0].vol = left;
+        volume_->volume_pair[0].vol = effectiveLeft;
     } else {
         volume_ = (struct pal_volume_data *)malloc(sizeof(struct pal_volume_data)
                     +sizeof(struct pal_channel_vol_kv) * 2);
@@ -2191,9 +2202,9 @@ int StreamOutPrimary::SetVolume(float left , float right) {
         }
         volume_->no_of_volpair = 2;
         volume_->volume_pair[0].channel_mask = 0x01;
-        volume_->volume_pair[0].vol = left;
+        volume_->volume_pair[0].vol = effectiveLeft;
         volume_->volume_pair[1].channel_mask = 0x10;
-        volume_->volume_pair[1].vol = right;
+        volume_->volume_pair[1].vol = effectiveRight;
     }
 
     /* if stream is not opened already cache the volume and set on open */
@@ -2205,12 +2216,26 @@ int StreamOutPrimary::SetVolume(float left , float right) {
     }
 
     /* Also pass volume to audio extensions */
-    AudioExtn::audio_extn_set_volume(streamAttributes_.type, address_, left, right);
+    AudioExtn::audio_extn_set_volume(streamAttributes_.type, address_, effectiveLeft, effectiveRight);
 
 done:
     stream_mutex_.unlock();
     AHAL_DBG("Exit ret: %d", ret);
     return ret;
+}
+
+void StreamOutPrimary::SetBusPortVolume(float volume) {
+    float trackLeft, trackRight;
+    {
+        std::lock_guard<std::mutex> lock(stream_mutex_);
+        bus_port_volume_ = volume;
+        trackLeft  = track_volume_left_;
+        trackRight = track_volume_right_;
+    }
+    /* Recompute effective volume with the new port gain and last known track volume. */
+    AHAL_INFO("SetBusPortVolume: port=%.6f track_l=%.6f track_r=%.6f on %s",
+              volume, trackLeft, trackRight, address_);
+    SetVolume(trackLeft, trackRight);
 }
 
 /* Delay in Us */
