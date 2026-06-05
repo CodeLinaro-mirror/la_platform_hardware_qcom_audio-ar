@@ -119,7 +119,9 @@ AUDIO_MODULES += mm-audio-ftm
 AUDIO_MODULES += libmcs
 AUDIO_MODULES += libquasar
 AUDIO_MODULES += sensors.dynamic_sensor_hal
+ifneq ($(TARGET_HAS_LOW_RAM),true)
 AUDIO_MODULES += libaudiofeaturestats
+endif
 AUDIO_MODULES += libhotword_intf
 AUDIO_MODULES += libcustomva_intf
 AUDIO_MODULES += libVoiceSdk
