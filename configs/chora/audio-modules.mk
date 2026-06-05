@@ -116,6 +116,7 @@ AUDIO_MODULES += ftm_test_config_bourtzi-mtp-snd-card
 AUDIO_MODULES += ftm_test_config_bourtzi-mtp-wcn6450-snd-card
 AUDIO_MODULES += ftm_test_config_bourtzi-qrd-snd-card
 AUDIO_MODULES += ftm_test_config_bourtzi-qrd-wcn6450-snd-card
+AUDIO_MODULES += ftm_test_config_bourtzi-qrd-wsa883x-snd-card
 
 AUDIO_MODULES += audioadsprpcd
 AUDIO_MODULES += MTP_acdb_cal.acdb
