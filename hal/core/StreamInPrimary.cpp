@@ -153,6 +153,7 @@ ndk::ScopedAStatus StreamInPrimary::configureConnectedDevices_I() {
             }
         }
     } else if (mTag == Usecase::VOIP_RECORD) {
+        mPlatform.configurePalDevicesCustomKey(connectedPalDevices, "");
         if (mPlatform.getVoiceCueOnVoipEnable()) {
             mPlatform.configurePalDevicesCustomKey(connectedPalDevices, "voicecue");
             LOG(INFO) << __func__ << ": setting custom key as voicecue";
@@ -256,6 +257,11 @@ void StreamInPrimary::resume() {
 
 ::android::status_t StreamInPrimary::transfer(void* buffer, size_t frameCount,
                                               size_t* actualFrameCount, int32_t* latencyMs) {
+    if (frameCount == 0) {
+        *actualFrameCount = 0;
+        return ::android::OK;
+    }
+
     int32_t bytesRead = 0;
 
     if (!mPalHandle) {

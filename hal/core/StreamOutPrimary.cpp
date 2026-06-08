@@ -305,6 +305,11 @@ void StreamOutPrimary::resume() {
 
 ::android::status_t StreamOutPrimary::transfer(void* buffer, size_t frameCount,
                                                size_t* actualFrameCount, int32_t* latencyMs) {
+    if (frameCount == 0) {
+        *actualFrameCount = 0;
+        return ::android::OK;
+    }
+
     if (!mPalHandle) {
         // configure on first transfer or after stand by
         configure();

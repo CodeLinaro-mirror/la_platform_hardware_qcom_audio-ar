@@ -391,7 +391,7 @@ ndk::ScopedAStatus Module::connectExternalDevice(const AudioPort& in_templateIdA
                 // Check if profiles are non empty because they were populated
                 // by a previous connection. Otherwise, it means that they are
                 // not empty because the mix port has static profiles.
-                for (const auto cp : mConnectedDevicePorts) {
+                for (const auto& cp : mConnectedDevicePorts) {
                     if (cp.second.count(portsIt->id) > 0) {
                         connectedPortsIt->second.insert(portsIt->id);
                         break;
@@ -2072,8 +2072,10 @@ void Module::onSetGenericParameters(const std::vector<VendorParameter>& params) 
             mTelephony->updateVoiceCue(usecaseMask);
             if (usecaseMask & UV_FLUENCE_VOIP_BIT) {
                 mPlatform.setVoiceCueOnVoipEnable(true);
+                reconfigureVoiceCueDevices();
             } else {
                 mPlatform.setVoiceCueOnVoipEnable(false);
+                reconfigureVoiceCueDevices();
             }
         } else if (Parameters::kUvVoiceCueBytes == param.id) {
             updateVoiceCueBytes(std::move(paramValue));
@@ -2462,6 +2464,21 @@ bool Module::parseUvVoiceCueStatusConfig(const std::string& value,
     }
     return true;
 }
+
+void Module::reconfigureVoiceCueDevices() {
+    // Iterate all active input streams
+    std::lock_guard<std::mutex> lock(Module::inListMutex);
+    for (auto& streamIn : Module::mStreamsIn) {
+         auto stream = streamIn.lock();
+         if (!stream) continue;
+
+         auto streamInPrimary =
+             std::static_pointer_cast<StreamInPrimary>(stream);
+         if (streamInPrimary)
+             streamInPrimary->reconfigureConnectedDevices();
+    }
+}
+
 // static
 Module::SetParameterToFeatureMap Module::fillSetParameterToFeatureMap() {
     SetParameterToFeatureMap map{{Parameters::kHdrRecord, Feature::HDR},

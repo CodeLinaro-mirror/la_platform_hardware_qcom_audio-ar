@@ -567,6 +567,9 @@ void Telephony::onExternalDeviceConnectionChanged(const AudioDevice& extDevice,
     } else {
         std::erase(mExternalDevices, extDevice);
     }
+    if (mIsCRSDeviceSupported) {
+        return;
+    }
     if (isBluetoothSCODevice(extDevice) || isBluetoothA2dpDevice(extDevice) ||
         isBluetoothLEBroadcastDevice(extDevice)) {
         LOG(VERBOSE) << __func__ << ": sco/a2dp/ble broadcast no change";
@@ -706,6 +709,8 @@ void Telephony::updateCrsDevice() {
 
 
 AudioDevice Telephony::getMatchingTxDevice(const AudioDevice& rxDevice) {
+    /** Todo: A more comprehensive approach is needed for predicting the Tx device based on the
+     * given Rx device.*/
     auto getComplementDeviceIfAny =
             [&](const AudioDeviceDescription& desc) -> std::optional<AudioDevice> {
         auto itr =
@@ -736,7 +741,8 @@ AudioDevice Telephony::getMatchingTxDevice(const AudioDevice& rxDevice) {
     } else if (rxDevice.type.type == AudioDeviceType::OUT_DEVICE &&
                rxDevice.type.connection == AudioDeviceDescription::CONNECTION_ANALOG) {
         return AudioDevice{.type.type = AudioDeviceType::IN_MICROPHONE};
-    } else if (rxDevice.type.type == AudioDeviceType::OUT_DEVICE &&
+    } else if ((rxDevice.type.type == AudioDeviceType::OUT_DEVICE ||
+                rxDevice.type.type == AudioDeviceType::OUT_HEADSET) &&
                rxDevice.type.connection == AudioDeviceDescription::CONNECTION_BT_SCO) {
         auto found = getComplementDeviceIfAny(
                 AudioDeviceDescription{.type = AudioDeviceType::IN_DEVICE,
@@ -744,10 +750,7 @@ AudioDevice Telephony::getMatchingTxDevice(const AudioDevice& rxDevice) {
         if (found) {
             return found.value();
         }
-        return AudioDevice{.type.type = AudioDeviceType::IN_MICROPHONE};
-    } else if (rxDevice.type.type == AudioDeviceType::OUT_HEADSET &&
-               rxDevice.type.connection == AudioDeviceDescription::CONNECTION_BT_SCO) {
-        auto found = getComplementDeviceIfAny(
+        found = getComplementDeviceIfAny(
                 AudioDeviceDescription{.type = AudioDeviceType::IN_HEADSET,
                                        .connection = AudioDeviceDescription::CONNECTION_BT_SCO});
         if (found) {
@@ -944,9 +947,16 @@ void Telephony:: updateVoiceCue(uint32_t usecaseMask) {
     std::scoped_lock lock{mLock};
     if (usecaseMask & UV_FLUENCE_TELEPHONY_BIT) {
         mIsVoiceCueEnabled = true;
+        if (mPalHandle != nullptr) {
+            updateDevices();
+        }
+
     } else {
         mIsVoiceCueEnabled = false;
-    }
+        if (mPalHandle != nullptr) {
+            updateDevices();
+        }
+   }
     LOG(INFO) << __func__ << ": is enabled: " << mIsVoiceCueEnabled;
 }
 
@@ -1221,6 +1231,7 @@ ndk::ScopedAStatus Telephony::startCall() {
         LOG(ERROR) << __func__ << ": pal stream open failed !!" << ret;
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
     }
+    updateVoiceVolume();
     if (int32_t ret = ::pal_stream_start(mPalHandle); ret) {
         LOG(ERROR) << __func__ << ": pal stream start failed !!" << ret;
         pal_stream_close(mPalHandle);
@@ -1230,9 +1241,11 @@ ndk::ScopedAStatus Telephony::startCall() {
     if (mPlatform.getMicMuteStatus()) {
         mPlatform.setStreamMicMute(mPalHandle, true);
     }
-    updateVoiceVolume();
     if (mIsDeviceMuted) {
         configureDeviceMute();
+    }
+    if (mIsBypassVoiceNsRxCfg) {
+        configureVoiceNsRxConfigMode();
     }
     if (mSetUpdates.mIsCrsCall) {
         mPlatform.setStreamMicMute(mPalHandle, true);
@@ -1637,16 +1650,15 @@ void Telephony::updateDevices() {
         }
     }
 
-    //set or remove custom key for hac mode
+    strlcpy(palDevices[0].custom_config.custom_key, "", sizeof(palDevices[0].custom_config.custom_key));
+    //set custom key for hac mode
     if (mTelecomConfig.isHacEnabled.has_value() && mTelecomConfig.isHacEnabled.value().value &&
         palDevices[0].id == PAL_DEVICE_OUT_HANDSET) {
         strlcpy(palDevices[0].custom_config.custom_key, "HAC",
                 sizeof(palDevices[0].custom_config.custom_key));
         LOG(VERBOSE) << __func__ << "setting custom key as " << palDevices[0].custom_config.custom_key;
-    } else {
-        strlcpy(palDevices[0].custom_config.custom_key, "",
-                sizeof(palDevices[0].custom_config.custom_key));
     }
+    //set custom key for voicecue mode
     if (mIsVoiceCueEnabled) {
         strlcpy(palDevices[1].custom_config.custom_key, "voicecue",
                 sizeof(palDevices[1].custom_config.custom_key));
@@ -1681,6 +1693,10 @@ void Telephony::updateDevices() {
     if (mSetUpdates.mIsCrsCall) {
         if (mRxDevice.type.type != AudioDeviceType::OUT_SPEAKER &&
             mRxDevice.type.type != AudioDeviceType::OUT_SPEAKER_EARPIECE) {
+            pal_stream_handle_t* voipRxHandle = mPlatform.getVoipRxStreamHandle();
+            if (voipRxHandle != nullptr) {
+                mHasConcurrentPlayback = true;
+            }
             startCrsLoopback();
         }
     }

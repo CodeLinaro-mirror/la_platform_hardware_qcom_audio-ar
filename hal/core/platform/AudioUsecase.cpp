@@ -246,7 +246,9 @@ size_t LowLatencyPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
 // [Deep Buffer Start]
 
 size_t DeepBufferPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
-    return kPeriodDurationMs * getSampleRate(mixPortConfig).value() / 1000;
+    const std::string kPeriodSizeProp = "vendor.audio.deep_buffer.period_size";
+    auto PeriodSize = ::android::base::GetUintProperty<size_t>(kPeriodSizeProp, kPeriodDurationMs);
+    return PeriodSize * getSampleRate(mixPortConfig).value() / 1000;
 }
 
 // [Deep Buffer End]
@@ -305,7 +307,7 @@ CompressPlayback::CompressPlayback(
         const ::aidl::android::media::audio::common::AudioOffloadInfo& offloadInfo,
         PlatformStreamCallback* const callback,
         const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig)
-    : mOffloadInfo(offloadInfo), mPlatformStreamCallback(callback), mMixPortConfig(mixPortConfig) {
+    : mOffloadInfo(offloadInfo), mMixPortConfig(mixPortConfig), mPlatformStreamCallback(callback) {
     configureDefault();
 }
 
@@ -990,7 +992,7 @@ CompressCapture::CompressCapture(
         const ::aidl::android::media::audio::common::AudioFormatDescription& format,
         const int32_t sampleRate,
         const ::aidl::android::media::audio::common::AudioChannelLayout& channelLayout)
-    : mCompressFormat(format), mSampleRate(sampleRate), mChannelLayout(channelLayout) {
+    : mCompressFormat(format), mChannelLayout(channelLayout), mSampleRate(sampleRate) {
     if (mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_LC ||
         mCompressFormat.encoding == ::android::MEDIA_MIMETYPE_AUDIO_AAC_ADTS_LC) {
         mPalSndEnc.aac_enc.enc_cfg.aac_enc_mode = Aac::EncodingMode::LC;
