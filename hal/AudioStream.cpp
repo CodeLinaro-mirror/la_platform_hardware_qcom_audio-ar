@@ -4269,7 +4269,8 @@ uint32_t StreamInPrimary::GetBufferSize() {
     } else if (streamAttributes_.type == PAL_STREAM_ULTRA_LOW_LATENCY) {
         return GetBufferSizeForLowLatencyRecord();
     } else if (streamAttributes_.type == PAL_STREAM_DEEP_BUFFER ||
-               streamAttributes_.type == PAL_STREAM_VOICE_CALL_RECORD) {
+               streamAttributes_.type == PAL_STREAM_VOICE_CALL_RECORD ||
+               streamAttributes_.type == PAL_STREAM_VOICE_RECOGNITION) {
         return (config_.sample_rate/ 1000) * AUDIO_CAPTURE_PERIOD_DURATION_MSEC *
             audio_bytes_per_frame(
                     audio_channel_count_from_in_mask(config_.channel_mask),
