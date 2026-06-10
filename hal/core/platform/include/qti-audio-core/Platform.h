@@ -18,6 +18,7 @@
 #include <qti-audio-core/AudioUsecase.h>
 #include <system/audio.h>
 
+#include <optional>
 #include <unordered_map>
 
 namespace qti::audio::core {
@@ -74,7 +75,7 @@ class Platform {
 
     mutable bool mUSBCapEnable;
     int mCallState;
-    int mCallMode;
+    int mCallMode = AUDIO_MODE_NORMAL;
     static Platform& getInstance();
 
     size_t getFrameCount(
@@ -182,7 +183,7 @@ class Platform {
             const ::aidl::android::media::audio::common::AudioPort& dynamicDeviceAudioPort) const;
     int handleDeviceConnectionChange(
             const ::aidl::android::media::audio::common::AudioPort& deviceAudioPort,
-            const bool isConnect) const;
+            const bool isConnect);
     uint32_t getBluetoothLatencyMs(
             const std::vector<::aidl::android::media::audio::common::AudioDevice>&
                     bluetoothDevices);
@@ -263,10 +264,21 @@ class Platform {
     bool isHACEnabled() const noexcept { return mIsHACEnabled; }
 
     void updateCallState(int callState) { mCallState = callState; }
-    void updateCallMode(int callMode) { mCallMode = callMode; }
+    void updateCallMode(int callMode) {
+        mCallMode = callMode;
+        if (mCallMode == AUDIO_MODE_NORMAL) {
+            mWasVoipRecordStarted = false;
+        }
+    }
 
     int getCallState() { return mCallState; }
     int getCallMode() { return mCallMode; }
+    bool isDpForVoiceEnabled() const noexcept { return mDpForVoiceEnabled; }
+    void markVoipRecordStarted() noexcept { mWasVoipRecordStarted = true; }
+    bool isVoipRinging() const noexcept {
+        return (mCallMode == AUDIO_MODE_RINGTONE || mCallMode == AUDIO_MODE_IN_COMMUNICATION) &&
+               !mWasVoipRecordStarted;
+    }
     bool isA2dpSuspended();
 
     void setWFDProxyChannels(const uint32_t numProxyChannels) noexcept;
@@ -307,6 +319,8 @@ class Platform {
     void configurePalDevices(
             const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig,
             std::vector<pal_device>& palDevices);
+    bool forceDpDeviceForVoice(std::vector<pal_device>& palDevices,
+                               bool includeSpeaker = false) const noexcept;
     void setHdrOnPalDevice(pal_device* palDeviceIn);
     bool isHDRARMenabled();
     bool isHDRSPFEnabled();
@@ -323,6 +337,9 @@ class Platform {
             const ::aidl::android::media::audio::common::AudioDevice&) const;
 
     void initUsecaseOpMap();
+    void updateConnectedDpDevice(
+            const ::aidl::android::media::audio::common::AudioDevice& device,
+            pal_device_id_t palDeviceId, bool isConnect) const noexcept;
 
   public:
     constexpr static uint32_t kDefaultOutputSampleRate = 48000;
@@ -332,6 +349,7 @@ class Platform {
 
   private:
     std::vector<::aidl::android::media::audio::common::AudioDevice> mPrimaryPlaybackDevices{};
+    mutable std::vector<::aidl::android::media::audio::common::AudioDevice> mConnectedDpDevices{};
 
     std::map<std::string, std::string> mParameters;
     card_status_t mSndCardStatus{CARD_STATUS_OFFLINE};
@@ -345,7 +363,9 @@ class Platform {
     ::aidl::android::hardware::audio::core::IModule::ScreenRotation mCurrentScreenRotation{
             ::aidl::android::hardware::audio::core::IModule::ScreenRotation::DEG_0};
     bool mOffloadSpeedSupported = false;
+    bool mDpForVoiceEnabled = false;
     bool mMicMuted = false;
+    bool mWasVoipRecordStarted = false;
 
     /* HDR */
     bool mHDREnabled{false};

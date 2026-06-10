@@ -16,6 +16,7 @@
 #include <qti-audio/PlatformConverter.h>
 #include <qti-audio-core/Utils.h>
 
+#include <algorithm>
 #include <aidl/qti/audio/core/VString.h>
 #include <cutils/properties.h>
 #include <dlfcn.h>
@@ -274,6 +275,9 @@ void Platform::customizePalDevices(const AudioPortConfig& mixPortConfig, const U
         auto itr = std::find_if(palDevices.begin(), palDevices.end(), [](const auto& palDevice) {
             return palDevice.id == PAL_DEVICE_OUT_HANDSET;
         });
+        if (itr == palDevices.end()) {
+            return;
+        }
         setPalDeviceCustomKey(*itr, "HAC");
     }
 }
@@ -326,6 +330,7 @@ std::vector<pal_device> Platform::convertToPalDevices(
         } else if (isHdmiDevice(device) && isOutputDevice(device)) {
             if (auto result = getHdmiParameters(device)) {
                 palDevices[i].id = result->deviceId;
+                updateConnectedDpDevice(device, palDevices[i].id, true);
             } else {
                 return {};
             }
@@ -371,6 +376,11 @@ std::vector<pal_device> Platform::configureAndFetchPalDevices(
         }
     }
     auto palDevices = convertToPalDevices(devices);
+
+    if (mDpForVoiceEnabled &&
+        (tag == Usecase::VOIP_PLAYBACK || hasOutputVoipRxFlag(mixPortConfig.flags.value()))) {
+        forceDpDeviceForVoice(palDevices, isVoipRinging());
+    }
 
     customizePalDevices(mixPortConfig, tag, palDevices);
 
@@ -569,7 +579,7 @@ std::optional<struct HdmiParameters> Platform::getHdmiParameters(
 }
 
 int Platform::handleDeviceConnectionChange(const AudioPort& deviceAudioPort,
-                                            const bool isConnect) const {
+                                            const bool isConnect) {
     const auto& devicePortExt = deviceAudioPort.ext.get<AudioPortExt::Tag::device>();
 
     auto& audioDeviceDesc = devicePortExt.device.type;
@@ -629,8 +639,77 @@ int Platform::handleDeviceConnectionChange(const AudioPort& deviceAudioPort,
     }
     LOG(INFO) << __func__ << devicePortExt.device.toString()
               << (isConnect ? ": connected" : "disconnected");
+    updateConnectedDpDevice(devicePortExt.device, deviceConnection->id, isConnect);
 
     return 0;
+}
+
+bool Platform::forceDpDeviceForVoice(std::vector<pal_device>& palDevices,
+                                     bool includeSpeaker) const noexcept {
+    if (!mDpForVoiceEnabled) {
+        return false;
+    }
+    if (mConnectedDpDevices.empty()) {
+        return false;
+    }
+    if (palDevices.empty()) {
+        return false;
+    }
+
+    const auto dpDevice = mConnectedDpDevices.back();
+    auto dpPalDevices = convertToPalDevices({dpDevice});
+    if (dpPalDevices.empty()) {
+        return false;
+    }
+
+    LOG(DEBUG) << __func__ << " force output pal_device from " << palDevices[0].id
+              << " to " << dpPalDevices[0].id;
+    palDevices[0] = dpPalDevices[0];
+    if (!includeSpeaker ||
+        std::any_of(palDevices.cbegin(), palDevices.cend(), [](const pal_device& device) {
+            return device.id == PAL_DEVICE_OUT_SPEAKER;
+        })) {
+        return true;
+    }
+
+    auto speakerPalDevices =
+            convertToPalDevices({AudioDevice{.type.type = AudioDeviceType::OUT_SPEAKER}});
+    if (!speakerPalDevices.empty()) {
+        palDevices.push_back(speakerPalDevices[0]);
+        LOG(DEBUG) << __func__ << " add speaker for VOIP ringing";
+    }
+    return true;
+}
+
+void Platform::updateConnectedDpDevice(const AudioDevice& device, pal_device_id_t palDeviceId,
+                                       bool isConnect) const noexcept {
+    if (palDeviceId != PAL_DEVICE_OUT_HDMI && palDeviceId != PAL_DEVICE_OUT_AUX_DIGITAL &&
+        palDeviceId != PAL_DEVICE_OUT_AUX_DIGITAL_1) {
+        return;
+    }
+
+    const auto sameDevice = [&](const AudioDevice& connectedDevice) {
+        return connectedDevice.type.type == device.type.type &&
+               connectedDevice.type.connection == device.type.connection &&
+               connectedDevice.address.toString() == device.address.toString();
+    };
+
+    if (isConnect) {
+        auto it = std::find_if(mConnectedDpDevices.begin(), mConnectedDpDevices.end(), sameDevice);
+        if (it != mConnectedDpDevices.end()) {
+            mConnectedDpDevices.erase(it);
+            mConnectedDpDevices.push_back(device);
+            return;
+        }
+        mConnectedDpDevices.push_back(device);
+        LOG(DEBUG) << __func__ << " cached DP device " << device.toString()
+                  << ", palDeviceId " << palDeviceId;
+    } else {
+        mConnectedDpDevices.erase(std::remove_if(mConnectedDpDevices.begin(),
+                                                 mConnectedDpDevices.end(), sameDevice),
+                                  mConnectedDpDevices.end());
+        LOG(DEBUG) << __func__ << " removed DP device " << device.toString();
+    }
 }
 
 void Platform::setWFDProxyChannels(const uint32_t numProxyChannels) noexcept {
@@ -1444,6 +1523,7 @@ Platform::Platform() {
     mSndCardStatus = CARD_STATUS_ONLINE;
     LOG(VERBOSE) << __func__ << " pal register global callback successful";
     mOffloadSpeedSupported = property_get_bool("vendor.audio.offload.playspeed", true);
+    mDpForVoiceEnabled = property_get_bool("vendor.audio.enable.dp.for.voice", false);
     MicrophoneInfoParser micInfoParser;
     mMicrophoneInfo = micInfoParser.getMicrophoneInfo();
     mMicrophoneDynamicInfoMap = micInfoParser.getMicrophoneDynamicInfoMap();
