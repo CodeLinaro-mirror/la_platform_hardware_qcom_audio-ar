@@ -22,6 +22,7 @@ AUDIO_AGM += libagm_compress_plugin
 AUDIO_AGM += agmcompresscap
 AUDIO_AGM += agmvoiceui
 AUDIO_AGM += agmhostless
+AUDIO_AGM += stt_meta_extract
 
 #PAL Module
 AUDIO_PAL := libar-pal
