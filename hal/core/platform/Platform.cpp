@@ -323,7 +323,7 @@ std::vector<pal_device> Platform::convertToPalDevices(
                 return {};
             palDevices[i].address.card_id = deviceAddressAlsa[0];
             palDevices[i].address.device_num = deviceAddressAlsa[1];
-        } else if (isHdmiDevice(device)) {
+        } else if (isHdmiDevice(device) && isOutputDevice(device)) {
             if (auto result = getHdmiParameters(device)) {
                 palDevices[i].id = result->deviceId;
             } else {
