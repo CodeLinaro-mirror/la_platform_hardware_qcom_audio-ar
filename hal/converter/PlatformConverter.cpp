@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
- * SPDX-License-Identifier: BSD-3-Clause-Clear
- */
+* Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+* SPDX-License-Identifier: BSD-3-Clause-Clear
+*/
 
 #define LOG_NDEBUG 0
 #define LOG_TAG "AHAL_PlatformConverter_QTI"
@@ -419,9 +419,9 @@ outputFlagsStreamtypeMap populatemOutputFlagsStreamtypeMap() {
             static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::PRIMARY) |
                                  1 << flagCastToint(AudioOutputFlags::FAST));
     result[lowLatencyPlaybackFlags] = PAL_STREAM_LOW_LATENCY;
-    constexpr auto pcmOffloadPlaybackFlags =
+    constexpr auto directPcmPlaybackFlags =
             static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DIRECT));
-    result[pcmOffloadPlaybackFlags] = PAL_STREAM_PCM_OFFLOAD;
+    result[directPcmPlaybackFlags] = PAL_STREAM_PCM_OFFLOAD;
     constexpr auto voipPlaybackFlags =
             static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::VOIP_RX));
     result[voipPlaybackFlags] =  PAL_STREAM_VOIP_RX;
