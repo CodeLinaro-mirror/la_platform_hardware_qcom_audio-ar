@@ -11,8 +11,8 @@
 #include <audio_utils/clock.h>
 #include <hardware/audio.h>
 #include <qti-audio-core/Module.h>
-#include <qti-audio-core/ModulePrimary.h>
 #include <qti-audio-core/Parameters.h>
+#include <qti-audio-core/PlatformUtils.h>
 #include <qti-audio-core/StreamOutPrimary.h>
 #include <qti-audio/PlatformConverter.h>
 
@@ -51,15 +51,14 @@ StreamOutPrimary::StreamOutPrimary(StreamContext&& context, const SourceMetadata
       mTag(getUsecaseTag(getContext().getMixPortConfig())),
       mTagName(getName(mTag)),
       mFrameSizeBytes(getContext().getFrameSize()),
-      mMixPortConfig(getContext().getMixPortConfig()),
-      mPlaybackRate(sDefaultPlaybackRate) {
+      mPlaybackRate(sDefaultPlaybackRate),
+      mMixPortConfig(getContext().getMixPortConfig()) {
     if (mTag == Usecase::PRIMARY_PLAYBACK) {
         mExt.emplace<PrimaryPlayback>();
     } else if (mTag == Usecase::DEEP_BUFFER_PLAYBACK) {
         mExt.emplace<DeepBufferPlayback>();
     } else if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK) {
-        mExt.emplace<CompressPlayback>(offloadInfo.value(), this,
-                                       mMixPortConfig);
+        mExt.emplace<CompressPlayback>(offloadInfo.value(), this, mMixPortConfig);
     } else if (mTag == Usecase::DIRECT_PCM_PLAYBACK) {
         mExt.emplace<DirectPcmPlayback>(mMixPortConfig);
     } else if (mTag == Usecase::VOIP_PLAYBACK) {
@@ -76,23 +75,24 @@ StreamOutPrimary::StreamOutPrimary(StreamContext&& context, const SourceMetadata
         mExt.emplace<BitPerfectPlayback>(mMixPortConfig);
     }
 
+    std::ostringstream os;
+    os << "[id:" << mMixPortConfig.id;
+    os << ",io:" << mMixPortConfig.ext.get<AudioPortExt::Tag::mix>().handle << "]";
+    os << ": usecase: " << mTagName << " ";
+    mLogPrefix = os.str();
+
     mHwVolumeSupported = isHwVolumeSupported();
     mHwFlushSupported = isHwFlushSupported();
     mHwPauseSupported = isHwPauseSupported();
     if (mHwVolumeSupported) {
         mVolumes.resize(getChannelCount(mMixPortConfig.channelMask.value()));
     }
-    std::ostringstream os;
-    os << " : usecase: " << mTagName;
-    os << ", mix port config id:" << mMixPortConfig.id;
-    os << ", IoHandle:" << mMixPortConfig.ext.get<AudioPortExt::Tag::mix>().handle << " ";
-    mLogPrefix = os.str();
-    LOG(DEBUG) << __func__ << mLogPrefix;
+    LOG(DEBUG) << __func__ << mLogPrefix << " created " << mMixPortConfig.toString();
 }
 
 bool StreamOutPrimary::isHwVolumeSupported() {
     switch (mTag) {
-        //TODO: See how Bitperfect volume support can be added
+        // TODO: See how Bitperfect volume support can be added
         case Usecase::COMPRESS_OFFLOAD_PLAYBACK:
         case Usecase::DIRECT_PCM_PLAYBACK:
         case Usecase::VOIP_PLAYBACK:
@@ -131,7 +131,7 @@ struct BufferConfig StreamOutPrimary::getBufferConfig() {
 
 StreamOutPrimary::~StreamOutPrimary() {
     cleanupWorker();
-    LOG(DEBUG) << __func__ << mLogPrefix;
+    LOG(DEBUG) << __func__ << mLogPrefix << "destroyed";
 }
 
 // start of methods called from IModule
@@ -180,12 +180,6 @@ ndk::ScopedAStatus StreamOutPrimary::configureConnectedDevices_I() {
 
     LOG(DEBUG) << __func__ << mLogPrefix << " connected to " << mConnectedDevices;
 
-    for (auto connectedPalDevice : connectedPalDevices) {
-        if (connectedPalDevice.id == PAL_DEVICE_OUT_SPEAKER) {
-            mPlatform.setRotation();
-            break;
-        }
-    }
     return ndk::ScopedAStatus::ok();
 }
 
@@ -306,17 +300,16 @@ void StreamOutPrimary::resume() {
         LOG(DEBUG) << __func__ << mLogPrefix << ": stream is not connected";
         return ::android::OK;
     }
-    if (hasOutputVoipRxFlag(mMixPortConfig.flags.value()) ||
-        hasOutputDeepBufferFlag(mMixPortConfig.flags.value())) {
-        if (auto telephony = mContext.getTelephony().lock()) {
-            telephony->onPlaybackStart(mConnectedDevices);
-        }
-    }
     return ::android::OK;
 }
 
 ::android::status_t StreamOutPrimary::transfer(void* buffer, size_t frameCount,
                                                size_t* actualFrameCount, int32_t* latencyMs) {
+    if (frameCount == 0) {
+        *actualFrameCount = 0;
+        return ::android::OK;
+    }
+
     if (!mPalHandle) {
         // configure on first transfer or after stand by
         configure();
@@ -607,33 +600,6 @@ ndk::ScopedAStatus StreamOutPrimary::setHwVolume(const std::vector<float>& in_ch
     return ndk::ScopedAStatus::ok();
 }
 
-ndk::ScopedAStatus StreamOutPrimary::getPlaybackRateParameters(AudioPlaybackRate* _aidl_return) {
-    if (!mPlatform.usecaseSupportsOffloadSpeed(mTag)) {
-        return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
-    }
-
-    LOG(DEBUG) << __func__ << mLogPrefix << mPlaybackRate.toString();
-    *_aidl_return = mPlaybackRate;
-    return ndk::ScopedAStatus::ok();
-}
-
-ndk::ScopedAStatus StreamOutPrimary::setPlaybackRateParameters(
-        const AudioPlaybackRate& in_playbackRate) {
-    auto ret = mPlatform.setPlaybackRate(mPalHandle, mTag, in_playbackRate);
-    if (PlaybackRateStatus::SUCCESS == ret) {
-        mPlaybackRate = in_playbackRate;
-        LOG(DEBUG) << __func__ << mLogPrefix << mPlaybackRate.toString();
-        return ndk::ScopedAStatus::ok();
-    } else if (PlaybackRateStatus::UNSUPPORTED == ret) {
-        LOG(VERBOSE) << __func__ << mLogPrefix << "raise EX_UNSUPPORTED_OPERATION exception for "
-                     << mPlaybackRate.toString();
-        return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
-    }
-
-    LOG(ERROR) << __func__ << mLogPrefix << "raise EX_ILLEGAL_ARGUMENT exception for "
-                 << mPlaybackRate.toString();
-    return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
-}
 
 // end of IStreamOut Methods
 
@@ -671,10 +637,10 @@ int32_t StreamOutPrimary::setAggregateSourceMetadata(bool voiceActive) {
     std::vector<playback_track_metadata_t> total_tracks;
     source_metadata_t btSourceMetadata;
 
-    ModulePrimary::outListMutex.lock();
-    std::vector<std::weak_ptr<StreamOut>>& outStreams = ModulePrimary::getOutStreams();
+    Module::outListMutex.lock();
+    std::vector<std::weak_ptr<StreamOut>>& outStreams = Module::getOutStreams();
     if (voiceActive || outStreams.empty()) {
-        ModulePrimary::outListMutex.unlock();
+        Module::outListMutex.unlock();
         return 0;
     }
     auto removeStreams = [&](std::weak_ptr<StreamOut> streamOut) -> bool {
@@ -698,7 +664,7 @@ int32_t StreamOutPrimary::setAggregateSourceMetadata(bool voiceActive) {
                  << " total track count " << track_count_total;
 
     if (track_count_total <= 0) {
-        ModulePrimary::outListMutex.unlock();
+        Module::outListMutex.unlock();
         return 0;
     }
 
@@ -743,12 +709,23 @@ int32_t StreamOutPrimary::setAggregateSourceMetadata(bool voiceActive) {
         }
     }
 
+    auto getCombinedMetadata = [&]() {
+        std::ostringstream oss;
+        oss << " track count:" << btSourceMetadata.track_count;
+        for (size_t i = 0; i < btSourceMetadata.track_count; i++) {
+            oss << " { Usage:" << btSourceMetadata.tracks[i].usage
+                << ", content_type:" << btSourceMetadata.tracks[i].content_type << " } ";
+        }
+        return oss.str();
+    };
+
     if (btSourceMetadata.track_count > 0) {
         btSourceMetadata.tracks = total_tracks.data();
+        LOG(VERBOSE) << __func__ << mLogPrefix << ": combined : " << getCombinedMetadata();
         pal_set_param(PAL_PARAM_ID_SET_SOURCE_METADATA, (void*)&btSourceMetadata, 0);
     }
 
-    ModulePrimary::outListMutex.unlock();
+    Module::outListMutex.unlock();
     return 0;
 }
 
@@ -812,12 +789,13 @@ size_t StreamOutPrimary::getPlatformDelay() const noexcept {
 }
 
 ::android::status_t StreamOutPrimary::onWriteError(const size_t sleepFrameCount, size_t* const consumedFrameCount) {
-    shutdown_I();
     if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK) {
         // return error for offload, so that FW sends data again
         LOG(ERROR) << __func__ << mLogPrefix << ": cannot afford write failure";
         *consumedFrameCount = 0;
         return ::android::DEAD_OBJECT;
+    } else {
+        shutdown_I();
     }
     auto& sampleRate = mMixPortConfig.sampleRate.value().value;
     if (sampleRate == 0) {
@@ -922,6 +900,7 @@ void StreamOutPrimary::configure() {
     }
 
     const auto palOpenApiStartTime = std::chrono::steady_clock::now();
+    LOG(DEBUG) << __func__ << mLogPrefix << "pal_stream_open with " << toString(*attr.get());
     if (int32_t ret = ::pal_stream_open(attr.get(), palDevices.size(), palDevices.data(), 0,
                                         nullptr, palFn, cookie, &(this->mPalHandle));
         ret) {
@@ -1033,6 +1012,10 @@ void StreamOutPrimary::configure() {
         }
     }
 
+    if (mTag == Usecase::VOIP_PLAYBACK && mPalHandle) {
+            mPlatform.setVoipRxStreamHandle(mPalHandle);
+    }
+
     if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK) {
         // Must be before pal stream start
         std::get<CompressPlayback>(mExt).setAndConfigureCodecInfo(mPalHandle);
@@ -1051,7 +1034,12 @@ void StreamOutPrimary::configure() {
             telephony->CallTranslationManager("",CALL_TRANSLATION_DIR_RX);
         }
     }
-
+    if (hasOutputVoipRxFlag(mMixPortConfig.flags.value()) ||
+        hasOutputDeepBufferFlag(mMixPortConfig.flags.value())) {
+        if (auto telephony = mContext.getTelephony().lock()) {
+            telephony->onPlaybackStart(mConnectedDevices);
+        }
+    }
     if (mTag == Usecase::HAPTICS_PLAYBACK && mHapticsPalHandle) {
         if (int32_t ret = ::pal_stream_start(this->mHapticsPalHandle); ret) {
             LOG(ERROR) << __func__ << mLogPrefix << " failed to start haptics stream. ret:" << ret;
@@ -1067,10 +1055,7 @@ void StreamOutPrimary::configure() {
 
     LOG(VERBOSE) << __func__ << mLogPrefix << " pal_stream_start successful";
 
-    if (mPlaybackRate != sDefaultPlaybackRate) {
-        LOG(DEBUG) << __func__ << mLogPrefix << ": using playspeed " << mPlaybackRate.speed;
-        mPlatform.setPlaybackRate(mPalHandle, mTag, mPlaybackRate);
-    }
+    applyPlaybackRateIfNonDefault();
 
     LOG(INFO) << __func__ << mLogPrefix << ": stream is configured with " << mConnectedDevices;
     enableOffloadEffects(true);
@@ -1175,6 +1160,9 @@ void StreamOutPrimary::shutdown_I() {
             telephony->onPlaybackClose();
         }
     }
+    if (mTag == Usecase::VOIP_PLAYBACK && mPalHandle != nullptr) {
+        mPlatform.setVoipRxStreamHandle(nullptr);
+    }
 
     mIsPaused = false;
     mPalHandle = nullptr;
@@ -1182,5 +1170,13 @@ void StreamOutPrimary::shutdown_I() {
     LOG(VERBOSE) << __func__ << mLogPrefix;
 }
 
+bool StreamOutPrimary::supportsPlaybackRate() const {
+    return mPlatform.supportsPlaybackRate(mTag);
+}
 
-} // namespace qti::audio::core
+ndk::ScopedAStatus StreamOutPrimary::setPlaybackRateImpl(
+        const ::aidl::android::media::audio::common::AudioPlaybackRate& rate) {
+    return toBinderStatus(mPlatform.setPlaybackRate(mPalHandle, mTag, rate));
+}
+
+}  // namespace qti::audio::core

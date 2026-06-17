@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-/*
- * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+/**
+ * ​Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -43,6 +43,9 @@ Bluetooth::Bluetooth() {
 }
 
 ndk::ScopedAStatus Bluetooth::setScoConfig(const ScoConfig& in_config, ScoConfig* _aidl_return) {
+    if (Platform::getInstance().isScoManagedByAudio()) {
+        return ndk::ScopedAStatus::ok();
+    }
     if (in_config.isEnabled.has_value()) {
         mScoConfig.isEnabled = in_config.isEnabled;
         mScoConfig.isEnabled.value().value == true ? mPlatform.setBluetoothParameters("BT_SCO=on")
@@ -145,7 +148,7 @@ ndk::ScopedAStatus BluetoothA2dp::reconfigureOffload(
         const std::vector<::aidl::android::hardware::audio::core::VendorParameter>& in_parameters
                 __unused) {
     LOG(DEBUG) << __func__ << ": " << ::android::internal::ToString(in_parameters);
-    mPlatform.setBluetoothParameters("reconfigA2dp=true");
+    mPlatform.reconfigureA2DP();
     return ndk::ScopedAStatus::ok();
 }
 
@@ -157,8 +160,7 @@ ndk::ScopedAStatus BluetoothLe::isEnabled(bool* _aidl_return) {
 
 ndk::ScopedAStatus BluetoothLe::setEnabled(bool in_enabled) {
     mEnabled = in_enabled;
-    mEnabled == true ? mPlatform.setBluetoothParameters("LeAudioSuspended=false")
-                     : mPlatform.setBluetoothParameters("LeAudioSuspended=true");
+    mPlatform.doBleSuspend(!mEnabled);
     LOG(DEBUG) << __func__ << ": " << mEnabled;
     return ndk::ScopedAStatus::ok();
 }

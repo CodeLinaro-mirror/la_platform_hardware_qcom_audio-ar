@@ -58,6 +58,7 @@ AUDIO_PAL += libdev_headphone
 AUDIO_PAL += libdev_headset_mic
 AUDIO_PAL += libdev_speaker
 AUDIO_PAL += libdev_speaker_mic
+AUDIO_PAL += libdev_dummy
 
 # C2 Audio
 AUDIO_C2 := libqc2audio_base
@@ -67,7 +68,6 @@ AUDIO_C2 += libqc2audio_core
 AUDIO_C2 += libqc2audio_basecodec
 AUDIO_C2 += libqc2audio_hooks
 AUDIO_C2 += libqc2audio_swaudiocodec
-AUDIO_C2 += libqc2audio_hwaudiocodec
 AUDIO_C2 += vendor.qti.media.c2audio@1.0-service
 AUDIO_C2 += libEvrcSwCodec
 AUDIO_C2 += libQcelp13SwCodec

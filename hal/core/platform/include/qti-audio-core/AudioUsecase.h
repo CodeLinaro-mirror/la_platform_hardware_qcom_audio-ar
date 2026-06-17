@@ -147,7 +147,7 @@ class PrimaryPlayback : public UsecaseConfig<PrimaryPlayback> {
 class DeepBufferPlayback : public UsecaseConfig<DeepBufferPlayback> {
   public:
     constexpr static size_t kPeriodCount = 2;
-    constexpr static size_t kPeriodDurationMs = 40;
+    constexpr static size_t kPeriodDurationMs = 120;
     constexpr static size_t kPlatformDelayMs = 29;
 
     static size_t getFrameCount(

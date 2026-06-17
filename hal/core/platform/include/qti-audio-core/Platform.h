@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -67,6 +67,8 @@ class Platform {
     Platform(Platform&& other) = delete;
     Platform& operator=(Platform&& other) = delete;
     static int palGlobalCallback(uint32_t event_id, uint32_t* event_data, uint64_t cookie);
+    void onInitSuccess();
+    void onInitBluetoothPrep();
 
   public:
     // BT related params used across
@@ -99,6 +101,8 @@ class Platform {
 
     void registerPlatformGlobalCallBack(PlatformGlobalCallback* cb);
     bool setParameter(const std::string& key, const std::string& value);
+    void reconfigureA2DP() noexcept;
+    void doBleSuspend(const bool suspend) noexcept;
     bool setBluetoothParameters(const char* kvpairs);
     bool setVendorParameters(
             const std::vector<::aidl::android::hardware::audio::core::VendorParameter>&
@@ -126,15 +130,15 @@ class Platform {
      * @param mixPortConfig mixportconfig for which devices are requested
      * @param tag usecase tag
      * @param setDevices vector of devices for which pal devices are requested
-     * @param dummyDevice setDevices can be empty, in that case if client needs
-     * dummy device in form of PAL_DEVICE_[IN/OUT]_DUMMY
+     * @return corresponding PAL devices with configuration.
+     * if `setDevices` are empty or has NONE device, return DUMMY device.
      */
 
     std::vector<pal_device> configureAndFetchPalDevices(
             const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig,
             const Usecase& tag,
-            const std::vector<::aidl::android::media::audio::common::AudioDevice>& setDevices,
-            const bool dummyDevice = false) const;
+            const std::vector<::aidl::android::media::audio::common::AudioDevice>& setDevices)
+            const;
 
     /*
      * @breif sets the device to PAL for given PAL handle
@@ -143,19 +147,16 @@ class Platform {
      * @param mixPortConfig mixportconfig for which devices are requested
      * @param tag usecase tag
      * @param setDevices vector of devices for which pal devices are requested
-     * @param dummyDevice setDevices can be empty, in that case if client needs
-     * dummy device in form of PAL_DEVICE_[IN/OUT]_DUMMY
+     * @return corresponding PAL devices with configuration.
+     * if `setDevices` are empty or has NONE device, return DUMMY device.
      */
 
-    int32_t setDevice(
-            pal_stream_handle_t* handle,
-            const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig,
-            const Usecase& tag,
-            const std::vector<::aidl::android::media::audio::common::AudioDevice>& setDevices,
-            const bool dummyDevice = false) const;
+    int32_t setDevice(pal_stream_handle_t* handle,
+                      const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig,
+                      const Usecase& tag,
+                      const std::vector<::aidl::android::media::audio::common::AudioDevice>&
+                              setDevices) const;
 
-    std::vector<pal_device> getDummyPalDevices(
-            const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig) const;
     /*
     * @breif In order to get stream position in the DSP pipeline
     * 
@@ -220,6 +221,13 @@ class Platform {
 
     bool isHDREnabled() const { return mHDREnabled; }
     void setHDREnabled(bool const& enable) { mHDREnabled = enable; }
+
+    bool isAudioZoomEnabled() const { return mAudioZoomEnabled; }
+    void setAudioZoomEnabled(bool const& enable) { mAudioZoomEnabled = enable; }
+
+    int32_t getAudioZoomFactor() const { return mAudioZoomFactor; }
+
+    int setAudioZoomFactor(pal_stream_handle_t* mPalHandle, float const& audioZoomFactor);
 
     int32_t getHDRSampleRate() const { return mHDRSampleRate; }
 
@@ -290,6 +298,23 @@ class Platform {
     void setCallTranslationState(const bool state) noexcept { mIsCallTranslationEnabled = state; }
     bool getCallTranslationState() noexcept { return mIsCallTranslationEnabled; }
 
+    // Set and Get Value Functions for UV Audio Cue config from APK.
+    void setUvVoiceCueStatusConfig(uint32_t usecaseMask) noexcept {
+        mUvVoiceCueUsecaseMask = usecaseMask;
+    }
+    uint32_t getUvVoiceCueStatusConfig() const noexcept {
+        return mUvVoiceCueUsecaseMask;
+    }
+    bool isUvVoiceCueUsecaseEnabled(uint32_t usecaseBit) const noexcept {
+        return (mUvVoiceCueUsecaseMask & usecaseBit) != 0;
+    }
+    void setVoiceCueOnVoipEnable(bool enable) noexcept {
+        mIsVoiceCueOnVoipEnabled = enable;
+    }
+    bool getVoiceCueOnVoipEnable() const noexcept {
+        return mIsVoiceCueOnVoipEnabled;
+    }
+
     void setHACEnabled(const bool& enable) noexcept { mIsHACEnabled = enable; }
 
     bool isHACEnabled() const noexcept { return mIsHACEnabled; }
@@ -323,16 +348,17 @@ class Platform {
 
     void updateScreenRotation(const ::aidl::android::hardware::audio::core::IModule::ScreenRotation
                                       in_rotation) noexcept;
-    void setRotation() const noexcept;
     ::aidl::android::hardware::audio::core::IModule::ScreenRotation getCurrentScreenRotation() const
             noexcept;
 
     bool platformSupportsOffloadSpeed() { return mOffloadSpeedSupported; }
-    bool usecaseSupportsOffloadSpeed(const Usecase& tag) {
+    bool supportsPlaybackRate(const Usecase& tag) {
         return platformSupportsOffloadSpeed() && isOffload(tag);
     }
 
-    bool isOffload(const Usecase& tag) { return tag == Usecase::COMPRESS_OFFLOAD_PLAYBACK; }
+    bool isOffload(const Usecase& tag) {
+        return tag == Usecase::COMPRESS_OFFLOAD_PLAYBACK || tag == Usecase::MMAP_OFFLOAD_PLAYBACK;
+    }
     int setLatencyMode(uint32_t mode, pal_device_id_t dev_id);
     int getRecommendedLatencyModes(
           std::vector<::aidl::android::media::audio::common::AudioLatencyMode>* _aidl_return,
@@ -347,6 +373,7 @@ class Platform {
     bool getUSBCapEnable() { return mUSBCapEnable; }
     void updateHotwordPortConfig(
         ::aidl::android::media::audio::common::AudioPortConfig& portConfig);
+    bool isScoManagedByAudio() const noexcept;
   private:
     void customizePalDevices(
             const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig,
@@ -418,7 +445,7 @@ class Platform {
             ::aidl::android::hardware::audio::core::IModule::ScreenRotation::DEG_0};
     bool mOffloadSpeedSupported = false;
     bool mMicMuted = false;
-
+    uint32_t mUvVoiceCueUsecaseMask = 0;
     /* HDR */
     bool mHDREnabled{false};
     int32_t mHDRSampleRate{0};
@@ -426,8 +453,13 @@ class Platform {
     bool mWNREnabled{false};
     bool mANREnabled{false};
     bool mInverted{false};
+    bool mIsVoiceCueOnVoipEnabled{false};
     std::string mOrientation{""};
     std::string mFacing{""};
+
+    /* Audio Zoom */
+    bool mAudioZoomEnabled{false};
+    float mAudioZoomFactor{1.0};
 
     /* HAC enablement*/
     bool mIsHACEnabled{false};
@@ -440,6 +472,7 @@ class Platform {
     PalDevToMicDynamicInfoMap mMicrophoneDynamicInfoMap;
     // proxy related info
     size_t mProxyRecordFMQSize{0};
+    bool mIsScoManagedbyAudio{false};
     std::weak_ptr<::aidl::android::hardware::audio::core::ITelephony> mTelephony;
     PlatformGlobalCallback* mPlatformGlobalCallback = nullptr;
 };

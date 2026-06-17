@@ -23,6 +23,8 @@
 #pragma once
 
 #include <aidl/android/hardware/audio/core/VendorParameter.h>
+#include <aidl/android/hardware/audio/common/SourceMetadata.h>
+#include <aidl/android/hardware/audio/common/SinkMetadata.h>
 #include <aidl/android/hardware/audio/effect/Descriptor.h>
 #include <aidl/android/media/audio/common/AudioDevice.h>
 #include <aidl/android/media/audio/common/AudioInputFlags.h>
@@ -55,6 +57,15 @@ inline std::string errorToString(const ScopedAStatus& s) {
 
 namespace qti::audio::core {
 
+// classes using this macros must provide getPrefixLog
+#define STREAM_LOG(severity) LOG(severity) << getPrefixLog() << ": " << __func__ << ": "
+
+#define HAL_LOGV STREAM_LOG(VERBOSE)
+#define HAL_LOGD STREAM_LOG(DEBUG)
+#define HAL_LOGI STREAM_LOG(INFO)
+#define HAL_LOGW STREAM_LOG(WARNING)
+#define HAL_LOGE STREAM_LOG(ERROR)
+#define HAL_LOGF STREAM_LOG(FATAL)
 /*
 * Helper class used by streams when the target audio format differs
 * from input audio format. This can happen if underlying layers don't support certain formats.
@@ -156,6 +167,9 @@ bool hasOutputDeepBufferFlag(const ::aidl::android::media::audio::common::AudioI
 
 bool hasOutputCompressOffloadFlag(
         const ::aidl::android::media::audio::common::AudioIoFlags&) noexcept;
+
+bool hasOutputCompressOffloadFlag(
+        const ::aidl::android::media::audio::common::AudioPortConfig&) noexcept;
 
 bool hasInputHotwordFlag(const ::aidl::android::media::audio::common::AudioIoFlags&) noexcept;
 
@@ -266,6 +280,11 @@ auto findById(std::vector<T>& v, int32_t id) {
     return std::find_if(v.begin(), v.end(), [&](const auto& e) { return e.id == id; });
 }
 
+template <typename T>
+auto findById(const std::vector<T>& v, int32_t id) {
+    return std::find_if(v.begin(), v.end(), [&](const auto& e) { return e.id == id; });
+}
+
 // Return elements from the vector that have specified ids, also
 // optionally return which ids were not found.
 template <typename T>
@@ -335,24 +354,9 @@ constexpr size_t getPcmSampleSizeInBytes(::aidl::android::media::audio::common::
     return 0;
 }
 
-constexpr size_t getChannelCount(
+size_t getChannelCount(
         const ::aidl::android::media::audio::common::AudioChannelLayout& layout,
-        int32_t mask = std::numeric_limits<int32_t>::max()) {
-    using Tag = ::aidl::android::media::audio::common::AudioChannelLayout::Tag;
-    switch (layout.getTag()) {
-        case Tag::none:
-            return 0;
-        case Tag::invalid:
-            return 0;
-        case Tag::indexMask:
-            return __builtin_popcount(layout.get<Tag::indexMask>() & mask);
-        case Tag::layoutMask:
-            return __builtin_popcount(layout.get<Tag::layoutMask>() & mask);
-        case Tag::voiceMask:
-            return __builtin_popcount(layout.get<Tag::voiceMask>() & mask);
-    }
-    return 0;
-}
+        int32_t mask = std::numeric_limits<int32_t>::max()) noexcept;
 
 constexpr size_t getFrameSizeInBytes(
         const ::aidl::android::media::audio::common::AudioFormatDescription& format,
@@ -457,5 +461,20 @@ constexpr bool isValidAudioMode(::aidl::android::media::audio::common::AudioMode
 }
 
 ::aidl::android::media::audio::common::AudioUuid stringToUuid(const char* str);
+
+bool isValidPlaybackTrackMetadataTag(const std::string& tag) noexcept;
+bool isValidRecordTrackMetadataTag(const std::string& tag) noexcept;
+bool isValidPlaybackTrackMetadata(
+        const aidl::android::hardware::audio::common::PlaybackTrackMetadata&
+                playbackTrackMetadata) noexcept;
+bool isValidRecordTrackMetadata(const aidl::android::hardware::audio::common::RecordTrackMetadata&
+                                        recordTrackMetadata) noexcept;
+bool isValidSourceMetadata(
+        const aidl::android::hardware::audio::common::SourceMetadata& sourceMetadata) noexcept;
+bool isValidSinkMetadata(
+        const aidl::android::hardware::audio::common::SinkMetadata& sinkMetadata) noexcept;
+
+bool isNoneDevice(const ::aidl::android::media::audio::common::AudioDevice&) noexcept;
+bool hasNoneDevice(const std::vector<::aidl::android::media::audio::common::AudioDevice>&) noexcept;
 
 } // namespace qti::audio::core

@@ -1,5 +1,6 @@
 # Business Application definition
 BA_NAME := mobile
+
 # Audio product definitions
 include vendor/qcom/opensource/audio-hal/primary-hal/configs/canoe/audio-modules.mk
 PRODUCT_PACKAGES += $(AUDIO_MODULES)
@@ -353,6 +354,10 @@ vendor.qc2audio.suspend.enabled=true
 #Enable qc2 audio sw flac frame decode
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.qc2audio.per_frame.flac.dec.enabled=true
+
+#Enable ats thread enable
+PRODUCT_PROPERTY_OVERRIDES += \
+persist.vendor.audio.atsthread.enable=true
 
 
 ifneq ($(GENERIC_ODM_IMAGE),true)

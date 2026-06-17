@@ -77,7 +77,7 @@ int ParamDelegator::sendKvPayload(pal_stream_handle_t *handle, uint32_t tag,
     palKeyVector->num_tkvs = kvp->num_tkvs;
     memcpy(palKeyVector->kvp, kvp->kvp, (kvp->num_tkvs * sizeof(pal_key_value_pair_t)));
 
-    return pal_stream_set_custom_param(handle, PAL_CUSTOM_PARAM_AR_UI_EFFECT, palPayload, palPayload->payload_size);
+    return pal_stream_set_custom_param(handle, (char *)PAL_CUSTOM_PARAM_AR_UI_EFFECT, palPayload, palPayload->payload_size);
 }
 
 int ParamDelegator::setCustomPayload(pal_stream_handle_t *handle, uint32_t tag,
@@ -105,7 +105,7 @@ int ParamDelegator::setCustomPayload(pal_stream_handle_t *handle, uint32_t tag,
     customPayload->paramId = data->paramId;
     memcpy(customPayload->data, data->data, customDataSize);
 
-    return pal_stream_set_custom_param(handle, PAL_CUSTOM_PARAM_AR_UI_EFFECT, palPayload, palPayload->payload_size);
+    return pal_stream_set_custom_param(handle, (char *)PAL_CUSTOM_PARAM_AR_UI_EFFECT, palPayload, palPayload->payload_size);
 }
 
 int ParamDelegator::setCustomPayloadGeneric(pal_stream_handle_t *handle, uint32_t tag,
@@ -241,7 +241,7 @@ int ParamDelegator::updatePalParameters(pal_stream_handle_t *handle, struct Equa
         customPayload->data[index++] = eq->config.pregain;
         customPayload->data[index++] = CUSTOM_OPENSL_PRESET;
         customPayload->data[index++] = eq->config.numBands;
-        for (int i = 0; i < eq->config.numBands; i++) {
+        for (uint32_t i = 0; i < eq->config.numBands; i++) {
             LOG(VERBOSE) << __func__ << " band " << i << " filter " << eq->bandConfig[i].filterType
                          << " frequency " << eq->bandConfig[i].frequencyMhz << " gain "
                          << eq->bandConfig[i].gainMb << " quality factor "

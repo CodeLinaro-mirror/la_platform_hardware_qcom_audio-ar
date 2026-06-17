@@ -68,6 +68,7 @@ class StreamInPrimary : public StreamIn, public StreamCommonImpl {
     void onClose() override { defaultOnClose(); }
     static std::mutex sinkMetadata_mutex_;
     void checkHearingAidRoutingForVoice(const Metadata& metadata, bool voiceActive);
+    void setAudioZoomFactor(float const& audioZoomFactor) override;
 
   protected:
     /*

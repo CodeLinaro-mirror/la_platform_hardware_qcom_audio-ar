@@ -94,15 +94,22 @@ extern "C" __attribute__((visibility("default"))) int32_t registerServices() {
             std::string(AospModule::descriptor).append("/").append("default");
     AIBinder *binder = AServiceManager_checkService(serviceName.c_str());
     bool registerStubAsDefault = false;
+    bool isDefaultIntfReg = false;
     if (binder == nullptr) {
         LOG(INFO) << "IModule/default is not registered yet";
         registerStubAsDefault = true;
+    } else {
+        isDefaultIntfReg = true;
     }
 
     std::string registeredModules{};
     for (AospModuleConfigurationPair &configPair : *gModuleConfigs) {
         std::string name = configPair.first;
         if (name == "default") {
+            if (isDefaultIntfReg) {
+                LOG(FATAL) << __func__ << " IModule/default is already registered validate "
+                           << gAudioPolicyConfigFile;
+            }
             registerStubAsDefault = false;
         } else if (name == "stub") {
             if (registerStubAsDefault) {

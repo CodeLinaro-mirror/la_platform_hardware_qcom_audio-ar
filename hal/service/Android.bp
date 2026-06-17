@@ -11,6 +11,11 @@ cc_binary {
         "-Wthread-safety",
     ],
 
+    cppflags: [
+        "-Wreorder",
+        "-Werror=reorder",
+    ],
+
     srcs:
         ["Service.cpp",
          "ConfigManager.cpp",

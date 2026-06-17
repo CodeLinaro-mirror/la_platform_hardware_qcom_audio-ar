@@ -1,5 +1,7 @@
 # Business Application definition
 BA_NAME := mobile
+
+
 # Audio product definitions
 include vendor/qcom/opensource/audio-hal/primary-hal/configs/art/audio-modules.mk
 PRODUCT_PACKAGES += $(AUDIO_MODULES)
@@ -46,10 +48,40 @@ PRODUCT_PACKAGES += fai__4.8.21_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_5.6.0_
 PRODUCT_PACKAGES += fai__8.0.3_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_5.6.0_enpuv6.pmd
 PRODUCT_PACKAGES += fai__8.0.2_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_5.6.0_enpuv6.pmd
 PRODUCT_PACKAGES += fai__3.0.0_0.0__eai_5.6.0_enpuv6.pmd
+PRODUCT_PACKAGES += fai__2.7.2_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.2.0_enpuv7.pmd
+PRODUCT_PACKAGES += fai__2.9.0_1.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.2.0_enpuv7.pmd
+PRODUCT_PACKAGES += fai__2.9.2_1.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.2.0_enpuv7.pmd
+PRODUCT_PACKAGES += fai__4.8.4_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.2.0_enpuv7.pmd
+PRODUCT_PACKAGES += fai__4.8.21_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.2.0_enpuv7.pmd
+PRODUCT_PACKAGES += fai__8.0.2_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.2.0_enpuv7.pmd
+PRODUCT_PACKAGES += fai__8.0.3_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.2.0_enpuv7.pmd
+PRODUCT_PACKAGES += fai__3.0.0_0.0__eai_7.2.0_enpuv7.pmd
+PRODUCT_PACKAGES += fai__2.9.0_1.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.4.0_enpuv7.pmd
+PRODUCT_PACKAGES += fai__2.9.2_1.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.4.0_enpuv7.pmd
+PRODUCT_PACKAGES += fai__2.7.2_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.4.0_enpuv7.pmd
+PRODUCT_PACKAGES += fai__4.8.4_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.4.0_enpuv7.pmd
+PRODUCT_PACKAGES += fai__4.8.21_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.4.0_enpuv7.pmd
+PRODUCT_PACKAGES += fai__8.0.2_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.4.0_enpuv7.pmd
+PRODUCT_PACKAGES += fai__8.0.3_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.4.0_enpuv7.pmd
+PRODUCT_PACKAGES += fai__3.0.0_0.0__eai_7.4.0_enpuv7.pmd
+PRODUCT_PACKAGES += fai__2.9.0_1.2__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.4.0_enpuv7.pmd
+PRODUCT_PACKAGES += fai__2.9.2_1.2__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.4.0_enpuv7.pmd
+PRODUCT_PACKAGES += fai__2.7.2_0.2__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.4.0_enpuv7.pmd
+PRODUCT_PACKAGES += fai__4.8.4_0.2__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.4.0_enpuv7.pmd
+PRODUCT_PACKAGES += fai__4.8.21_0.2__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.4.0_enpuv7.pmd
+PRODUCT_PACKAGES += fai__4.8.14_0.2__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.4.0_enpuv7.pmd
+PRODUCT_PACKAGES += fai__8.0.2_0.2__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.4.0_enpuv7.pmd
+PRODUCT_PACKAGES += fai__8.0.3_0.2__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.4.0_enpuv7.pmd
+PRODUCT_PACKAGES += fai__15.20.1_1.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.4.0_enpuv7.pmd
+PRODUCT_PACKAGES += fai__15.20.2_1.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.4.0_enpuv7.pmd
+PRODUCT_PACKAGES += fai__20.21.4_1.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_7.4.0_enpuv7.pmd
+PRODUCT_PACKAGES += ffecns_base_model.pmd
+PRODUCT_PACKAGES += ffecns_uv_model.pmd
 
 # Adding WNR Model File
 PRODUCT_PACKAGES += wind_filter__1.0__48k__2ch__16b__eai_5.5.eai
 PRODUCT_PACKAGES += wind_filter__1.0__48k__2ch__16b__eai_5.8.eai
+PRODUCT_PACKAGES += wind_filter__1.0__48k__2ch__16b__eai_7.4.eai
 
 # Audio configuration xml's related to Hawi
 QCV_FAMILY_SKUS := art
@@ -126,13 +158,65 @@ PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/bluetooth_qti_hearing_aid_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/bluetooth_qti_hearing_aid_audio_policy_configuration.xml
 
 PRODUCT_COPY_FILES += \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/codec2/media_codecs_c2_audio.xml:vendor/etc/media_codecs_c2_audio.xml \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/codec2/service/1.0/c2audio.vendor.base-arm.policy:vendor/etc/seccomp_policy/c2audio.vendor.base-arm.policy \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/codec2/service/1.0/c2audio.vendor.base-arm64.policy:vendor/etc/seccomp_policy/c2audio.vendor.base-arm64.policy \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/codec2/service/1.0/c2audio.vendor.ext-arm.policy:vendor/etc/seccomp_policy/c2audio.vendor.ext-arm.policy \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/codec2/service/1.0/c2audio.vendor.ext-arm64.policy:vendor/etc/seccomp_policy/c2audio.vendor.ext-arm64.policy
-PRODUCT_COPY_FILES += \
     $(CONFIG_HAL_SRC_DIR)/vendor_audio_interfaces.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/vendor_audio_interfaces.xml
+
+# Audio configuration xml's related to Maili
+QCV_FAMILY_SKUS := pebble
+DEVICE_SKU := pebble
+UV_WRAPPER2 := false
+
+CONFIG_PAL_SRC_DIR := vendor/qcom/opensource/pal/configs/qcom/$(BA_NAME)/art
+CONFIG_HAL_SRC_DIR := vendor/qcom/opensource/audio-hal/primary-hal/configs/art
+CONFIG_SKU_OUT_DIR := $(TARGET_COPY_OUT_VENDOR)/etc/audio/sku_$(DEVICE_SKU)
+
+PRODUCT_COPY_FILES += \
+    $(CONFIG_HAL_SRC_DIR)/audio_effects.conf:$(CONFIG_SKU_OUT_DIR)/audio_effects.conf \
+    $(CONFIG_HAL_SRC_DIR)/audio_effects.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects.xml \
+    $(CONFIG_HAL_SRC_DIR)/audio_effects_config.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects_config.xml \
+    $(CONFIG_HAL_SRC_DIR)/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/microphone_characteristics.xml \
+    $(CONFIG_PAL_SRC_DIR)/card-defs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/card-defs.xml \
+    $(CONFIG_PAL_SRC_DIR)/card-defs-native.xml:$(TARGET_COPY_OUT_VENDOR)/etc/card-defs-native.xml \
+    $(CONFIG_PAL_SRC_DIR)/mixer_paths_pebble_mtp_wcd9378.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_pebble_mtp_wcd9378.xml \
+    $(CONFIG_PAL_SRC_DIR)/mixer_paths_pebble_mtp_qmp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_pebble_mtp_qmp.xml \
+    $(CONFIG_PAL_SRC_DIR)/mixer_paths_pebble_cdp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_pebble_cdp.xml \
+    $(CONFIG_PAL_SRC_DIR)/mixer_paths_pebble_qrd.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_pebble_qrd.xml \
+    $(CONFIG_PAL_SRC_DIR)/mixer_paths_pebble_mtp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_pebble_mtp.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_pebble_cdp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_pebble_cdp.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_pebble_mtp_wcd9378.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_pebble_mtp_wcd9378.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_pebble_mtp_qmp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_pebble_mtp_qmp.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_pebble_qrd.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_pebble_qrd.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_pebble_mtp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_pebble_mtp.xml \
+    $(CONFIG_PAL_SRC_DIR)/usecaseKvManager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usecaseKvManager.xml \
+    $(CONFIG_PAL_SRC_DIR)/Hapticsconfig.xml:$(TARGET_COPY_OUT_VENDOR)/etc/Hapticsconfig.xml \
+    $(CONFIG_PAL_SRC_DIR)/plugin_manager.xml:$(CONFIG_SKU_OUT_DIR)/plugin_manager.xml \
+    vendor/qcom/opensource/audio-hal/primary-hal/configs/common/media_codecs_vendor_audio.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_vendor_audio.xml \
+    frameworks/native/data/etc/android.hardware.audio.pro.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.pro.xml \
+    frameworks/native/data/etc/android.hardware.audio.low_latency.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.low_latency.xml \
+    frameworks/native/data/etc/android.hardware.sensor.dynamic.head_tracker.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/sku_$(DEVICE_SKU)/android.hardware.sensor.dynamic.head_tracker.xml
+# Copy AudioEffects config
+PRODUCT_COPY_FILES += \
+    hardware/interfaces/audio/aidl/default/audio_effects_config.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects_config_stub.xml
+
+# Copy Quasar config
+PRODUCT_COPY_FILES += \
+    $(CONFIG_HAL_SRC_DIR)/quasar_config.xml:$(CONFIG_SKU_OUT_DIR)/quasar_config.xml
+
+#XML Audio configuration files
+ifneq ($(TARGET_USES_AOSP_FOR_AUDIO), true)
+PRODUCT_COPY_FILES += \
+    $(CONFIG_HAL_SRC_DIR)/audio_policy_configuration.xml:$(CONFIG_SKU_OUT_DIR)/audio_policy_configuration.xml
+
+#Audio configuration xml's common to art family
+PRODUCT_COPY_FILES += \
+$(foreach DEVICE_SKU, $(QCV_FAMILY_SKUS), \
+    $(CONFIG_HAL_SRC_DIR)/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/sku_$(DEVICE_SKU)_qssi/audio_policy_configuration.xml)
+
+PRODUCT_COPY_FILES += \
+    $(CONFIG_HAL_SRC_DIR)/audio_module_config_primary.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/audio_module_config_primary.xml
+endif
+
+# XML config file for memory logger
+PRODUCT_COPY_FILES += $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/$(DEVICE_SKU)/mem_logger_config.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mem_logger_config.xml
 
 ifneq (,$(filter userdebug eng, $(TARGET_BUILD_VARIANT)))
 PRODUCT_COPY_FILES += \
@@ -167,10 +251,6 @@ vendor.audio.offload.multiple.enabled=false
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.flac.sw.decoder.24bit=true
 
-#split a2dp DSP supported encoder list
-PRODUCT_PROPERTY_OVERRIDES += \
-persist.vendor.bt.a2dp_offload_cap=sbc-aptx-aptxtws-aptxhd-aac-ldac
-
 # A2DP offload support
 PRODUCT_PROPERTY_OVERRIDES += \
 ro.bluetooth.a2dp_offload.supported=true
@@ -204,28 +284,11 @@ vendor.audio.adm.buffering.ms=3
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.volume.headset.gain.depcal=true
 
-#enable c2 based encoders/decoders as default NT decoders/encoders
+#Enable ats thread enable
 PRODUCT_PROPERTY_OVERRIDES += \
-vendor.audio.c2.preferred=true
-
-#Enable dmaBuf heap usage by C2 components
-PRODUCT_PROPERTY_OVERRIDES += \
-debug.c2.use_dmabufheaps=1
-
-#Enable C2 suspend
-PRODUCT_PROPERTY_OVERRIDES += \
-vendor.qc2audio.suspend.enabled=true
-
-#Enable qc2 audio sw flac frame decode
-PRODUCT_PROPERTY_OVERRIDES += \
-vendor.qc2audio.per_frame.flac.dec.enabled=true
+persist.vendor.audio.atsthread.enable=true
 
 
-ifneq ($(GENERIC_ODM_IMAGE),true)
-$(warning "Enabling codec2.0 SW only for non-generic odm build variant")
-#Rank OMX SW codecs lower than OMX HW codecs
-PRODUCT_PROPERTY_OVERRIDES += debug.stagefright.omx_default_rank=0
-endif
 endif
 #enable keytone FR
 PRODUCT_PROPERTY_OVERRIDES += \
@@ -251,5 +314,6 @@ BUILD_AUDIO_TECHPACK_SOURCE := true
 AUDIO_FEATURE_EAI_VERSION_MAIN := 7
 AUDIO_FEATURE_EAI_VERSION_MINOR := 4
 
-include vendor/qcom/opensource/audio-hal/primary-hal/configs/art/audio-properties.mk
-
+include vendor/qcom/opensource/audio-hal/primary-hal/configs/$(TARGET_BOARD_PLATFORM)/audio-properties.mk
+# C2 Audio
+include vendor/qcom/opensource/audio-hal/primary-hal/configs/$(TARGET_BOARD_PLATFORM)/codec2_config.mk

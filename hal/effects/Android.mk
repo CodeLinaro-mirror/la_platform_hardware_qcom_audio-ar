@@ -16,7 +16,16 @@ LOCAL_MODULE:= libaudioeffecthal_base_impl_static
 LOCAL_VENDOR_MODULE := true
 LOCAL_MODULE_OWNER := qti
 
-LOCAL_C_FLAGS += -Werror -Wall -Wextra -Wthread-safety
+LOCAL_CFLAGS := \
+            -Werror \
+            -Wall \
+            -Wextra \
+            -Wthread-safety \
+            $(ALL_HAL_DEP_C_FLAGS)
+
+LOCAL_CPPFLAGS := \
+            -Wreorder \
+            -Werror=reorder
 
 LOCAL_SRC_FILES:= \
         EffectThread.cpp \
@@ -38,7 +47,15 @@ LOCAL_VENDOR_MODULE := true
 LOCAL_MODULE_OWNER := qti
 LOCAL_MODULE_RELATIVE_PATH := hw
 
-LOCAL_C_FLAGS += -Werror -Wall -Wextra
+LOCAL_CFLAGS := \
+        -Werror \
+        -Wall \
+        -Wextra \
+        $(ALL_HAL_DEP_C_FLAGS)
+
+LOCAL_CPPFLAGS := \
+        -Wreorder \
+        -Werror=reorder
 
 LOCAL_SRC_FILES:= \
         EffectConfig.cpp \
@@ -46,7 +63,7 @@ LOCAL_SRC_FILES:= \
         EffectMain.cpp
 
 LOCAL_STATIC_LIBRARIES := libaudioeffecthal_base_impl_static
-LOCAL_VINTF_FRAGMENTS := audioeffectservice_qti.xml
+LOCAL_VINTF_FRAGMENTS := vintf/$(EFFECT_HAL_AIDL_VERSION)/audioeffectservice_qti.xml
 
 LOCAL_SHARED_LIBRARIES:= \
     $(EFFECTS_DEFAULTS_SHARED_LIBRARIES) \

@@ -106,12 +106,12 @@ class StreamContext {
           mFormat(format),
           mChannelLayout(channelLayout),
           mSampleRate(sampleRate),
+          mMixPortConfig(mixPortConfig),
           mDataMQ(std::move(dataMQ)),
           mAsyncCallback(asyncCallback),
           mOutEventCallback(outEventCallback),
-          mMixPortConfig(mixPortConfig),
-          mNominalLatency(nominalLatency),
           mDebugParameters(debugParameters),
+          mNominalLatency(nominalLatency),
           mTelephony(telephony),
           mStreamName(streamName) {}
     StreamContext(StreamContext&& other)
@@ -121,10 +121,10 @@ class StreamContext {
           mFormat(other.mFormat),
           mChannelLayout(other.mChannelLayout),
           mSampleRate(other.mSampleRate),
+          mMixPortConfig(std::move(other.mMixPortConfig)),
           mDataMQ(std::move(other.mDataMQ)),
           mAsyncCallback(std::move(other.mAsyncCallback)),
           mOutEventCallback(std::move(other.mOutEventCallback)),
-          mMixPortConfig(std::move(other.mMixPortConfig)),
           mDebugParameters(std::move(other.mDebugParameters)),
           mFrameCount(other.mFrameCount),
           mNominalLatency(other.mNominalLatency),
@@ -166,8 +166,6 @@ class StreamContext {
     ::aidl::android::media::audio::common::AudioIoFlags getFlags() const {
         return mMixPortConfig.flags.value();
     }
-    bool getForceTransientBurst() const { return mDebugParameters.forceTransientBurst; }
-    bool getForceSynchronousDrain() const { return mDebugParameters.forceSynchronousDrain; }
     size_t getFrameSize() const;
     int getInternalCommandCookie() const { return mInternalCommandCookie; }
     int32_t getMixPortHandle() const {
@@ -195,7 +193,8 @@ class StreamContext {
     }
     int32_t getNominalLatencyMs() const { return mNominalLatency; }
     std::weak_ptr<Telephony> getTelephony() { return mTelephony; }
-    std::string getStreamName() const { return mStreamName; }
+    const std::string& getStreamName() const { return mStreamName; }
+    const std::string& getPrefixLog() const { return getStreamName(); }
 
   private:
     std::unique_ptr<CommandMQ> mCommandMQ;
@@ -278,12 +277,18 @@ class StreamWorkerCommonLogic : public StreamLogic {
     void populateReplyWrongState(
             ::aidl::android::hardware::audio::core::StreamDescriptor::Reply* reply,
             const ::aidl::android::hardware::audio::core::StreamDescriptor::Command& command) const;
+
+    void populateReplyUnsupportedCommand(
+            ::aidl::android::hardware::audio::core::StreamDescriptor::Reply* reply,
+            const ::aidl::android::hardware::audio::core::StreamDescriptor::Command& command) const;
+
     void switchToTransientState(
             ::aidl::android::hardware::audio::core::StreamDescriptor::State state) {
         mState = state;
         mTransientStateStart = std::chrono::steady_clock::now();
     }
 
+    const std::string& getPrefixLog() const { return mContext->getPrefixLog(); }
     // The context is only used for reading, except for updating the frame count,
     // which happens on the worker thread only.
     StreamContext* const mContext;
@@ -505,6 +510,7 @@ struct StreamCommonInterface {
             ::aidl::android::hardware::audio::core::MmapBufferDescriptor* desc) = 0;
 
     virtual void setStreamMicMute(const bool muted) = 0;
+    virtual void setAudioZoomFactor(float const& factor) = 0;
 };
 
 // This is equivalent to automatically generated 'IStreamCommonDelegator' but uses
@@ -634,6 +640,7 @@ class StreamCommonImpl : virtual public StreamCommonInterface, virtual public Dr
             const std::vector<::aidl::android::media::audio::common::AudioDevice>& devices)
             override;
     void setStreamMicMute(const bool muted) override;
+    void setAudioZoomFactor(float const& factor) override;
 
     ndk::ScopedAStatus configureMMapStream(
             ::aidl::android::hardware::audio::core::MmapBufferDescriptor* desc,
@@ -682,6 +689,7 @@ class StreamCommonImpl : virtual public StreamCommonInterface, virtual public Dr
 
     private:
     std::atomic<bool> mWorkerStopIssued = false;
+    const std::string& getPrefixLog() const { return mContextRef.getPrefixLog(); }
 };
 
 // Note: 'StreamIn/Out' can not be used on their own. Instead, they must be used for defining
@@ -707,9 +715,7 @@ class StreamIn : virtual public StreamCommonInterface,
         return getStreamCommonCommon(_aidl_return);
     }
     ndk::ScopedAStatus updateMetadata(const ::aidl::android::hardware::audio::common::SinkMetadata&
-                                              in_sinkMetadata) override {
-        return updateMetadataCommon(in_sinkMetadata);
-    }
+                                              in_sinkMetadata) override;
     ndk::ScopedAStatus getActiveMicrophones(
             std::vector<::aidl::android::media::audio::common::MicrophoneDynamicInfo>* _aidl_return)
             override;
@@ -727,6 +733,9 @@ class StreamIn : virtual public StreamCommonInterface,
 
     StreamContext mContext;
     const std::map<::aidl::android::media::audio::common::AudioDevice, std::string> mMicrophones;
+
+  private:
+    const std::string& getPrefixLog() const { return mContext.getPrefixLog(); }
 };
 
 class StreamOut : virtual public StreamCommonInterface,
@@ -749,10 +758,7 @@ class StreamOut : virtual public StreamCommonInterface,
         return getStreamCommonCommon(_aidl_return);
     }
     ndk::ScopedAStatus updateMetadata(
-            const ::aidl::android::hardware::audio::common::SourceMetadata& in_sourceMetadata)
-            override {
-        return updateMetadataCommon(in_sourceMetadata);
-    }
+            const ::aidl::android::hardware::audio::common::SourceMetadata& in_sourceMetadata) override;
     ndk::ScopedAStatus updateOffloadMetadata(
             const ::aidl::android::hardware::audio::common::AudioOffloadMetadata&
                     in_offloadMetadata) override;
@@ -785,6 +791,24 @@ class StreamOut : virtual public StreamCommonInterface,
     StreamContext mContext;
     const std::optional<::aidl::android::media::audio::common::AudioOffloadInfo> mOffloadInfo;
     std::optional<::aidl::android::hardware::audio::common::AudioOffloadMetadata> mOffloadMetadata;
+
+  private:
+    const std::string& getPrefixLog() const { return mContext.getPrefixLog(); }
+
+  protected:
+    static constexpr ::aidl::android::media::audio::common::AudioPlaybackRate sDefaultPlaybackRate =
+            {.speed = 1.0f,
+             .pitch = 1.0f,
+             .fallbackMode = ::aidl::android::media::audio::common::AudioPlaybackRate::
+                     TimestretchFallbackMode::FAIL};
+    ::aidl::android::media::audio::common::AudioPlaybackRate mPlaybackRate{sDefaultPlaybackRate};
+
+    virtual bool supportsPlaybackRate() const { return false; }
+    virtual ndk::ScopedAStatus setPlaybackRateImpl(
+            const ::aidl::android::media::audio::common::AudioPlaybackRate& rate);
+
+    // Call this after pal_stream_start to apply any cached rate.
+    void applyPlaybackRateIfNonDefault();
 };
 
 // The recommended way to create a stream instance.
@@ -821,6 +845,11 @@ class StreamWrapper {
         auto s = mStream.lock();
         if (s) return s->setStreamMicMute(muted);
         return;
+    }
+
+    void setAudioZoomFactor(float const& factor) {
+        auto s = mStream.lock();
+        if (s) s->setAudioZoomFactor(factor);
     }
 
     ndk::ScopedAStatus configureMMapStream(
@@ -863,6 +892,11 @@ class Streams {
             return it->second.setStreamMicMute(muted);
         }
         return;
+    }
+    void setAudioZoomFactor(int32_t portConfigId, float const& factor) {
+        if (auto it = mStreams.find(portConfigId); it != mStreams.end()) {
+            it->second.setAudioZoomFactor(factor);
+        }
     }
     std::string toString() const {
         std::ostringstream os;

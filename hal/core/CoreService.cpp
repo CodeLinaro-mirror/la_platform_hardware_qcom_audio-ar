@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -12,7 +12,6 @@
 #include <android/binder_process.h>
 
 #include <qti-audio-core/Module.h>
-#include <qti-audio-core/ModulePrimary.h>
 #include <cstdlib>
 #include <ctime>
 
@@ -30,7 +29,7 @@ auto registerBinderAsService = [](auto &&binder, const std::string &serviceName)
 
 void makeIModuleDefaultQti() {
     if (gModuleDefaultQti == nullptr) {
-        gModuleDefaultQti = ndk::SharedRefBase::make<::qti::audio::core::ModulePrimary>();
+        gModuleDefaultQti = ndk::SharedRefBase::make<::qti::audio::core::Module>();
     }
 }
 
