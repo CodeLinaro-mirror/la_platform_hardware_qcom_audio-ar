@@ -59,6 +59,8 @@ AUDIO_PAL += libdev_headset_mic
 AUDIO_PAL += libdev_speaker
 AUDIO_PAL += libdev_speaker_mic
 AUDIO_PAL += libdev_dummy
+AUDIO_PAL += libdev_handset_va
+AUDIO_PAL += libdev_headset_va
 
 # C2 Audio
 AUDIO_C2 := libqc2audio_base
@@ -86,6 +88,10 @@ AUDIO_MODULES += shikra_dsp_acdb_cal.acdb
 AUDIO_MODULES += shikra_dsp_workspaceFileXml.qwsp
 AUDIO_MODULES += shikra_cpu_acdb_cal.acdb
 AUDIO_MODULES += shikra_cpu_workspaceFileXml.qwsp
+AUDIO_MODULES += hotword_plugin
+AUDIO_MODULES += customva_plugin
+AUDIO_MODULES += sva_plugin
+AUDIO_MODULES += libvui_utils
 
 AUDIO_MODULES += $(AUDIO_AGM)
 AUDIO_MODULES += $(AUDIO_PAL)
