@@ -25,6 +25,10 @@ LOCAL_CFLAGS += -Wno-writable-strings
 LOCAL_VINTF_FRAGMENTS   := \
     ../../configs/common/manifest_non_qmaa.xml
 
+ifneq (,$(filter 17 CinnamonBun,$(PLATFORM_VERSION)))
+    LOCAL_VINTF_FRAGMENTS += manifest_audiocorehal_qti_17.xml
+endif
+
 LOCAL_SRC_FILES := \
     CoreService.cpp \
     Bluetooth.cpp \
@@ -56,7 +60,7 @@ LOCAL_HEADER_LIBRARIES :=  \
 ifneq (,$(filter U UpsideDownCake 14 V VanillaIceCream 15, $(PLATFORM_VERSION)))
     LOCAL_CPPFLAGS += -DHARDWARE_TIMESTAMP
 else ifneq (,$(filter W Baklava 16 CinnamonBun 17, $(PLATFORM_VERSION)))
-    ifneq (,$(filter $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)$(TARGET_BOARD_DERIVATIVE_SUFFIX), gen4_gvm_gy gen4_gvm_gy_sgt gen5_gvm gen5_gvm_gy))
+    ifneq (,$(filter $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)$(TARGET_BOARD_DERIVATIVE_SUFFIX), gen4_gvm_gy gen4_gvm_gy_sgt gen5_gvm gen5_gvm_cmu gen5_gvm_gy))
     LOCAL_CPPFLAGS += -DHARDWARE_TIMESTAMP
     endif
 endif
@@ -98,7 +102,6 @@ LOCAL_SHARED_LIBRARIES := \
     $(LATEST_ANDROID_HARDWARE_AUDIO_EFFECT) \
     android.hardware.audio.core.sounddose-V1-ndk \
     libar-pal \
-    libaudioserviceexampleimpl \
     libaudioplatformconverter.qti \
     qti-audio-types-aidl-V1-ndk
 
