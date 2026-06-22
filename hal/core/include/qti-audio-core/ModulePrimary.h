@@ -15,8 +15,8 @@
  */
 
 /*
- * Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -38,9 +38,15 @@ extern "C" void extn_set_duck_config_for_address(char* address, bool duck, float
 
 namespace qti::audio::core {
 
-class ModulePrimary final : public Module {
+/* Vendor note: 'final' intentionally removed and processSetVendorParameters made virtual
+ * to allow OEM subclassing (ModulePrimaryOEM in vendor/qcom/proprietary/audio_cust).
+ * This is a vendor extension point - not an AIDL interface change. All consumers are
+ * rebuilt from source; there is no pre-compiled binary ABI impact.
+ */
+class ModulePrimary : public Module {
   public:
     ModulePrimary();
+    ModulePrimary(AudioExtension& audExt, Platform& platform);
 
     // #################### start of overriding APIs from IModule ####################
     virtual ndk::ScopedAStatus setAudioPortConfig(const ::aidl::android::media::audio::common::AudioPortConfig& in_requested, ::aidl::android::media::audio::common::AudioPortConfig* out_suggested, bool* _aidl_return) override;
@@ -181,7 +187,8 @@ class ModulePrimary final : public Module {
     }
 
     // start of module parameters handling
-    bool processSetVendorParameters(
+    // Made virtual (vendor extension): allows ModulePrimaryOEM to override and chain back.
+    virtual bool processSetVendorParameters(
             const std::vector<::aidl::android::hardware::audio::core::VendorParameter>&);
     // setHandler for Generic
     void onSetGenericParameters(
@@ -232,8 +239,8 @@ class ModulePrimary final : public Module {
     ChildInterface<::aidl::android::hardware::audio::core::IBluetooth> mBluetooth;
     ChildInterface<::aidl::android::hardware::audio::core::IBluetoothA2dp> mBluetoothA2dp;
     ChildInterface<::aidl::android::hardware::audio::core::IBluetoothLe> mBluetoothLe;
-    Platform& mPlatform{Platform::getInstance()};
-    AudioExtension& mAudExt{AudioExtension::getInstance()};
+    Platform& mPlatform;
+    AudioExtension& mAudExt;
 
   private:
     bool mOffloadSpeedSupported;

@@ -132,6 +132,8 @@ typedef void (*register_reconfig_cb_t)(int (*reconfig_cb)(tSESSION_TYPE, int));
 
 typedef void (*gef_init_t)(void);
 typedef void (*gef_deinit_t)(void);
+typedef void (*streamInfo_t) (pal_stream_type_t streamType);
+
 
 // POWER_POLICY FEATURE
 typedef void (*fp_in_set_power_policy_t) (uint8_t);
@@ -280,6 +282,7 @@ class GefExtension : public AudioExtensionBase {
 
 class AudioExtension {
   public:
+    virtual ~AudioExtension() = default; //make class polymorphic
     static AudioExtension& getInstance() {
         static const auto kAudioExtension = []() {
             std::unique_ptr<AudioExtension> audioExt{new AudioExtension()};
@@ -294,7 +297,7 @@ class AudioExtension {
     void in_set_power_policy(uint8_t enable);
     void out_set_power_policy(uint8_t enable);
     int audio_extn_autohal_set_parameters(struct str_parms *params);
-    void audio_extn_set_parameters(struct str_parms* params);
+    virtual void audio_extn_set_parameters(struct str_parms* params);
     void audio_extn_get_parameters(struct str_parms* params, struct str_parms* reply);
     void audio_feature_stats_set_parameters(struct str_parms* params);
     void audio_feature_softStepVolume_set_parameters(struct str_parms* params);

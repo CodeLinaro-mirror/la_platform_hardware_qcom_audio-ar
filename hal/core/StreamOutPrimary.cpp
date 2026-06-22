@@ -48,17 +48,76 @@ static bool karaoke = false;
 namespace qti::audio::core {
 
 std::mutex StreamOutPrimary::sourceMetadata_mutex_;
+/* StreamOutPrimary supports two construction paths:
 
-StreamOutPrimary::StreamOutPrimary(StreamContext&& context, const SourceMetadata& sourceMetadata,
-                                   const std::optional<AudioOffloadInfo>& offloadInfo,
-                                   std::vector<AudioDevice> audioDevices)
+ 1) An explicit, dependency-injected constructor where the caller provides
+    the usecase tag, AudioExtension, and HalOffloadEffects. This enables
+    better testability, policy-driven stream creation, and avoids reliance
+    on singletons.
+
+ 2) A convenience constructor that auto-derives the usecase from the mix
+    port config and audio devices, and relies on singleton instances.
+    This preserves legacy behavior and simplifies existing call sites.
+*/
+// Explicit constructor: usecase and dependencies are provided by the caller.
+StreamOutPrimary::StreamOutPrimary(
+        StreamContext&& context,
+        const SourceMetadata& sourceMetadata,
+        const std::optional<AudioOffloadInfo>& offloadInfo,
+        std::vector<AudioDevice> audioDevices,
+        AudioExtension& audExt,
+        const Usecase tag,
+        HalOffloadEffects& halEffects)
     : StreamOut(std::move(context), offloadInfo),
       StreamCommonImpl(&(StreamOut::mContext), sourceMetadata),
-      mTag(getUsecaseTag(getContext().getMixPortConfig(), audioDevices)),
+
+      // ---- exactly matches class member order ----
+      mAudioDevices(std::move(audioDevices)),
+      mBytesWritten(0),
+      mMuted(false),
+
+      mTag(tag),
       mTagName(getName(mTag)),
       mFrameSizeBytes(getContext().getFrameSize()),
+
       mPlaybackRate(sDefaultPlaybackRate),
-      mMixPortConfig(getContext().getMixPortConfig()) {
+
+      mPlatform(Platform::getInstance()),
+      mMixPortConfig(getContext().getMixPortConfig()),
+      mHalEffects(halEffects),
+      mAudExt(audExt)
+{
+    initParams();
+}
+// Convenience constructor: auto-detects usecase and uses singleton dependencies.
+StreamOutPrimary::StreamOutPrimary(
+        StreamContext&& context,
+        const SourceMetadata& sourceMetadata,
+        const std::optional<AudioOffloadInfo>& offloadInfo,
+        std::vector<AudioDevice> audioDevices)
+    : StreamOut(std::move(context), offloadInfo),
+      StreamCommonImpl(&(StreamOut::mContext), sourceMetadata),
+
+      // ---- exactly matches class member order ----
+      mAudioDevices(std::move(audioDevices)),
+      mBytesWritten(0),
+      mMuted(false),
+
+      mTag(getUsecaseTag(getContext().getMixPortConfig(), mAudioDevices)),
+      mTagName(getName(mTag)),
+      mFrameSizeBytes(getContext().getFrameSize()),
+
+      mPlaybackRate(sDefaultPlaybackRate),
+
+      mPlatform(Platform::getInstance()),
+      mMixPortConfig(getContext().getMixPortConfig()),
+      mHalEffects(HalOffloadEffects::getInstance()),
+      mAudExt(AudioExtension::getInstance())
+{
+    initParams();
+}
+
+void StreamOutPrimary::initParams() {
     if (mTag == Usecase::PRIMARY_PLAYBACK) {
         mExt.emplace<PrimaryPlayback>();
     } else if (mTag == Usecase::DEEP_BUFFER_PLAYBACK) {
@@ -78,7 +137,7 @@ StreamOutPrimary::StreamOutPrimary(StreamContext&& context, const SourceMetadata
     } else if (mTag == Usecase::REAR_SEAT_PLAYBACK ) {
         mExt.emplace<RearSeatPlayback>();
     } else if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK) {
-        mExt.emplace<CompressPlayback>(offloadInfo.value(), this,
+        mExt.emplace<CompressPlayback>(mOffloadInfo.value(), this,
                                        mMixPortConfig);
     } else if (mTag == Usecase::PCM_OFFLOAD_PLAYBACK) {
         mExt.emplace<PcmOffloadPlayback>(mMixPortConfig);
@@ -98,9 +157,8 @@ StreamOutPrimary::StreamOutPrimary(StreamContext&& context, const SourceMetadata
         mExt.emplace<LowLatencyPlayback>();
     }
     outFlags = mMixPortConfig.flags.value().get<AudioIoFlags::Tag::output>();
-    mAudioDevices = audioDevices;
-    if (audioDevices.size() == 1) {
-        busAddr = audioDevices[0].address.get<AudioDeviceAddress::Tag::id>();
+    if (mAudioDevices.size() == 1) {
+        busAddr = mAudioDevices[0].address.get<AudioDeviceAddress::Tag::id>();
         LOG (VERBOSE) << __func__ << " AudioDeviceAddress: " << busAddr;
     }
     mHwVolumeSupported = isHwVolumeSupported();
@@ -1172,7 +1230,7 @@ void StreamOutPrimary::configure() {
         mPalHandle = nullptr;
         return;
     }
-
+    requestFocus();
     if (mUseCachedVolume) {
         setHwVolume(mVolumes);
     }
@@ -1349,7 +1407,7 @@ void StreamOutPrimary::configure() {
     pal_stream_set_mute(mPalHandle, mMuted);
 
     LOG(INFO) << __func__ << mLogPrefix << ": stream is configured";
-    enableOffloadEffects(true);
+    enableOffloadEffects(true, attr->type);
     const auto endTime = std::chrono::steady_clock::now();
     using FloatMillis = std::chrono::duration<float, std::milli>;
     const float palStreamOpenTimeTaken =
@@ -1365,7 +1423,8 @@ void StreamOutPrimary::configure() {
 }
 
 
-void StreamOutPrimary::enableOffloadEffects(const bool enable) {
+void StreamOutPrimary::enableOffloadEffects(const bool enable,
+            pal_stream_type_t palStreamType = PAL_STREAM_INVALID) {
     if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK || mTag == Usecase::PCM_OFFLOAD_PLAYBACK) {
         auto& ioHandle = mMixPortConfig.ext.get<AudioPortExt::Tag::mix>().handle;
         if (enable) {
@@ -1418,6 +1477,7 @@ void StreamOutPrimary::shutdown_I() {
     mPalHandleMutex.lock();
     if (mPalHandle != nullptr) {
         enableOffloadEffects(false);
+        abandonFocus();
         ::pal_stream_stop(mPalHandle);
         ::pal_stream_close(mPalHandle);
     }
