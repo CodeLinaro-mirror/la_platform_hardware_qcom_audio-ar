@@ -60,6 +60,7 @@ PRODUCT_PACKAGES += wind_filter__1.0__48k__2ch__16b__eai_5.8.eai
 QCV_FAMILY_SKUS := malabar
 DEVICE_SKU := malabar
 UV_WRAPPER2 := false
+AUDIO_FEATURE_STATS_ENABLED := false
 
 CONFIG_PAL_SRC_DIR := vendor/qcom/opensource/pal/configs/qcom/$(BA_NAME)/malabar
 CONFIG_HAL_SRC_DIR := vendor/qcom/opensource/audio-hal/primary-hal/configs/malabar
