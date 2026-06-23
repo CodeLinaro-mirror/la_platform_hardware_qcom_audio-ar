@@ -1,3 +1,8 @@
+include vendor/qcom/opensource/audio-hal/primary-hal/configs/taro/audio-modules.mk
+PRODUCT_PACKAGES += $(AUDIO_MODULES)
+
+# Business Application definition
+BA_NAME := mobile
 #BOARD_USES_GENERIC_AUDIO := true
 #
 #AUDIO_FEATURE_FLAGS
@@ -159,8 +164,6 @@ PRODUCT_PACKAGES += ftm_test_config_diwali-idp-sku1-snd-card
 PRODUCT_PACKAGES += ftm_test_config_diwali-qrd-sku1-snd-card
 PRODUCT_PACKAGES += audioadsprpcd
 PRODUCT_PACKAGES += vendor.qti.audio-adsprpc-service.rc
-PRODUCT_PACKAGES += android.hardware.audio.service_64
-PRODUCT_PACKAGES += android.hardware.audio.service_64.rc
 PRODUCT_PACKAGES += MTP_acdb_cal.acdb
 PRODUCT_PACKAGES += MTP_workspaceFileXml.qwsp
 PRODUCT_PACKAGES += CDP_acdb_cal.acdb
@@ -204,31 +207,51 @@ PRODUCT_PACKAGES += $(AUDIO_C2)
 QCV_FAMILY_SKUS := taro
 DEVICE_SKU := taro
 
-CONFIG_PAL_SRC_DIR := vendor/qcom/opensource/pal/configs/taro
+CONFIG_PAL_SRC_DIR := vendor/qcom/opensource/pal/configs/qcom/$(BA_NAME)/taro
 CONFIG_HAL_SRC_DIR := vendor/qcom/opensource/audio-hal/primary-hal/configs/taro
 CONFIG_SKU_OUT_DIR := $(TARGET_COPY_OUT_VENDOR)/etc/audio/sku_$(DEVICE_SKU)
 
 PRODUCT_COPY_FILES += \
     $(CONFIG_HAL_SRC_DIR)/audio_effects.conf:$(CONFIG_SKU_OUT_DIR)/audio_effects.conf \
     $(CONFIG_HAL_SRC_DIR)/audio_effects.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects.xml \
+    $(CONFIG_HAL_SRC_DIR)/audio_effects_config.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects_config.xml \
     $(CONFIG_HAL_SRC_DIR)/card-defs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/card-defs.xml \
     $(CONFIG_HAL_SRC_DIR)/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/microphone_characteristics.xml \
     $(CONFIG_HAL_SRC_DIR)/mixer_paths_waipio_qrd.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_waipio_qrd.xml \
     $(CONFIG_HAL_SRC_DIR)/mixer_paths_waipio_mtp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_waipio_mtp.xml \
     $(CONFIG_HAL_SRC_DIR)/mixer_paths_waipio_cdp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_waipio_cdp.xml \
+    $(CONFIG_HAL_SRC_DIR)/vendor_audio_interfaces.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/vendor_audio_interfaces.xml \
+    $(CONFIG_HAL_SRC_DIR)/audio_module_config_primary.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/audio_module_config_primary.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_waipio_qrd.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_waipio_qrd.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_waipio_mtp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_waipio_mtp.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_waipio_cdp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_waipio_cdp.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_upd.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_upd.xml \
+    $(CONFIG_PAL_SRC_DIR)/plugin_manager.xml:$(CONFIG_SKU_OUT_DIR)/plugin_manager.xml \
     $(CONFIG_PAL_SRC_DIR)/usecaseKvManager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usecaseKvManager.xml \
     vendor/qcom/opensource/audio-hal/primary-hal/configs/common/media_codecs_vendor_audio.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_vendor_audio.xml \
     frameworks/native/data/etc/android.hardware.audio.pro.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.pro.xml \
-    frameworks/native/data/etc/android.hardware.audio.low_latency.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.low_latency.xml
+    frameworks/native/data/etc/android.hardware.audio.low_latency.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.low_latency.xml \
+    $(TOPDIR)frameworks/av/services/audiopolicy/config/stub_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/stub_audio_policy_configuration.xml \
+    $(CONFIG_PAL_SRC_DIR)/Hapticsconfig.xml:$(TARGET_COPY_OUT_VENDOR)/etc/Hapticsconfig.xml
+
+PRODUCT_COPY_FILES += \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/init.qti.audio.debug.sh:$(TARGET_COPY_OUT_VENDOR)/bin/init.qti.audio.debug.sh
 
 #XML Audio configuration files
 ifneq ($(TARGET_USES_AOSP_FOR_AUDIO), true)
 PRODUCT_COPY_FILES += \
     $(CONFIG_HAL_SRC_DIR)/audio_policy_configuration.xml:$(CONFIG_SKU_OUT_DIR)/audio_policy_configuration.xml
+
+# Copy AudioEffects stub config
+PRODUCT_COPY_FILES += \
+    hardware/interfaces/audio/aidl/default/audio_effects_config.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects_config_stub.xml
+
+# Copy quasar config
+PRODUCT_COPY_FILES += \
+    $(CONFIG_HAL_SRC_DIR)/quasar_config.xml:$(CONFIG_SKU_OUT_DIR)/quasar_config.xml
+
+# Copy mem_logger config
+PRODUCT_COPY_FILES += $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/$(DEVICE_SKU)/mem_logger_config.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mem_logger_config.xml
 
 #Audio configuration xml's common to Taro family
 PRODUCT_COPY_FILES += \
@@ -245,6 +268,7 @@ CONFIG_SKU_OUT_DIR := $(TARGET_COPY_OUT_VENDOR)/etc/audio/sku_$(DEVICE_SKU)
 PRODUCT_COPY_FILES += \
     $(CONFIG_HAL_SRC_DIR)/audio_effects.conf:$(CONFIG_SKU_OUT_DIR)/audio_effects.conf \
     $(CONFIG_HAL_SRC_DIR)/audio_effects.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects.xml \
+    $(CONFIG_HAL_SRC_DIR)/audio_effects_config.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects_config.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_upd.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_upd.xml \
     $(CONFIG_HAL_SRC_DIR)/mixer_paths_diwali_idp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_diwali_idp.xml \
     $(CONFIG_HAL_SRC_DIR)/mixer_paths_diwali_qrd.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_diwali_qrd.xml \
@@ -281,7 +305,7 @@ PRODUCT_COPY_FILES += \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_waipio_qrd.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_waipio_qrd.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_waipio_mtp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_waipio_mtp.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_waipio_cdp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_waipio_cdp.xml \
-    $(CONFIG_PAL_SRC_DIR)/resourcemanager_upd.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_upd.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_upd.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_upd.xml
 
 #XML Audio configuration files
 ifneq ($(TARGET_USES_AOSP_FOR_AUDIO), true)
@@ -687,3 +711,38 @@ PRODUCT_PACKAGES_DEBUG += \
 endif
 
 AUDIO_FEATURE_ENABLED_GKI := true
+
+ifeq ($(AUDIO_FEATURE_ENABLED_DLKM),true)
+BOARD_VENDOR_KERNEL_MODULES += \
+    $(KERNEL_MODULES_OUT)/q6_notifier_dlkm.ko \
+    $(KERNEL_MODULES_OUT)/spf_core_dlkm.ko \
+    $(KERNEL_MODULES_OUT)/audpkt_ion_dlkm.ko \
+    $(KERNEL_MODULES_OUT)/gpr_dlkm.ko \
+    $(KERNEL_MODULES_OUT)/audio_pkt_dlkm.ko \
+    $(KERNEL_MODULES_OUT)/q6_dlkm.ko \
+    $(KERNEL_MODULES_OUT)/adsp_loader_dlkm.ko \
+    $(KERNEL_MODULES_OUT)/audio_prm_dlkm.ko \
+    $(KERNEL_MODULES_OUT)/q6_pdr_dlkm.ko \
+    $(KERNEL_MODULES_OUT)/pinctrl_lpi_dlkm.ko \
+    $(KERNEL_MODULES_OUT)/swr_dlkm.ko \
+    $(KERNEL_MODULES_OUT)/swr_ctrl_dlkm.ko \
+    $(KERNEL_MODULES_OUT)/snd_event_dlkm.ko \
+    $(KERNEL_MODULES_OUT)/wcd_core_dlkm.ko \
+    $(KERNEL_MODULES_OUT)/mbhc_dlkm.ko \
+    $(KERNEL_MODULES_OUT)/wcd9xxx_dlkm.ko \
+    $(KERNEL_MODULES_OUT)/swr_haptics_dlkm.ko \
+    $(KERNEL_MODULES_OUT)/stub_dlkm.ko \
+    $(KERNEL_MODULES_OUT)/machine_dlkm.ko \
+    $(KERNEL_MODULES_OUT)/lpass_cdc_dlkm.ko \
+    $(KERNEL_MODULES_OUT)/lpass_cdc_wsa_macro_dlkm.ko \
+    $(KERNEL_MODULES_OUT)/lpass_cdc_va_macro_dlkm.ko \
+    $(KERNEL_MODULES_OUT)/lpass_cdc_tx_macro_dlkm.ko \
+    $(KERNEL_MODULES_OUT)/lpass_cdc_rx_macro_dlkm.ko \
+    $(KERNEL_MODULES_OUT)/wsa883x_dlkm.ko \
+    $(KERNEL_MODULES_OUT)/wcd938x_dlkm.ko \
+    $(KERNEL_MODULES_OUT)/wcd938x_slave_dlkm.ko \
+    $(KERNEL_MODULES_OUT)/wcd937x_dlkm.ko \
+    $(KERNEL_MODULES_OUT)/wcd937x_slave_dlkm.ko
+endif
+
+include vendor/qcom/opensource/audio-hal/primary-hal/configs/taro/audio-properties.mk
