@@ -147,6 +147,8 @@ PRODUCT_PACKAGES += IOT_acdb_cal.acdb
 PRODUCT_PACKAGES += IOT_workspaceFileXml.qwsp
 PRODUCT_PACKAGES += QRD_acdb_cal.acdb
 PRODUCT_PACKAGES += QRD_workspaceFileXml.qwsp
+PRODUCT_PACKAGES += CONTROLLER_acdb_cal.acdb
+PRODUCT_PACKAGES += CONTROLLER_workspaceFileXml.qwsp
 PRODUCT_PACKAGES += IDP_lahaina_yupik_acdb_cal.acdb
 PRODUCT_PACKAGES += IDP_lahaina_yupik_workspaceFileXml.qwsp
 PRODUCT_PACKAGES += QRD_yupik_acdb_cal.acdb
@@ -193,10 +195,12 @@ PRODUCT_COPY_FILES += \
     $(CONFIG_HAL_SRC_DIR)/mixer_paths_lahaina_yupikidp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_lahaina_yupikidp.xml \
     $(CONFIG_HAL_SRC_DIR)/mixer_paths_lahaina_yupikidprb3.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_lahaina_yupikidprb3.xml \
     $(CONFIG_HAL_SRC_DIR)/mixer_paths_lahaina_yupikidpaio.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_lahaina_yupikidpaio.xml \
+    $(CONFIG_HAL_SRC_DIR)/mixer_paths_lahaina_yupikidpcontroller.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_lahaina_yupikidpcontroller.xml \
     $(CONFIG_HAL_SRC_DIR)/mixer_paths_lahaina_yupikidpiot.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_lahaina_yupikidpiot.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_lahaina_yupikidp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_lahaina_yupikidp.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_lahaina_yupikqrd.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_lahaina_yupikqrd.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_lahaina_yupikidprb3.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_lahaina_yupikidprb3.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_lahaina_yupikidpcontroller.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_lahaina_yupikidpcontroller.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_lahaina_yupikidpaio.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_lahaina_yupikidpaio.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_lahaina_yupikidpiot.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_lahaina_yupikidpiot.xml \
     $(CONFIG_PAL_SRC_DIR)/usecaseKvManager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usecaseKvManager.xml \
