@@ -1012,6 +1012,10 @@
         <ctl name="VA DMIC MUX1" value="DMIC0"/>
         <ctl name="VA DMIC MUX2" value="DMIC2"/>
     </path>
+    <path name="va-mic-tmic-lpi">
+        <ctl name="LPI Enable" value="1"/>
+        <path name="va-mic-tmic" />
+    </path>
     <path name="va-mic-qmic">
        <ctl name="VA_CDC_DMA_TX_0 Channels" value="Four"/>
         <ctl name="VA_AIF1_CAP Mixer DEC0" value="1"/>
@@ -1026,6 +1030,10 @@
         <ctl name="VA DMIC MUX1" value="DMIC0"/>
         <ctl name="VA DMIC MUX2" value="DMIC2"/>
         <ctl name="VA DMIC MUX3" value="DMIC1"/>
+    </path>
+    <path name="va-mic-qmic-lpi">
+        <ctl name="LPI Enable" value="1"/>
+        <path name="va-mic-qmic" />
     </path>
     <path name="echo-ref-record">
     </path>
