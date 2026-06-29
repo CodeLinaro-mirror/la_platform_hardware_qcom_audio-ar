@@ -215,6 +215,10 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
             <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_FRONT_BACK" channelMasks="INDEX_MASK_3" formatType="PCM" pcmType="INT_24_BIT" />
             <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_FRONT_BACK" channelMasks="INDEX_MASK_3" formatType="PCM" pcmType="FIXED_Q_8_24" />
         </mixPort>
+        <mixPort name="mixport_eavb0" role="sink" >
+            <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO"
+                formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
         <!-- end of sink mixports-->
     </mixPorts>
     <devicePorts>
@@ -336,6 +340,9 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <devicePort tagName="echo_reference_mic" deviceType="IN_ECHO_REFERENCE" role="source" attached="true">
            <profile samplingRates="16000 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </devicePort>
+        <devicePort tagName="eavb_in_bus" deviceType="IN_BUS" role="source" attached="true" address="BUS24_INPUT_EAVB">
+           <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </devicePort>
     </devicePorts>
     <routes>
         <!-- start of output device routes -->
@@ -357,6 +364,7 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <route type="mix" sink="mixport_tuner0" sources="fm_tuner" />
         <route type="mix" sink="fast_input" sources="built_in_mic,built_in_back_mic"/>
         <route type="mix" sink="echo_ref" sources="echo_reference_mic"/>
+        <route type="mix" sink="mixport_eavb0" sources="eavb_in_bus"/>
         <!-- end of input device routes -->
     </routes>
 </module>

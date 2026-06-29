@@ -729,7 +729,8 @@ void StreamInPrimary::updatePalDeviceForBusAddr(struct pal_device* devices, uint
     std::unordered_map<std::string, pal_device_id_t> busAddressMap = {
             {"BUS04_INPUT", PAL_DEVICE_IN_HANDSET_MIC},
             {"BUS09_INPUT_FRONT_PASSENGER", PAL_DEVICE_IN_A2B_MIC},
-            {"BUS17_INPUT_REAR_SEAT", PAL_DEVICE_IN_A2B2_MIC}};
+            {"BUS17_INPUT_REAR_SEAT", PAL_DEVICE_IN_A2B2_MIC},
+            {"BUS24_INPUT_EAVB", PAL_DEVICE_IN_EAVB}};
 
     for (uint32_t devIdx = 0; devIdx < numDevices; devIdx++) {
         auto it = busAddressMap.find(busAddressString);
@@ -774,6 +775,9 @@ void StreamInPrimary::configure() {
         LOG(DEBUG) << __func__ << " : PCM_RECORD usecase" << "Bus Address: " << attr->bus_addr;
         if ((std::strcmp(attr->bus_addr, "BUS04_INPUT") == 0) || (std::strcmp(attr->bus_addr, "BUS09_INPUT_FRONT_PASSENGER") == 0) || (std::strcmp(attr->bus_addr, "BUS17_INPUT_REAR_SEAT") == 0)) {
             attr->type = PAL_STREAM_CAPTURE_BUS;
+        }
+        else if (std::strcmp(attr->bus_addr, "BUS24_INPUT_EAVB") == 0) {
+            attr->type = PAL_STREAM_EAVB_CAPTURE;
         }
         else {
         attr->type = PAL_STREAM_DEEP_BUFFER;
