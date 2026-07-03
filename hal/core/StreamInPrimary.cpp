@@ -438,8 +438,10 @@ int64_t StreamInPrimary::GetSourceLatency() {
         auto& compressCapture = std::get<CompressCapture>(mExt);
         compressCapture.advanceReadCount();
         *latencyMs = compressCapture.getLatencyMs();
-    } else if (mTag == Usecase::PCM_RECORD || mTag == Usecase::HOTWORD_RECORD) {
+    } else if (mTag == Usecase::PCM_RECORD) {
         *latencyMs = PcmRecord::kCaptureDurationMs;
+    } else if (mTag == Usecase::HOTWORD_RECORD) {
+        *latencyMs = HotwordRecord::kCaptureDurationMs;
     }
 #ifndef HARDWARE_TIMESTAMP
     clock_gettime(CLOCK_MONOTONIC, &readAt);
