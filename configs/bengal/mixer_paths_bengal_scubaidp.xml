@@ -26,7 +26,7 @@
 <!-- IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                          -->
 
 <!-- Changes from Qualcomm Technologies, Inc. are provided under the following license:   -->
-<!-- ​​​​Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.                   -->
+<!-- Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.                   -->
 <!-- SPDX-License-Identifier: BSD-3-Clause-Clear                                          -->
 <mixer>
     <!-- These are the initial mixer settings -->
@@ -2876,6 +2876,9 @@
     </path>
 
     <path name="usb-headset-mic">
+    </path>
+
+    <path name="echo-ref-record">
     </path>
 
     <path name="capture-fm">
