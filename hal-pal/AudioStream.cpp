@@ -3913,9 +3913,6 @@ set_buff_size:
                     audio_channel_count_from_in_mask(config_.channel_mask),
                     config_.format);
         inBufCount = MMAP_PERIOD_COUNT_DEFAULT;
-    } else if (usecase_ == USECASE_AUDIO_RECORD_LOW_LATENCY) {
-        inBufSize = BUF_SIZE_CAPTURE;
-        inBufCount = NO_OF_BUF;
     } else
         inBufSize = StreamInPrimary::GetBufferSize();
     if (!handle) {
