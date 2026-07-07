@@ -393,6 +393,19 @@ std::shared_ptr<StreamOutPrimary> AudioDevice::CreateStreamOut(
         astream->GetStreamHandle(stream_out);
     }
     out_list_mutex.lock();
+    // Apply cached port volume inside the lock before adding to stream_out_list_.
+    // This prevents a race where SetBusPortVolume() on another thread updates the
+    // cache and iterates the list after the stream is added but before the cached
+    // value is applied here — which would result in the stale cached value
+    // overwriting the newer one.
+    if (address) {
+        auto it = bus_port_volume_cache_.find(std::string(address));
+        if (it != bus_port_volume_cache_.end()) {
+            AHAL_INFO("Applying cached port volume %.6f to new stream on %s",
+                      it->second, address);
+            astream->bus_port_volume_ = it->second;
+        }
+    }
     stream_out_list_.push_back(astream);
     AHAL_INFO("output stream %d %p",(int)stream_out_list_.size(), stream_out);
     if (flags & AUDIO_OUTPUT_FLAG_PRIMARY) {
@@ -997,6 +1010,14 @@ int adev_set_audio_port_config(struct audio_hw_device *dev,
                                const struct audio_port_config *config)
 {
     std::shared_ptr<AudioDevice> adevice = AudioDevice::GetInstance(dev);
+    if (!adevice) {
+        ALOGE("%s: invalid adevice object", __func__);
+        return -EINVAL;
+    }
+    if (!config) {
+        ALOGE("%s: invalid config", __func__);
+        return -EINVAL;
+    }
     char config_address[AUDIO_DEVICE_MAX_ADDRESS_LEN];
     strlcpy(config_address, config->ext.device.address, AUDIO_DEVICE_MAX_ADDRESS_LEN);
     float volume = 0.0;
@@ -1006,33 +1027,40 @@ int adev_set_audio_port_config(struct audio_hw_device *dev,
         config->ext.device.type,
         config->ext.device.address,
         config->gain.values[0]);
-        auto list = adevice->GetStreamOutList();
-        for(auto iter = list.begin(); iter != list.end(); ++iter) {
-            ALOGI("%s: Stream address: %s  config address: %s\n", __func__,(*iter)->address_, config_address);
-#ifdef FORD_EXTN_AUTO
-            if ((strncmp(config_address, "BUS03_PHONE", AUDIO_DEVICE_MAX_ADDRESS_LEN) == 0) && !hfpVolumeSetBoot)
-                process_hfp_volume(dev, config->gain.values[0]);
-#endif
-            if(strcmp((*iter)->address_, config_address) == 0) {
-                if (config->gain.values[0] <= MIN_VOLUME_VALUE_MB) {
-                    volume = MIN_VOLUME_GAIN;
-                } else if (config->gain.values[0] >= MAX_VOLUME_VALUE_MB) {
-                    volume = MAX_VOLUME_GAIN;
-                } else {
-                    volume = pow(10.0, ((float)config->gain.values[0] / 2000));
-                }
-                ALOGE("%s: set volume to stream", __func__);
-                AudioExtn::audio_extn_place_marker("M - AHAL SetVolume Enter", true);
-                (*iter)->SetVolume(volume, volume);
-                AudioExtn::audio_extn_place_marker("M - AHAL SetVolume Exit", false);
-            }
+        if (config->gain.values[0] <= MIN_VOLUME_VALUE_MB) {
+            volume = MIN_VOLUME_GAIN;
+        } else if (config->gain.values[0] >= MAX_VOLUME_VALUE_MB) {
+            volume = MAX_VOLUME_GAIN;
+        } else {
+            volume = pow(10.0, ((float)config->gain.values[0] / 2000));
         }
+#ifdef FORD_EXTN_AUTO
+        if ((strncmp(config_address, "BUS03_PHONE", AUDIO_DEVICE_MAX_ADDRESS_LEN) == 0) && !hfpVolumeSetBoot)
+            process_hfp_volume(dev, config->gain.values[0]);
+#endif
+        adevice->SetBusPortVolume(std::string(config_address), volume);
     }
     return 0;
 }
 
 std::vector<std::shared_ptr<StreamOutPrimary>> AudioDevice::GetStreamOutList() {
+    // Caller must hold out_list_mutex.
     return stream_out_list_;
+}
+
+void AudioDevice::SetBusPortVolume(const std::string& address, float volume) {
+    // Lock order: out_list_mutex -> stream_mutex_ (inside SetBusPortVolume on stream).
+    // Never acquire out_list_mutex while stream_mutex_ is held.
+    std::lock_guard<std::mutex> lock(out_list_mutex);
+    bus_port_volume_cache_[address] = volume;
+    for(auto iter = stream_out_list_.begin(); iter != stream_out_list_.end(); ++iter) {
+        if(strcmp((*iter)->address_, address.c_str()) == 0) {
+            ALOGI("%s: set bus port volume to stream", __func__);
+            AudioExtn::audio_extn_place_marker("M - AHAL SetVolume Enter", true);
+            (*iter)->SetBusPortVolume(volume);
+            AudioExtn::audio_extn_place_marker("M - AHAL SetVolume Exit", false);
+        }
+    }
 }
 
 static int adev_dump(const audio_hw_device_t *device __unused, int fd __unused)
