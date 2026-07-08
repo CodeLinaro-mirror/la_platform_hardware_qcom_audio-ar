@@ -46,6 +46,11 @@ PRODUCT_PACKAGES += fai__4.8.21_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_5.6.0_
 PRODUCT_PACKAGES += fai__8.0.3_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_5.6.0_enpuv6.pmd
 PRODUCT_PACKAGES += fai__8.0.2_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_5.6.0_enpuv6.pmd
 PRODUCT_PACKAGES += fai__3.0.0_0.0__eai_5.6.0_enpuv6.pmd
+PRODUCT_PACKAGES += fai__2.0.0_0.1__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_3.18_adsp.pmd
+PRODUCT_PACKAGES += fai__4.14.0_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_3.18_adsp.pmd
+PRODUCT_PACKAGES += fai__4.5.1_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_3.18_adsp.pmd
+PRODUCT_PACKAGES += fai__4.6.3_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_3.18_adsp.pmd
+PRODUCT_PACKAGES += fai__3.0.0_0.0__eai_3.18_adsp.pmd
 
 # Adding WNR Model File
 PRODUCT_PACKAGES += wind_filter__1.0__48k__2ch__16b__eai_5.5.eai
@@ -55,6 +60,7 @@ PRODUCT_PACKAGES += wind_filter__1.0__48k__2ch__16b__eai_5.8.eai
 QCV_FAMILY_SKUS := malabar
 DEVICE_SKU := malabar
 UV_WRAPPER2 := false
+AUDIO_FEATURE_STATS_ENABLED := false
 
 CONFIG_PAL_SRC_DIR := vendor/qcom/opensource/pal/configs/qcom/$(BA_NAME)/malabar
 CONFIG_HAL_SRC_DIR := vendor/qcom/opensource/audio-hal/primary-hal/configs/malabar
@@ -115,12 +121,6 @@ PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/bluetooth_qti_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/bluetooth_qti_audio_policy_configuration.xml \
     $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/bluetooth_qti_hearing_aid_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/bluetooth_qti_hearing_aid_audio_policy_configuration.xml
 
-PRODUCT_COPY_FILES += \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/codec2/media_codecs_c2_audio.xml:vendor/etc/media_codecs_c2_audio.xml \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/codec2/service/1.0/c2audio.vendor.base-arm.policy:vendor/etc/seccomp_policy/c2audio.vendor.base-arm.policy \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/codec2/service/1.0/c2audio.vendor.base-arm64.policy:vendor/etc/seccomp_policy/c2audio.vendor.base-arm64.policy \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/codec2/service/1.0/c2audio.vendor.ext-arm.policy:vendor/etc/seccomp_policy/c2audio.vendor.ext-arm.policy \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/common/codec2/service/1.0/c2audio.vendor.ext-arm64.policy:vendor/etc/seccomp_policy/c2audio.vendor.ext-arm64.policy
 PRODUCT_COPY_FILES += \
     $(CONFIG_HAL_SRC_DIR)/vendor_audio_interfaces.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/vendor_audio_interfaces.xml
 
@@ -201,34 +201,11 @@ PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.hw.aac.encoder=false
 #ADM Buffering size in ms
 PRODUCT_PROPERTY_OVERRIDES += \
-vendor.audio.adm.buffering.ms=3
+vendor.audio.adm.buffering.ms=4
 
 #enable headset calibration
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.volume.headset.gain.depcal=true
-
-#enable c2 based encoders/decoders as default NT decoders/encoders
-PRODUCT_PROPERTY_OVERRIDES += \
-vendor.audio.c2.preferred=true
-
-#Enable dmaBuf heap usage by C2 components
-PRODUCT_PROPERTY_OVERRIDES += \
-debug.c2.use_dmabufheaps=1
-
-#Enable C2 suspend
-PRODUCT_PROPERTY_OVERRIDES += \
-vendor.qc2audio.suspend.enabled=true
-
-#Enable qc2 audio sw flac frame decode
-PRODUCT_PROPERTY_OVERRIDES += \
-vendor.qc2audio.per_frame.flac.dec.enabled=true
-
-
-ifneq ($(GENERIC_ODM_IMAGE),true)
-$(warning "Enabling codec2.0 SW only for non-generic odm build variant")
-#Rank OMX SW codecs lower than OMX HW codecs
-PRODUCT_PROPERTY_OVERRIDES += debug.stagefright.omx_default_rank=0
-endif
 
 #enable keytone FR
 PRODUCT_PROPERTY_OVERRIDES += \
@@ -253,4 +230,3 @@ AUDIO_FEATURE_ENABLED_GKI := true
 BUILD_AUDIO_TECHPACK_SOURCE := true
 
 include vendor/qcom/opensource/audio-hal/primary-hal/configs/malabar/audio-properties.mk
-
