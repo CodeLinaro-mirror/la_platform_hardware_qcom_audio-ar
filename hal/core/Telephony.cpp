@@ -349,14 +349,13 @@ void Telephony::setDevices(const std::vector<AudioDevice>& devices, const bool u
         mTxDevice = getMatchingTxDevice(mRxDevice);
         updateDevices();
     } else {
-        /* USB TX capability is ready may later then USB RX devices. Here is to update
-         * TX device if voice call already start on USB RX devices.
+        /* Update TX device if voice call already started.
+         * If the target TX device is USB, check if it is connected first.
          */
-        if (isAnyCallActive() &&
-            (mTxDevice.type.type != devices[0].type.type)) {
-            if (isUsbDevice(devices[0]) && isUsbDevice(mRxDevice)) {
+        if (mIsVoiceStarted && (mTxDevice.type.type != devices[0].type.type)) {
+            if (isUsbDevice(devices[0])) {
                 if (!isUsbDeviceConnected(devices[0])) {
-                    LOG(DEBUG) << __func__ << ": usb_tx is not connected ";
+                    LOG(DEBUG) << __func__ << ": skip TX update. USB device not connected";
                     return;
                 }
             }
