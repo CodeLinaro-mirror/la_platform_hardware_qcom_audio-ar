@@ -855,20 +855,6 @@ void Platform::updateScreenRotation(const IModule::ScreenRotation in_rotation) n
     mCurrentScreenRotation = in_rotation;
 }
 
-void Platform::setRotation() const noexcept {
-    pal_param_device_rotation_t paramDeviceRotation{};
-    paramDeviceRotation.rotation_type =
-        (mCurrentScreenRotation == IModule::ScreenRotation::DEG_270) ?
-        PAL_SPEAKER_ROTATION_RL : PAL_SPEAKER_ROTATION_LR;
-
-    if (int32_t ret = ::pal_set_param(PAL_PARAM_ID_DEVICE_ROTATION,
-                                      &paramDeviceRotation,
-                                      sizeof(pal_param_device_rotation_t)); ret) {
-        LOG(ERROR) << __func__ << ": PAL_PARAM_ID_DEVICE_ROTATION failed： " << ret;
-        return;
-    }
-}
-
 IModule::ScreenRotation Platform::getCurrentScreenRotation() const noexcept {
     return mCurrentScreenRotation;
 }
