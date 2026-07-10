@@ -143,6 +143,8 @@ PRODUCT_PACKAGES += RB3_acdb_cal.acdb
 PRODUCT_PACKAGES += RB3_workspaceFileXml.qwsp
 PRODUCT_PACKAGES += AIO_acdb_cal.acdb
 PRODUCT_PACKAGES += AIO_workspaceFileXml.qwsp
+PRODUCT_PACKAGES += IOT_acdb_cal.acdb
+PRODUCT_PACKAGES += IOT_workspaceFileXml.qwsp
 PRODUCT_PACKAGES += QRD_acdb_cal.acdb
 PRODUCT_PACKAGES += QRD_workspaceFileXml.qwsp
 PRODUCT_PACKAGES += IDP_lahaina_yupik_acdb_cal.acdb
@@ -191,10 +193,12 @@ PRODUCT_COPY_FILES += \
     $(CONFIG_HAL_SRC_DIR)/mixer_paths_lahaina_yupikidp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_lahaina_yupikidp.xml \
     $(CONFIG_HAL_SRC_DIR)/mixer_paths_lahaina_yupikidprb3.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_lahaina_yupikidprb3.xml \
     $(CONFIG_HAL_SRC_DIR)/mixer_paths_lahaina_yupikidpaio.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_lahaina_yupikidpaio.xml \
+    $(CONFIG_HAL_SRC_DIR)/mixer_paths_lahaina_yupikidpiot.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_lahaina_yupikidpiot.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_lahaina_yupikidp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_lahaina_yupikidp.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_lahaina_yupikqrd.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_lahaina_yupikqrd.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_lahaina_yupikidprb3.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_lahaina_yupikidprb3.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_lahaina_yupikidpaio.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_lahaina_yupikidpaio.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_lahaina_yupikidpiot.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_lahaina_yupikidpiot.xml \
     $(CONFIG_PAL_SRC_DIR)/usecaseKvManager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usecaseKvManager.xml \
     $(CONFIG_PAL_SRC_DIR)/plugin_manager.xml:$(CONFIG_SKU_OUT_DIR)/plugin_manager.xml \
     vendor/qcom/opensource/audio-hal/primary-hal/configs/common/media_codecs_vendor_audio.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_vendor_audio.xml \
