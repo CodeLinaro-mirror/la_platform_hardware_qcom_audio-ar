@@ -194,7 +194,7 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <devicePort tagName="proxy_input_device" deviceType="IN_AFE_PROXY" connection="virtual" role="source">
             <profile samplingRates="8000 11025 16000 22050 32000 44100 48000 64000 88200 96000 128000 176400 192000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </devicePort>
-        <devicePort tagName="hdmi_in" deviceType="IN_DEVICE" connection="hdmi" role="source" attached="true">
+        <devicePort tagName="hdmi_in" deviceType="IN_DEVICE" connection="hdmi" role="source">
             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </devicePort>
         <devicePort tagName="bt_sco_headset_mic" deviceType="IN_HEADSET" connection="bt-sco" role="source">
