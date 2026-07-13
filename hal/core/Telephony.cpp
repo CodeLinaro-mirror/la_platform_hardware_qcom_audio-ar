@@ -84,7 +84,8 @@ void Telephony::VoiceStop() {
 }
 
 ndk::ScopedAStatus Telephony::switchAudioMode(AudioMode newAudioMode) {
-    std::scoped_lock lock{mLock};
+    bool reconfigureVoipPlayback = false;
+    std::unique_lock lock{mLock};
 
     if (std::find(mSupportedAudioModes.begin(), mSupportedAudioModes.end(), newAudioMode) ==
         mSupportedAudioModes.end()) {
@@ -94,7 +95,8 @@ ndk::ScopedAStatus Telephony::switchAudioMode(AudioMode newAudioMode) {
 
     mPlatform.updateCallMode((int)newAudioMode);
 
-    if (mAudioMode == newAudioMode) {
+    const auto oldAudioMode = mAudioMode;
+    if (oldAudioMode == newAudioMode) {
         LOG(VERBOSE) << __func__ << ": no change" << toString(newAudioMode);
         return ndk::ScopedAStatus::ok();
     }
@@ -117,6 +119,15 @@ ndk::ScopedAStatus Telephony::switchAudioMode(AudioMode newAudioMode) {
 
     mAudioMode = newAudioMode;
     LOG(DEBUG) << __func__ << ": switching to AudioMode:" << toString(mAudioMode);
+    reconfigureVoipPlayback =
+            mPlatform.isDpForVoiceEnabled() &&
+            (oldAudioMode == AudioMode::NORMAL || oldAudioMode == AudioMode::RINGTONE ||
+             oldAudioMode == AudioMode::IN_COMMUNICATION || newAudioMode == AudioMode::NORMAL ||
+             newAudioMode == AudioMode::RINGTONE || newAudioMode == AudioMode::IN_COMMUNICATION);
+    lock.unlock();
+    if (reconfigureVoipPlayback) {
+        reconfigureVoipPlaybackStream();
+    }
     return ndk::ScopedAStatus::ok();
 }
 
@@ -288,6 +299,9 @@ void Telephony::onExternalDeviceConnectionChanged(const AudioDevice& extDevice,
         return;
     }
     if (isAnyCallActive() || mAudioMode == AudioMode::IN_CALL) {
+        if (isHdmiDevice(extDevice)) {
+            updateDevices();
+        }
         LOG(VERBOSE) << __func__ << ": voice call exist";
         return;
     }
@@ -407,6 +421,9 @@ AudioDevice Telephony::getMatchingTxDevice(const AudioDevice& rxDevice) {
             return AudioDevice{.type.type = AudioDeviceType::IN_MICROPHONE};
         }
     } else if (rxDevice.type.type == AudioDeviceType::OUT_HEARING_AID) {
+        return AudioDevice{.type.type = AudioDeviceType::IN_MICROPHONE};
+    } else if (rxDevice.type.type == AudioDeviceType::OUT_DEVICE &&
+               rxDevice.type.connection == AudioDeviceDescription::CONNECTION_HDMI) {
         return AudioDevice{.type.type = AudioDeviceType::IN_MICROPHONE};
     } else {
         LOG(ERROR) << __func__ << ": unable to find matching TX device for " << rxDevice.toString();
@@ -636,6 +653,18 @@ void Telephony::setVoipPlaybackStream(std::weak_ptr<StreamCommonInterface> voipS
     mVoipStreamWptr = voipStream;
 }
 
+void Telephony::reconfigureVoipPlaybackStream() {
+    if (!mPlatform.isDpForVoiceEnabled()) {
+        return;
+    }
+    auto voipStream = mVoipStreamWptr.lock();
+    if (!voipStream) {
+        return;
+    }
+    LOG(INFO) << __func__ << ": reconfigure VOIP playback";
+    voipStream->reconfigureConnectedDevices();
+}
+
 void Telephony::triggerHACinVoipPlayback() {
     auto voipStream = mVoipStreamWptr.lock();
     if (!voipStream) {
@@ -734,6 +763,7 @@ ndk::ScopedAStatus Telephony::startCall() {
     auto attributes = mPlatform.getDefaultTelephonyAttributes();
 
     auto palDevices = mPlatform.convertToPalDevices({mRxDevice, mTxDevice});
+    mPlatform.forceDpDeviceForVoice(palDevices);
 
     attributes->info.voice_call_info.VSID = static_cast<uint32_t>(mSetUpdates.mVSID);
     {
@@ -883,6 +913,7 @@ void Telephony::stopCrsLoopback() {
 void Telephony::updateDevices() {
 
     auto palDevices = mPlatform.convertToPalDevices({mRxDevice, mTxDevice});
+    mPlatform.forceDpDeviceForVoice(palDevices);
 
     pal_param_bta2dp_t* param_bt_a2dp_ptr = nullptr;
     bool a2dp_capture_suspended = false;
@@ -964,6 +995,7 @@ void Telephony::updateDevices() {
             stopCrsLoopback();
         updateCrsDevice();
         palDevices = mPlatform.convertToPalDevices({mRxDevice, mTxDevice});
+        mPlatform.forceDpDeviceForVoice(palDevices);
         strlcpy(palDevices[0].custom_config.custom_key, "crsCall",
                   sizeof(palDevices[0].custom_config.custom_key));
     }

@@ -15,6 +15,7 @@
 #include <qti-audio-core/Module.h>
 #include <qti-audio-core/ModulePrimary.h>
 #include <qti-audio-core/StreamInPrimary.h>
+#include <qti-audio-core/Telephony.h>
 #include <system/audio.h>
 
 using aidl::android::hardware::audio::common::AudioOffloadMetadata;
@@ -783,6 +784,13 @@ void StreamInPrimary::configure() {
 
     if (!mEffectsApplied)
         applyEffects();
+
+    if (mTag == Usecase::VOIP_RECORD && mPlatform.isDpForVoiceEnabled()) {
+        mPlatform.markVoipRecordStarted();
+        if (auto telephony = mContext.getTelephony().lock()) {
+            telephony->reconfigureVoipPlaybackStream();
+        }
+    }
 
     LOG(DEBUG) << __func__ << mLogPrefix << " : stream is configured with " << mConnectedDevices;
 

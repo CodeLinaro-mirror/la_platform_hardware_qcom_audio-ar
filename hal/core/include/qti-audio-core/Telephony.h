@@ -146,6 +146,7 @@ class Telephony : public ::aidl::android::hardware::audio::core::BnTelephony {
 
     /* set the voip stream */
     void setVoipPlaybackStream(std::weak_ptr<StreamCommonInterface> voipStream);
+    void reconfigureVoipPlaybackStream();
 
     /* called on playback stream start/close */
     void onPlaybackStart(
