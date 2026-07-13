@@ -62,9 +62,9 @@ MM_AUDIO_AR += capi_gpio
 MM_AUDIO_AR += capi_irq_comm
 MM_AUDIO_AR += capi_synth
 MM_AUDIO_AR += capi_loud
-ifneq ( ,$(filter T Tiramisu 13 U 14, $(PLATFORM_VERSION)))
+ifneq ( ,$(filter T Tiramisu 13 U 14 CinnamonBun 17, $(PLATFORM_VERSION)))
 MM_AUDIO_AR += libarpowerpolicy
-endif #ends Tiramisu
+endif #ends PLATFORM_VERSION
 endif #ends TARGET_GVMGH_SPECIFIC
 ifeq ($(AUDIO_USE_STUB_HAL),false)
 MM_AUDIO_AR += libams
