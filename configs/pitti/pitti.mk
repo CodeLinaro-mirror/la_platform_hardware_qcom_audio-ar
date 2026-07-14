@@ -148,8 +148,10 @@ PRODUCT_COPY_FILES += \
     $(CONFIG_PAL_SRC_DIR)/card-defs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/card-defs.xml \
     $(CONFIG_PAL_SRC_DIR)/mixer_paths_pitti_qrd.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_pitti_qrd.xml \
     $(CONFIG_PAL_SRC_DIR)/mixer_paths_pitti_idp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_pitti_idp.xml \
+    $(CONFIG_PAL_SRC_DIR)/mixer_paths_pitti_wear.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_pitti_wear.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_pitti_qrd.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_pitti_qrd.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_pitti_idp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_pitti_idp.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_pitti_wear.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_pitti_wear.xml \
     $(CONFIG_PAL_SRC_DIR)/usecaseKvManager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usecaseKvManager.xml \
     vendor/qcom/opensource/audio-hal/primary-hal/configs/common/media_codecs_vendor_audio.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_vendor_audio.xml \
     frameworks/native/data/etc/android.hardware.audio.pro.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.pro.xml \

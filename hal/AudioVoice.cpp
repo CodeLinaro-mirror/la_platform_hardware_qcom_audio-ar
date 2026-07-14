@@ -466,10 +466,26 @@ int AudioVoice::GetMatchingTxDevices(const std::set<audio_devices_t>& rx_devices
             case AUDIO_DEVICE_OUT_BLUETOOTH_SCO:
             case AUDIO_DEVICE_OUT_BLUETOOTH_SCO_HEADSET:
             case AUDIO_DEVICE_OUT_BLUETOOTH_SCO_CARKIT:
-                tx_devices.insert(AUDIO_DEVICE_IN_BLUETOOTH_SCO_HEADSET);
+                if (pal_bt_input_device_available(PAL_DEVICE_IN_BLUETOOTH_SCO_HEADSET)){
+                    AHAL_DBG("%s: BT SCO input device available, "
+                             "inserting AUDIO_DEVICE_IN_BLUETOOTH_SCO_HEADSET", __func__);
+                    tx_devices.insert(AUDIO_DEVICE_IN_BLUETOOTH_SCO_HEADSET);
+                }
+                else {
+                    AHAL_DBG("%s: BT SCO input device not available, using builtin mic", __func__);
+                    tx_devices.insert(AUDIO_DEVICE_IN_BUILTIN_MIC);
+                }
                 break;
             case AUDIO_DEVICE_OUT_BLE_HEADSET:
-                tx_devices.insert(AUDIO_DEVICE_IN_BLE_HEADSET);
+                if (pal_bt_input_device_available(PAL_DEVICE_IN_BLUETOOTH_BLE)){
+                    AHAL_DBG("%s: BLE input device available, "
+                             "inserting AUDIO_DEVICE_IN_BLE_HEADSET", __func__);
+                    tx_devices.insert(AUDIO_DEVICE_IN_BLE_HEADSET);
+                }
+                else {
+                    AHAL_DBG("%s: BLE input device not available, using builtin mic", __func__);
+                    tx_devices.insert(AUDIO_DEVICE_IN_BUILTIN_MIC);
+                }
                 break;
             case AUDIO_DEVICE_OUT_HEARING_AID:
                 tx_devices.insert(AUDIO_DEVICE_IN_BUILTIN_MIC);

@@ -82,6 +82,8 @@ AUDIO_MODULES += QRD_acdb_cal.acdb
 AUDIO_MODULES += QRD_workspaceFileXml.qwsp
 AUDIO_MODULES += IDP_UPD_acdb_cal.acdb
 AUDIO_MODULES += IDP_UPD_workspaceFileXml.qwsp
+AUDIO_MODULES += WEAR_acdb_cal.acdb
+AUDIO_MODULES += WEAR_workspaceFileXml.qwsp
 AUDIO_MODULES += fai__2.3.0_0.1__3.0.0_0.0__eai_1.10.pmd
 AUDIO_MODULES += fai__2.3.0_0.1__3.0.0_0.0__eai_1.36_enpu2_comp.pmd
 AUDIO_MODULES += fai__2.0.0_0.1__3.0.0_0.0__eai_1.36_enpu2.pmd
@@ -119,7 +121,9 @@ AUDIO_MODULES += mm-audio-ftm
 AUDIO_MODULES += libmcs
 AUDIO_MODULES += libquasar
 AUDIO_MODULES += sensors.dynamic_sensor_hal
+ifneq ($(TARGET_HAS_LOW_RAM),true)
 AUDIO_MODULES += libaudiofeaturestats
+endif
 AUDIO_MODULES += libhotword_intf
 AUDIO_MODULES += libcustomva_intf
 AUDIO_MODULES += libVoiceSdk
