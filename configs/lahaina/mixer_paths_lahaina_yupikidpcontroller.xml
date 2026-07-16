@@ -240,7 +240,7 @@
     <ctl name="SEC MI2S LOOPBACK Volume" value="0"/>
     <path name="speaker-and-haptics"/>
 
-    <!-- These are audio route (FE to BE) specific mixer settings -->`
+    <!-- These are audio route (FE to BE) specific mixer settings -->
     <path name="gsm-mode">
         <ctl name="GSM mode Enable" value="ON"/>
     </path>
@@ -563,7 +563,7 @@
     <path name="speaker-mic">
         <ctl name="TX_CDC_DMA_TX_3 Channels" value="One"/>
         <ctl name="TX_AIF1_CAP Mixer DEC2" value="1"/>
-        <ctl name="TX DMIC MUX2" value="DMIC0"/>
+        <ctl name="TX DMIC MUX2" value="DMIC2"/>
     </path>
     <path name="voice-speaker-mic">
         <path name="speaker-mic"/>
@@ -629,7 +629,9 @@
         <ctl name="TX DMIC MUX2" value="DMIC0"/>
     </path>
     <path name="handset-mic">
-        <path name="dmic1"/>
+	<ctl name="TX_CDC_DMA_TX_3 Channels" value="One"/>
+        <ctl name="TX_AIF1_CAP Mixer DEC2" value="1"/>
+        <ctl name="TX DMIC MUX2" value="DMIC2"/>
     </path>
     <path name="voice-rec-mic">
         <path name="handset-mic"/>
@@ -648,9 +650,9 @@
     <path name="handset-dmic-endfire">
         <ctl name="TX_CDC_DMA_TX_3 Channels" value="Two"/>
         <ctl name="TX_AIF1_CAP Mixer DEC1" value="1"/>
-        <ctl name="TX DMIC MUX1" value="DMIC0"/>
+	<ctl name="TX DMIC MUX1" value="DMIC2"/>
         <ctl name="TX_AIF1_CAP Mixer DEC2" value="1"/>
-        <ctl name="TX DMIC MUX2" value="DMIC1"/>
+        <ctl name="TX DMIC MUX2" value="DMIC3"/>
     </path>
     <path name="dmic-endfire">
         <path name="handset-dmic-endfire"/>
@@ -666,9 +668,9 @@
     <path name="speaker-dmic-endfire">
         <ctl name="TX_CDC_DMA_TX_3 Channels" value="Two"/>
         <ctl name="TX_AIF1_CAP Mixer DEC1" value="1"/>
-        <ctl name="TX DMIC MUX1" value="DMIC3"/>
+	<ctl name="TX DMIC MUX1" value="DMIC2"/>
         <ctl name="TX_AIF1_CAP Mixer DEC2" value="1"/>
-        <ctl name="TX DMIC MUX2" value="DMIC1"/>
+        <ctl name="TX DMIC MUX2" value="DMIC3"/>
     </path>
     <path name="speaker-stereo-dmic-ef">
         <path name="speaker-dmic-endfire"/>
