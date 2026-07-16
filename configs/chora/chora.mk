@@ -51,6 +51,12 @@ PRODUCT_PACKAGES += fai__4.14.0_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_3.18_a
 PRODUCT_PACKAGES += fai__4.5.1_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_3.18_adsp.pmd
 PRODUCT_PACKAGES += fai__4.6.3_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_3.18_adsp.pmd
 PRODUCT_PACKAGES += fai__3.0.0_0.0__eai_3.18_adsp.pmd
+PRODUCT_PACKAGES += fai__2.3.0_0.1__3.0.0_0.0__eai_1.10.pmd
+PRODUCT_PACKAGES += fai__2.3.0_0.1__3.0.0_0.0__eai_1.36_enpu2_comp.pmd
+PRODUCT_PACKAGES += fai__2.0.0_0.1__3.0.0_0.0__eai_1.36_enpu2.pmd
+PRODUCT_PACKAGES += fai__2.7.2_0.0__3.0.0_0.0__eai_1.36_enpu2.pmd
+PRODUCT_PACKAGES += fai__2.7.20_0.0__3.0.0_0.0__eai_1.36_enpu2.pmd
+PRODUCT_PACKAGES += fai__3.0.0_0.0__eai_1.36_enpu2.pmd
 
 # Adding WNR Model File
 PRODUCT_PACKAGES += wind_filter__1.0__48k__2ch__16b__eai_5.5.eai
@@ -76,6 +82,8 @@ PRODUCT_COPY_FILES += \
         $(CONFIG_PAL_SRC_DIR)/resourcemanager_ravelin_idp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_ravelin_idp.xml \
         $(CONFIG_PAL_SRC_DIR)/resourcemanager_ravelin_qrd.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_ravelin_qrd.xml \
         $(CONFIG_PAL_SRC_DIR)/usecaseKvManager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usecaseKvManager.xml \
+        $(CONFIG_PAL_SRC_DIR)/usecaseKvManager_ravelin.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usecaseKvManager_ravelin.xml \
+        $(CONFIG_PAL_SRC_DIR)/usecaseKvManager_bourtzi.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usecaseKvManager_bourtzi.xml \
         $(CONFIG_PAL_SRC_DIR)/plugin_manager.xml:$(CONFIG_SKU_OUT_DIR)/plugin_manager.xml \
         frameworks/native/data/etc/android.hardware.sensor.dynamic.head_tracker.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/sku_$(DEVICE_SKU)/android.hardware.sensor.dynamic.head_tracker.xml
 # Copy AudioEffects config
@@ -219,10 +227,6 @@ vendor.audio.offload.multiple.enabled=false
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.flac.sw.decoder.24bit=true
 
-#split a2dp DSP supported encoder list
-PRODUCT_PROPERTY_OVERRIDES += \
-persist.vendor.bt.a2dp_offload_cap=sbc-aptx-aptxtws-aptxhd-aac-ldac
-
 # A2DP offload support
 PRODUCT_PROPERTY_OVERRIDES += \
 ro.bluetooth.a2dp_offload.supported=true
@@ -250,7 +254,7 @@ PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.hw.aac.encoder=false
 #ADM Buffering size in ms
 PRODUCT_PROPERTY_OVERRIDES += \
-vendor.audio.adm.buffering.ms=3
+vendor.audio.adm.buffering.ms=4
 
 #enable headset calibration
 PRODUCT_PROPERTY_OVERRIDES += \
