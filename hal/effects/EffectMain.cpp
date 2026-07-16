@@ -15,8 +15,8 @@
  */
 
 /*
- * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -32,6 +32,7 @@
 
 /** Default name of effect configuration file. */
 static const char* kDefaultConfigName = "audio_effects_config.xml";
+static const char* kAweConfigName = "audio_effects_config_awe.xml";
 static const char* kStubConfigName = "audio_effects_config_stub.xml";
 
 static inline std::string getEffectConfig() {
@@ -39,6 +40,16 @@ static inline std::string getEffectConfig() {
     if (stubmode) {
         LOG(INFO) << __func__ << " using effects in stub mode";
         return android::audio_find_readable_configuration_file(kStubConfigName);
+    }
+
+    auto audioVariant = ::android::base::GetProperty("ro.boot.audio", "");
+    if (audioVariant == "awe") {
+        // gen5 does not ship audio_effects_config_awe.xml; fall back to default if absent
+        auto aweConfig = android::audio_find_readable_configuration_file(kAweConfigName);
+        if (!aweConfig.empty()) {
+            LOG(INFO) << __func__ << " using effects config for awe";
+            return aweConfig;
+        }
     }
 
     return android::audio_find_readable_configuration_file(kDefaultConfigName);
