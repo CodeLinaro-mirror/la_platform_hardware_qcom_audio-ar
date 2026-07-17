@@ -598,11 +598,13 @@ class HotwordRecord : public UsecaseConfig<HotwordRecord> {
   public:
     constexpr static uint32_t kPeriodCount = 4;
     constexpr static size_t kPlatformDelayMs = 0;
+    // Match PAL SoundTriggerEngineAwe buffer period (120ms at 16kHz/16-bit/mono)
+    // to prevent DataMQ overflow during FTRT pre-buffer drain
+    constexpr static uint32_t kCaptureDurationMs = 120;
     static size_t getFrameCount(
             const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig);
 
-    // use same as pcm record
-    static int32_t getLatency() { return PcmRecord::getLatency(); }
+    static int32_t getLatency() { return kCaptureDurationMs * kPeriodCount + kPlatformDelayMs; }
     pal_stream_handle_t* getPalHandle(
             const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig);
 };
