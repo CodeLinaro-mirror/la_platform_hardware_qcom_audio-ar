@@ -266,6 +266,13 @@ PRODUCT_COPY_FILES += \
 endif
 endif
 
+# PAL plugin manager — gen4_au.mk only installs this for gen4_gvm_sdv
+ifneq (,$(filter gen4_gvm_sdv,$(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)$(TARGET_BOARD_DERIVATIVE_SUFFIX)))
+PRODUCT_COPY_FILES += \
+    $(TOPDIR)device/qcom/common/rootdir/etc/ueventd.qcom.rc:$(TARGET_COPY_OUT_VENDOR)/etc/sdv_core_ueventd/ueventd.qcom.rc \
+    $(TOPDIR)vendor/qcom/opensource/pal/configs/gen4_au/plugin_manager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/plugin_manager.xml
+endif
+
 ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), gen4_au)
 # Configuration files for gen4_au AudioReach value added SI
 PRODUCT_COPY_FILES += \
