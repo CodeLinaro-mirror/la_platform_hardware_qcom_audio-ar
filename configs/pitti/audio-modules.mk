@@ -69,6 +69,7 @@ AUDIO_MODULES += audio.r_submix.default
 AUDIO_MODULES += audio.primary.pitti
 AUDIO_MODULES += ftm_test_config
 AUDIO_MODULES += ftm_test_config_pitti-qrd-snd-card
+AUDIO_MODULES += ftm_test_config_pitti-wear-snd-card
 AUDIO_MODULES += audioadsprpcd
 
 ifneq ($(filter _32go _wear32,$(TARGET_BOARD_SUFFIX)),)
