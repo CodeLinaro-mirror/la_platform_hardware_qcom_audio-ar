@@ -181,7 +181,7 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     std::variant<std::monostate, PrimaryPlayback, DeepBufferPlayback, CompressPlayback,
                  PcmOffloadPlayback, VoipPlayback, SpatialPlayback, MMapPlayback, UllPlayback,
                  InCallMusic, HapticsPlayback,SysNotificationPlayback, NavGuidancePlayback,
-                 PhonePlayback, AlertPlayback, MediaPlayback, LowLatencyPlayback,
+                 PhonePlayback, AlertPlayback, MirrorPlayback,MediaPlayback, LowLatencyPlayback,
                  FrontPassengerPlayback, RearSeatPlayback>
             mExt;
     // references

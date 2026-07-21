@@ -27,6 +27,10 @@ struct HdmiParameters {
     int stream;
     pal_device_id_t deviceId;
 };
+struct mirrorDevice {
+    std::string src;
+    std::vector<std::string> dst;
+};
 
 enum class PlaybackRateStatus { SUCCESS, UNSUPPORTED, ILLEGAL_ARGUMENT };
 
@@ -58,6 +62,8 @@ inline UsecaseOps makeUsecaseOps() {
 
 class Platform {
   private:
+    std::vector<struct mirrorDevice> mirrordevices;
+
     Platform(const Platform&) = delete;
     Platform& operator=(const Platform& x) = delete;
 
@@ -278,6 +284,8 @@ class Platform {
     void setHapticsIntensity(const int hapticsIntensity) const noexcept;
 
     void updateUHQA(const bool enable) noexcept;
+    void updatemirrordevice(const mirrorDevice& mirrordevice);
+    const std::vector<mirrorDevice>& getMirrorDevices()  {return mirrordevices;};
     bool isUHQAEnabled() const noexcept;
     void updateVoiceAssistantZone(uint32_t zoneid) noexcept;
     void updateInputAssistantZone(uint32_t zoneid) noexcept;

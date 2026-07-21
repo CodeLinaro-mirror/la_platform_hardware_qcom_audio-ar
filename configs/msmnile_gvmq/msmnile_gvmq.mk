@@ -493,7 +493,7 @@ endif
 
 #enable mirror-link feature
 PRODUCT_PROPERTY_OVERRIDES += \
-vendor.audio.enable.mirrorlink=false
+vendor.audio.enable.mirrorlink=true
 
 ifeq ($(PRODUCT_NAME), msmnile_gvmgh)
 #enable voicecall speaker stereo

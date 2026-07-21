@@ -124,6 +124,8 @@ void StreamOutPrimary::initParams() {
         mExt.emplace<DeepBufferPlayback>();
     } else if (mTag == Usecase::MEDIA_PLAYBACK) {
         mExt.emplace<MediaPlayback>();
+    } else if (mTag == Usecase::MIRROR_PLAYBACK) {
+        mExt.emplace<MirrorPlayback>();
     } else if (mTag == Usecase::SYS_NOTIFICATION_PLAYBACK) {
         mExt.emplace<SysNotificationPlayback>();
     } else if (mTag == Usecase::NAV_GUIDANCE_PLAYBACK) {
@@ -182,6 +184,7 @@ bool StreamOutPrimary::isHwVolumeSupported() {
         case Usecase::VOIP_PLAYBACK:
         case Usecase::NAV_GUIDANCE_PLAYBACK:
         case Usecase::MEDIA_PLAYBACK:
+        case Usecase::MIRROR_PLAYBACK:
         case Usecase::PRIMARY_PLAYBACK:
         case Usecase::DEEP_BUFFER_PLAYBACK:
         case Usecase::ALERTS_PLAYBACK:
@@ -1105,18 +1108,45 @@ void StreamOutPrimary::updatePalDeviceForBusAddr(struct pal_device* devices, uin
         LOG(ERROR) << __func__ << "invalid input paramter";
         return;
     }
+    bool isMirrorDevice = (std::string::npos != busAddressString.find("MIRROR")) ? true : false;
+    bool isdeviceavaliable = false;
     LOG(DEBUG) << "device: " << devices << "num devices: "<< numDevices;
     std::unordered_map<std::string, pal_device_id_t> busAddressMap = {
             {"BUS08_FRONT_PASSENGER", PAL_DEVICE_OUT_A2B_SPKR},
             {"BUS16_REAR_SEAT", PAL_DEVICE_OUT_A2B2_SPKR}};
-
-    for (uint32_t devIdx = 0; devIdx < numDevices; devIdx++) {
-        auto it = busAddressMap.find(busAddressString);
-        if (it != busAddressMap.end()) {
-            devices[devIdx].id = it->second;
-        } else {
-            LOG(ERROR) << __func__ << "unknown bus address: " << busAddressString;
-            return;  // or some other default value
+    const auto& mirrordevices = mPlatform.getMirrorDevices();
+    const mirrorDevice* matchedDev = nullptr;
+    for (const auto& dev : mirrordevices) {
+        isdeviceavaliable = (busAddressString == dev.src);
+        if(isdeviceavaliable) {
+            matchedDev = &dev;
+            break;
+       }
+    }
+    if (isdeviceavaliable && matchedDev) {
+        for (uint32_t devIdx = 0; devIdx < numDevices; devIdx++) {
+            if (devIdx >= matchedDev->dst.size()) {
+                LOG(ERROR) << __func__ << " dst index out of range for mirror device: " << busAddressString;
+                return;
+            }
+            auto it = busAddressMap.find(matchedDev->dst[devIdx]);
+            if (it != busAddressMap.end()) {
+                devices[devIdx].id = it->second;
+            } else {
+                LOG(ERROR) << __func__ << "unknown bus address: " << busAddressString;
+                return;  // or some other default value
+            }
+        }
+    }
+    else{
+        for (uint32_t devIdx = 0; devIdx < numDevices; devIdx++) {
+            auto it = busAddressMap.find(busAddressString);
+            if (it != busAddressMap.end()) {
+                devices[devIdx].id = it->second;
+            } else {
+                LOG(ERROR) << __func__ << "unknown bus address: " << busAddressString;
+                return;  // or some other default value
+            }
         }
     }
     return;
@@ -1185,6 +1215,8 @@ void StreamOutPrimary::configure() {
     } else if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK) {
         attr->type = PAL_STREAM_COMPRESSED;
     } else if (mTag == Usecase::MEDIA_PLAYBACK) {
+        attr->type = PAL_STREAM_PLAYBACK_BUS;
+     } else if (mTag == Usecase::MIRROR_PLAYBACK) {
         attr->type = PAL_STREAM_PLAYBACK_BUS;
     } else if (mTag == Usecase::NAV_GUIDANCE_PLAYBACK) {
         attr->type = PAL_STREAM_PLAYBACK_BUS;

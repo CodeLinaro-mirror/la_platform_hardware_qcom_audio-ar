@@ -32,6 +32,7 @@ using ::aidl::android::media::audio::common::AudioChannelLayout;
 using ::aidl::android::media::audio::common::AudioDevice;
 using ::aidl::android::media::audio::common::AudioDeviceAddress;
 using ::aidl::android::media::audio::common::AudioDeviceDescription;
+using aidl::android::media::audio::common::AudioDeviceAddress;
 using ::aidl::android::media::audio::common::AudioDeviceType;
 using ::aidl::android::media::audio::common::AudioFormatDescription;
 using ::aidl::android::media::audio::common::AudioFormatType;
@@ -363,6 +364,7 @@ std::vector<pal_device> Platform::getDummyPalDevices(const AudioPortConfig& mixP
 std::vector<pal_device> Platform::configureAndFetchPalDevices(
         const AudioPortConfig& mixPortConfig, const Usecase& tag,
         const std::vector<AudioDevice>& devices, const bool dummyDevice) const {
+    std::vector<AudioDevice> mdevices;
     if (devices.empty()) {
         if (dummyDevice) {
             return getDummyPalDevices(mixPortConfig);
@@ -371,10 +373,51 @@ std::vector<pal_device> Platform::configureAndFetchPalDevices(
             return {};
         }
     }
+    std::string deviceAddress =  devices[0].address.get<AudioDeviceAddress::Tag::id>();
+    bool isMirrorDevice = (std::string::npos != deviceAddress.find("MIRROR")) ? true : false;
+    bool isdeviceavaliable ;
+    if(isMirrorDevice)
+    {
+        LOG(INFO)<<"the playback was happening in mirror device";
+         for (const auto& dev : mirrordevices)
+         {
+            isdeviceavaliable = (deviceAddress == dev.src);
+            if(isdeviceavaliable)
+            {
+                for (size_t i = 0; i < dev.dst.size(); ++i)
+                {
+                    mdevices.push_back(devices[0]);
+                    mdevices[i].address.set<::aidl::android::media::audio::common::AudioDeviceAddress::Tag::id>(dev.dst[i]);
+                }
+                auto palDevices = convertToPalDevices(mdevices);
+                customizePalDevices(mixPortConfig,tag,palDevices);
+                return palDevices;
+            }
+        }
+    }
+    // If mirror device but no match found, fall back to original devices
     auto palDevices = convertToPalDevices(devices);
     customizePalDevices(mixPortConfig,tag,palDevices);
 
     return palDevices;
+}
+void Platform:: updatemirrordevice(const mirrorDevice& mirrordevice) {
+    auto it = std::find_if( mirrordevices.begin(),mirrordevices.end(),[&](const mirrorDevice& d) {
+            return d.src == mirrordevice.src;
+        });
+    if (mirrordevice.dst.empty()) {
+        if (it != mirrordevices.end()) {
+            mirrordevices.erase(it);
+            LOG(DEBUG)<<__func__<<"mirror device is erased successfully";
+        }
+    } else {
+        if (it != mirrordevices.end()) {
+            *it = mirrordevice;
+        } else {
+            mirrordevices.push_back(mirrordevice);
+            LOG(DEBUG)<<__func__<<"mirror device is updated successfully";
+        }
+    }
 }
 
 void Platform::getPositionInFrames(pal_stream_handle_t* palHandle, int32_t const& sampleRate,
@@ -1390,6 +1433,7 @@ void Platform::initUsecaseOpMap() {
     mUsecaseOpMap[Usecase::PRIMARY_PLAYBACK] = makeUsecaseOps<PrimaryPlayback>();
 //AUTO
     mUsecaseOpMap[Usecase::MEDIA_PLAYBACK] = makeUsecaseOps<MediaPlayback>();
+    mUsecaseOpMap[Usecase::MIRROR_PLAYBACK] = makeUsecaseOps<MirrorPlayback>();
     mUsecaseOpMap[Usecase::NAV_GUIDANCE_PLAYBACK] = makeUsecaseOps<NavGuidancePlayback>();
     mUsecaseOpMap[Usecase::SYS_NOTIFICATION_PLAYBACK] = makeUsecaseOps<SysNotificationPlayback>();
     mUsecaseOpMap[Usecase::ALERTS_PLAYBACK] = makeUsecaseOps<AlertPlayback>();
