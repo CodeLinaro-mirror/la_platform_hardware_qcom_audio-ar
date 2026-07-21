@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
- * SPDX-License-Identifier: BSD-3-Clause-Clear
+ Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
 #pragma once
@@ -115,4 +115,6 @@ const static std::string kA2dpSuspended{"A2dpSuspended"};
 // Haptics
 const static std::string kHapticsVolume{"haptics_volume"};
 const static std::string kHapticsIntensity{"haptics_intensity"};
+const static std::string kMirrorSRC{"mirroring_src"};
+const static std::string kMirrorDST{"mirroring_dst"};
 }; // namespace qti::audio::core::Parameters

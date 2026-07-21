@@ -19,10 +19,10 @@
      See the License for the specific language governing permissions and
      limitations under the License.
 -->
-<!-- Changes from Qualcomm Innovation Center are provided under the following license:
-
-     Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
-     SPDX-License-Identifier: BSD-3-Clause-Clear
+<!--
+  Changes from Qualcomm Technologies, Inc. are provided under the following license:
+  Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+  SPDX-License-Identifier: BSD-3-Clause-Clear
 -->
 
 <!--
@@ -33,43 +33,50 @@
     - Volume groups
   in the car environment.
 -->
-<carAudioConfiguration version="2">
+<carAudioConfiguration version="3">
+   <mirroringDevices>
+       <mirroringDevice address="BUS1000_MIRROR"/>
+   </mirroringDevices>
     <zones>
-        <zone name="primary zone" isPrimary="true" occupantZoneId="0">
-            <volumeGroups>
-                <group>
-                    <device address="BUS00_MEDIA">
-                        <context context="music"/>
-                    </device>
-                </group>
-                <group>
-                    <device address="BUS01_SYS_NOTIFICATION">
-                        <context context="alarm"/>
-                        <context context="notification"/>
-                        <context context="system_sound"/>
-                    </device>
-                </group>
-                <group>
-                    <device address="BUS02_NAV_GUIDANCE">
-                        <context context="navigation"/>
-                        <context context="voice_command"/>
-                    </device>
-                </group>
-                <group>
-                    <device address="BUS03_PHONE">
-                        <context context="call"/>
-                        <context context="call_ring"/>
-                    </device>
-                </group>
-                <group>
-                    <device address="BUS05_ALERTS">
-                        <context context="emergency"/>
-                        <context context="safety"/>
-                        <context context="vehicle_status"/>
-                        <context context="announcement"/>
-                    </device>
-                </group>
-            </volumeGroups>
+        <zone name="primary zone" isPrimary="true" audioZoneId="0" occupantZoneId="0">
+            <zoneConfigs>
+                <zoneConfig name="primary zone config 0" isDefault="true">
+                    <volumeGroups>
+                        <group>
+                            <device address="BUS00_MEDIA">
+                                <context context="music"/>
+                            </device>
+                        </group>
+                        <group>
+                            <device address="BUS01_SYS_NOTIFICATION">
+                                <context context="alarm"/>
+                                <context context="notification"/>
+                                <context context="system_sound"/>
+                            </device>
+                        </group>
+                        <group>
+                            <device address="BUS02_NAV_GUIDANCE">
+                                <context context="navigation"/>
+                                <context context="voice_command"/>
+                            </device>
+                        </group>
+                        <group>
+                            <device address="BUS03_PHONE">
+                                <context context="call"/>
+                                <context context="call_ring"/>
+                            </device>
+                        </group>
+                        <group>
+                            <device address="BUS05_ALERTS">
+                                <context context="emergency"/>
+                                <context context="safety"/>
+                                <context context="vehicle_status"/>
+                                <context context="announcement"/>
+                            </device>
+                        </group>
+                    </volumeGroups>
+                </zoneConfig>
+            </zoneConfigs>
             <inputDevices>
                 <inputDevice address="BUS04_INPUT"/>
             </inputDevices>
@@ -87,25 +94,29 @@
                 where port is the physical port of the display (See DisplayAddress.Phyisical)
             -->
         </zone>
-        <zone name="front passenger zone" audioZoneId="1">
-            <volumeGroups>
-                <group>
-                    <device address="BUS08_FRONT_PASSENGER">
-                        <context context="music"/>
-                        <context context="navigation"/>
-                        <context context="voice_command"/>
-                        <context context="call_ring"/>
-                        <context context="call"/>
-                        <context context="alarm"/>
-                        <context context="notification"/>
-                        <context context="system_sound"/>
-                        <context context="emergency"/>
-                        <context context="safety"/>
-                        <context context="vehicle_status"/>
-                        <context context="announcement"/>
-                    </device>
-                </group>
-            </volumeGroups>
+        <zone name="front passenger zone" audioZoneId="1" occupantZoneId="1">
+            <zoneConfigs>
+                <zoneConfig name="A2B zone config 0" isDefault="true">
+                    <volumeGroups>
+                        <group>
+                            <device address="BUS08_FRONT_PASSENGER">
+                                <context context="music"/>
+                                <context context="navigation"/>
+                                <context context="voice_command"/>
+                                <context context="call_ring"/>
+                                <context context="call"/>
+                                <context context="alarm"/>
+                                <context context="notification"/>
+                                <context context="system_sound"/>
+                                <context context="emergency"/>
+                                <context context="safety"/>
+                                <context context="vehicle_status"/>
+                                <context context="announcement"/>
+                            </device>
+                        </group>
+                    </volumeGroups>
+                </zoneConfig>
+            </zoneConfigs>
             <inputDevices>
                 <inputDevice address="BUS09_INPUT_FRONT_PASSENGER"/>
             </inputDevices>
@@ -113,25 +124,29 @@
                 <display port="1"/>
             </displays>
         </zone>
-        <zone name="rear seat zone" audioZoneId="2">
-            <volumeGroups>
-                <group>
-                    <device address="BUS16_REAR_SEAT">
-                        <context context="music"/>
-                        <context context="navigation"/>
-                        <context context="voice_command"/>
-                        <context context="call_ring"/>
-                        <context context="call"/>
-                        <context context="alarm"/>
-                        <context context="notification"/>
-                        <context context="system_sound"/>
-                        <context context="emergency"/>
-                        <context context="safety"/>
-                        <context context="vehicle_status"/>
-                        <context context="announcement"/>
-                    </device>
-                </group>
-            </volumeGroups>
+        <zone name="rear seat zone" audioZoneId="2" occupantZoneId="2">
+            <zoneConfigs>
+                <zoneConfig name="A2B2 zone config 0" isDefault="true">
+                    <volumeGroups>
+                        <group>
+                            <device address="BUS16_REAR_SEAT">
+                                <context context="music"/>
+                                <context context="navigation"/>
+                                <context context="voice_command"/>
+                                <context context="call_ring"/>
+                                <context context="call"/>
+                                <context context="alarm"/>
+                                <context context="notification"/>
+                                <context context="system_sound"/>
+                                <context context="emergency"/>
+                                <context context="safety"/>
+                                <context context="vehicle_status"/>
+                                <context context="announcement"/>
+                            </device>
+                        </group>
+                    </volumeGroups>
+                </zoneConfig>
+            </zoneConfigs>
             <inputDevices>
                 <inputDevice address="BUS17_INPUT_REAR_SEAT"/>
             </inputDevices>

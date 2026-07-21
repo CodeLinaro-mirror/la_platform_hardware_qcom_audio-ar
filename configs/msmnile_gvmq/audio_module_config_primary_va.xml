@@ -7,6 +7,7 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
 <module name="default">
     <attachedDevices>
         <item>Media Bus</item>
+        <item>Mirror Bus</item>
         <item>Sys Notification Bus</item>
         <item>Nav Guidance Bus</item>
         <item>Phone Bus</item>
@@ -29,6 +30,9 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         output flags-->
         <!-- start of source mixports-->
         <mixPort name="media" role="source" flags="PRIMARY">
+            <profile samplingRates="8000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="mirror" role="source" flags="DEEP_BUFFER">
             <profile samplingRates="8000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
         <mixPort name="sys_notification_16bit" role="source" flags="DEEP_BUFFER">
@@ -236,6 +240,18 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
                       stepValueMB="100"/>
             </gains>
         </devicePort>
+        <devicePort tagName="Mirror Bus" role="sink" attached="true"  deviceType="OUT_BUS" address="BUS1000_MIRROR">
+            <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+            <gains>
+                <gain name="gain_1" mode="JOINT"
+                      minValueMB="-6000"
+                      maxValueMB="600"
+                      defaultValueMB="0"
+                      minRampMs="10"
+                      maxRampMs="100"
+                      stepValueMB="100"/>
+                </gains>
+         </devicePort>
         <devicePort tagName="Sys Notification Bus" role="sink" attached="true" deviceType="OUT_BUS" address="BUS01_SYS_NOTIFICATION">
             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         <gains>
@@ -352,6 +368,7 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <route type="mix" sink="Phone Bus" sources="phone_16bit,phone_24bit,phone_32bit,phone_float,mmap_no_irq_out,low_latency_out_16bit,low_latency_out_24bit,low_latency_out_32bit,low_latency_out_float,low_latency_out_8k_16bit,low_latency_out_8k_24bit,low_latency_out_8k_32bit,low_latency_out_8k_float,low_latency_out_16k_sys_16bit,low_latency_out_16k_sys_24bit,low_latency_out_16k_sys_32bit,low_latency_out_16k_sys_float,low_latency_out_24k_16bit,low_latency_out_24k_24bit,low_latency_out_24k_32bit,low_latency_out_24k_float,low_latency_out_32k_16bit,low_latency_out_32k_24bit,low_latency_out_32k_32bit,low_latency_out_32k_float" />
         <route type="mix" sink="Alerts Bus" sources="alerts_16bit,alerts_24bit,alerts_32bit,alerts_float,low_latency_out_16bit,low_latency_out_24bit,low_latency_out_32bit,low_latency_out_float,low_latency_out_8k_16bit,low_latency_out_8k_24bit,low_latency_out_8k_32bit,low_latency_out_8k_float,low_latency_out_16k_sys_16bit,low_latency_out_16k_sys_24bit,low_latency_out_16k_sys_32bit,low_latency_out_16k_sys_float,low_latency_out_24k_16bit,low_latency_out_24k_24bit,low_latency_out_24k_32bit,low_latency_out_24k_float,low_latency_out_32k_16bit,low_latency_out_32k_24bit,low_latency_out_32k_32bit,low_latency_out_32k_float" />
         <route type="mix" sink="Front Passenger Bus" sources="front_passenger" />
+        <route type="mix" sink="Mirror Bus" sources="mirror" />
         <route type="mix" sink="Rear Seat Bus" sources="rear_seat" />
         <!-- end of output device routes -->
 

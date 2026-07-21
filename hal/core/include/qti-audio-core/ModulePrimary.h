@@ -31,6 +31,11 @@ typedef enum power_policy_status_t {
     POWER_POLICY_STATUS_ONLINE
 } power_policy_status_t;
 
+
+struct mirrorDevice {
+    std::string src;
+    std::vector<std::string> dst;
+};
 extern "C" void extn_out_set_power_policy(uint8_t enable);
 extern "C" void extn_in_set_power_policy(uint8_t enable);
 extern "C" void extn_set_mute_config_for_address(char* address, bool muted, float volume);
@@ -146,6 +151,7 @@ class ModulePrimary final : public Module {
         FTM, // Factory Test Mode
         AUDIOEXTENSION,
         HAPTICS,
+        MIRRORINGDEVICES,
     };
 
     // For set parameters
@@ -201,6 +207,7 @@ class ModulePrimary final : public Module {
     // SetHandler For Haptics
     void onSetHapticsParameters(
             const std::vector<::aidl::android::hardware::audio::core::VendorParameter>&);
+    void onSetMirroringParameters(const std::vector<::aidl::android::hardware::audio::core::VendorParameter>&);
 
     std::vector<::aidl::android::hardware::audio::core::VendorParameter> processGetVendorParameters(
             const std::vector<std::string>&);
