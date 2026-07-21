@@ -96,6 +96,7 @@ AUDIO_MODULES += libvui_utils
 
 AUDIO_MODULES += ffv__7.1.1_0.1__eai3.19_adsp.eai
 AUDIO_MODULES += fai__4.14.0_0.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_3.18_adsp.pmd
+AUDIO_MODULES += fai__4.14.0_1.0__3.0.0_0.0__3.1.2_0.0__3.2.0_0.1__eai_3.18_adsp.pmd
 
 AUDIO_MODULES += hotword_plugin
 AUDIO_MODULES += customva_plugin
