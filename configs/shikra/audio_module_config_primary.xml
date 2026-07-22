@@ -26,6 +26,9 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <mixPort name="fast_input" role="sink" flags="FAST">
             <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO LAYOUT_2POINT1 LAYOUT_2POINT0POINT2 LAYOUT_3POINT0POINT2 LAYOUT_5POINT1" channelMasks="INDEX_MASK_3" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
+        <mixPort name="hotword_input" role="sink" flags="HW_HOTWORD">
+            <profile samplingRates="16000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
         <!-- end of sink mixports-->
     </mixPorts>
     <devicePorts>
@@ -64,6 +67,7 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <!-- input routes -->
         <route type="mix" sink="primary_in" sources="built_in_mic,built_in_back_mic,wired_headset_mic" />
         <route type="mix" sink="fast_input" sources="built_in_mic,built_in_back_mic,wired_headset_mic" />
+        <route type="mix" sink="hotword_input" sources="built_in_mic,built_in_back_mic,wired_headset_mic" />
     </routes>
 </module>
 </modules>
