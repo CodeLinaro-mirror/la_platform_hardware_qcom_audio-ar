@@ -69,7 +69,7 @@ int getUUID() {
 std::shared_ptr<IVhalClient> getVhalClient() {
     static std::shared_ptr<IVhalClient> vhalClient;
     if (vhalClient == nullptr) {
-        vhalClient = IVhalClient::create();
+        vhalClient = IVhalClient::create(/*startThreadPool=*/true);
     }
     return vhalClient;
 }

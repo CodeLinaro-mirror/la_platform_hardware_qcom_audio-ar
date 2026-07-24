@@ -723,7 +723,7 @@ extern "C" __attribute__((visibility("default")))int oem_init(void)
     // Connect to the Vehicle HAL so we can monitor state
     std::shared_ptr<IVhalClient> pVnet;
     LOG(INFO) << "Connecting to Vehicle HAL";
-    pVnet = IVhalClient::create();
+    pVnet = IVhalClient::create(/*startThreadPool=*/true);
     if (pVnet == nullptr) {
         LOG(ERROR) << "Vehicle HAL getService returned NULL.  Exiting.";
         retValue = EXIT_FAILURE;
