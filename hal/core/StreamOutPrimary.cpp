@@ -15,6 +15,7 @@
 #include <qti-audio-core/StreamOutPrimary.h>
 #include <qti-audio/PlatformConverter.h>
 #include <qti-audio-core/Parameters.h>
+#include <cutils/properties.h>
 
 using aidl::android::hardware::audio::common::AudioOffloadMetadata;
 using aidl::android::hardware::audio::common::SinkMetadata;
@@ -1153,6 +1154,7 @@ void StreamOutPrimary::configure() {
     AudioChannelLayout channelLayout;
     AudioChannelLayout hapticChannelLayout;
     auto attr = mPlatform.getPalStreamAttributes(mMixPortConfig, false);
+    char audio_boot_prop[PROPERTY_VALUE_MAX] = {0};
 
     if (!attr) {
         LOG(ERROR) << __func__ << mLogPrefix << " no pal attributes found";
@@ -1359,7 +1361,18 @@ void StreamOutPrimary::configure() {
         bufConfig.bufferSize = durationMs *
                     (mMixPortConfig.sampleRate.value().value /1000) * frameSizeInBytes;
     }
+
     size_t ringBufSizeInBytes = bufConfig.bufferSize;
+
+    if(attr->type == PAL_STREAM_LOW_LATENCY)
+    {
+        property_get("ro.boot.audio", audio_boot_prop, "");
+        if (strcmp(audio_boot_prop, "ar") == 0) {
+            ringBufSizeInBytes *= 2;
+            LOG(DEBUG) << __func__ << mLogPrefix << "ringBufSizeInBytes doubled here from it's orignal value to " << ringBufSizeInBytes;
+        }
+    }
+
     const size_t ringBufCount = bufConfig.bufferCount;
 
     if (mTag == Usecase::HAPTICS_PLAYBACK && mHapticsPalHandle) {
