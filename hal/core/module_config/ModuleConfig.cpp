@@ -15,8 +15,8 @@
  */
 
 /*
- * Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license::
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -694,7 +694,17 @@ static std::unique_ptr<ModuleConfig> getModuleConfig(const xsd::Modules::Module&
 
 // static
 std::unique_ptr<ModuleConfig> ModuleConfig::getPrimaryConfiguration() {
-    auto filePath = getReadAbleConfigurationFile(kPrimaryModuleConfigFileName.c_str());
+    char vendor_sku[PROPERTY_VALUE_MAX] = {'\0'};
+    std::string filePath;
+
+    if (property_get("ro.boot.product.vendor.sku", vendor_sku, "") <= 0) {
+        LOG(WARNING) << __func__ << ": failed to get property for the vendor_sku";
+    }
+    if (!strcmp(vendor_sku, "bourtzi")) {
+        filePath = getReadAbleConfigurationFile(kPrimaryModuleConfigFileNameBourtzi.c_str());
+    } else {
+        filePath = getReadAbleConfigurationFile(kPrimaryModuleConfigFileName.c_str());
+    }
     LOG(INFO) << __func__ << ": parse " << filePath;
     auto xsdConfig = xsd::read(filePath.c_str());
     if (!xsdConfig.has_value()) {
