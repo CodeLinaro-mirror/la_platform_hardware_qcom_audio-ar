@@ -56,6 +56,104 @@ namespace qti::audio::core {
 
 class Telephony;
 
+/*
+ * Timestamp de-jitter filter shared by StreamInPrimary and StreamOutPrimary.
+ *
+ * observable.timeNs is a raw uptimeNanos() sample carrying scheduler/binder
+ * jitter even though the paired frame count is hardware-paced and regular.
+ * CTS requires low sample-to-sample jitter and a stable long-run time/frame
+ * ratio.
+ *
+ * After (re)start or a large discontinuity (> kResyncNs), the raw clock
+ * passes through unchanged until kSettleSamples consecutive samples land
+ * within kJitterAllowedNs of the frame-implied line. Once settled:
+ *
+ *   predicted = lastTimeNs + (frames - lastFrames) / sampleRate
+ *   output    = predicted + (rawNs - predicted) / kSmoothing
+ *
+ * This damps scheduler noise while always easing toward the real clock, so
+ * it can't get stuck or drift from the true rate. Causal (output <= rawNs)
+ * and monotonic (output >= lastTimeNs) clamps hold once settled.
+ *
+ * Smoothing only starts once settled so a one-off burst right after (re)start
+ * isn't smeared into a longer jitter ramp; CTS's warmup window already
+ * excludes those samples.
+ */
+class TimestampSmoother {
+  public:
+    void reset() noexcept {
+        mInitialized = false;
+        mSettled = false;
+        mConsecutivePlausible = 0;
+        mLastFrames = 0;
+        mLastTimeNs = 0;
+    }
+
+    // Returns the de-jittered timeNs for the given frame count and raw sample.
+    int64_t refine(int64_t frames, int64_t rawNowNs, int64_t sampleRate) noexcept {
+        if (sampleRate <= 0) {
+            return rawNowNs;  // cannot model without a rate; leave as-is
+        }
+
+        if (!mInitialized || frames < mLastFrames) {
+            // First poll, or frame counter reset (flush/restart).
+            mInitialized = true;
+            mSettled = false;
+            mConsecutivePlausible = 0;
+            mLastFrames = frames;
+            mLastTimeNs = rawNowNs;
+            return rawNowNs;
+        }
+
+        const int64_t predicted =
+                mLastTimeNs + (frames - mLastFrames) * 1'000'000'000LL / sampleRate;
+        const int64_t residual = rawNowNs - predicted;
+
+        if (std::llabs(residual) > kResyncNs) {
+            // Fresh discontinuity: passthrough and re-settle from here.
+            mSettled = false;
+            mConsecutivePlausible = 0;
+            mLastFrames = frames;
+            mLastTimeNs = rawNowNs;
+            return rawNowNs;
+        }
+
+        if (!mSettled) {
+            mConsecutivePlausible =
+                    std::llabs(residual) <= kJitterAllowedNs ? mConsecutivePlausible + 1 : 0;
+            if (mConsecutivePlausible >= kSettleSamples) {
+                mSettled = true;
+            }
+            mLastFrames = frames;
+            mLastTimeNs = rawNowNs;
+            return rawNowNs;
+        }
+
+        int64_t output = predicted + residual / kSmoothing;
+        if (output > rawNowNs) {
+            output = rawNowNs;  // causal
+        }
+        if (output < mLastTimeNs) {
+            output = mLastTimeNs;  // monotonic
+        }
+
+        mLastFrames = frames;
+        mLastTimeNs = output;
+        return output;
+    }
+
+  private:
+    bool mInitialized = false;
+    bool mSettled = false;
+    int mConsecutivePlausible = 0;
+    int64_t mLastFrames = 0;
+    int64_t mLastTimeNs = 0;
+    static constexpr int64_t kJitterAllowedNs = 3'000'000;  // 3 ms; residual within this is ordinary noise
+    static constexpr int64_t kResyncNs = 100'000'000;  // 100 ms; residual above this is a real discontinuity
+    static constexpr int kSettleSamples = 2;  // consecutive plausible samples required before smoothing engages
+    static constexpr int64_t kSmoothing = 16;  // each poll eases 1/kSmoothing toward the observed clock
+};
+
 // This class is similar to StreamDescriptor, but unlike
 // the descriptor, it actually owns the objects implementing
 // data exchange: FMQs etc, whereas StreamDescriptor only
