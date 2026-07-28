@@ -470,8 +470,14 @@ void StreamOutPrimary::resume() {
         reply->latencyMs += latencyMs;
     }
     reply->observable.timeNs = ::android::uptimeNanos();
-    LOG(VERBOSE) <<__func__ << mLogPrefix << " observable.frames: " << reply->observable.frames;
 
+    // De-jitter render timestamp; see TimestampSmoother in Stream.h.
+    if (mTag == Usecase::LOW_LATENCY_PLAYBACK) {
+        reply->observable.timeNs = mTsSmoother.refine(reply->observable.frames,
+                reply->observable.timeNs, mMixPortConfig.sampleRate.value().value);
+    }
+
+    LOG(VERBOSE) <<__func__ << mLogPrefix << " observable.frames: " << reply->observable.frames;
     return ::android::OK;
 }
 
@@ -1134,6 +1140,7 @@ ndk::ScopedAStatus StreamOutPrimary::setLatencyMode(
 }
 
 void StreamOutPrimary::shutdown_I() {
+    mTsSmoother.reset();
     if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK) {
         std::get<CompressPlayback>(mExt).setAndConfigureCodecInfo(nullptr);
     }

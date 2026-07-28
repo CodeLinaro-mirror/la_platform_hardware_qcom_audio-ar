@@ -103,6 +103,9 @@ class StreamInPrimary : public StreamIn, public StreamCommonImpl {
     struct BufferConfig getBufferConfig();
     void applyEffects();
 
+    // Capture timestamp de-jitter filter. See TimestampSmoother in Stream.h.
+    TimestampSmoother mTsSmoother;
+
     bool mAECEnabled = false;
     bool mNSEnabled = false;
     bool mEffectsApplied = true;

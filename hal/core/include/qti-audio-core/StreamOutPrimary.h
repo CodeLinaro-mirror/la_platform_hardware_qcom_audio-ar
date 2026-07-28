@@ -151,6 +151,9 @@ class StreamOutPrimary : public StreamOut,
     bool isHwPauseSupported();
     struct BufferConfig getBufferConfig();
 
+    // Render timestamp de-jitter filter. See TimestampSmoother in Stream.h.
+    TimestampSmoother mTsSmoother;
+
     // optional buffer format converter, if stream input and output formats are different
     std::optional<std::unique_ptr<BufferFormatConverter>> mBufferFormatConverter;
 

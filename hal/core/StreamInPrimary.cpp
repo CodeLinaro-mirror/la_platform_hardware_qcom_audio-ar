@@ -335,6 +335,13 @@ void StreamInPrimary::resume() {
         auto& compressCapture = std::get<CompressCapture>(mExt);
         reply->observable.frames = compressCapture.getPositionInFrames();
     }
+
+    // De-jitter capture timestamp; see TimestampSmoother in Stream.h.
+    if (mTag == Usecase::PCM_RECORD) {
+        reply->observable.timeNs = mTsSmoother.refine(reply->observable.frames,
+                reply->observable.timeNs, mMixPortConfig.sampleRate.value().value);
+    }
+
     /* Adjustment accounts for A2dp decoder latency
      * Note: Decoder latency is returned in ms, while platform_source_latency in us.
      */
@@ -789,6 +796,7 @@ void StreamInPrimary::applyEffects() {
 void StreamInPrimary::shutdown_I() {
     LOG(DEBUG) << __func__ << mLogPrefix;
 
+    mTsSmoother.reset();
     mEffectsApplied = true;
     if (mPalHandle != nullptr) {
         if (mTag == Usecase::HOTWORD_RECORD && std::get<HotwordRecord>(mExt).isStRecord()) {
