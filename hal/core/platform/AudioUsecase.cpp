@@ -461,7 +461,7 @@ auto getIntValueFromVString = [](
 *
 */
 size_t LowLatencyPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
-    ssize_t kPeriodSize = LowLatencyPlayback::kPeriodDurationMs * DEFAULT_SAMPLE_RATE / 1000;
+    ssize_t kPeriodSize = LowLatencyPlayback::kPeriodDurationMs * (mixPortConfig.sampleRate.value().value) /1000;
     LOG(DEBUG) << "Period Size" << kPeriodSize;
     return kPeriodSize;
 }
@@ -1208,7 +1208,11 @@ size_t MMapRecord::getFrameCount(const AudioPortConfig& mixPortConfig) {
 
 // [HotwordRecord Start]
 size_t HotwordRecord::getFrameCount(const AudioPortConfig& mixPortConfig) {
-    return PcmRecord::getFrameCount(mixPortConfig);
+    size_t frameCount = kCaptureDurationMs * (mixPortConfig.sampleRate.value().value / 1000);
+    frameCount = getNearestMultiple(
+            frameCount, std::lcm(32, getPcmSampleSizeInBytes(mixPortConfig.format.value().pcm)));
+    frameCount = std::max(frameCount, PcmRecord::kFMQMinFrameSize);
+    return frameCount;
 }
 
 pal_stream_handle_t* HotwordRecord::getPalHandle(

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -50,9 +50,6 @@ class HalOffloadEffects {
 #endif
     std::vector<EffectLibInfo> mEffects;
 
-    HalOffloadEffects();
-    void loadLibrary(std::string path);
-
   public:
     static HalOffloadEffects& getInstance() {
         static HalOffloadEffects halEffects;
@@ -61,6 +58,9 @@ class HalOffloadEffects {
 
     void startEffect(int ioHandle, pal_stream_handle_t* palHandle);
     void stopEffect(int ioHandle);
+    protected:
+        HalOffloadEffects();
+        void loadLibrary(std::string path);
 };
 
 } // qti::audio::core

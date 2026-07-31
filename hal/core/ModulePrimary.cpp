@@ -142,8 +142,12 @@ binder_status_t ModulePrimary::dump(int fd, const char** args, uint32_t numArgs)
     return 0;
 }
 
-ModulePrimary::ModulePrimary() : Module(Type::DEFAULT) {
+ModulePrimary::ModulePrimary() : Module(Type::DEFAULT), mPlatform(Platform::getInstance()), mAudExt(AudioExtension::getInstance()) {
     mOffloadSpeedSupported = mPlatform.platformSupportsOffloadSpeed();
+}
+
+ModulePrimary::ModulePrimary(AudioExtension& audExt, Platform& platform) : Module(Type::DEFAULT), mPlatform(platform), mAudExt(audExt) {
+     mOffloadSpeedSupported = mPlatform.platformSupportsOffloadSpeed();
 }
 
 ndk::ScopedAStatus ModulePrimary::getMicrophones(std::vector<MicrophoneInfo>* _aidl_return) {
