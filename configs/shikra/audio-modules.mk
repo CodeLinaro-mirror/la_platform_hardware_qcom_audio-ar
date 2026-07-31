@@ -61,6 +61,7 @@ AUDIO_PAL += libdev_speaker_mic
 AUDIO_PAL += libdev_dummy
 AUDIO_PAL += libdev_handset_va
 AUDIO_PAL += libdev_headset_va
+AUDIO_PAL += libdev_proxy
 
 # C2 Audio
 AUDIO_C2 := libqc2audio_base
