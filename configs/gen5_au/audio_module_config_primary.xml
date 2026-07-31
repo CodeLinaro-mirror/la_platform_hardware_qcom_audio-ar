@@ -22,6 +22,7 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <item>wired_headset_mic</item>
         <item>bt_sco_headset_mic</item>
         <item>echo_reference_mic</item>
+        <item>eavb_in_bus</item>
     </attachedDevices>
     <defaultOutputDevice>Media Bus</defaultOutputDevice>
     <mixPorts>
@@ -248,6 +249,10 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <mixPort name="hotword_input" role="sink" flags="HW_HOTWORD">
             <profile samplingRates="16000" channelLayouts="LAYOUT_MONO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
+        <mixPort name="mixport_eavb0" role="sink" >
+            <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO"
+                formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
         <!-- end of sink mixports-->
     </mixPorts>
     <devicePorts>
@@ -369,6 +374,9 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <devicePort tagName="echo_reference_mic" deviceType="IN_ECHO_REFERENCE" role="source" attached="true">
            <profile samplingRates="16000 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </devicePort>
+        <devicePort tagName="eavb_in_bus" deviceType="IN_BUS" role="source" attached="true" address="BUS24_INPUT_EAVB">
+           <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </devicePort>
     </devicePorts>
     <routes>
         <route type="mix" sink="Media Bus" sources="media,primary_out,direct_pcm_out,direct_pcm_out_6ch,direct_pcm_out_8ch,low_latency_out_16bit,mmap_no_irq_out" />
@@ -387,6 +395,7 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <route type="mix" sink="fast_input" sources="built_in_mic,built_in_back_mic"/>
         <route type="mix" sink="echo_ref" sources="echo_reference_mic"/>
         <route type="mix" sink="hotword_input" sources="built_in_mic,wired_headset_mic" />
+        <route type="mix" sink="mixport_eavb0" sources="eavb_in_bus"/>
     </routes>
 </module>
 </modules>
