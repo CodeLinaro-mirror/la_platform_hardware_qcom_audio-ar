@@ -164,7 +164,7 @@ PRODUCT_COPY_FILES += \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/audio_policy_volumes.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_volumes.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/default_volume_tables.xml:$(TARGET_COPY_OUT_VENDOR)/etc/default_volume_tables.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/bluetooth_with_le_audio_policy_configuration_7_0.xml:$(TARGET_COPY_OUT_VENDOR)/etc/bluetooth_audio_policy_configuration.xml \
-    #$(TOPDIR)frameworks/native/data/etc/android.hardware.audio.pro.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.pro.xml \
+    $(TOPDIR)frameworks/native/data/etc/android.hardware.audio.pro.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.pro.xml \
     $(TOPDIR)frameworks/native/data/etc/android.hardware.audio.low_latency.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.audio.low_latency.xml
 
 # common vendor configuration files
@@ -174,6 +174,7 @@ PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen5_au/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_configuration.xml \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen5_au/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/audio_policy_configuration.xml \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen5_au/audio_effects_config.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects_config.xml \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen5_au/audio_effects_config_awe.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects_config_awe.xml \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen5_au/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/microphone_characteristics.xml \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen5_au/mem_logger_config.xml:$(TARGET_COPY_OUT_VENDOR)/etc/mem_logger_config.xml \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen5_au/audio_effects.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects.xml \
@@ -196,6 +197,11 @@ PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen5_au/modules.audio.ar.blocklist:$(TARGET_COPY_OUT_VENDOR_DLKM)/lib/modules/modules.audio.ar.blocklist \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen5_au/modules.audio.legacy.blocklist:$(TARGET_COPY_OUT_VENDOR_DLKM)/lib/modules/modules.audio.legacy.blocklist
 endif # ends ENABLE_HYP
+
+ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)$(TARGET_BOARD_DERIVATIVE_SUFFIX), gen5_gvm)
+PRODUCT_COPY_FILES += \
+     $(TOPDIR)vendor/qcom/opensource/pal/configs/gen5_au/plugin_manager.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/plugin_manager.xml
+endif # configuration files for gen5_gvm
 
 #Audio HAL version
 PRODUCT_PROPERTY_OVERRIDES += \

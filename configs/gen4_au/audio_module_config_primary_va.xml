@@ -28,66 +28,6 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <!-- based on role, mixport flags are identified as either input flags or
         output flags-->
         <!-- start of source mixports-->
-        <mixPort name="fast_port_8k_16BIT" role="source" flags="FAST">
-            <profile samplingRates= "8000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
-        </mixPort>
-        <mixPort name="fast_port_16k_16BIT" role="source" flags="FAST">
-            <profile samplingRates= "16000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
-        </mixPort>
-        <mixPort name="fast_port_24k_16BIT" role="source" flags="FAST">
-            <profile samplingRates= "24000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
-        </mixPort>
-        <mixPort name="fast_port_32k_16BIT" role="source" flags="FAST">
-            <profile samplingRates= "32000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
-        </mixPort>
-        <mixPort name="fast_port_48k_16BIT" role="source" flags="FAST">
-            <profile samplingRates= "48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
-        </mixPort>
-        <mixPort name="fast_port_8k_24BIT" role="source" flags="FAST">
-            <profile samplingRates= "8000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_24_BIT" />
-        </mixPort>
-        <mixPort name="fast_port_16k_24BIT" role="source" flags="FAST">
-            <profile samplingRates= "16000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_24_BIT" />
-        </mixPort>
-        <mixPort name="fast_port_24k_24BIT" role="source" flags="FAST">
-            <profile samplingRates= "24000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_24_BIT" />
-        </mixPort>
-        <mixPort name="fast_port_32k_24BIT" role="source" flags="FAST">
-            <profile samplingRates= "32000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_24_BIT" />
-        </mixPort>
-        <mixPort name="fast_port_48k_24BIT" role="source" flags="FAST">
-            <profile samplingRates= "48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_24_BIT" />
-        </mixPort>
-        <mixPort name="fast_port_8k_32BIT" role="source" flags="FAST">
-            <profile samplingRates= "8000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_32_BIT" />
-        </mixPort>
-        <mixPort name="fast_port_16k_32BIT" role="source" flags="FAST">
-            <profile samplingRates= "16000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_32_BIT" />
-        </mixPort>
-        <mixPort name="fast_port_24k_32BIT" role="source" flags="FAST">
-            <profile samplingRates= "24000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_32_BIT" />
-        </mixPort>
-        <mixPort name="fast_port_32k_32BIT" role="source" flags="FAST">
-            <profile samplingRates= "32000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_32_BIT" />
-        </mixPort>
-        <mixPort name="fast_port_48k_32BIT" role="source" flags="FAST">
-            <profile samplingRates= "48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_32_BIT" />
-        </mixPort>
-        <mixPort name="fast_port_8k_float" role="source" flags="FAST">
-            <profile samplingRates= "8000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="FLOAT_32_BIT" />
-        </mixPort>
-        <mixPort name="fast_port_16k_float" role="source" flags="FAST">
-            <profile samplingRates= "16000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="FLOAT_32_BIT" />
-        </mixPort>
-        <mixPort name="fast_port_24k_float" role="source" flags="FAST">
-            <profile samplingRates= "24000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="FLOAT_32_BIT" />
-        </mixPort>
-        <mixPort name="fast_port_32k_float" role="source" flags="FAST">
-            <profile samplingRates= "32000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="FLOAT_32_BIT" />
-        </mixPort>
-        <mixPort name="fast_port_48k_float" role="source" flags="FAST">
-            <profile samplingRates= "48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="FLOAT_32_BIT" />
-        </mixPort>
         <mixPort name="media" role="source" flags="PRIMARY">
             <profile samplingRates="8000 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
@@ -148,6 +88,66 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <mixPort name="primary_out" role="source" flags="FAST">
             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
+        <mixPort name="fast_port_8k_16BIT" role="source" flags="FAST">
+            <profile samplingRates= "8000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="fast_port_16k_16BIT" role="source" flags="FAST">
+            <profile samplingRates= "16000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="fast_port_24k_16BIT" role="source" flags="FAST">
+            <profile samplingRates= "24000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="fast_port_32k_16BIT" role="source" flags="FAST">
+            <profile samplingRates= "32000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="fast_port_48k_16BIT" role="source" flags="FAST">
+            <profile samplingRates= "48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
+        </mixPort>
+        <mixPort name="fast_port_8k_24BIT" role="source" flags="FAST">
+            <profile samplingRates= "8000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_24_BIT" />
+        </mixPort>
+        <mixPort name="fast_port_16k_24BIT" role="source" flags="FAST">
+            <profile samplingRates= "16000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_24_BIT" />
+        </mixPort>
+        <mixPort name="fast_port_24k_24BIT" role="source" flags="FAST">
+            <profile samplingRates= "24000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_24_BIT" />
+        </mixPort>
+        <mixPort name="fast_port_32k_24BIT" role="source" flags="FAST">
+            <profile samplingRates= "32000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_24_BIT" />
+        </mixPort>
+        <mixPort name="fast_port_48k_24BIT" role="source" flags="FAST">
+            <profile samplingRates= "48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_24_BIT" />
+        </mixPort>
+        <mixPort name="fast_port_8k_32BIT" role="source" flags="FAST">
+            <profile samplingRates= "8000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_32_BIT" />
+        </mixPort>
+        <mixPort name="fast_port_16k_32BIT" role="source" flags="FAST">
+            <profile samplingRates= "16000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_32_BIT" />
+        </mixPort>
+        <mixPort name="fast_port_24k_32BIT" role="source" flags="FAST">
+            <profile samplingRates= "24000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_32_BIT" />
+        </mixPort>
+        <mixPort name="fast_port_32k_32BIT" role="source" flags="FAST">
+            <profile samplingRates= "32000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_32_BIT" />
+        </mixPort>
+        <mixPort name="fast_port_48k_32BIT" role="source" flags="FAST">
+            <profile samplingRates= "48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_32_BIT" />
+        </mixPort>
+        <mixPort name="fast_port_8k_float" role="source" flags="FAST">
+            <profile samplingRates= "8000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="FLOAT_32_BIT" />
+        </mixPort>
+        <mixPort name="fast_port_16k_float" role="source" flags="FAST">
+            <profile samplingRates= "16000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="FLOAT_32_BIT" />
+        </mixPort>
+        <mixPort name="fast_port_24k_float" role="source" flags="FAST">
+            <profile samplingRates= "24000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="FLOAT_32_BIT" />
+        </mixPort>
+        <mixPort name="fast_port_32k_float" role="source" flags="FAST">
+            <profile samplingRates= "32000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="FLOAT_32_BIT" />
+        </mixPort>
+        <mixPort name="fast_port_48k_float" role="source" flags="FAST">
+            <profile samplingRates= "48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="FLOAT_32_BIT" />
+        </mixPort>
         <mixPort name="compress_offload_out" role="source" recommendedMuteDurationMs="190" flags="DIRECT COMPRESS_OFFLOAD NON_BLOCKING GAPLESS_OFFLOAD">
             <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO" formatType="NON_PCM" encoding="audio/mpeg" />
             <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000 64000 88200 96000 128000 176400 192000" channelLayouts="LAYOUT_MONO LAYOUT_STEREO" formatType="NON_PCM" encoding="audio/flac" />
@@ -177,7 +177,7 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <mixPort name="raw_out" role="source" flags="FAST RAW">
             <profile samplingRates="48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
-        <mixPort name="mmap_no_irq_out" role="source" flags="DIRECT MMAP_NOIRQ">
+        <mixPort name="mmap_no_irq_out" role="source" flags="DIRECT MMAP_NOIRQ" maxOpenStreamCount="7" maxActiveStreamCount="7">
             <profile samplingRates="8000 11025 12000 16000 22050 24000 32000 44100 48000" channelLayouts="LAYOUT_STEREO" formatType="PCM" pcmType="INT_16_BIT" />
         </mixPort>
         <!-- end of source mixports-->

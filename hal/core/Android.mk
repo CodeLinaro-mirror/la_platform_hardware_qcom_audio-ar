@@ -13,6 +13,9 @@ LOCAL_MODULE_RELATIVE_PATH := hw
 LOCAL_C_INCLUDES    :=  $(LOCAL_PATH)/include\
                         $(LOCAL_PATH)/extensions/include
 
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/include \
+                           $(LOCAL_PATH)/extensions/include
+
 LOCAL_CFLAGS := \
     -DBACKEND_NDK \
     -Wall \
@@ -24,6 +27,10 @@ LOCAL_CFLAGS += -Wno-writable-strings
 
 LOCAL_VINTF_FRAGMENTS   := \
     ../../configs/common/manifest_non_qmaa.xml
+
+ifneq (,$(filter 17 CinnamonBun,$(PLATFORM_VERSION)))
+    LOCAL_VINTF_FRAGMENTS += manifest_audiocorehal_qti_17.xml
+endif
 
 LOCAL_SRC_FILES := \
     CoreService.cpp \
@@ -98,7 +105,6 @@ LOCAL_SHARED_LIBRARIES := \
     $(LATEST_ANDROID_HARDWARE_AUDIO_EFFECT) \
     android.hardware.audio.core.sounddose-V1-ndk \
     libar-pal \
-    libaudioserviceexampleimpl \
     libaudioplatformconverter.qti \
     qti-audio-types-aidl-V1-ndk
 

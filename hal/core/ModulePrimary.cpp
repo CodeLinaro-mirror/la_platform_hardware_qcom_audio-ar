@@ -21,6 +21,7 @@
  */
 
 #include <vector>
+#include <sstream>
 
 #define LOG_TAG "AHAL_ModulePrimary_QTI"
 #include <android-base/logging.h>
@@ -142,8 +143,12 @@ binder_status_t ModulePrimary::dump(int fd, const char** args, uint32_t numArgs)
     return 0;
 }
 
-ModulePrimary::ModulePrimary() : Module(Type::DEFAULT) {
+ModulePrimary::ModulePrimary() : Module(Type::DEFAULT), mPlatform(Platform::getInstance()), mAudExt(AudioExtension::getInstance()) {
     mOffloadSpeedSupported = mPlatform.platformSupportsOffloadSpeed();
+}
+
+ModulePrimary::ModulePrimary(AudioExtension& audExt, Platform& platform) : Module(Type::DEFAULT), mPlatform(platform), mAudExt(audExt) {
+     mOffloadSpeedSupported = mPlatform.platformSupportsOffloadSpeed();
 }
 
 ndk::ScopedAStatus ModulePrimary::getMicrophones(std::vector<MicrophoneInfo>* _aidl_return) {
@@ -596,7 +601,7 @@ void ModulePrimary::onSetGenericParameters(const std::vector<VendorParameter>& p
     for (const auto& param : params) {
         std::string paramValue{};
         if (!extractParameter<VString>(param, &paramValue)) {
-            LOG(ERROR) << ": extraction failed for " << param.id;
+           LOG(ERROR) << ": extraction failed for " <<  param.id;
             continue;
         }
         if (Parameters::kInCallMusic == param.id) {
@@ -624,7 +629,43 @@ void ModulePrimary::onSetGenericParameters(const std::vector<VendorParameter>& p
         }
     }
 }
-
+void ModulePrimary::onSetMirroringParameters(const std::vector<VendorParameter>& params) {
+    struct mirrorDevice mirrordevice;
+    for (const auto& param : params) {
+        std::string paramValue{};
+        if (!extractParameter<VString>(param, &paramValue)) {
+           LOG(ERROR) << ": extraction failed for " << param.id;
+            continue;
+        }
+        if (Parameters::kMirrorSRC == param.id) {
+            mirrordevice.src = paramValue;
+        } else if (Parameters::kMirrorDST == param.id) {
+            auto MirrorDST = paramValue;
+            // Split comma-separated string into vector
+            std::vector<std::string> dstDevices;
+            std::stringstream ss(MirrorDST);
+            std::string device;
+            while (std::getline(ss, device, ',')) {
+                // Trim whitespace from device string
+                device.erase(0, device.find_first_not_of(" \t\r\n"));
+                device.erase(device.find_last_not_of(" \t\r\n") + 1);
+                if (!device.empty()) {
+                    dstDevices.push_back(device);
+                }
+            }
+            mirrordevice.dst = dstDevices;
+        }
+    }
+    // Only update if src is non-empty
+    if (mirrordevice.src.empty()) {
+        LOG(ERROR) << __func__ << ": mirroring_src not provided, skipping update";
+        return;
+    }
+    if (mirrordevice.dst.empty()) {
+        LOG(WARNING) << __func__ << ": mirroring_dst not provided for src: " << mirrordevice.src << ", clearing mirror entry";
+    }
+    mPlatform.updatemirrordevice(mirrordevice);
+}
 void MuteConfig::set_mute_config_for_address(char* address, bool muted, float volume) {
     LOG(DEBUG) << __func__ << ": Enter, muted: " << muted << ", address: " << address;
 
@@ -921,7 +962,9 @@ ModulePrimary::SetParameterToFeatureMap ModulePrimary::fillSetParameterToFeature
                                  {Parameters::kWfdIPAsProxyDevConnected, Feature::WFD},
                                  {Parameters::kProxyRecordFMQSize, Feature::WFD},
                                  {Parameters::kHapticsVolume, Feature::HAPTICS},
-                                 {Parameters::kHapticsIntensity, Feature::HAPTICS}};
+                                 {Parameters::kHapticsIntensity, Feature::HAPTICS},
+                                 {Parameters::kMirrorSRC, Feature::MIRRORINGDEVICES},
+                                 {Parameters::kMirrorDST, Feature::MIRRORINGDEVICES}};
     return map;
 }
 
@@ -934,6 +977,7 @@ ModulePrimary::FeatureToSetHandlerMap ModulePrimary::fillFeatureToSetHandlerMap(
             {Feature::WFD, &ModulePrimary::onSetWFDParameters},
             {Feature::FTM, &ModulePrimary::onSetFTMParameters},
             {Feature::HAPTICS, &ModulePrimary::onSetHapticsParameters},
+            {Feature::MIRRORINGDEVICES, &ModulePrimary::onSetMirroringParameters},
     };
     return map;
 }

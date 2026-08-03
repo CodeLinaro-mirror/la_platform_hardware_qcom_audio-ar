@@ -25,10 +25,15 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     StreamOutPrimary(StreamContext&& context,
                      const ::aidl::android::hardware::audio::common::SourceMetadata& sourceMetadata,
                      const std::optional<::aidl::android::media::audio::common::AudioOffloadInfo>&
-                             offloadInfo,
-                             std::vector<AudioDevice> AudioDevices);
+                             offloadInfo, std::vector<AudioDevice> AudioDevices);
+    StreamOutPrimary(StreamContext&& context,
+                        const ::aidl::android::hardware::audio::common::SourceMetadata& sourceMetadata,
+                        const std::optional<::aidl::android::media::audio::common::AudioOffloadInfo>&
+                                offloadInfo, std::vector<AudioDevice> AudioDevices, AudioExtension& audExt, const Usecase tag,
+                                        HalOffloadEffects& halEffects);
 
     virtual ~StreamOutPrimary() override;
+    void initParams();
     int32_t setAggregateSourceMetadata(bool voiceActive) override;
     std::string getAddress() { return busAddr; };
     std::string setAddress(std::string Address);
@@ -105,6 +110,8 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     void onError() override;
     std::vector<::aidl::android::media::audio::common::AudioDevice> mAudioDevices; /* AudioDevices for Effects */
     uint64_t mBytesWritten; /* total bytes written, not cleared when entering standby */
+    virtual void requestFocus() {};
+    virtual void abandonFocus() {};
     bool mMuted = false;
     std::vector <::aidl::android::media::audio::common::AudioDevice>& getAudioDevice() {
         return mAudioDevices;
@@ -136,7 +143,8 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     ::android::status_t onWriteError(const size_t sleepFrameCount);
 
     // This API calls startEffect/stopEffect only on offload/pcm offload outputs.
-    void enableOffloadEffects(const bool enable);
+    virtual void enableOffloadEffects(const bool enable,
+        pal_stream_type_t palStreamType);
     int64_t GetRenderLatency(std::string address);
     // API which are *_I are internal
     ndk::ScopedAStatus configureConnectedDevices_I();
@@ -173,14 +181,14 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     std::variant<std::monostate, PrimaryPlayback, DeepBufferPlayback, CompressPlayback,
                  PcmOffloadPlayback, VoipPlayback, SpatialPlayback, MMapPlayback, UllPlayback,
                  InCallMusic, HapticsPlayback,SysNotificationPlayback, NavGuidancePlayback,
-                 PhonePlayback, AlertPlayback, MediaPlayback, LowLatencyPlayback,
+                 PhonePlayback, AlertPlayback, MirrorPlayback,MediaPlayback, LowLatencyPlayback,
                  FrontPassengerPlayback, RearSeatPlayback>
             mExt;
     // references
     Platform& mPlatform{Platform::getInstance()};
     const ::aidl::android::media::audio::common::AudioPortConfig& mMixPortConfig;
-    HalOffloadEffects& mHalEffects{HalOffloadEffects::getInstance()};
-    AudioExtension& mAudExt{AudioExtension::getInstance()};
+    HalOffloadEffects& mHalEffects;
+    AudioExtension& mAudExt;
     int64_t GetSourceLatency();
   private:
     int32_t outFlags;

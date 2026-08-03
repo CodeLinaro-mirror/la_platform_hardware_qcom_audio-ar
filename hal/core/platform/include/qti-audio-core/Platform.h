@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -26,6 +26,10 @@ struct HdmiParameters {
     int controller;
     int stream;
     pal_device_id_t deviceId;
+};
+struct mirrorDevice {
+    std::string src;
+    std::vector<std::string> dst;
 };
 
 enum class PlaybackRateStatus { SUCCESS, UNSUPPORTED, ILLEGAL_ARGUMENT };
@@ -58,7 +62,7 @@ inline UsecaseOps makeUsecaseOps() {
 
 class Platform {
   private:
-    explicit Platform();
+    std::vector<struct mirrorDevice> mirrordevices;
 
     Platform(const Platform&) = delete;
     Platform& operator=(const Platform& x) = delete;
@@ -67,7 +71,16 @@ class Platform {
     Platform& operator=(Platform&& other) = delete;
     static int palGlobalCallback(uint32_t event_id, uint32_t* event_data, uint64_t cookie);
 
+  protected:
+    // Protected so that only subclasses (e.g. PlatformOEM) and getInstance() can
+    // construct Platform directly, preserving the singleton contract.
+    explicit Platform();
+
   public:
+    // Virtual destructor must be public: std::default_delete (used by unique_ptr/shared_ptr)
+    // is not a Platform friend, so it needs public access for polymorphic deletion.
+    virtual ~Platform() = default;
+
     // BT related params used across
     bool bt_lc3_speech_enabled;
     static btsco_lc3_cfg_t btsco_lc3_cfg;
@@ -271,6 +284,8 @@ class Platform {
     void setHapticsIntensity(const int hapticsIntensity) const noexcept;
 
     void updateUHQA(const bool enable) noexcept;
+    void updatemirrordevice(const mirrorDevice& mirrordevice);
+    const std::vector<mirrorDevice>& getMirrorDevices()  {return mirrordevices;};
     bool isUHQAEnabled() const noexcept;
     void updateVoiceAssistantZone(uint32_t zoneid) noexcept;
     void updateInputAssistantZone(uint32_t zoneid) noexcept;
@@ -313,7 +328,7 @@ class Platform {
     std::optional<struct HdmiParameters> getHdmiParameters(
             const ::aidl::android::media::audio::common::AudioDevice&) const;
 
-    void initUsecaseOpMap();
+    virtual void initUsecaseOpMap();
 
   public:
     constexpr static uint32_t kDefaultOutputSampleRate = 48000;
@@ -350,7 +365,6 @@ class Platform {
 
     /* HAC enablement*/
     bool mIsHACEnabled{false};
-
     std::unordered_map<Usecase, UsecaseOps> mUsecaseOpMap;
     std::vector<::aidl::android::media::audio::common::MicrophoneInfo> mMicrophoneInfo;
     using PalDevToMicDynamicInfoMap = std::unordered_map<
@@ -360,5 +374,14 @@ class Platform {
     // proxy related info
     size_t mProxyRecordFMQSize{0};
     std::weak_ptr<::aidl::android::hardware::audio::core::ITelephony> mTelephony;
+
+  protected:
+    std::unordered_map<Usecase, UsecaseOps>& usecaseOpMap() noexcept {
+        return mUsecaseOpMap;
+    }
+
+    const std::unordered_map<Usecase, UsecaseOps>& usecaseOpMap() const noexcept {
+        return mUsecaseOpMap;
+    }
 };
 } // namespace qti::audio::core

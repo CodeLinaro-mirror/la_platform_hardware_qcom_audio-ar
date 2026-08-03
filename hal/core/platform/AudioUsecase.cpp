@@ -234,6 +234,8 @@ Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConf
             static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::PRIMARY));
     constexpr auto navGuidancePlaybackFlag =
             static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DEEP_BUFFER));
+    constexpr auto mirrorPlaybackFlag =
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DEEP_BUFFER));
     constexpr auto sysNotificationPlaybackFlag =
             static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DEEP_BUFFER));
     constexpr auto alertPlaybackFlag =
@@ -320,6 +322,9 @@ Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConf
         } else if (outFlags == RearSeatPlaybackFlag &&
                    (deviceAddress.compare("BUS16_REAR_SEAT") == 0)) {
             tag = Usecase::REAR_SEAT_PLAYBACK;
+        } else if (outFlags == mirrorPlaybackFlag &&
+                   (deviceAddress.compare("BUS1000_MIRROR") == 0)) {
+            tag = Usecase::MIRROR_PLAYBACK;
         } else if (outFlags == primaryPlaybackFlags) {
             tag = Usecase::PRIMARY_PLAYBACK;
 
@@ -385,6 +390,8 @@ std::string getName(const Usecase tag) {
             return "PRIMARY_PLAYBACK";
         case Usecase::MEDIA_PLAYBACK:
             return "MEDIA_PLAYBACK";
+        case Usecase::MIRROR_PLAYBACK:
+            return "MIRROR_PLAYBACK";
         case Usecase::SYS_NOTIFICATION_PLAYBACK:
             return "SYS_NOTIFICATION_PLAYBACK";
         case Usecase::NAV_GUIDANCE_PLAYBACK:
@@ -461,7 +468,7 @@ auto getIntValueFromVString = [](
 *
 */
 size_t LowLatencyPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
-    ssize_t kPeriodSize = LowLatencyPlayback::kPeriodDurationMs * DEFAULT_SAMPLE_RATE / 1000;
+    ssize_t kPeriodSize = LowLatencyPlayback::kPeriodDurationMs * (mixPortConfig.sampleRate.value().value) /1000;
     LOG(DEBUG) << "Period Size" << kPeriodSize;
     return kPeriodSize;
 }
@@ -471,6 +478,9 @@ size_t LowLatencyPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
 // [MediaPlayback Start]
 
 size_t MediaPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
+    return kPeriodSize;
+}
+size_t MirrorPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
     return kPeriodSize;
 }
 // [MediaPlayback end]
@@ -1208,7 +1218,11 @@ size_t MMapRecord::getFrameCount(const AudioPortConfig& mixPortConfig) {
 
 // [HotwordRecord Start]
 size_t HotwordRecord::getFrameCount(const AudioPortConfig& mixPortConfig) {
-    return PcmRecord::getFrameCount(mixPortConfig);
+    size_t frameCount = kCaptureDurationMs * (mixPortConfig.sampleRate.value().value / 1000);
+    frameCount = getNearestMultiple(
+            frameCount, std::lcm(32, getPcmSampleSizeInBytes(mixPortConfig.format.value().pcm)));
+    frameCount = std::max(frameCount, PcmRecord::kFMQMinFrameSize);
+    return frameCount;
 }
 
 pal_stream_handle_t* HotwordRecord::getPalHandle(
