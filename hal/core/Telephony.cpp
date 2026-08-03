@@ -125,6 +125,12 @@ ndk::ScopedAStatus Telephony::switchAudioMode(AudioMode newAudioMode) {
         }
     }
 
+    if (mAudioMode == AudioMode::IN_COMMUNICATION && newAudioMode != AudioMode::IN_COMMUNICATION) {
+        if (mPlatform.getMicMuteStatus()) {
+            mPlatform.setMicMuteStatus(false);
+        }
+    }
+
     mAudioMode = newAudioMode;
     LOG(DEBUG) << __func__ << ": switching to AudioMode:" << toString(mAudioMode);
     return ndk::ScopedAStatus::ok();
