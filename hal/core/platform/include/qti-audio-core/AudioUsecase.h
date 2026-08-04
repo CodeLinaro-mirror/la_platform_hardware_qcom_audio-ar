@@ -160,7 +160,7 @@ class LowLatencyPlayback : public UsecaseConfig<LowLatencyPlayback> {
   public:
     constexpr static size_t kPeriodCount = 2;
     constexpr static size_t kPlatformDelayMs = 13;
-    constexpr static size_t kPeriodDurationMs = 4;
+    constexpr static size_t kPeriodDurationMs = 10;
     static std::unordered_set<size_t> kSupportedFrameSizes;
 
     static size_t getFrameCount(
@@ -446,8 +446,8 @@ class BitPerfectPlayback : public UsecaseConfig<BitPerfectPlayback> {
 
 class PcmRecord : public UsecaseConfig<PcmRecord> {
   public:
-    constexpr static uint32_t kCaptureDurationMs = 20;
-    constexpr static uint32_t kPeriodCount = 4;
+    constexpr static uint32_t kCaptureDurationMs = 40;
+    constexpr static uint32_t kPeriodCount = 2;
     constexpr static size_t kFMQMinFrameSize = 160;
     constexpr static size_t kPlatformDelayMs = 20;
 
