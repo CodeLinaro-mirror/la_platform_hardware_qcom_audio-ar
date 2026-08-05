@@ -40,6 +40,19 @@ service vendor.audio-hal /vendor/bin/hw/android.hardware.audio.service_64
     writepid /dev/cpuset/foreground/tasks /dev/stune/foreground/tasks
     onrestart restart audioserver
 
+service tdm-clock-output /vendor/bin/agmcap /dev/null -D 100 -d 127 -c 1 -r 48000 -b 16 -num_intf 1 -i TDM-LPAIF-TX-PRIMARY -skv 0xB1000001 -dkv 0xA3000011 -ikv 6
+    class late_start
+    user audio
+    group audio system
+    disabled
+    onrestart restart tdm-clock-output
+
+on property:init.svc.vendor.audio-hal=running
+    start tdm-clock-output
+
+on property:init.svc.vendor.audio-hal=stopped
+    stop tdm-clock-output
+
 # SSR trigger for audio subsystem
 on property:vendor.audio.ssr.trigger=1
     write /sys/kernel/boot_adsp/ssr 1
