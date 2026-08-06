@@ -3704,6 +3704,9 @@
          <ctl name="ADC2 MUX" value="INP2" />
          <ctl name="ADC2_BCS Disable" value="1" />
          <ctl name="VA_DEC0 MODE" value="ADC_LOW_PWR" />
+     </path>
+
+    <path name="dummy-dev">
     </path>
 
 </mixer>
