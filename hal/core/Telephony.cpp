@@ -1462,13 +1462,13 @@ void Telephony::updateDevices() {
         LOG(ERROR) << __func__ << ": failed to set devices";
         return;
     }
+    updateVoiceVolume();
     if (mSetUpdates.mIsCrsCall) {
         if (mRxDevice.type.type != AudioDeviceType::OUT_SPEAKER &&
             mRxDevice.type.type != AudioDeviceType::OUT_SPEAKER_EARPIECE) {
             startCrsLoopback();
         }
     }
-    updateVoiceVolume();
     if (mIsDeviceMuted) {
         configureDeviceMute();
     }
