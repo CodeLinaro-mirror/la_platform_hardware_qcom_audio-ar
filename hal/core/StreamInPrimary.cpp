@@ -371,6 +371,7 @@ void StreamInPrimary::resume() {
         configure();
         if (!mPalHandle) {
             LOG(ERROR) << __func__ << mLogPrefix << ": failed to configure";
+            memset(buffer, 0, frameCount * mFrameSizeBytes);
             *actualFrameCount = frameCount;
             return onReadError(frameCount);
         }
