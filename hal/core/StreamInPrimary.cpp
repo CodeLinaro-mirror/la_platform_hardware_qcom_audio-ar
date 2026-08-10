@@ -852,6 +852,12 @@ void StreamInPrimary::configure() {
     uint64_t cookie = reinterpret_cast<uint64_t>(this);
     pal_stream_callback palFn = nullptr;
 
+    std::unique_lock<std::mutex> lock(mPalHandleMutex);
+    if (mPalHandle != nullptr) {
+        LOG(DEBUG) << __func__ << mLogPrefix << ": already configured, skipping";
+        return;
+    }
+
     const auto palOpenApiStartTime = std::chrono::steady_clock::now();
     if (int32_t ret = ::pal_stream_open(attr.get(), palDevices.size(), palDevices.data(), 0,
                                         nullptr, palFn, cookie, &(mPalHandle));
