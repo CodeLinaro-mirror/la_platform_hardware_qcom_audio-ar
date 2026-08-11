@@ -55,6 +55,7 @@ PRODUCT_PACKAGES += wind_filter__1.0__48k__2ch__16b__eai_5.8.eai
 QCV_FAMILY_SKUS := canoe
 DEVICE_SKU := canoe
 UV_WRAPPER2 := false
+AUDIO_FEATURE_STATS_ENABLED := true
 
 CONFIG_PAL_SRC_DIR := vendor/qcom/opensource/pal/configs/qcom/$(BA_NAME)/canoe
 CONFIG_HAL_SRC_DIR := vendor/qcom/opensource/audio-hal/primary-hal/configs/canoe
@@ -360,6 +361,10 @@ vendor.qc2audio.suspend.enabled=true
 #Enable qc2 audio sw flac frame decode
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.qc2audio.per_frame.flac.dec.enabled=true
+
+#Enable ats thread enable
+PRODUCT_PROPERTY_OVERRIDES += \
+persist.vendor.audio.atsthread.enable=true
 
 
 ifneq ($(GENERIC_ODM_IMAGE),true)
