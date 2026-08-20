@@ -141,6 +141,8 @@ PRODUCT_PACKAGES += IDP_acdb_cal.acdb
 PRODUCT_PACKAGES += IDP_workspaceFileXml.qwsp
 PRODUCT_PACKAGES += RB3_acdb_cal.acdb
 PRODUCT_PACKAGES += RB3_workspaceFileXml.qwsp
+PRODUCT_PACKAGES += RB3_VC_acdb_cal.acdb
+PRODUCT_PACKAGES += RB3_VC_workspaceFileXml.qwsp
 PRODUCT_PACKAGES += AIO_acdb_cal.acdb
 PRODUCT_PACKAGES += AIO_workspaceFileXml.qwsp
 PRODUCT_PACKAGES += IOT_acdb_cal.acdb
@@ -197,12 +199,14 @@ PRODUCT_COPY_FILES += \
     $(CONFIG_HAL_SRC_DIR)/mixer_paths_lahaina_yupikqrd.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_lahaina_yupikqrd.xml \
     $(CONFIG_HAL_SRC_DIR)/mixer_paths_lahaina_yupikidp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_lahaina_yupikidp.xml \
     $(CONFIG_HAL_SRC_DIR)/mixer_paths_lahaina_yupikidprb3.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_lahaina_yupikidprb3.xml \
+    $(CONFIG_HAL_SRC_DIR)/mixer_paths_lahaina_yupikidprb3_vc.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_lahaina_yupikidprb3_vc.xml \
     $(CONFIG_HAL_SRC_DIR)/mixer_paths_lahaina_yupikidpaio.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_lahaina_yupikidpaio.xml \
     $(CONFIG_HAL_SRC_DIR)/mixer_paths_lahaina_yupikidpcontroller.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_lahaina_yupikidpcontroller.xml \
     $(CONFIG_HAL_SRC_DIR)/mixer_paths_lahaina_yupikidpiot.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_lahaina_yupikidpiot.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_lahaina_yupikidp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_lahaina_yupikidp.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_lahaina_yupikqrd.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_lahaina_yupikqrd.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_lahaina_yupikidprb3.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_lahaina_yupikidprb3.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_lahaina_yupikidprb3_vc.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_lahaina_yupikidprb3_vc.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_lahaina_yupikidpcontroller.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_lahaina_yupikidpcontroller.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_lahaina_yupikidpaio.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_lahaina_yupikidpaio.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_lahaina_yupikidpiot.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_lahaina_yupikidpiot.xml \
