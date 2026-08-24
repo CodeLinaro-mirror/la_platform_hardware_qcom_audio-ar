@@ -689,10 +689,13 @@ void Telephony::reconfigure(const SetUpdates& newUpdates) {
                  if (mPalCrsHandle != nullptr) {
                      stopCrsLoopback();
                  }
-                 mSetUpdates.mIsCrsCall = newUpdates.mIsCrsCall;
                  mIsCRSStarted  = false;
                  LOG(DEBUG) << __func__ << ": stop CRS call";
              }
+         }
+         //Full sync when VSID matches
+         if (mSetUpdates.mVSID == newUpdates.mVSID) {
+             mSetUpdates = newUpdates;
          }
     }
 
