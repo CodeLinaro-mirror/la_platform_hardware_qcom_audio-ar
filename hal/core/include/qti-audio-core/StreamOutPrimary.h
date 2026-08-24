@@ -81,6 +81,11 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     ndk::ScopedAStatus getHwVolume(std::vector<float>* _aidl_return) override;
     ndk::ScopedAStatus setHwVolume(const std::vector<float>& in_channelVolumes) override;
 
+    ndk::ScopedAStatus setPortVolume(const std::vector<float>& in_channelVolumes);
+    std::vector<float> getPortVolumes() const { return mPortVolumes; }
+
+    bool isStreamVolumeProgrammed() const { return mStreamVolumeProgrammed; }
+
     ndk::ScopedAStatus getPlaybackRateParameters(
             ::aidl::android::media::audio::common::AudioPlaybackRate* _aidl_return) override;
     ndk::ScopedAStatus setPlaybackRateParameters(
@@ -154,6 +159,10 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     const size_t mFrameSizeBytes;
     bool mIsPaused{false};
     std::vector<float> mVolumes{};
+    /* set by setHwVolume(); see isStreamVolumeProgrammed() */
+    bool mStreamVolumeProgrammed = false;
+    /* automotive bus port gain, applied on top of mVolumes; unity when unset */
+    std::vector<float> mPortVolumes{};
     bool mUseCachedVolume = false;
     bool mHwVolumeSupported = false;
     bool mHwFlushSupported = false;
@@ -195,6 +204,7 @@ class StreamOutPrimary : public StreamOut, public StreamCommonImpl, public Platf
     std::mutex mPalHandleMutex;   /* mutex for palhandle */
     std::string mLogPrefix = "";
     bool isHwVolumeSupported();
+    ndk::ScopedAStatus applyVolume();
     bool isHwFlushSupported();
     bool isHwPauseSupported();
     struct BufferConfig getBufferConfig();
