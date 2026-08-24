@@ -107,7 +107,8 @@ StreamOutPrimary::StreamOutPrimary(StreamContext&& context, const SourceMetadata
     mHwPauseSupported = isHwPauseSupported();
     mHwFlushSupported = isHwFlushSupported();
     LOG(VERBOSE) << __func__ << " Hwpause: " << mHwPauseSupported << " HwFlush: " << mHwFlushSupported;
-    mVolumes.resize(getChannelCount(mMixPortConfig.channelMask.value()));
+    mVolumes.assign(getChannelCount(mMixPortConfig.channelMask.value()), 1.0f);
+    mPortVolumes.assign(mVolumes.size(), 1.0f);
     ioHandle_l = mMixPortConfig.ext.get<AudioPortExt::Tag::mix>().handle;
     std::ostringstream os;
     os << " : usecase: " << mTagName;
@@ -281,7 +282,7 @@ ndk::ScopedAStatus StreamOutPrimary::configureMMapStream(int32_t* fd, int64_t* b
     LOG(INFO) << __func__ << mLogPrefix << ": stream is configured";
 
     if (mUseCachedVolume) {
-        setHwVolume(mVolumes);
+        applyVolume();
     }
 
     return ndk::ScopedAStatus::ok();
@@ -762,6 +763,60 @@ ndk::ScopedAStatus StreamOutPrimary::getHwVolume(std::vector<float>* _aidl_retur
     return ndk::ScopedAStatus::ok();
 }
 
+ndk::ScopedAStatus StreamOutPrimary::applyVolume() {
+    if (!mPalHandle) {
+        return ndk::ScopedAStatus::ok();
+    }
+
+    std::vector<float> effective(mVolumes.size());
+    for (size_t i = 0; i < mVolumes.size(); i++) {
+        const float portVol = mPortVolumes.empty()
+                                      ? 1.0f
+                                      : mPortVolumes[i < mPortVolumes.size() ? i : 0];
+        effective[i] = mVolumes[i] * portVol;
+    }
+
+    if (int32_t ret = mPlatform.setVolume(mPalHandle, effective); ret) {
+        LOG(ERROR) << __func__ << mLogPrefix << " failed to set volume";
+        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
+    }
+
+    LOG(DEBUG) << __func__ << mLogPrefix << " stream "
+               << ::android::internal::ToString(mVolumes) << " port "
+               << ::android::internal::ToString(mPortVolumes) << " applied "
+               << ::android::internal::ToString(effective);
+    return ndk::ScopedAStatus::ok();
+}
+
+ndk::ScopedAStatus StreamOutPrimary::setPortVolume(const std::vector<float>& in_channelVolumes) {
+    if (!mHwVolumeSupported) {
+        return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
+    }
+
+    if (in_channelVolumes.empty()) {
+        LOG(ERROR) << __func__ << mLogPrefix << " empty port volume";
+        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
+    }
+
+    if (!std::all_of(in_channelVolumes.begin(), in_channelVolumes.end(),
+                     [](float vol) { return (vol >= 0.0f && vol <= 1.0f); })) {
+        LOG(ERROR) << __func__ << mLogPrefix << " out of range port volume "
+                   << ::android::internal::ToString(in_channelVolumes);
+        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
+    }
+
+    mPortVolumes = in_channelVolumes;
+    mUseCachedVolume = true;
+
+    if (!mPalHandle) {
+        LOG(DEBUG) << __func__ << mLogPrefix << " cache port volume "
+                   << ::android::internal::ToString(in_channelVolumes);
+        return ndk::ScopedAStatus::ok();
+    }
+
+    return applyVolume();
+}
+
 ndk::ScopedAStatus StreamOutPrimary::setHwVolume(const std::vector<float>& in_channelVolumes) {
     struct str_parms* hfp_parms = nullptr;
     std::string kvpairs = "";
@@ -786,8 +841,10 @@ ndk::ScopedAStatus StreamOutPrimary::setHwVolume(const std::vector<float>& in_ch
         return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
     }
 
+    mVolumes = in_channelVolumes;
+    mStreamVolumeProgrammed = true;
+
     if (!mPalHandle) {
-        mVolumes = in_channelVolumes;
         mUseCachedVolume = true;
         LOG(DEBUG) << __func__ << mLogPrefix << " cache volume "
                    << ::android::internal::ToString(in_channelVolumes);
@@ -802,15 +859,7 @@ ndk::ScopedAStatus StreamOutPrimary::setHwVolume(const std::vector<float>& in_ch
         return ndk::ScopedAStatus::ok();
     }
 
-    if (int32_t ret = mPlatform.setVolume(mPalHandle, in_channelVolumes); ret) {
-        LOG(ERROR) << __func__ << mLogPrefix << " failed to set volume";
-        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
-    }
-
-    mVolumes = in_channelVolumes;
-
-    LOG(DEBUG) << __func__ << mLogPrefix << ::android::internal::ToString(mVolumes);
-    return ndk::ScopedAStatus::ok();
+    return applyVolume();
 }
 
 ndk::ScopedAStatus StreamOutPrimary::getPlaybackRateParameters(AudioPlaybackRate* _aidl_return) {
@@ -1174,7 +1223,7 @@ void StreamOutPrimary::configure() {
     }
 
     if (mUseCachedVolume) {
-        setHwVolume(mVolumes);
+        applyVolume();
     }
 
     if (mTag == Usecase::COMPRESS_OFFLOAD_PLAYBACK || mTag == Usecase::PCM_OFFLOAD_PLAYBACK) {
@@ -1194,9 +1243,15 @@ void StreamOutPrimary::configure() {
                     if (streamOutPrimary->isStreamOutPrimary() || streamOutPrimary->isStreamOutMedia()) {
                         /* Get mute status and volumes from PRIMARY_PLAYBACK or MEDIA_PLAYBACK */
                         mMuted = streamOutPrimary->mMuted;
-                        streamOutPrimary->getHwVolume(&Volumes);
-                        for(iter_channel = 0; iter_channel < no_of_channels; iter_channel++) {
-                            mVolumes[iter_channel] = Volumes[0];
+                        if (streamOutPrimary->isStreamVolumeProgrammed()) {
+                            streamOutPrimary->getHwVolume(&Volumes);
+                            for(iter_channel = 0; iter_channel < no_of_channels; iter_channel++) {
+                                mVolumes[iter_channel] = Volumes[0];
+                            }
+                        }
+                        auto portVolumes = streamOutPrimary->getPortVolumes();
+                        if (!portVolumes.empty()) {
+                            mPortVolumes.assign(no_of_channels, portVolumes[0]);
                         }
                         LOG(INFO) << __func__ << " Overriding Offload Volume";
                         break;
@@ -1208,7 +1263,7 @@ void StreamOutPrimary::configure() {
             }
         }
         ModulePrimary::outListMutex.unlock();
-        setHwVolume(mVolumes);
+        applyVolume();
     }
     if (mTag == Usecase::HAPTICS_PLAYBACK) {
 
