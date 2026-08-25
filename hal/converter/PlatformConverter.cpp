@@ -416,6 +416,9 @@ outputFlagsStreamtypeMap populatemOutputFlagsStreamtypeMap() {
     constexpr auto mediaPlaybackFlags =
             static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::PRIMARY));
     result[mediaPlaybackFlags] = PAL_STREAM_PLAYBACK_BUS;
+    constexpr auto mirrorPlaybackFlags =
+            static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::DEEP_BUFFER));
+    result[mirrorPlaybackFlags] = PAL_STREAM_PLAYBACK_BUS;
 
     constexpr auto navGuidancePlaybbackFlag =
             static_cast<int32_t>(1 << flagCastToint(AudioOutputFlags::FAST));

@@ -63,6 +63,7 @@ enum class Usecase : uint16_t {
     VOIP_RECORD,
     VOICE_CALL_RECORD,
     HOTWORD_RECORD,
+    MIRROR_PLAYBACK,
 };
 
 Usecase getUsecaseTag(const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig);
@@ -190,6 +191,18 @@ class LowLatencyPlayback : public UsecaseConfig<LowLatencyPlayback> {
 };
 
 class MediaPlayback : public UsecaseConfig<MediaPlayback> {
+  public:
+    constexpr static size_t kPeriodCount = 2;
+    constexpr static size_t kPlatformDelayMs = 29;
+    constexpr static size_t kPeriodDurationMs = 40;
+    constexpr static size_t kPeriodSize = kPeriodDurationMs * DEFAULT_SAMPLE_RATE /1000;
+
+    static size_t getFrameCount(
+            const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig);
+
+    static int32_t getLatency() { return kPeriodDurationMs * kPeriodCount + kPlatformDelayMs; }
+};
+class MirrorPlayback : public UsecaseConfig<MirrorPlayback> {
   public:
     constexpr static size_t kPeriodCount = 2;
     constexpr static size_t kPlatformDelayMs = 29;
