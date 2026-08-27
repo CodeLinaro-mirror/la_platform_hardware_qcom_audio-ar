@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- Copyright (C) 2025 The Android Open Source Project
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+          http://www.apache.org/licenses/LICENSE-2.0
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+-->
+<!--
+     Changes from Qualcomm Technologies, Inc. are provided under the following license:
+     Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+     SPDX-License-Identifier: BSD-3-Clause-Clear
+-->
+<!-- Default Volume Tables included by Audio Policy Configuration file -->
+<!-- Full Default Volume table for all device category -->
+<volumes>
+  <reference name="DEFAULT_VOLUME_STEPS_CURVE">
+    <!-- Default Volume Steps Curve -->
+    <point>0,-4500</point>
+    <point>1,-3950</point>
+    <point>2,-3550</point>
+    <point>3,-3150</point>
+    <point>4,-2850</point>
+    <point>5,-2650</point>
+    <point>6,-2500</point>
+    <point>7,-2350</point>
+    <point>8,-2250</point>
+    <point>9,-2150</point>
+    <point>10,-2050</point>
+    <point>11,-1950</point>
+    <point>12,-1850</point>
+    <point>13,-1750</point>
+    <point>14,-1700</point>
+    <point>15,-1600</point>
+    <point>16,-1550</point>
+    <point>17,-1500</point>
+    <point>18,-1450</point>
+    <point>19,-1350</point>
+    <point>20,-1300</point>
+    <point>21,-1250</point>
+    <point>22,-1150</point>
+    <point>23,-1100</point>
+    <point>24,-1050</point>
+    <point>25,-950</point>
+    <point>26,-900</point>
+    <point>27,-850</point>
+    <point>28,-750</point>
+    <point>29,-700</point>
+    <point>30,-650</point>
+    <point>31,-600</point>
+    <point>32,-500</point>
+    <point>33,-450</point>
+    <point>34,-400</point>
+    <point>35,-300</point>
+    <point>36,-250</point>
+    <point>37,-200</point>
+    <point>38,-100</point>
+    <point>39,-50</point>
+    <point>40,0</point>
+  </reference>
+  <reference name="NOT_MUTABLE_VOLUME_STEPS_CURVE_5TO40">
+    <!-- Base on DEFAULT_VOLUME_STEPS_CURVE : Volume 36 Steps Curve -->
+    <point>0,-2650</point>
+    <point>1,-2500</point>
+    <point>2,-2350</point>
+    <point>3,-2250</point>
+    <point>4,-2150</point>
+    <point>5,-2050</point>
+    <point>6,-1950</point>
+    <point>7,-1850</point>
+    <point>8,-1750</point>
+    <point>9,-1700</point>
+    <point>10,-1600</point>
+    <point>11,-1550</point>
+    <point>12,-1500</point>
+    <point>13,-1450</point>
+    <point>14,-1350</point>
+    <point>15,-1300</point>
+    <point>16,-1250</point>
+    <point>17,-1150</point>
+    <point>18,-1100</point>
+    <point>19,-1050</point>
+    <point>20,-950</point>
+    <point>21,-900</point>
+    <point>22,-850</point>
+    <point>23,-750</point>
+    <point>24,-700</point>
+    <point>25,-650</point>
+    <point>26,-600</point>
+    <point>27,-500</point>
+    <point>28,-450</point>
+    <point>29,-400</point>
+    <point>30,-300</point>
+    <point>31,-250</point>
+    <point>32,-200</point>
+    <point>33,-100</point>
+    <point>34,-50</point>
+    <point>35,0</point>
+  </reference>
+</volumes>

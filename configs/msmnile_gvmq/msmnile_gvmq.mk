@@ -5,6 +5,11 @@ PRODUCT_PACKAGES += $(AUDIO_MODULES)
 #AUDIO_FEATURE_FLAGS
 AUDIO_FRAMEWORK_AUDIOREACH := true
 ifeq ($(AUDIO_FRAMEWORK_AUDIOREACH),true)
+ifeq ($(TARGET_USES_CAPE_FOR_AUDIO),true)
+include vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_gvmq/cape.mk
+PRODUCT_PROPERTY_OVERRIDES += \
+    persist.vendor.audio.cape.enable=true
+endif
 #$(error AUDIO_FRAMEWORK_AUDIOREACH is $(AUDIO_FRAMEWORK_AUDIOREACH))
 ifeq ($(TARGET_USES_QMAA_OVERRIDE_AUDIO), false)
 ifeq ($(TARGET_USES_QMAA),true)
@@ -146,7 +151,11 @@ DEVICE_PACKAGE_OVERLAYS += vendor/qcom/opensource/audio-hal-ar/primary-hal/confi
 endif
 
 #Automotive audio specific device overlays
+ifeq ($(TARGET_USES_CAPE_FOR_AUDIO), true)
+DEVICE_PACKAGE_OVERLAYS += vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/cape/overlay
+else
 DEVICE_PACKAGE_OVERLAYS += vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/overlay
+endif
 
 # Configuration files shared between msmnile_gvmgh and others
 PRODUCT_COPY_FILES += \
@@ -267,6 +276,12 @@ PRODUCT_COPY_FILES += \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/default_volume_tables.xml:$(TARGET_COPY_OUT_VENDOR)/etc/default_volume_tables.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/r_submix_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/r_submix_audio_policy_configuration.xml \
     $(TOPDIR)frameworks/av/services/audiopolicy/config/usb_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usb_audio_policy_configuration.xml
+
+ifeq ($(TARGET_USES_CAPE_FOR_AUDIO),true)
+PRODUCT_COPY_FILES += \
+    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_gvmq/car_audio_configuration_cape.xml:$(TARGET_COPY_OUT_VENDOR)/etc/car_audio_configuration_cape.xml
+endif
+
 endif
 
 ifeq ($(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), gen4_gvm)

@@ -1,0 +1,364 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+/*
+ * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ * Not a Contribution.
+ */
+-->
+<!-- Copyright (C) 2018 The Android Open Source Project
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+-->
+<!--
+  Changes from Qualcomm Technologies, Inc. are provided under the following license:
+  Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+  SPDX-License-Identifier: BSD-3-Clause-Clear
+-->
+
+<!--
+  Defines the audio configuration in a car, including
+    - Audio zones
+    - Display to audio zone mappings
+    - Context to audio bus mappings
+    - Volume groups
+  in the car environment.
+-->
+<carAudioConfiguration version="4">
+    <deviceConfigurations>
+        <deviceConfiguration name="useHalDuckingSignals" value="true"/>
+        <deviceConfiguration name="useCoreAudioRouting" value="true"/>
+        <deviceConfiguration name="useCoreAudioVolume" value="true"/>
+        <deviceConfiguration name="useCarVolumeGroupMuting" value="true"/>
+    </deviceConfigurations>
+    <mirroringDevices>
+        <mirroringDevice address="BUS1000_MIRROR"/>
+    </mirroringDevices>
+    <oemContexts>
+        <oemContext name="voice_command" id="1000">
+            <audioAttributes>
+                <usage value="AUDIO_USAGE_ASSISTANT"/>
+                <usage value="AUDIO_USAGE_ASSISTANCE_ACCESSIBILITY"/>
+            </audioAttributes>
+        </oemContext>
+        <oemContext name="voice_call" id="1001">
+            <audioAttributes>
+                <usage value="AUDIO_USAGE_VOICE_COMMUNICATION"/>
+                <usage value="AUDIO_USAGE_CALL_ASSISTANT"/>
+                <usage value="AUDIO_USAGE_VOICE_COMMUNICATION_SIGNALLING"/>
+            </audioAttributes>
+        </oemContext>
+        <oemContext name="music" id="1002">
+            <audioAttributes>
+                <usage value="AUDIO_USAGE_MEDIA"/>
+                <usage value="AUDIO_USAGE_GAME"/>
+                <usage value="AUDIO_USAGE_UNKNOWN"/>
+            </audioAttributes>
+        </oemContext>
+        <oemContext name="navigation" id="1003">
+            <audioAttributes>
+                <usage value="AUDIO_USAGE_ASSISTANCE_NAVIGATION_GUIDANCE"/>
+            </audioAttributes>
+        </oemContext>
+        <oemContext name="alarm" id="1004">
+            <audioAttributes>
+                <usage value="AUDIO_USAGE_ALARM"/>
+            </audioAttributes>
+        </oemContext>
+        <oemContext name="ring" id="1005">
+            <audioAttributes>
+                <usage value="AUDIO_USAGE_NOTIFICATION_TELEPHONY_RINGTONE"/>
+            </audioAttributes>
+        </oemContext>
+        <oemContext name="notification" id="1006">
+            <audioAttributes>
+                <usage value="AUDIO_USAGE_NOTIFICATION"/>
+                <usage value="AUDIO_USAGE_NOTIFICATION_EVENT"/>
+            </audioAttributes>
+        </oemContext>
+        <oemContext name="system_sound" id="1007">
+            <audioAttributes>
+                <usage value="AUDIO_USAGE_ASSISTANCE_SONIFICATION"/>
+            </audioAttributes>
+        </oemContext>
+        <oemContext name="emergency" id="1008">
+            <audioAttributes>
+                <usage value="AUDIO_USAGE_EMERGENCY"/>
+            </audioAttributes>
+        </oemContext>
+        <oemContext name="safety" id="1009">
+            <audioAttributes>
+                <usage value="AUDIO_USAGE_SAFETY"/>
+            </audioAttributes>
+        </oemContext>
+        <oemContext name="vehicle_status" id="1010">
+            <audioAttributes>
+                <usage value="AUDIO_USAGE_VEHICLE_STATUS"/>
+            </audioAttributes>
+        </oemContext>
+        <oemContext name="announcement" id="1011">
+            <audioAttributes>
+                <usage value="AUDIO_USAGE_ANNOUNCEMENT"/>
+            </audioAttributes>
+        </oemContext>
+        <oemContext name="z1_voice_command" id="1014">
+            <audioAttributes>
+                <usage value="AUDIO_USAGE_ASSISTANT"/>
+                <usage value="AUDIO_USAGE_ASSISTANCE_ACCESSIBILITY"/>
+            </audioAttributes>
+        </oemContext>
+        <oemContext name="z1_voice_call" id="1015">
+            <audioAttributes>
+                <usage value="AUDIO_USAGE_VOICE_COMMUNICATION"/>
+                <usage value="AUDIO_USAGE_CALL_ASSISTANT"/>
+                <usage value="AUDIO_USAGE_VOICE_COMMUNICATION_SIGNALLING"/>
+            </audioAttributes>
+        </oemContext>
+        <oemContext name="z1_music" id="1016">
+            <audioAttributes>
+                <usage value="AUDIO_USAGE_MEDIA"/>
+                <usage value="AUDIO_USAGE_GAME"/>
+                <usage value="AUDIO_USAGE_UNKNOWN"/>
+            </audioAttributes>
+        </oemContext>
+        <oemContext name="z1_navigation" id="1017">
+            <audioAttributes>
+                <usage value="AUDIO_USAGE_ASSISTANCE_NAVIGATION_GUIDANCE"/>
+            </audioAttributes>
+        </oemContext>
+        <oemContext name="z1_alarm" id="1018">
+            <audioAttributes>
+                <usage value="AUDIO_USAGE_ALARM"/>
+            </audioAttributes>
+        </oemContext>
+        <oemContext name="z1_ring" id="1019">
+            <audioAttributes>
+                <usage value="AUDIO_USAGE_NOTIFICATION_TELEPHONY_RINGTONE"/>
+            </audioAttributes>
+        </oemContext>
+        <oemContext name="z1_notification" id="1020">
+            <audioAttributes>
+                <usage value="AUDIO_USAGE_NOTIFICATION"/>
+                <usage value="AUDIO_USAGE_NOTIFICATION_EVENT"/>
+            </audioAttributes>
+        </oemContext>
+        <oemContext name="z1_system_sound" id="1021">
+            <audioAttributes>
+                <usage value="AUDIO_USAGE_ASSISTANCE_SONIFICATION"/>
+            </audioAttributes>
+        </oemContext>
+        <oemContext name="z1_emergency" id="1022">
+            <audioAttributes>
+                <usage value="AUDIO_USAGE_EMERGENCY"/>
+            </audioAttributes>
+        </oemContext>
+        <oemContext name="z1_safety" id="1023">
+            <audioAttributes>
+                <usage value="AUDIO_USAGE_SAFETY"/>
+            </audioAttributes>
+        </oemContext>
+        <oemContext name="z1_vehicle_status" id="1024">
+            <audioAttributes>
+                <usage value="AUDIO_USAGE_VEHICLE_STATUS"/>
+            </audioAttributes>
+        </oemContext>
+        <oemContext name="z1_announcement" id="1025">
+            <audioAttributes>
+                <usage value="AUDIO_USAGE_ANNOUNCEMENT"/>
+            </audioAttributes>
+        </oemContext>
+        <oemContext name="z2_voice_command" id="1026">
+            <audioAttributes>
+                <usage value="AUDIO_USAGE_ASSISTANT"/>
+                <usage value="AUDIO_USAGE_ASSISTANCE_ACCESSIBILITY"/>
+            </audioAttributes>
+        </oemContext>
+        <oemContext name="z2_voice_call" id="1027">
+            <audioAttributes>
+                <usage value="AUDIO_USAGE_VOICE_COMMUNICATION"/>
+                <usage value="AUDIO_USAGE_CALL_ASSISTANT"/>
+                <usage value="AUDIO_USAGE_VOICE_COMMUNICATION_SIGNALLING"/>
+            </audioAttributes>
+        </oemContext>
+        <oemContext name="z2_music" id="1028">
+            <audioAttributes>
+                <usage value="AUDIO_USAGE_MEDIA"/>
+                <usage value="AUDIO_USAGE_GAME"/>
+                <usage value="AUDIO_USAGE_UNKNOWN"/>
+            </audioAttributes>
+        </oemContext>
+        <oemContext name="z2_navigation" id="1029">
+            <audioAttributes>
+                <usage value="AUDIO_USAGE_ASSISTANCE_NAVIGATION_GUIDANCE"/>
+            </audioAttributes>
+        </oemContext>
+        <oemContext name="z2_alarm" id="1030">
+            <audioAttributes>
+                <usage value="AUDIO_USAGE_ALARM"/>
+            </audioAttributes>
+        </oemContext>
+        <oemContext name="z2_ring" id="1031">
+            <audioAttributes>
+                <usage value="AUDIO_USAGE_NOTIFICATION_TELEPHONY_RINGTONE"/>
+            </audioAttributes>
+        </oemContext>
+        <oemContext name="z2_notification" id="1032">
+            <audioAttributes>
+                <usage value="AUDIO_USAGE_NOTIFICATION"/>
+                <usage value="AUDIO_USAGE_NOTIFICATION_EVENT"/>
+            </audioAttributes>
+        </oemContext>
+        <oemContext name="z2_system_sound" id="1033">
+            <audioAttributes>
+                <usage value="AUDIO_USAGE_ASSISTANCE_SONIFICATION"/>
+            </audioAttributes>
+        </oemContext>
+        <oemContext name="z2_emergency" id="1034">
+            <audioAttributes>
+                <usage value="AUDIO_USAGE_EMERGENCY"/>
+            </audioAttributes>
+        </oemContext>
+        <oemContext name="z2_safety" id="1035">
+            <audioAttributes>
+                <usage value="AUDIO_USAGE_SAFETY"/>
+            </audioAttributes>
+        </oemContext>
+        <oemContext name="z2_vehicle_status" id="1036">
+            <audioAttributes>
+                <usage value="AUDIO_USAGE_VEHICLE_STATUS"/>
+            </audioAttributes>
+        </oemContext>
+        <oemContext name="z2_announcement" id="1037">
+            <audioAttributes>
+                <usage value="AUDIO_USAGE_ANNOUNCEMENT"/>
+            </audioAttributes>
+        </oemContext>
+    </oemContexts>
+    <zones>
+        <zone name="primary zone" isPrimary="true" audioZoneId="0" occupantZoneId="0">
+            <zoneConfigs>
+                <zoneConfig name="primary zone config 0" isDefault="true">
+                    <volumeGroups>
+                        <group name="entertainment">
+                            <device address="BUS00_MEDIA">
+                                <context context="music"/>
+                            </device>
+                        </group>
+                        <group name="system_sound">
+                            <device address="BUS01_SYS_NOTIFICATION">
+                                <context context="alarm"/>
+                                <context context="notification"/>
+                                <context context="system_sound"/>
+                            </device>
+                        </group>
+                        <group name="navvol">
+                            <device address="BUS02_NAV_GUIDANCE">
+                                <context context="navigation"/>
+                                <context context="voice_command"/>
+                            </device>
+                        </group>
+                        <group name="telvol">
+                            <device address="BUS03_PHONE">
+                                <context context="voice_call"/>
+                                <context context="ring"/>
+                            </device>
+                        </group>
+                        <group name="sdsvol">
+                            <device address="BUS05_ALERTS">
+                                <context context="emergency"/>
+                                <context context="safety"/>
+                                <context context="vehicle_status"/>
+                                <context context="announcement"/>
+                            </device>
+                        </group>
+                    </volumeGroups>
+                </zoneConfig>
+            </zoneConfigs>
+            <inputDevices>
+                <inputDevice address="BUS04_INPUT"/>
+            </inputDevices>
+            <inputDevices>
+                <inputDevice address="BUS24_INPUT_EAVB"/>
+            </inputDevices>
+            <displays>
+                <display port="0"/>
+            </displays>
+            <!-- to specify displays associated with this audio zone, use the following tags
+                <displays>
+                    <display port="1"/>
+                    <display port="2"/>
+                </displays>
+                where port is the physical port of the display (See DisplayAddress.Phyisical)
+            -->
+        </zone>
+        <zone name="front passenger zone" audioZoneId="1" occupantZoneId="1">
+            <zoneConfigs>
+                <zoneConfig name="A2B zone config 0" isDefault="true">
+                    <volumeGroups>
+                        <group name="front_entertainment">
+                            <device address="BUS08_FRONT_PASSENGER">
+                                <context context="z1_music"/>
+                                <context context="z1_navigation"/>
+                                <context context="z1_voice_command"/>
+                                <context context="z1_ring"/>
+                                <context context="z1_voice_call"/>
+                                <context context="z1_alarm"/>
+                                <context context="z1_notification"/>
+                                <context context="z1_system_sound"/>
+                                <context context="z1_emergency"/>
+                                <context context="z1_safety"/>
+                                <context context="z1_vehicle_status"/>
+                                <context context="z1_announcement"/>
+                            </device>
+                        </group>
+                    </volumeGroups>
+                </zoneConfig>
+            </zoneConfigs>
+            <inputDevices>
+                <inputDevice address="BUS09_INPUT_FRONT_PASSENGER"/>
+            </inputDevices>
+            <displays>
+                <display port="1"/>
+            </displays>
+        </zone>
+        <zone name="rear seat zone" audioZoneId="2" occupantZoneId="2">
+            <zoneConfigs>
+                <zoneConfig name="A2B2 zone config 0" isDefault="true">
+                    <volumeGroups>
+                        <group name="rear_entertainment">
+                            <device address="BUS16_REAR_SEAT">
+                                <context context="z2_music"/>
+                                <context context="z2_navigation"/>
+                                <context context="z2_voice_command"/>
+                                <context context="z2_ring"/>
+                                <context context="z2_voice_call"/>
+                                <context context="z2_alarm"/>
+                                <context context="z2_notification"/>
+                                <context context="z2_system_sound"/>
+                                <context context="z2_emergency"/>
+                                <context context="z2_safety"/>
+                                <context context="z2_vehicle_status"/>
+                                <context context="z2_announcement"/>
+                            </device>
+                        </group>
+                    </volumeGroups>
+                </zoneConfig>
+            </zoneConfigs>
+            <inputDevices>
+                <inputDevice address="BUS17_INPUT_REAR_SEAT"/>
+            </inputDevices>
+            <displays>
+                <display port="2"/>
+            </displays>
+        </zone>
+    </zones>
+</carAudioConfiguration>

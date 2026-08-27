@@ -1,0 +1,145 @@
+soong_namespace {
+    imports: [
+        "frameworks/av/services/audiopolicy/config",
+    ],
+}
+//////////////////////////////////////////////////////////////
+//
+// Audio Policy Engine Configuration files
+//
+//////////////////////////////////////////////////////////////
+
+filegroup {
+    name: "audio_policy_configuration_top_file",
+    srcs: ["audio_module_config_primary.xml"],
+}
+
+filegroup {
+    name: "audio_policy_configuration_files",
+    srcs: ["audio_module_config_primary.xml"],
+}
+
+genrule {
+    name: "audio_policy_engine_criterion_types",
+    defaults: ["capbuildpolicycriteriontypesrule"],
+    srcs: [
+        ":audio_policy_configuration_top_file",
+        ":audio_policy_configuration_files",
+    ],
+}
+
+prebuilt_etc {
+    name: "audio_policy_engine_criterion_types.xml",
+    vendor: true,
+    src: ":audio_policy_engine_criterion_types",
+}
+
+filegroup {
+    name: "audio_policy_engine_configuration",
+    srcs: [
+        "engine/config/audio_policy_engine_configuration_va.xml",
+    ],
+}
+
+filegroup {
+    name: "audio_policy_engine_configuration_files",
+    srcs: [
+        ":audio_policy_engine_configuration",
+        "engine/config/audio_policy_engine_product_strategies.xml",
+        "engine/config/audio_policy_engine_volumes.xml",
+        "engine/config/audio_policy_engine_default_volumes.xml",
+        ":audio_policy_engine_criterion_types",
+        ":audio_policy_engine_criteria",
+    ],
+}
+
+prebuilt_etc {
+    name: "audio_policy_engine_configuration_va.xml",
+    vendor: true,
+    src: ":audio_policy_engine_configuration",
+    required: [
+        "audio_policy_engine_criterion_types.xml",
+        "audio_policy_engine_criteria.xml",
+        "audio_policy_engine_product_strategies.xml",
+        "audio_policy_engine_volumes.xml",
+        "audio_policy_engine_default_volumes.xml",
+    ],
+}
+
+prebuilt_etc {
+    name: "audio_policy_engine_product_strategies.xml",
+    vendor: true,
+    src: "engine/config/audio_policy_engine_product_strategies.xml",
+}
+
+prebuilt_etc {
+    name: "audio_policy_engine_volumes.xml",
+    vendor: true,
+    src: "engine/config/audio_policy_engine_volumes.xml",
+}
+
+prebuilt_etc {
+    name: "audio_policy_engine_default_volumes.xml",
+    vendor: true,
+    src: "engine/config/audio_policy_engine_default_volumes.xml",
+}
+
+//////////////////////////////////////////////////////////////
+//
+// Audio Policy Parameter Framework
+//
+//////////////////////////////////////////////////////////////
+
+genrule {
+    name: "buildstrategiesstructure_gen",
+    defaults: ["buildstrategiesstructurerule"],
+    srcs: [
+        ":audio_policy_engine_configuration_files",
+    ],
+}
+
+//
+// Generate Audio Policy Parameter Framework Configurable Domains
+//
+filegroup {
+    name: "edd_files",
+    srcs: [
+        "engine/parameter-framework/Settings/device_for_product_strategies.pfw",
+        "engine/parameter-framework/Settings/device_for_input_source.pfw",
+        "engine/parameter-framework/Settings/volumes.pfw",
+    ],
+}
+
+filegroup {
+    name: "audio_policy_pfw_toplevel",
+    srcs: [":ParameterFrameworkConfigurationCapSrc"],
+}
+
+filegroup {
+    name: "audio_policy_pfw_structure_files",
+    srcs: [
+        ":CapClass",
+        ":CapSubsystem",
+        ":buildaidlcommontypesstructure_gen",
+        ":cap_product_strategies_structure",
+    ],
+}
+
+genrule {
+    name: "domaingeneratorpolicyrule_gen",
+    defaults: ["domaingeneratorpolicyrule"],
+    srcs: [
+        ":audio_policy_pfw_toplevel",
+        ":audio_policy_pfw_structure_files",
+        ":audio_policy_engine_criterion_types",
+        ":edd_files",
+    ],
+}
+
+prebuilt_etc {
+    name: "parameter-framework.policy",
+    filename_from_src: true,
+    vendor: true,
+    src: ":domaingeneratorpolicyrule_gen",
+    sub_dir: "parameter-framework/Settings/Policy",
+}

@@ -1,0 +1,269 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!-- Copyright (C) 2025 The Android Open Source Project
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+-->
+<!--
+     Changes from Qualcomm Technologies, Inc. are provided under the following license:
+     Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+     SPDX-License-Identifier: BSD-3-Clause-Clear
+-->
+<volumeGroups>
+  <!-- AM/FM/HD Tuner, XM Tuner, DAB Tuner, DRM Tuner, RSE -In, I-Pod, USB,
+         Bluetooth audio streaming, SPI-Media, DTV. -->
+  <volumeGroup>
+    <name>entertainment</name>
+    <indexMin>0</indexMin>
+    <indexMax>40</indexMax>
+    <volume
+      deviceCategory="DEVICE_CATEGORY_SPEAKER"
+      ref="DEFAULT_VOLUME_STEPS_CURVE"
+    />
+    <volume
+      deviceCategory="DEVICE_CATEGORY_HEADSET"
+      ref="DEFAULT_VOLUME_STEPS_CURVE"
+    />
+    <volume
+      deviceCategory="DEVICE_CATEGORY_EARPIECE"
+      ref="DEFAULT_VOLUME_STEPS_CURVE"
+    />
+    <volume
+      deviceCategory="DEVICE_CATEGORY_EXT_MEDIA"
+      ref="DEFAULT_VOLUME_STEPS_CURVE"
+    />
+    <volume
+      deviceCategory="DEVICE_CATEGORY_HEARING_AID"
+      ref="DEFAULT_VOLUME_STEPS_CURVE"
+    />
+  </volumeGroup>
+
+  <!-- Called also "navvol": Navigation speech, IPA-TTS, IPA_FAP, AD2_TTS, SPI-Info/Guide -->
+  <volumeGroup>
+    <name>navvol</name>
+    <indexMin>5</indexMin>
+    <indexMax>40</indexMax>
+    <volume
+      deviceCategory="DEVICE_CATEGORY_SPEAKER"
+      ref="NOT_MUTABLE_VOLUME_STEPS_CURVE_5TO40"
+    />
+    <volume
+      deviceCategory="DEVICE_CATEGORY_HEADSET"
+      ref="NOT_MUTABLE_VOLUME_STEPS_CURVE_5TO40"
+    />
+    <volume
+      deviceCategory="DEVICE_CATEGORY_EARPIECE"
+      ref="NOT_MUTABLE_VOLUME_STEPS_CURVE_5TO40"
+    />
+    <volume
+      deviceCategory="DEVICE_CATEGORY_EXT_MEDIA"
+      ref="NOT_MUTABLE_VOLUME_STEPS_CURVE_5TO40"
+    />
+    <volume
+      deviceCategory="DEVICE_CATEGORY_HEARING_AID"
+      ref="NOT_MUTABLE_VOLUME_STEPS_CURVE_5TO40"
+    />
+  </volumeGroup>
+
+  <volumeGroup>
+    <name>system_sound</name>
+    <indexMin>0</indexMin>
+    <indexMax>40</indexMax>
+    <volume
+      deviceCategory="DEVICE_CATEGORY_SPEAKER"
+      ref="DEFAULT_VOLUME_STEPS_CURVE"
+    />
+    <volume
+      deviceCategory="DEVICE_CATEGORY_HEADSET"
+      ref="DEFAULT_VOLUME_STEPS_CURVE"
+    />
+    <volume
+      deviceCategory="DEVICE_CATEGORY_EARPIECE"
+      ref="DEFAULT_VOLUME_STEPS_CURVE"
+    />
+    <volume
+      deviceCategory="DEVICE_CATEGORY_EXT_MEDIA"
+      ref="DEFAULT_VOLUME_STEPS_CURVE"
+    />
+    <volume
+      deviceCategory="DEVICE_CATEGORY_HEARING_AID"
+      ref="DEFAULT_VOLUME_STEPS_CURVE"
+    />
+  </volumeGroup>
+
+  <!-- Called also "TelVol": BT Phone, 3rd party voice comm. -->
+  <volumeGroup>
+    <name>telvol</name>
+    <indexMin>5</indexMin>
+    <indexMax>40</indexMax>
+    <volume
+      deviceCategory="DEVICE_CATEGORY_SPEAKER"
+      ref="NOT_MUTABLE_VOLUME_STEPS_CURVE_5TO40"
+    />
+    <volume
+      deviceCategory="DEVICE_CATEGORY_HEADSET"
+      ref="NOT_MUTABLE_VOLUME_STEPS_CURVE_5TO40"
+    />
+    <volume
+      deviceCategory="DEVICE_CATEGORY_EARPIECE"
+      ref="NOT_MUTABLE_VOLUME_STEPS_CURVE_5TO40"
+    />
+    <volume
+      deviceCategory="DEVICE_CATEGORY_EXT_MEDIA"
+      ref="NOT_MUTABLE_VOLUME_STEPS_CURVE_5TO40"
+    />
+    <volume
+      deviceCategory="DEVICE_CATEGORY_HEARING_AID"
+      ref="NOT_MUTABLE_VOLUME_STEPS_CURVE_5TO40"
+    />
+  </volumeGroup>
+
+  <volumeGroup>
+    <name>enforced_audible</name>
+    <indexMin>5</indexMin>
+    <indexMax>40</indexMax>
+    <volume
+      deviceCategory="DEVICE_CATEGORY_SPEAKER"
+      ref="DEFAULT_VOLUME_STEPS_CURVE"
+    />
+    <volume
+      deviceCategory="DEVICE_CATEGORY_HEADSET"
+      ref="DEFAULT_VOLUME_STEPS_CURVE"
+    />
+    <volume
+      deviceCategory="DEVICE_CATEGORY_EARPIECE"
+      ref="DEFAULT_VOLUME_STEPS_CURVE"
+    />
+    <volume
+      deviceCategory="DEVICE_CATEGORY_EXT_MEDIA"
+      ref="DEFAULT_VOLUME_STEPS_CURVE"
+    />
+    <volume
+      deviceCategory="DEVICE_CATEGORY_HEARING_AID"
+      ref="DEFAULT_VOLUME_STEPS_CURVE"
+    />
+  </volumeGroup>
+
+  <!-- Called also "SdsVol": TCU-TTS, Driving-ECO, SDS, SMS-Reading, SXM-TTS, SPI-SDS -->
+  <volumeGroup>
+    <name>sdsvol</name>
+    <indexMin>5</indexMin>
+    <indexMax>40</indexMax>
+    <volume
+      deviceCategory="DEVICE_CATEGORY_SPEAKER"
+      ref="NOT_MUTABLE_VOLUME_STEPS_CURVE_5TO40"
+    />
+    <volume
+      deviceCategory="DEVICE_CATEGORY_HEADSET"
+      ref="NOT_MUTABLE_VOLUME_STEPS_CURVE_5TO40"
+    />
+    <volume
+      deviceCategory="DEVICE_CATEGORY_EARPIECE"
+      ref="NOT_MUTABLE_VOLUME_STEPS_CURVE_5TO40"
+    />
+    <volume
+      deviceCategory="DEVICE_CATEGORY_EXT_MEDIA"
+      ref="NOT_MUTABLE_VOLUME_STEPS_CURVE_5TO40"
+    />
+    <volume
+      deviceCategory="DEVICE_CATEGORY_HEARING_AID"
+      ref="NOT_MUTABLE_VOLUME_STEPS_CURVE_5TO40"
+    />
+  </volumeGroup>
+
+
+  <volumeGroup>
+    <!--as far as STREAM_TTS is aliased with STREAM_MUSIC, must share same volume curve profile-->
+    <name>tts</name>
+    <indexMin>0</indexMin>
+    <indexMax>40</indexMax>
+    <volume
+      deviceCategory="DEVICE_CATEGORY_SPEAKER"
+      ref="DEFAULT_VOLUME_STEPS_CURVE"
+    />
+    <volume
+      deviceCategory="DEVICE_CATEGORY_HEADSET"
+      ref="DEFAULT_VOLUME_STEPS_CURVE"
+    />
+    <volume
+      deviceCategory="DEVICE_CATEGORY_EARPIECE"
+      ref="DEFAULT_VOLUME_STEPS_CURVE"
+    />
+    <volume
+      deviceCategory="DEVICE_CATEGORY_EXT_MEDIA"
+      ref="DEFAULT_VOLUME_STEPS_CURVE"
+    />
+    <volume
+      deviceCategory="DEVICE_CATEGORY_HEARING_AID"
+      ref="DEFAULT_VOLUME_STEPS_CURVE"
+    />
+    <!--indexMin>0</indexMin>
+        <indexMax>15</indexMax>
+        <volume deviceCategory="DEVICE_CATEGORY_SPEAKER">
+            <point>0,-0</point>
+            <point>100,0</point>
+        </volume-->
+  </volumeGroup>
+
+  <volumeGroup>
+    <name>front_entertainment</name>
+    <indexMin>0</indexMin>
+    <indexMax>40</indexMax>
+    <volume
+      deviceCategory="DEVICE_CATEGORY_SPEAKER"
+      ref="DEFAULT_VOLUME_STEPS_CURVE"
+    />
+    <volume
+      deviceCategory="DEVICE_CATEGORY_HEADSET"
+      ref="DEFAULT_VOLUME_STEPS_CURVE"
+    />
+    <volume
+      deviceCategory="DEVICE_CATEGORY_EARPIECE"
+      ref="DEFAULT_VOLUME_STEPS_CURVE"
+    />
+    <volume
+      deviceCategory="DEVICE_CATEGORY_EXT_MEDIA"
+      ref="DEFAULT_VOLUME_STEPS_CURVE"
+    />
+    <volume
+      deviceCategory="DEVICE_CATEGORY_HEARING_AID"
+      ref="DEFAULT_VOLUME_STEPS_CURVE"
+    />
+  </volumeGroup>
+
+  <volumeGroup>
+    <name>rear_entertainment</name>
+    <indexMin>0</indexMin>
+    <indexMax>40</indexMax>
+    <volume
+      deviceCategory="DEVICE_CATEGORY_SPEAKER"
+      ref="DEFAULT_VOLUME_STEPS_CURVE"
+    />
+    <volume
+      deviceCategory="DEVICE_CATEGORY_HEADSET"
+      ref="DEFAULT_VOLUME_STEPS_CURVE"
+    />
+    <volume
+      deviceCategory="DEVICE_CATEGORY_EARPIECE"
+      ref="DEFAULT_VOLUME_STEPS_CURVE"
+    />
+    <volume
+      deviceCategory="DEVICE_CATEGORY_EXT_MEDIA"
+      ref="DEFAULT_VOLUME_STEPS_CURVE"
+    />
+    <volume
+      deviceCategory="DEVICE_CATEGORY_HEARING_AID"
+      ref="DEFAULT_VOLUME_STEPS_CURVE"
+    />
+  </volumeGroup>
+
+</volumeGroups>

@@ -1,0 +1,347 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!-- Copyright (C) 2025 The Android Open Source Project
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+-->
+<!--
+     Changes from Qualcomm Technologies, Inc. are provided under the following license:
+     Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+     SPDX-License-Identifier: BSD-3-Clause-Clear
+-->
+<ProductStrategies>
+  <ProductStrategy name="voice_command" id="1000">
+    <AttributesGroup streamType="AUDIO_STREAM_ASSISTANT" volumeGroup="navvol">
+      <Attributes>
+        <Usage value="AUDIO_USAGE_ASSISTANT" />
+      </Attributes>
+      <Attributes>
+        <Usage value="AUDIO_USAGE_ASSISTANCE_ACCESSIBILITY" />
+      </Attributes>
+    </AttributesGroup>
+  </ProductStrategy>
+
+  <ProductStrategy name="voice_call" id="1001">
+    <AttributesGroup streamType="AUDIO_STREAM_VOICE_CALL" volumeGroup="telvol">
+      <Attributes>
+        <Usage value="AUDIO_USAGE_VOICE_COMMUNICATION" />
+      </Attributes>
+      <Attributes>
+        <Usage value="AUDIO_USAGE_CALL_ASSISTANT" />
+      </Attributes>
+    </AttributesGroup>
+    <AttributesGroup streamType="AUDIO_STREAM_DTMF" volumeGroup="telvol">
+      <Attributes>
+        <Usage value="AUDIO_USAGE_VOICE_COMMUNICATION_SIGNALLING" />
+      </Attributes>
+    </AttributesGroup>
+    <AttributesGroup streamType="AUDIO_STREAM_BLUETOOTH_SCO" volumeGroup="telvol">
+      <Attributes>
+        <Flags value="AUDIO_FLAG_SCO" />
+      </Attributes>
+    </AttributesGroup>
+  </ProductStrategy>
+
+  <ProductStrategy name="music" id="1002">
+    <AttributesGroup streamType="AUDIO_STREAM_MUSIC" volumeGroup="entertainment">
+      <Attributes>
+        <Usage value="AUDIO_USAGE_MEDIA" />
+      </Attributes>
+      <Attributes>
+        <Usage value="AUDIO_USAGE_GAME" />
+      </Attributes>
+      <!-- Default product strategy has empty attributes -->
+      <Attributes></Attributes>
+    </AttributesGroup>
+  </ProductStrategy>
+
+  <ProductStrategy name="navigation" id="1003">
+    <AttributesGroup volumeGroup="navvol">
+      <Usage value="AUDIO_USAGE_ASSISTANCE_NAVIGATION_GUIDANCE" />
+    </AttributesGroup>
+  </ProductStrategy>
+
+  <ProductStrategy name="alarm" id="1004">
+    <AttributesGroup streamType="AUDIO_STREAM_ALARM" volumeGroup="system_sound">
+      <Usage value="AUDIO_USAGE_ALARM" />
+    </AttributesGroup>
+  </ProductStrategy>
+
+  <ProductStrategy name="ring" id="1005">
+    <AttributesGroup streamType="AUDIO_STREAM_RING" volumeGroup="telvol">
+      <Usage value="AUDIO_USAGE_NOTIFICATION_TELEPHONY_RINGTONE" />
+    </AttributesGroup>
+  </ProductStrategy>
+
+  <ProductStrategy name="notification" id="1006">
+    <AttributesGroup streamType="AUDIO_STREAM_NOTIFICATION" volumeGroup="system_sound">
+      <Attributes>
+        <Usage value="AUDIO_USAGE_NOTIFICATION" />
+      </Attributes>
+      <Attributes>
+        <Usage value="AUDIO_USAGE_NOTIFICATION_EVENT" />
+      </Attributes>
+    </AttributesGroup>
+  </ProductStrategy>
+
+  <ProductStrategy name="system_sound" id="1007">
+    <AttributesGroup streamType="AUDIO_STREAM_SYSTEM" volumeGroup="system_sound">
+      <Usage value="AUDIO_USAGE_ASSISTANCE_SONIFICATION" />
+    </AttributesGroup>
+  </ProductStrategy>
+
+  <ProductStrategy name="emergency" id="1008">
+    <AttributesGroup volumeGroup="sdsvol">
+      <Usage value="AUDIO_USAGE_EMERGENCY"/>
+    </AttributesGroup>
+  </ProductStrategy>
+
+  <ProductStrategy name="safety" id="1009">
+    <AttributesGroup volumeGroup="sdsvol">
+      <Usage value="AUDIO_USAGE_SAFETY"/>
+    </AttributesGroup>
+  </ProductStrategy>
+
+  <ProductStrategy name="vehicle_status" id="1010">
+    <AttributesGroup volumeGroup="sdsvol">
+      <Usage value="AUDIO_USAGE_VEHICLE_STATUS"/>
+    </AttributesGroup>
+  </ProductStrategy>
+
+  <ProductStrategy name="announcement" id="1011">
+    <AttributesGroup volumeGroup="sdsvol">
+      <Usage value="AUDIO_USAGE_ANNOUNCEMENT"/>
+    </AttributesGroup>
+  </ProductStrategy>
+
+  <ProductStrategy name="tts" id="1012">
+    <AttributesGroup streamType="AUDIO_STREAM_TTS" volumeGroup="tts">
+      <Attributes>
+        <Flags value="AUDIO_FLAG_BEACON" />
+      </Attributes>
+    </AttributesGroup>
+    <AttributesGroup streamType="AUDIO_STREAM_ACCESSIBILITY" volumeGroup="tts">
+      <Attributes>
+        <Flags value="AUDIO_FLAG_BEACON" />
+      </Attributes>
+    </AttributesGroup>
+  </ProductStrategy>
+
+  <ProductStrategy name="enforced_audible" id="1013">
+    <AttributesGroup streamType="AUDIO_STREAM_ENFORCED_AUDIBLE" volumeGroup="enforced_audible">
+      <Attributes>
+        <Flags value="AUDIO_FLAG_AUDIBILITY_ENFORCED" />
+      </Attributes>
+    </AttributesGroup>
+  </ProductStrategy>
+
+  <ProductStrategy name="z1_voice_command" id="1014" fallbackOnDefault="true" zoneId="1">
+    <AttributesGroup volumeGroup="front_entertainment">
+      <Attributes>
+        <Usage value="AUDIO_USAGE_ASSISTANT" />
+      </Attributes>
+      <Attributes>
+        <Usage value="AUDIO_USAGE_ASSISTANCE_ACCESSIBILITY" />
+      </Attributes>
+    </AttributesGroup>
+  </ProductStrategy>
+
+  <ProductStrategy name="z1_voice_call" id="1015" fallbackOnDefault="true" zoneId="1">
+    <AttributesGroup volumeGroup="front_entertainment">
+      <Attributes>
+        <Usage value="AUDIO_USAGE_VOICE_COMMUNICATION" />
+      </Attributes>
+      <Attributes>
+        <Usage value="AUDIO_USAGE_CALL_ASSISTANT" />
+      </Attributes>
+      <Attributes>
+        <Usage value="AUDIO_USAGE_VOICE_COMMUNICATION_SIGNALLING" />
+      </Attributes>
+      <Attributes>
+        <Flags value="AUDIO_FLAG_SCO" />
+      </Attributes>
+    </AttributesGroup>
+  </ProductStrategy>
+
+  <ProductStrategy name="z1_music" id="1016" fallbackOnDefault="true" zoneId="1">
+    <AttributesGroup volumeGroup="front_entertainment">
+      <Attributes>
+        <Usage value="AUDIO_USAGE_MEDIA" />
+      </Attributes>
+      <Attributes>
+        <Usage value="AUDIO_USAGE_GAME" />
+      </Attributes>
+      <!-- Default product strategy has no attributes -->
+      <Attributes />
+    </AttributesGroup>
+  </ProductStrategy>
+
+  <ProductStrategy name="z1_navigation" id="1017" fallbackOnDefault="true" zoneId="1">
+    <AttributesGroup volumeGroup="front_entertainment">
+      <Usage value="AUDIO_USAGE_ASSISTANCE_NAVIGATION_GUIDANCE" />
+    </AttributesGroup>
+  </ProductStrategy>
+
+  <ProductStrategy name="z1_alarm" id="1018" fallbackOnDefault="true" zoneId="1">
+    <AttributesGroup volumeGroup="front_entertainment">
+      <Usage value="AUDIO_USAGE_ALARM" />
+    </AttributesGroup>
+  </ProductStrategy>
+
+  <ProductStrategy name="z1_ring" id="1019" fallbackOnDefault="true" zoneId="1">
+    <AttributesGroup volumeGroup="front_entertainment">
+      <Usage value="AUDIO_USAGE_NOTIFICATION_TELEPHONY_RINGTONE" />
+    </AttributesGroup>
+  </ProductStrategy>
+
+  <ProductStrategy name="z1_notification" id="1020" fallbackOnDefault="true" zoneId="1">
+    <AttributesGroup volumeGroup="front_entertainment">
+      <Attributes>
+        <Usage value="AUDIO_USAGE_NOTIFICATION" />
+      </Attributes>
+      <Attributes>
+        <Usage value="AUDIO_USAGE_NOTIFICATION_EVENT" />
+      </Attributes>
+    </AttributesGroup>
+  </ProductStrategy>
+
+  <ProductStrategy name="z1_system_sound" id="1021" fallbackOnDefault="true" zoneId="1">
+    <AttributesGroup volumeGroup="front_entertainment">
+      <Usage value="AUDIO_USAGE_ASSISTANCE_SONIFICATION" />
+    </AttributesGroup>
+  </ProductStrategy>
+
+  <ProductStrategy name="z1_emergency" id="1022" fallbackOnDefault="true" zoneId="1">
+    <AttributesGroup volumeGroup="front_entertainment">
+      <Usage value="AUDIO_USAGE_EMERGENCY"/>
+    </AttributesGroup>
+  </ProductStrategy>
+
+  <ProductStrategy name="z1_safety" id="1023" fallbackOnDefault="true" zoneId="1">
+    <AttributesGroup volumeGroup="front_entertainment">
+      <Usage value="AUDIO_USAGE_SAFETY"/>
+    </AttributesGroup>
+  </ProductStrategy>
+
+  <ProductStrategy name="z1_vehicle_status" id="1024" fallbackOnDefault="true" zoneId="1">
+    <AttributesGroup volumeGroup="front_entertainment">
+      <Usage value="AUDIO_USAGE_VEHICLE_STATUS"/>
+    </AttributesGroup>
+  </ProductStrategy>
+
+  <ProductStrategy name="z1_announcement" id="1025" fallbackOnDefault="true" zoneId="1">
+    <AttributesGroup volumeGroup="front_entertainment">
+      <Usage value="AUDIO_USAGE_ANNOUNCEMENT"/>
+    </AttributesGroup>
+  </ProductStrategy>
+
+  <ProductStrategy name="z2_voice_command" id="1026" fallbackOnDefault="true" zoneId="2">
+    <AttributesGroup volumeGroup="rear_entertainment">
+      <Attributes>
+        <Usage value="AUDIO_USAGE_ASSISTANT" />
+      </Attributes>
+      <Attributes>
+        <Usage value="AUDIO_USAGE_ASSISTANCE_ACCESSIBILITY" />
+      </Attributes>
+    </AttributesGroup>
+  </ProductStrategy>
+
+  <ProductStrategy name="z2_voice_call" id="1027" fallbackOnDefault="true" zoneId="2">
+    <AttributesGroup volumeGroup="rear_entertainment">
+      <Attributes>
+        <Usage value="AUDIO_USAGE_VOICE_COMMUNICATION" />
+      </Attributes>
+      <Attributes>
+        <Usage value="AUDIO_USAGE_CALL_ASSISTANT" />
+      </Attributes>
+      <Attributes>
+        <Usage value="AUDIO_USAGE_VOICE_COMMUNICATION_SIGNALLING" />
+      </Attributes>
+      <Attributes>
+        <Flags value="AUDIO_FLAG_SCO" />
+      </Attributes>
+    </AttributesGroup>
+  </ProductStrategy>
+
+  <ProductStrategy name="z2_music" id="1028" fallbackOnDefault="true" zoneId="2">
+    <AttributesGroup volumeGroup="rear_entertainment">
+      <Attributes>
+        <Usage value="AUDIO_USAGE_MEDIA" />
+      </Attributes>
+      <Attributes>
+        <Usage value="AUDIO_USAGE_GAME" />
+      </Attributes>
+      <!-- Default product strategy has no attributes -->
+      <Attributes />
+    </AttributesGroup>
+  </ProductStrategy>
+
+  <ProductStrategy name="z2_navigation" id="1029" fallbackOnDefault="true" zoneId="2">
+    <AttributesGroup volumeGroup="rear_entertainment">
+      <Usage value="AUDIO_USAGE_ASSISTANCE_NAVIGATION_GUIDANCE" />
+    </AttributesGroup>
+  </ProductStrategy>
+
+  <ProductStrategy name="z2_alarm" id="1030" fallbackOnDefault="true" zoneId="2">
+    <AttributesGroup volumeGroup="rear_entertainment">
+      <Usage value="AUDIO_USAGE_ALARM" />
+    </AttributesGroup>
+  </ProductStrategy>
+
+  <ProductStrategy name="z2_ring" id="1031" fallbackOnDefault="true" zoneId="2">
+    <AttributesGroup volumeGroup="rear_entertainment">
+      <Usage value="AUDIO_USAGE_NOTIFICATION_TELEPHONY_RINGTONE" />
+    </AttributesGroup>
+  </ProductStrategy>
+
+  <ProductStrategy name="z2_notification" id="1032" fallbackOnDefault="true" zoneId="2">
+    <AttributesGroup volumeGroup="rear_entertainment">
+      <Attributes>
+        <Usage value="AUDIO_USAGE_NOTIFICATION" />
+      </Attributes>
+      <Attributes>
+        <Usage value="AUDIO_USAGE_NOTIFICATION_EVENT" />
+      </Attributes>
+    </AttributesGroup>
+  </ProductStrategy>
+
+  <ProductStrategy name="z2_system_sound" id="1033" fallbackOnDefault="true" zoneId="2">
+    <AttributesGroup volumeGroup="rear_entertainment">
+      <Usage value="AUDIO_USAGE_ASSISTANCE_SONIFICATION" />
+    </AttributesGroup>
+  </ProductStrategy>
+
+  <ProductStrategy name="z2_emergency" id="1034" fallbackOnDefault="true" zoneId="2">
+    <AttributesGroup volumeGroup="rear_entertainment">
+      <Usage value="AUDIO_USAGE_EMERGENCY"/>
+    </AttributesGroup>
+  </ProductStrategy>
+
+  <ProductStrategy name="z2_safety" id="1035" fallbackOnDefault="true" zoneId="2">
+    <AttributesGroup volumeGroup="rear_entertainment">
+      <Usage value="AUDIO_USAGE_SAFETY"/>
+    </AttributesGroup>
+  </ProductStrategy>
+
+  <ProductStrategy name="z2_vehicle_status" id="1036" fallbackOnDefault="true" zoneId="2">
+    <AttributesGroup volumeGroup="rear_entertainment">
+      <Usage value="AUDIO_USAGE_VEHICLE_STATUS"/>
+    </AttributesGroup>
+  </ProductStrategy>
+
+  <ProductStrategy name="z2_announcement" id="1037" fallbackOnDefault="true" zoneId="2">
+    <AttributesGroup volumeGroup="rear_entertainment">
+      <Usage value="AUDIO_USAGE_ANNOUNCEMENT"/>
+    </AttributesGroup>
+  </ProductStrategy>
+
+</ProductStrategies>
