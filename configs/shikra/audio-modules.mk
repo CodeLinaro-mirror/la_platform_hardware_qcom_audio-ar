@@ -40,7 +40,12 @@ endif
 #PAL Service
 AUDIO_PAL += libpalclient
 AUDIO_PAL += libpalipcservice
+# assemble_vintf segfaults on this service's VINTF fragment in the automotive
+# build, breaking the build. Exclude the module on auto so the fragment is not
+# assembled. Workaround for a host-tool crash, not a functional decision.
+ifneq ($(TARGET_BOARD_AUTO),true)
 AUDIO_PAL += libpaleventnotifier
+endif
 #PAL Stream Modules
 AUDIO_PAL += libstream_pcm
 AUDIO_PAL += libstream_soundtrigger
@@ -109,11 +114,16 @@ AUDIO_MODULES += $(AUDIO_TEST)
 AUDIO_MODULES += libsoundtriggerhal.qti
 
 # enable Listen Sound Model aidl 1.0
+# assemble_vintf segfaults on Manifest_IListenSoundModel.xml in the automotive
+# build, breaking the build. Exclude the module on auto so the fragment is not
+# assembled. Workaround for a host-tool crash, not a functional decision.
+ifneq ($(TARGET_BOARD_AUTO),true)
 AUDIO_MODULES += \
     liblistensoundmodelaidl \
     liblistensoundmodel2vendor \
     vendor.qti.hardware.ListenSoundModelAidl-V1-ndk.vendor \
     Manifest_IListenSoundModel.xml
+endif
 
 # AIDL Audio modules
 
