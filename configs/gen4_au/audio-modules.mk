@@ -11,7 +11,6 @@ ifneq ($(AUDIO_MODULES_DISABLED),true)
 #AGM
 ifeq (,$(filter gen4_gvm_gy, $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)))
 AUDIO_AGM := libagmclient
-AUDIO_AGM += libagmipcservice
 AUDIO_AGM += libagm
 AUDIO_AGM += agmplay
 AUDIO_AGM += agmcap
@@ -23,6 +22,12 @@ AUDIO_AGM += libagm_compress_plugin
 AUDIO_AGM += agmcompresscap
 AUDIO_AGM += agmvoiceui
 AUDIO_AGM += agmhostless
+ifeq ($(TARGET_SDV_ENABLED), true)
+AUDIO_AGM += init.qti.AGMIPC.sh
+AUDIO_AGM += agmipcservice
+else
+AUDIO_AGM += libagmipcservice
+endif
 endif
 
 #PAL Module

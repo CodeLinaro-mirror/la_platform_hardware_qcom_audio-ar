@@ -21,6 +21,7 @@
  */
 
 #include <vector>
+#include <sstream>
 
 #define LOG_TAG "AHAL_ModulePrimary_QTI"
 #include <android-base/logging.h>
@@ -316,7 +317,6 @@ void ModulePrimary::onNewPatchCreation(const std::vector<AudioPortConfig*>& sour
 
 ndk::ScopedAStatus qti::audio::core::ModulePrimary::setAudioPortConfig(const ::aidl::android::media::audio::common::AudioPortConfig& in_requested,::aidl::android::media::audio::common::AudioPortConfig* out_suggested,bool* _aidl_return)
 {
-    int list_id,Requsted_id;
     LOG(DEBUG) << "setaudioportconfig module primary";
     ndk::ScopedAStatus status = Module::setAudioPortConfig(in_requested,out_suggested,_aidl_return);
     if (!status.isOk()) {
@@ -347,52 +347,45 @@ ndk::ScopedAStatus qti::audio::core::ModulePrimary::setAudioPortConfig(const ::a
     }
     auto& routes = getConfig().routes;
     auto route = routes.begin();
-    for (route;route != routes.end(); route++) {
+    for (route; route != routes.end(); route++) {
         if (route->sinkPortId == in_requested.portId) {
             LOG(DEBUG) << "route port " << route->toString();
             break;
         }
     }
+    if (route == routes.end()) {
+        LOG(DEBUG) << __func__ << ": no route found for portId " << in_requested.portId;
+        return ndk::ScopedAStatus::ok();
+    }
     LOG(VERBOSE) << "the module list is not empty";
-    auto iter = list.begin();
-    auto route_portid = route->sourcePortIds.begin();
-    for (iter; route_portid!=route->sourcePortIds.end(); iter++) {
-        if(iter == list.end()) {
-             iter = list.begin();
-             LOG(DEBUG) << __func__ << "port not found " << *route_portid;
-             route_portid++;
-        }
-        auto outIter = iter->lock();
-        if (outIter) {
+    for (auto route_portid = route->sourcePortIds.begin();
+             route_portid != route->sourcePortIds.end(); ++route_portid) {
+        for (auto iter = list.begin(); iter != list.end(); ++iter) {
+            auto outIter = iter->lock();
+            if (!outIter) {
+                LOG(DEBUG) << "error in generation of shared pointer";
+                continue;
+            }
             auto &mcontext = (*outIter).getStreamContext();
             auto &list_audioportconfig = mcontext.getMixPortConfig();
-            list_id = list_audioportconfig.portId;
-            int no_of_channels = (int)getChannelCount(list_audioportconfig.channelMask.value());
-            float volume;
+            int list_id = list_audioportconfig.portId;
             if (list_id == (*route_portid)) {
-                std::vector<float> vol;
+                int no_of_channels = (int)getChannelCount(list_audioportconfig.channelMask.value());
                 LOG(DEBUG) << "Found the stream at id" << list_id;
+                LOG(DEBUG) << "Gain in MB: " << in_requested.gain->values[0];
                 /* converting gain from range of -6000MB to 600MB to this range to 0.0f to 1.0f
                 this formula converts gain value to pal_stream_volume linearly
                 new_value = ( (old_range_value - old_range_min) / (old_range_max - old_range_min) ) * (new_range_max - new_range_min) + new_range_min */
-                LOG(DEBUG) << "Gain in MB: " << in_requested.gain->values[0];
-                volume = (((float)(in_requested.gain->values[0]) - MIN_VOLUME_GAIN_MB) /
+                float volume = (((float)(in_requested.gain->values[0]) - MIN_VOLUME_GAIN_MB) /
                              (MAX_VOLUME_GAIN_MB - MIN_VOLUME_GAIN_MB)) *
                              (MAX_VOLUME_GAIN - MIN_VOLUME_GAIN) + MIN_VOLUME_GAIN;
-                int iter_channel;
-                for(iter_channel = 0; iter_channel<no_of_channels; iter_channel++) {
-                    vol.push_back(volume);
-                }
+                std::vector<float> vol(no_of_channels, volume);
                 LOG(DEBUG) << "gain is:" << volume;
                 LOG(DEBUG) << "volume is:" << vol[0];
                 (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(outIter))->setHwVolume(vol);
                 LOG(DEBUG) << "volume set :" << vol[0];
-                route_portid++;
+                break;
             }
-            outIter.reset();
-        }
-        else {
-            LOG(DEBUG) << "error in generation of shared pointer";
         }
     }
     return ndk::ScopedAStatus::ok();
@@ -600,7 +593,7 @@ void ModulePrimary::onSetGenericParameters(const std::vector<VendorParameter>& p
     for (const auto& param : params) {
         std::string paramValue{};
         if (!extractParameter<VString>(param, &paramValue)) {
-            LOG(ERROR) << ": extraction failed for " << param.id;
+           LOG(ERROR) << ": extraction failed for " <<  param.id;
             continue;
         }
         if (Parameters::kInCallMusic == param.id) {
@@ -628,7 +621,43 @@ void ModulePrimary::onSetGenericParameters(const std::vector<VendorParameter>& p
         }
     }
 }
-
+void ModulePrimary::onSetMirroringParameters(const std::vector<VendorParameter>& params) {
+    struct mirrorDevice mirrordevice;
+    for (const auto& param : params) {
+        std::string paramValue{};
+        if (!extractParameter<VString>(param, &paramValue)) {
+           LOG(ERROR) << ": extraction failed for " << param.id;
+            continue;
+        }
+        if (Parameters::kMirrorSRC == param.id) {
+            mirrordevice.src = paramValue;
+        } else if (Parameters::kMirrorDST == param.id) {
+            auto MirrorDST = paramValue;
+            // Split comma-separated string into vector
+            std::vector<std::string> dstDevices;
+            std::stringstream ss(MirrorDST);
+            std::string device;
+            while (std::getline(ss, device, ',')) {
+                // Trim whitespace from device string
+                device.erase(0, device.find_first_not_of(" \t\r\n"));
+                device.erase(device.find_last_not_of(" \t\r\n") + 1);
+                if (!device.empty()) {
+                    dstDevices.push_back(device);
+                }
+            }
+            mirrordevice.dst = dstDevices;
+        }
+    }
+    // Only update if src is non-empty
+    if (mirrordevice.src.empty()) {
+        LOG(ERROR) << __func__ << ": mirroring_src not provided, skipping update";
+        return;
+    }
+    if (mirrordevice.dst.empty()) {
+        LOG(WARNING) << __func__ << ": mirroring_dst not provided for src: " << mirrordevice.src << ", clearing mirror entry";
+    }
+    mPlatform.updatemirrordevice(mirrordevice);
+}
 void MuteConfig::set_mute_config_for_address(char* address, bool muted, float volume) {
     LOG(DEBUG) << __func__ << ": Enter, muted: " << muted << ", address: " << address;
 
@@ -925,7 +954,9 @@ ModulePrimary::SetParameterToFeatureMap ModulePrimary::fillSetParameterToFeature
                                  {Parameters::kWfdIPAsProxyDevConnected, Feature::WFD},
                                  {Parameters::kProxyRecordFMQSize, Feature::WFD},
                                  {Parameters::kHapticsVolume, Feature::HAPTICS},
-                                 {Parameters::kHapticsIntensity, Feature::HAPTICS}};
+                                 {Parameters::kHapticsIntensity, Feature::HAPTICS},
+                                 {Parameters::kMirrorSRC, Feature::MIRRORINGDEVICES},
+                                 {Parameters::kMirrorDST, Feature::MIRRORINGDEVICES}};
     return map;
 }
 
@@ -938,6 +969,7 @@ ModulePrimary::FeatureToSetHandlerMap ModulePrimary::fillFeatureToSetHandlerMap(
             {Feature::WFD, &ModulePrimary::onSetWFDParameters},
             {Feature::FTM, &ModulePrimary::onSetFTMParameters},
             {Feature::HAPTICS, &ModulePrimary::onSetHapticsParameters},
+            {Feature::MIRRORINGDEVICES, &ModulePrimary::onSetMirroringParameters},
     };
     return map;
 }
