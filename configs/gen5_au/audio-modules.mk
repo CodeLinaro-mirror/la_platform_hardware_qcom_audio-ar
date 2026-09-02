@@ -8,6 +8,15 @@ endif
 #Packages that should not be installed in QMAA are enabled here
 ifneq ($(AUDIO_MODULES_DISABLED),true)
 
+#AGM
+AUDIO_AGM := agmplay
+AUDIO_AGM += agmcap
+AUDIO_AGM += agmhostless
+AUDIO_AGM += agmcompressplay
+AUDIO_AGM += agmcompresscap
+AUDIO_AGM += agmvoiceui
+AUDIO_AGM += libagmmixer
+
 #PAL Module
 AUDIO_PAL := libar-pal
 AUDIO_PAL += lib_bt_bundle
@@ -75,6 +84,7 @@ AUDIO_ACDB += acdb_cal.acdbdelta
 
 AUDIO_MODULES += $(AUDIO_PAL)
 AUDIO_MODULES += $(AUDIO_ACDB)
+AUDIO_MODULES += $(AUDIO_AGM)
 
 # Qti GEF AR
 AUDIO_MODULES += libqtigefar
