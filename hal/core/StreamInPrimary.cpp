@@ -371,6 +371,7 @@ void StreamInPrimary::resume() {
         configure();
         if (!mPalHandle) {
             LOG(ERROR) << __func__ << mLogPrefix << ": failed to configure";
+            memset(buffer, 0, frameCount * mFrameSizeBytes);
             *actualFrameCount = frameCount;
             return onReadError(frameCount);
         }
@@ -552,8 +553,10 @@ int32_t StreamInPrimary::setAggregateSinkMetadata(bool voiceActive) {
         return 0;
     }
     auto removeStreams = [&](std::weak_ptr<StreamIn> streamIn) -> bool {
-        if (!streamIn.lock()) return true;
-        return streamIn.lock()->isClosed();
+         if (auto sharedStream = streamIn.lock()) {
+            return sharedStream->isClosed();
+         }
+         return true;
     };
 
     inStreams.erase(std::remove_if(inStreams.begin(), inStreams.end(), removeStreams),

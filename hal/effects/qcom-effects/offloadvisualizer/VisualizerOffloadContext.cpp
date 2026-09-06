@@ -372,9 +372,9 @@ Visualizer::Measurement VisualizerOffloadContext::getMeasure() {
 }
 
 std::vector<uint8_t> VisualizerOffloadContext::capture() {
+    std::lock_guard lg(mMutex);
     uint32_t captureSamples = mCaptureSamples;
     std::vector<uint8_t> result(captureSamples, 0x80);
-    std::lock_guard lg(mMutex);
     if (mState != State::ACTIVE) {
         return result;
     }
@@ -389,7 +389,12 @@ std::vector<uint8_t> VisualizerOffloadContext::capture() {
         return result;
     }
     int32_t latencyMs = mDownstreamLatency;
-    latencyMs -= deltaMs;
+    if(__builtin_sub_overflow(latencyMs, deltaMs, &latencyMs))
+    {
+        LOG(ERROR) << __func__ << " sub_overflow latencyMs " << mDownstreamLatency
+        << " deltaMs " << deltaMs << details();
+        return result;
+    }
     if (latencyMs < 0) {
         latencyMs = 0;
     }
@@ -403,7 +408,12 @@ std::vector<uint8_t> VisualizerOffloadContext::capture() {
     }
 
     int32_t capturePoint;
-    __builtin_sub_overflow((int32_t)mCaptureIdx, deltaSamples, &capturePoint);
+    if(__builtin_sub_overflow((int32_t)mCaptureIdx, deltaSamples, &capturePoint))
+    {
+        LOG(ERROR) << __func__ << " sub_overflow mCaptureIdx " << mCaptureIdx
+        << " deltaSamples " << deltaSamples << details();
+        return result;
+    }
     // a negative capturePoint means we wrap the buffer.
     if (capturePoint < 0) {
         uint32_t size = -capturePoint;
