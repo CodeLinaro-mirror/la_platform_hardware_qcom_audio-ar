@@ -278,6 +278,10 @@ PRODUCT_PROPERTY_OVERRIDES += \
 PRODUCT_PROPERTY_OVERRIDES += \
     vendor.audio.ull_record_period_multiplier=2
 
+# dual mic true stereo record feature
+PRODUCT_PROPERTY_OVERRIDES += \
+    vendor.audio.true_stereo_rec.enable=true
+
 ##Ambisonic Capture
 PRODUCT_PROPERTY_OVERRIDES += \
 persist.vendor.audio.ambisonic.capture=false \

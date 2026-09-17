@@ -10,6 +10,7 @@
 #include <aidl/android/hardware/audio/effect/IEffect.h>
 
 #include <android-base/logging.h>
+#include <android-base/properties.h>
 #include <audio_utils/clock.h>
 #include <hardware/audio.h>
 #include <qti-audio-core/Module.h>
@@ -121,6 +122,22 @@ ndk::ScopedAStatus StreamInPrimary::configureConnectedDevices_I() {
         if (mPlatform.getTranslationRecordState()) {
             mPlatform.configurePalDevicesCustomKey(connectedPalDevices, "translate_record");
             LOG(INFO) << __func__ << "setting custom key as translate_record";
+        }
+        if (mTag == Usecase::PCM_RECORD) {
+            const auto isTrueStereoEnabled =
+                    ::android::base::GetBoolProperty("vendor.audio.true_stereo_rec.enable", false);
+            if (isTrueStereoEnabled) {
+                const auto& source = getAudioSource(mMixPortConfig);
+                if (source &&
+                    (source.value() == AudioSource::CAMCORDER ||
+                     source.value() == AudioSource::MIC) &&
+                    getChannelCount(mMixPortConfig.channelMask.value()) == 2) {
+                    mPlatform.configurePalDevicesCustomKey(connectedPalDevices,
+                                                          "dual-mic-true-stereo");
+                    LOG(INFO) << __func__ << mLogPrefix
+                              << ": setting custom key as dual-mic-true-stereo";
+                }
+            }
         }
     } else if (mTag == Usecase::ULTRA_FAST_RECORD) {
         auto countProxyDevices = std::count_if(mConnectedDevices.cbegin(), mConnectedDevices.cend(),
@@ -720,6 +737,22 @@ void StreamInPrimary::configure() {
     if (mTag == Usecase::PCM_RECORD || mTag == Usecase::COMPRESS_CAPTURE) {
         LOG(DEBUG) << __func__ << mLogPrefix << " PalDevices is config";
         mPlatform.configurePalDevices(mMixPortConfig, palDevices);
+    }
+
+    if (mTag == Usecase::PCM_RECORD) {
+        const auto isTrueStereoEnabled =
+                ::android::base::GetBoolProperty("vendor.audio.true_stereo_rec.enable", false);
+        if (isTrueStereoEnabled) {
+            const auto& tsSource = getAudioSource(mMixPortConfig);
+            if (tsSource &&
+                (tsSource.value() == AudioSource::CAMCORDER ||
+                 tsSource.value() == AudioSource::MIC) &&
+                getChannelCount(mMixPortConfig.channelMask.value()) == 2) {
+                mPlatform.configurePalDevicesCustomKey(palDevices, "dual-mic-true-stereo");
+                LOG(INFO) << __func__ << mLogPrefix
+                          << ": setting custom key as dual-mic-true-stereo";
+            }
+        }
     }
 
     uint64_t cookie = reinterpret_cast<uint64_t>(this);
