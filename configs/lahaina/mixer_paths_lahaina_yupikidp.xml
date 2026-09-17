@@ -316,8 +316,8 @@
         <ctl name="SpR COMP Switch" value="1"/>
         <ctl name="SpR VISENSE Switch" value="1"/>
         <ctl name="SpR SWR DAC_Port Switch" value="1"/>
-        <ctl name="WSA_RX0 Digital Volume" value="68"/>
-        <ctl name="WSA_RX1 Digital Volume" value="68"/>
+        <ctl name="WSA_RX0 Digital Volume" value="84"/>
+        <ctl name="WSA_RX1 Digital Volume" value="84"/>
     </path>
     <path name="haptics">
         <ctl name="SWR DAC_Port Switch" value="1"/>
