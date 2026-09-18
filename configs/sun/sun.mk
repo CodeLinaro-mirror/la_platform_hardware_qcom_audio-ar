@@ -98,11 +98,13 @@ PRODUCT_COPY_FILES += \
     $(CONFIG_HAL_SRC_DIR)/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/microphone_characteristics.xml \
     $(CONFIG_PAL_SRC_DIR)/card-defs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/card-defs.xml \
     $(CONFIG_PAL_SRC_DIR)/mixer_paths_sun_qrd.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_sun_qrd.xml \
+    $(CONFIG_PAL_SRC_DIR)/mixer_paths_sun_iot_vc.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_sun_iot_vc.xml \
     $(CONFIG_PAL_SRC_DIR)/mixer_paths_sun_mtp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_sun_mtp.xml \
     $(CONFIG_PAL_SRC_DIR)/mixer_paths_sun_mtp_wsa883x_qmp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_sun_mtp_wsa883x_qmp.xml \
     $(CONFIG_PAL_SRC_DIR)/mixer_paths_sun_cdp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_sun_cdp.xml \
     $(CONFIG_PAL_SRC_DIR)/mixer_paths_sun_qrd_sku2.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_sun_qrd_sku2.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_sun_qrd.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_sun_qrd.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_sun_iot_vc.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_sun_iot_vc.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_sun_mtp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_sun_mtp.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_sun_cdp.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_sun_cdp.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_sun_qrd_sku2.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_sun_qrd_sku2.xml \
@@ -291,10 +293,6 @@ vendor.audio.offload.multiple.enabled=false
 #flac sw decoder 24 bit decode capability
 PRODUCT_PROPERTY_OVERRIDES += \
 vendor.audio.flac.sw.decoder.24bit=true
-
-#split a2dp DSP supported encoder list
-PRODUCT_PROPERTY_OVERRIDES += \
-persist.vendor.bt.a2dp_offload_cap=sbc-aptx-aptxtws-aptxhd-aac-ldac
 
 # A2DP offload support
 PRODUCT_PROPERTY_OVERRIDES += \
