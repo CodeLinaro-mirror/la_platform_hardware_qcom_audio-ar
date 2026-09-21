@@ -955,6 +955,13 @@ int64_t DirectPcmPlayback::getPositionInFrames(pal_stream_handle_t* palHandle) {
         return mTotalDSPFrames + mPrevFrames;
     }
 
+    // After flush, SPR is not reset on this platform. Suppress live reads
+    // until a new PAL session is opened (onConfigure), to prevent the
+    // accumulated mTotalDSPFrames from being inflated by a stale SPR.
+    if (mIsFlushed) {
+        return mTotalDSPFrames;
+    }
+
     // if sound card not up, then cache position
     auto& platform = Platform::getInstance();
     if (!platform.isSoundCardUp()) {
@@ -981,9 +988,27 @@ int64_t DirectPcmPlayback::getPositionInFrames(pal_stream_handle_t* palHandle) {
 }
 
 void DirectPcmPlayback::onFlush() {
-    // on flush SPR module is reset to 0. Hence, we cache the DSP frames
-    mTotalDSPFrames = mTotalDSPFrames + mPrevFrames;
+    // Use the pause-time snapshot if available, else fall back to mPrevFrames
+    int64_t framesToAccumulate = (mPausedFrames >= 0) ? mPausedFrames : mPrevFrames;
+    mTotalDSPFrames = mTotalDSPFrames + framesToAccumulate;
     mPrevFrames = 0;
+    mPausedFrames = -1;
+    mIsFlushed = true;
+}
+
+void DirectPcmPlayback::onConfigure() {
+    mIsFlushed = false;
+    mPrevFrames = 0;
+}
+
+void DirectPcmPlayback::onPause(pal_stream_handle_t* palHandle) {
+        // Read SPR now (immediately after pal_stream_pause succeeds) to
+        // here (holds the value from the last BURST reply); only a fresh
+        // pal_get_timestamp call gives the true pause-time position.
+        // On bengal/qcm2290 the SPR clock keeps ticking after pause, so
+        // any later re-read (e.g. inside flush()) will be over-advanced.
+        getPositionInFrames(palHandle);   // updates mPrevFrames with live SPR
+        mPausedFrames = mPrevFrames;      // snapshot accurate pause-time position
 }
 
 // [DirectPcmPlayback End]

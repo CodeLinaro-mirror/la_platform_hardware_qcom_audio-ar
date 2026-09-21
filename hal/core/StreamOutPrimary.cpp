@@ -392,6 +392,9 @@ ndk::ScopedAStatus StreamOutPrimary::configureMMapStream(MmapBufferDescriptor* d
         return ret;
     }
     mIsPaused = true;
+    if (mTag == Usecase::DIRECT_PCM_PLAYBACK) {
+         std::get<DirectPcmPlayback>(mExt).onPause(mPalHandle);
+    }
     LOG(DEBUG) << __func__ << mLogPrefix;
     return ::android::OK;
 }
@@ -1226,6 +1229,10 @@ void StreamOutPrimary::configure() {
     if (mPlaybackRate != sDefaultPlaybackRate) {
         LOG(DEBUG) << __func__ << mLogPrefix << ": using playspeed " << mPlaybackRate.speed;
         mPlatform.setPlaybackRate(mPalHandle, mTag, mPlaybackRate);
+    }
+
+    if (mTag == Usecase::DIRECT_PCM_PLAYBACK) {
+        std::get<DirectPcmPlayback>(mExt).onConfigure();
     }
 
     LOG(INFO) << __func__ << mLogPrefix << ": stream is configured with " << mConnectedDevices;
