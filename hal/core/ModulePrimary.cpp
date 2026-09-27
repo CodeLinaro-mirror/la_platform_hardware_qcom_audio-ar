@@ -382,7 +382,7 @@ ndk::ScopedAStatus qti::audio::core::ModulePrimary::setAudioPortConfig(const ::a
                 }
                 LOG(DEBUG) << "gain is:" << volume;
                 LOG(DEBUG) << "volume is:" << vol[0];
-                (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(outIter))->setHwVolume(vol);
+                (std::static_pointer_cast<::qti::audio::core::StreamOutPrimary>(outIter))->setPortVolume(vol);
                 LOG(DEBUG) << "volume set :" << vol[0];
                 route_portid++;
             }
