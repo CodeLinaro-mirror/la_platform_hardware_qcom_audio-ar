@@ -35,6 +35,7 @@
 #include <media/stagefright/foundation/MediaDefs.h>
 #include <android-base/properties.h>
 
+#include <algorithm>
 #include <map>
 #include <memory>
 #include <unordered_map>
