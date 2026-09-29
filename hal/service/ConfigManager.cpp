@@ -7,6 +7,7 @@
 #define LOG_TAG "AHAL_Service_QTI"
 
 #include "ConfigManager.h"
+#include <functional>
 #include <log/log.h>
 #include <tinyxml2.h>
 #include <unistd.h>
