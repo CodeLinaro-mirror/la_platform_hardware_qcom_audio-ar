@@ -269,6 +269,7 @@ PRODUCT_COPY_FILES += \
     $(CONFIG_HAL_SRC_DIR)/audio_effects.conf:$(CONFIG_SKU_OUT_DIR)/audio_effects.conf \
     $(CONFIG_HAL_SRC_DIR)/audio_effects.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects.xml \
     $(CONFIG_HAL_SRC_DIR)/audio_effects_config.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects_config.xml \
+    $(CONFIG_PAL_SRC_DIR)/plugin_manager.xml:$(CONFIG_SKU_OUT_DIR)/plugin_manager.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_upd.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_upd.xml \
     $(CONFIG_HAL_SRC_DIR)/mixer_paths_diwali_idp.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_diwali_idp.xml \
     $(CONFIG_HAL_SRC_DIR)/mixer_paths_diwali_qrd.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_diwali_qrd.xml \
@@ -277,12 +278,21 @@ PRODUCT_COPY_FILES += \
     $(CONFIG_HAL_SRC_DIR)/mixer_paths_diwali_idp_sku1.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_diwali_idp_sku1.xml \
     $(CONFIG_HAL_SRC_DIR)/mixer_paths_diwali_qrd_sku1.xml:$(CONFIG_SKU_OUT_DIR)/mixer_paths_diwali_qrd_sku1.xml \
     $(CONFIG_PAL_SRC_DIR)/resourcemanager_diwali_idp_sku1.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_diwali_idp_sku1.xml \
-    $(CONFIG_PAL_SRC_DIR)/resourcemanager_diwali_qrd_sku1.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_diwali_qrd_sku1.xml
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_diwali_qrd_sku1.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_diwali_qrd_sku1.xml \
+    $(CONFIG_PAL_SRC_DIR)/resourcemanager_diwali_parrot_qrd.xml:$(CONFIG_SKU_OUT_DIR)/resourcemanager_diwali_parrot_qrd.xml
 
 #XML Audio configuration files
 ifneq ($(TARGET_USES_AOSP_FOR_AUDIO), true)
 PRODUCT_COPY_FILES += \
     $(CONFIG_HAL_SRC_DIR)/audio_policy_configuration.xml:$(CONFIG_SKU_OUT_DIR)/audio_policy_configuration.xml
+
+# Copy AudioEffects stub config
+PRODUCT_COPY_FILES += \
+    hardware/interfaces/audio/aidl/default/audio_effects_config.xml:$(CONFIG_SKU_OUT_DIR)/audio_effects_config_stub.xml
+
+# Copy quasar config
+PRODUCT_COPY_FILES += \
+    $(CONFIG_HAL_SRC_DIR)/quasar_config.xml:$(CONFIG_SKU_OUT_DIR)/quasar_config.xml
 
 #Audio configuration xml's common to Taro family
 PRODUCT_COPY_FILES += \
