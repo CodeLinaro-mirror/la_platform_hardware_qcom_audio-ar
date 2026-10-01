@@ -8,7 +8,12 @@ ifeq ($(AUDIO_FRAMEWORK_AUDIOREACH),true)
 ifeq ($(TARGET_USES_CAPE_FOR_AUDIO),true)
 include vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/msmnile_gvmq/cape.mk
 PRODUCT_PROPERTY_OVERRIDES += \
-    persist.vendor.audio.cape.enable=true
+    # CAP Engine is set to bootup default = Disabled
+    # due to depdencies on AOSP fixes - which can cause
+    # bootkpi issues. After all mandatory AOSP fixes are
+    # available, the default boot mode will be switched to CAPE,
+    # till then default bootup config = Legacy mode */
+    persist.vendor.audio.cape.enable=false
 endif
 #$(error AUDIO_FRAMEWORK_AUDIOREACH is $(AUDIO_FRAMEWORK_AUDIOREACH))
 ifeq ($(TARGET_USES_QMAA_OVERRIDE_AUDIO), false)
