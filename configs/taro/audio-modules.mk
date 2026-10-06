@@ -177,6 +177,12 @@ AUDIO_MODULES += \
     libaudiocorehal.default \
     libaudioeffecthal.qti
 
+# VUI interface plugins for SVA/Hotword/CustomVA
+AUDIO_MODULES += sva_plugin
+AUDIO_MODULES += hotword_plugin
+AUDIO_MODULES += customva_plugin
+AUDIO_MODULES += libvui_utils
+
 # add modules for fuzzing
 ifneq ($(filter audio,$(QC_HWASAN))$(filter hwaddress,$(SANITIZE_TARGET)),)
 AUDIO_MODULES += fuzz-audio-hal
