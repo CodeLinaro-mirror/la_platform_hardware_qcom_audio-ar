@@ -357,7 +357,7 @@
     <path name="deep-buffer-playback">
     </path>
 
-    <path name="deep-buffer-playback speaker-protected">
+    <path name="deep-buffer-playback speaker-prot">
         <path name="deep-buffer-playback" />
     </path>
 
@@ -456,7 +456,7 @@
     <path name="low-latency-playback">
     </path>
 
-    <path name="low-latency-playback speaker-protected">
+    <path name="low-latency-playback speaker-prot">
         <path name="low-latency-playback" />
     </path>
 
@@ -558,7 +558,7 @@
     <path name="audio-ull-playback">
     </path>
 
-    <path name="audio-ull-playback speaker-protected">
+    <path name="audio-ull-playback speaker-prot">
         <path name="audio-ull-playback" />
     </path>
 
@@ -656,7 +656,7 @@
     <path name="compress-offload-playback">
     </path>
 
-    <path name="compress-offload-playback speaker-protected">
+    <path name="compress-offload-playback speaker-prot">
         <path name="compress-offload-playback" />
     </path>
 
@@ -2128,7 +2128,7 @@
     <path name="speaker-mic-sbc">
     </path>
 
-    <path name="speaker-protected">
+    <path name="speaker-prot">
         <ctl name="WSA_AIF_VI Mixer WSA_SPKR_VI_1" value="1" />
         <ctl name="WSA_AIF_VI Mixer WSA_SPKR_VI_2" value="1" />
         <path name="speaker" />
@@ -2145,11 +2145,11 @@
     </path>
 
     <path name="voice-speaker-stereo-protected">
-        <path name="speaker-protected" />
+        <path name="speaker-prot" />
     </path>
 
     <path name="speaker-protected-vbat">
-        <path name="speaker-protected" />
+        <path name="speaker-prot" />
         <ctl name="WSA_RX INT0 VBAT WSA RX0 VBAT Enable" value="1" />
         <ctl name="WSA_RX INT1 VBAT WSA RX1 VBAT Enable" value="1" />
     </path>
