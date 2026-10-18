@@ -417,10 +417,14 @@ class DirectPcmPlayback : public UsecaseConfig<DirectPcmPlayback> {
 
     int64_t getPositionInFrames(pal_stream_handle_t* palHandle);
     void onFlush();
+    void onPause(pal_stream_handle_t* palHandle);
+    void onConfigure();
 
   private:
     int64_t mTotalDSPFrames{0};
     int64_t mPrevFrames{0};
+    int64_t mPausedFrames{-1};
+    bool    mIsFlushed{false};
     const ::aidl::android::media::audio::common::AudioPortConfig& mMixPortConfig;
 };
 

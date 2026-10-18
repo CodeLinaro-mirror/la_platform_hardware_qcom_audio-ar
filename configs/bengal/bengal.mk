@@ -229,9 +229,13 @@ PRODUCT_COPY_FILES += \
 ifneq ($(TARGET_USES_AOSP_FOR_AUDIO), true)
 PRODUCT_COPY_FILES += \
     $(CONFIG_HAL_SRC_DIR)/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/audio_policy_configuration.xml
-
+ifeq ($(filter _612tiny _612tiny_32go, $(TARGET_BOARD_SUFFIX)),)
 PRODUCT_COPY_FILES += \
     $(CONFIG_HAL_SRC_DIR)/audio_module_config_primary.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/audio_module_config_primary.xml
+else
+PRODUCT_COPY_FILES += \
+    $(CONFIG_HAL_SRC_DIR)/bengal_tiny_32_64/audio_module_config_primary.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/audio_module_config_primary.xml
+endif
 endif
 
 PRODUCT_COPY_FILES += \

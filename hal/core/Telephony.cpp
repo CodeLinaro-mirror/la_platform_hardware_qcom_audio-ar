@@ -467,10 +467,11 @@ void Telephony::onExternalDeviceConnectionChanged(const AudioDevice& extDevice,
              iter++;
         }
         if (CRSPluginDevices.empty()) {
-            mRxDevice = kDefaultRxDevice;
-            mTxDevice = getMatchingTxDevice(mRxDevice);
-            if (mIsCRSStarted)
+            if (mIsCRSStarted) {
+                mRxDevice = kDefaultRxDevice;
+                mTxDevice = getMatchingTxDevice(mRxDevice);
                 updateDevices();
+            }
         } else {
             if (mIsCRSStarted)
                 updateDevices();
@@ -525,10 +526,11 @@ void Telephony::onBluetoothScoEvent(const bool& enable) {
                  iter++;
             }
             if (CRSPluginDevices.empty()) {
-                mRxDevice = kDefaultRxDevice;
-                mTxDevice = getMatchingTxDevice(mRxDevice);
-                if (mIsCRSStarted)
+                if (mIsCRSStarted) {
+                    mRxDevice = kDefaultRxDevice;
+                    mTxDevice = getMatchingTxDevice(mRxDevice);
                     updateDevices();
+                }
             } else {
                 if (mIsCRSStarted)
                     updateDevices();

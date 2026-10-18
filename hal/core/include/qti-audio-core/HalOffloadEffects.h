@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -9,6 +9,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <mutex>
 
 namespace qti::audio::core {
 
@@ -50,8 +51,12 @@ class HalOffloadEffects {
 #endif
     std::vector<EffectLibInfo> mEffects;
 
+    bool mLoaded;
+    std::mutex mLoadMutex;
+
     HalOffloadEffects();
     void loadLibrary(std::string path);
+    void ensureLoaded();
 
   public:
     static HalOffloadEffects& getInstance() {

@@ -232,4 +232,6 @@ vendor.audio.gsl.shmem.dmaheap.uncached=true
 AUDIO_FEATURE_ENABLED_GKI := true
 BUILD_AUDIO_TECHPACK_SOURCE := true
 
-include vendor/qcom/opensource/audio-hal/primary-hal/configs/malabar/audio-properties.mk
+include vendor/qcom/opensource/audio-hal/primary-hal/configs/$(TARGET_BOARD_PLATFORM)/audio-properties.mk
+# C2 Audio
+include vendor/qcom/opensource/audio-hal/primary-hal/configs/$(TARGET_BOARD_PLATFORM)/codec2_config.mk
