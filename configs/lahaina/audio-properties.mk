@@ -5,6 +5,10 @@ PRODUCT_PROPERTY_OVERRIDES += aaudio.mmap_policy=2
 PRODUCT_PROPERTY_OVERRIDES += aaudio.mmap_exclusive_policy=2
 PRODUCT_PROPERTY_OVERRIDES += aaudio.hw_burst_min_usec=2000
 
+# period count for MMAP Audio playback
+AUDIO_HAL_PROP += \
+vendor.audio.mmap.period_count=64
+
 # spf hdr record either true or false
 AUDIO_HAL_PROP += \
 vendor.audio.hdr.spf.record.enable=false

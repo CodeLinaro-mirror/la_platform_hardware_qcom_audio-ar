@@ -205,12 +205,14 @@ class MMapPlayback : public MmapUsecaseBase, public UsecaseConfig<MMapPlayback> 
   public:
     constexpr static size_t kPeriodDurationMs = 1;
     constexpr static size_t kPlatformDelayMs = 3;
-    constexpr static uint32_t kPeriodCount = 512;
+    constexpr static uint32_t kDefaultPeriodCount = 512;
+    static uint32_t kPeriodCount;
 
     static size_t getFrameCount(
             const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig);
 
     static int32_t getLatency() { return kPeriodDurationMs + kPlatformDelayMs; }
+    static uint32_t getPeriodCount();
 };
 
 class CompressPlayback : public UsecaseConfig<CompressPlayback, false /*IsPcm*/> {
@@ -463,13 +465,15 @@ class UltraFastRecord : public UsecaseConfig<UltraFastRecord> {
 class MMapRecord : public MmapUsecaseBase, public UsecaseConfig<MMapRecord> {
   public:
     constexpr static uint32_t kCaptureDurationMs = 2;
-    constexpr static size_t kPeriodCount = 512;
+    constexpr static size_t kDefaultPeriodCount = 512;
     constexpr static size_t kPlatformDelayMs = 4;
+    static uint32_t kPeriodCount;
 
     static size_t getFrameCount(
             const ::aidl::android::media::audio::common::AudioPortConfig& mixPortConfig);
 
     static int32_t getLatency() { return kPlatformDelayMs; }
+    static uint32_t getPeriodCount();
 };
 
 class HotwordRecord : public UsecaseConfig<HotwordRecord> {

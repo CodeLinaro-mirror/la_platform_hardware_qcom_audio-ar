@@ -345,6 +345,16 @@ int32_t MmapUsecaseBase::stop() {
 
 // [MmapUsecaseBase End]
 // [MMapPlayback Start]
+
+uint32_t MMapPlayback::kPeriodCount = MMapPlayback::getPeriodCount();
+
+//static
+uint32_t MMapPlayback::getPeriodCount() {
+    const std::string kPeriodCountProp{"vendor.audio.mmap.period_count"};
+    auto count = ::android::base::GetUintProperty<size_t>(kPeriodCountProp, kDefaultPeriodCount);
+    return count > 0 ? count : kDefaultPeriodCount;
+}
+
 size_t MMapPlayback::getFrameCount(const AudioPortConfig& mixPortConfig) {
     return kPeriodDurationMs * getSampleRate(mixPortConfig).value() / 1000;
 }
@@ -893,6 +903,15 @@ size_t UltraFastRecord::getFrameCount(const AudioPortConfig& mixPortConfig) {
 // [UltraFastRecord End]
 
 // [MMapRecord Start]
+
+uint32_t MMapRecord::kPeriodCount = MMapRecord::getPeriodCount();
+
+//static
+uint32_t MMapRecord::getPeriodCount() {
+    const std::string kPeriodCountProp{"vendor.audio.mmap.period_count"};
+    auto count = ::android::base::GetUintProperty<size_t>(kPeriodCountProp, kDefaultPeriodCount);
+    return count > 0 ? count : kDefaultPeriodCount;
+}
 
 size_t MMapRecord::getFrameCount(const AudioPortConfig& mixPortConfig) {
     return kCaptureDurationMs * getSampleRate(mixPortConfig).value() / 1000;

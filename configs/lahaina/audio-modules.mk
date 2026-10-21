@@ -175,6 +175,9 @@ AUDIO_MODULES += \
     vendor.qti.hardware.ListenSoundModelAidl-V1-ndk.vendor
 
 # AIDL Audio modules
+# AOSP example service implementation
+AUDIO_MODULES += \
+    libaudioserviceexampleimpl
 
 AUDIO_MODULES += \
     audiohalservice.qti \

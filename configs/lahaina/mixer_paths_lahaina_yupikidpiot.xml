@@ -304,25 +304,25 @@
     </path>
     <path name="speaker">
         <ctl name="WSA_CDC_DMA_RX_0 Channels" value="One"/>
-        <ctl name="WSA RX0 MUX" value="AIF1_PB"/>
-        <ctl name="WSA_RX0 INP0" value="RX0"/>
-        <ctl name="WSA_COMP1 Switch" value="1"/>
-        <ctl name="SpL COMP Switch" value="1"/>
-        <ctl name="SpL VISENSE Switch" value="1"/>
-        <ctl name="SpL SWR DAC_Port Switch" value="1"/>
-        <ctl name="WSA_RX0 Digital Volume" value="68"/>
+        <ctl name="WSA RX1 MUX" value="AIF1_PB"/>
+        <ctl name="WSA_RX1 INP0" value="RX1"/>
+        <ctl name="WSA_COMP2 Switch" value="1"/>
+        <ctl name="SpR COMP Switch" value="1"/>
+        <ctl name="SpR VISENSE Switch" value="1"/>
+        <ctl name="SpR SWR DAC_Port Switch" value="1"/>
+        <ctl name="WSA_RX1 Digital Volume" value="68"/>
     </path>
     <path name="haptics">
         <ctl name="SWR DAC_Port Switch" value="1"/>
     </path>
     <path name="speaker-mono">
         <ctl name="WSA_CDC_DMA_RX_0 Channels" value="One"/>
-        <ctl name="WSA RX0 MUX" value="AIF1_PB"/>
-        <ctl name="WSA_RX0 INP0" value="RX0"/>
-        <ctl name="WSA_COMP1 Switch" value="1"/>
-        <ctl name="SpL COMP Switch" value="1"/>
-        <ctl name="SpL VISENSE Switch" value="1"/>
-        <ctl name="SpL SWR DAC_Port Switch" value="1"/>
+        <ctl name="WSA RX1 MUX" value="AIF1_PB"/>
+        <ctl name="WSA_RX1 INP0" value="RX1"/>
+        <ctl name="WSA_COMP2 Switch" value="1"/>
+        <ctl name="SpR COMP Switch" value="1"/>
+        <ctl name="SpR VISENSE Switch" value="1"/>
+        <ctl name="SpR SWR DAC_Port Switch" value="1"/>
     </path>
     <path name="speaker-mono-2">
         <ctl name="WSA_CDC_DMA_RX_0 Channels" value="One"/>
@@ -333,7 +333,7 @@
         <ctl name="SpR VISENSE Switch" value="1"/>
         <ctl name="SpR SWR DAC_Port Switch" value="1"/>
     </path>
-	<path name="speaker-mono-2-prot">
+        <path name="speaker-mono-2-prot">
         <ctl name="WSA_AIF_VI Mixer WSA_SPKR_VI_2" value="1"/>
         <ctl name="WSA_CDC_DMA_0 TX Format" value="PACKED_16B"/>
         <path name="speaker-mono-2"/>
@@ -469,12 +469,12 @@
     </path>
     <path name="handset">
         <ctl name="WSA_CDC_DMA_RX_0 Channels" value="One"/>
-        <ctl name="WSA RX0 MUX" value="AIF1_PB"/>
-        <ctl name="WSA_RX0 INP0" value="RX0"/>
-        <ctl name="WSA_COMP1 Switch" value="1"/>
-        <ctl name="SpL COMP Switch" value="1"/>
-        <ctl name="SpL VISENSE Switch" value="1"/>
-        <ctl name="SpL SWR DAC_Port Switch" value="1"/>
+        <ctl name="WSA RX1 MUX" value="AIF1_PB"/>
+        <ctl name="WSA_RX1 INP0" value="RX1"/>
+        <ctl name="WSA_COMP2 Switch" value="1"/>
+        <ctl name="SpR COMP Switch" value="1"/>
+        <ctl name="SpR VISENSE Switch" value="1"/>
+        <ctl name="SpR SWR DAC_Port Switch" value="1"/>
         <ctl name="EAR SPKR PA Gain" value="G_6_DB"/>
     </path>
     <path name="headphones">
