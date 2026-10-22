@@ -23,8 +23,8 @@ vendor.audio.offload.buffer.size.kb=32
 
 # compress capture feature related
 AUDIO_HAL_PROP += \
-vendor.audio.compress_capture.enabled=false \
-vendor.audio.compress_capture.aac=false
+vendor.audio.compress_capture.enabled=true \
+vendor.audio.compress_capture.aac=true
 # compress capture end
 
 #AIDL HAL enabled
