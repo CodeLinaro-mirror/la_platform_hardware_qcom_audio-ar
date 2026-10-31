@@ -211,15 +211,9 @@ PRODUCT_COPY_FILES += \
 endif
 endif
 
-ifneq (,$(filter gen4_gvm_cmu, $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX)$(TARGET_BOARD_DERIVATIVE_SUFFIX)))
 PRODUCT_COPY_FILES += \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/car_audio_configuration_cmu.xml:$(TARGET_COPY_OUT_VENDOR)/etc/car_audio_configuration.xml \
     $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/common_au/car_audio_configuration_cmu.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/car_audio_configuration.xml
-else
-PRODUCT_COPY_FILES += \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/car_audio_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_ar/car_audio_configuration.xml \
-    $(TOPDIR)vendor/qcom/opensource/audio-hal-ar/primary-hal/configs/gen4_au/car_audio_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/car_audio_configuration.xml
-endif
 
 # common configuration files
 PRODUCT_COPY_FILES += \
